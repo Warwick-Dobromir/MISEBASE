@@ -9,6 +9,7 @@ dependencies {
     add("ksp", catalog.findLibrary("androidx-room-compiler").get())
     add("testImplementation", catalog.findLibrary("androidx-room-testing").get())
     add("testImplementation", catalog.findLibrary("robolectric").get())
+    add("testImplementation", catalog.findLibrary("kotlinx-coroutines-test").get())
 }
 
 ksp {

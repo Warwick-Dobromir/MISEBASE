@@ -1,0 +1,25 @@
+package com.culinary.core.database.converter
+
+import androidx.room.TypeConverter
+import com.culinary.core.database.model.EntityStatusDb
+import com.culinary.core.database.model.UnitDimensionDb
+
+/**
+ * 枚举以 TEXT 存储（A06 §1.2）。
+ *
+ * `valueOf` 遇到未知值会抛异常，而不是静默回退：未知枚举说明数据被外部改动或
+ * 迁移不完整，必须暴露为错误而不是猜一个默认值。
+ */
+class DatabaseConverters {
+    @TypeConverter
+    fun fromUnitDimension(value: UnitDimensionDb): String = value.name
+
+    @TypeConverter
+    fun toUnitDimension(value: String): UnitDimensionDb = UnitDimensionDb.valueOf(value)
+
+    @TypeConverter
+    fun fromEntityStatus(value: EntityStatusDb): String = value.name
+
+    @TypeConverter
+    fun toEntityStatus(value: String): EntityStatusDb = EntityStatusDb.valueOf(value)
+}
