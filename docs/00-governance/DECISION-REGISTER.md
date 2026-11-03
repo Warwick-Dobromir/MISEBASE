@@ -1,7 +1,7 @@
 # CULINARY 决策登记册
 
 **文档编号**：GOV-DECISIONS
-**版本**：`0.2.0`
+**版本**：`0.3.0`
 **状态**：`Review`
 **日期**：2026-11-04
 **负责人**：首席架构师 / 技术负责人
@@ -34,7 +34,7 @@
 | D-008 | 单位换算 | 同维度按基准因子；跨维度只允许食材级显式换算；无依据则拒绝并分行 | ACCEPTED | 是（单项已接受） | A04, ADR-005 |
 | D-009 | 库存 | 批次 + 储存位置 + 追加式流水；禁止直接改库存数字 | ACCEPTED | 是（单项已接受） | A04, A05, ADR-006 |
 | D-010 | 预留时机 | 计划确认时默认创建预留；可配置为仅计算不预留 | OPEN | 否（两种都支持） | A04 |
-| D-011 | 备份格式 | ZIP 容器接受；必须补齐一致性/附件/清单/兼容/校验/预检/回滚，见 E05 合规矩阵 | ACCEPTED | 是（条件已落实，待整体复核） | E05, ADR-007 |
+| D-011 | 备份格式 | ZIP 容器接受；必须补齐一致性（优先 Online Backup API）/附件/manifest 自校验/兼容/校验/预检/回滚，见 E05 合规矩阵 | ACCEPTED | 是（条件已落实，待整体复核） | E05, ADR-007 |
 | D-012 | 依赖注入 | Hilt 2.57.2（KSP，编译期校验；2.59+ 要求 AGP 9） | PROPOSED | 是 | A01, ADR-008 |
 | D-013 | 扫码 | CameraX + ML Kit Bundled 条码模型；本地识别；在线查询仅预留接口 | PROPOSED | 是 | A01, ADR-009 |
 | D-014 | 云/AI/协作 | 本阶段不引入云账号、实时同步、多人协作、AI 核心功能 | CONFIRMED | — | P01 |
@@ -75,13 +75,14 @@
 
 负责人明确要求：先提交完整模块清单、职责边界、依赖关系图和拆分依据，再确定模块数量。**“16 个模块”不是已批准数字**，只是细粒度参考。
 
-本修订新增 [A03A 模块拆分审查提案](../02-architecture/A03A-MODULE-DECOMPOSITION-REVIEW.md)，给出 8 / 13 / 16 三种方案，推荐 **13 模块平衡方案**：
+本修订新增 [A03A 模块拆分审查提案](../02-architecture/A03A-MODULE-DECOMPOSITION-REVIEW.md)，给出 8 / 15 / 16 三种方案，推荐 **15 模块平衡方案**：
 
-- 合并 `core:model` 到 `core:domain`；
-- 合并酱汁/菜谱的 UI 能力为 `feature:formulas`（数据与领域仍分开）；
-- 合并商品/库存的 UI 能力为 `feature:inventory`。
+- 合并 `core:model` 到 `core:domain`（包级保持 model/rule/usecase 边界）；
+- 酱汁 `feature:sauces` 与菜谱 `feature:recipes` **保持独立**，通过 domain 端口与版本引用交互；
+- 商品 `feature:products` 与库存 `feature:inventory` **保持独立**，通过 `product_id` 与 domain 端口交互；
+- 保留 `core:database` 独立、`core:data` 独立、feature 间零依赖；公共能力归 core。
 
-保留 `core:database` 独立、`core:data` 独立、feature 间零依赖。最终数量由负责人审查 A03A 后确定。
+最终数量由负责人审查 A03A 后确定。A03A 已给出 15 模块职责表、依赖图与无环检查结果。
 
 ### D-011 备份不是“打个 ZIP”
 
@@ -141,3 +142,4 @@
 |---|---|---|---|
 | 0.1.0 | 2026-11-04 | 初稿；建立 25 项决策与签收机制 | 架构组 |
 | 0.2.0 | 2026-11-04 | 记录 6 项单项接受；D-004 修改为模块审查；D-011 条件接受；G1 保持 PENDING | 架构组 |
+| 0.3.0 | 2026-11-04 | 按二次意见：D-004 改为 15 模块（sauces/recipes、products/inventory 独立）；D-011 补在线备份/自校验/迁移预检；G1 仍 PENDING | 架构组 |

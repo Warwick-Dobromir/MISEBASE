@@ -1,7 +1,7 @@
 # CULINARY 数据备份与恢复方案
 
 **文档编号**：E05
-**版本**：`0.2.0`
+**版本**：`0.3.0`
 **状态**：`Review`
 **日期**：2026-11-04
 **负责人**：首席架构师 / 技术负责人
@@ -13,7 +13,7 @@
 
 ### 1.1 目标
 
-- 一次备份包含**完整业务数据**：数据库、被引用图片、版本/校验信息。
+- 一次备份包含**完整业务数据**：数据库、被引用图片/附件、版本/校验信息。
 - 备份可验证：能发现截断、篡改、缺文件、版本不兼容。
 - 恢复可回滚：恢复失败不破坏当前数据。
 - 自动备份不阻塞前台；手动备份可导出到用户选择的位置。
@@ -31,9 +31,10 @@
 
 | 要求 | 本方案落点 | 状态 |
 |---|---|---|
-| 数据库一致性快照 | 第 6 节：写锁 + `wal_checkpoint(TRUNCATE)` + 复制 + `quick_check` | 已设计 |
+| 数据库一致性快照 | 第 6 节：优先 Online Backup API；否则写屏障 + checkpoint + 复制 + 可打开性校验 | 已设计 |
 | 图片及附件完整性 | 第 7 节：引用清单 + 逐文件 SHA-256；v1 附件=图片，未来文件复用同机制 | 已设计 |
 | 备份清单（manifest） | 第 4 节：必填字段、计数、版本、文件列表 | 已设计 |
+| manifest 自身完整性 | 第 4.3 节：`manifest.sha256` + `checksums_sha256`；加密时 GCM tag | 已设计 |
 | 版本兼容 | 第 4.3 节 + 第 12 节：format/schema 双向规则 | 已设计 |
 | 校验机制 | 第 5 节：每文件 SHA-256 + manifest 校验 | 已设计 |
 | 恢复前验证 | 第 12 节：结构/路径/大小/版本/哈希/DB 完整性/空间 | 已设计 |
@@ -68,7 +69,8 @@ culinary-backup-20261104-0030-manual.zip
 │  ├─ 0a/
 │  │  └─ <uuid>.webp
 │  └─ ...
-└─ checksums.sha256
+├─ checksums.sha256
+└─ manifest.sha256          # manifest 自身的 SHA-256（防误改/损坏）
 ```
 
 ### 3.2 加密（`.culinary`）
@@ -116,15 +118,19 @@ ext:  zip（无密码） | culinary（有密码）
     "model": "Pixel",
     "api_level": 36
   },
-  "database": {
-    "path": "database/culinary.db",
-    "size_bytes": 10485760,
-    "sha256": "..."
-  },
-  "images": [
+  "database": [
     {
+      "path": "database/culinary.db",
+      "size_bytes": 10485760,
+      "sha256": "..."
+    }
+  ],
+  "attachments": [
+    {
+      "kind": "image",
       "path": "images/0a/<uuid>.webp",
       "size_bytes": 123456,
+      "mime_type": "image/webp",
       "sha256": "..."
     }
   ],
@@ -134,11 +140,23 @@ ext:  zip（无密码） | culinary（有密码）
     "product": 60,
     "inventory_ledger": 4200
   },
+  "totals": {
+    "file_count": 121,
+    "total_bytes": 10519216
+  },
+  "integrity": {
+    "status": "VERIFIED",
+    "manifest_sha256": "...",
+    "manifest_size_bytes": 4096,
+    "checksums_sha256": "..."
+  },
   "warnings": [],
   "encryption": {
     "algorithm": "AES-256-GCM",
     "kdf": "PBKDF2-HMAC-SHA256",
-    "iterations": 210000
+    "iterations": 210000,
+    "salt_b64": "...",
+    "nonce_b64": "..."
   }
 }
 ```
@@ -153,20 +171,33 @@ ext:  zip（无密码） | culinary（有密码）
 | `app.version_name` / `version_code` | 备份时 App |
 | `app.schema_version` | 备份时 DB schema |
 | `app.install_id` | 安装实例 ID |
-| `database.path` / `size_bytes` / `sha256` | DB 文件 |
-| `images[]` | 每张图的相对路径/大小/SHA-256 |
+| `database[]` | DB 文件相对路径、大小、SHA-256（v1 单文件） |
+| `attachments[]` | 图片/附件：kind、相对路径、大小、MIME、SHA-256 |
 | `counts` | 关键表行数，用于恢复后校验 |
-| `warnings` | 非致命问题（如缺图） |
+| `totals.file_count` / `total_bytes` | 文件数量与总大小 |
+| `integrity.status` | `VERIFIED` / `PARTIAL` / `FAILED` |
+| `integrity.manifest_sha256` / `manifest_size_bytes` | manifest 自身校验 |
+| `integrity.checksums_sha256` | 校验清单自身的 SHA-256 |
+| `encryption` | 算法、KDF、迭代次数、salt/nonce（加密时） |
+| `warnings` | 非致命异常；不得静默跳过 |
 
-### 4.3 兼容规则
+### 4.3 Manifest 完整性保护
+
+- manifest 生成后计算 SHA-256，写入 `manifest.sha256` 与 `integrity.manifest_sha256`；`checksums.sha256` 本身也计算 SHA-256。
+- 恢复时先校验 `manifest.sha256`，再校验 `checksums.sha256`，最后逐文件校验。
+- 加密备份：整个内层 ZIP（含 manifest）由 AES-GCM 认证，GCM tag 提供密码学完整性。
+- 未加密 ZIP：SHA-256 可发现**意外损坏/截断**，但无法防止恶意同时改写 manifest 与 hash；如需防篡改，必须使用加密备份。此限制必须在 UI/文档中说明。
+
+### 4.4 兼容规则
 
 - `format_version > 当前支持`：拒绝恢复，提示升级 App。
-- `format_version < 当前支持`：由 importer 升级；必须测试。
+- `format_version < 当前支持`：由 importer 升级；必须测试并记录迁移路径。
 - `app.schema_version > 当前 App schema`：拒绝恢复。
-- `app.schema_version < 当前 App schema`：允许，恢复后走正常迁移。
-- manifest 缺必填字段：拒绝。
+- `app.schema_version < 当前 App schema`：允许，但恢复前必须通过迁移兼容性检查；不得跳过未验证的迁移。
+- manifest 缺必填字段、`integrity.status != VERIFIED`（除用户明确接受 PARTIAL）：拒绝。
+- **备份格式版本与 DB schema 版本独立**；不得用一个版本号推断另一个。
 
-## 5. 校验和
+## 5. 校验机制
 
 - 每个文件单独 SHA-256，写入 `manifest.json` 与 `checksums.sha256`。
 - `checksums.sha256` 格式：
@@ -176,44 +207,106 @@ ext:  zip（无密码） | culinary（有密码）
 <sha256>  images/0a/<uuid>.webp
 ```
 
+- `manifest.sha256` 保存 manifest 自身的 SHA-256；`integrity.checksums_sha256` 保存校验清单自身的 SHA-256。
+- 校验顺序：
+  1. 容器结构/magic/header；
+  2. 加密时先验证 GCM tag；
+  3. manifest 自身 hash；
+  4. `checksums.sha256` 自身 hash；
+  5. 逐文件 SHA-256；
+  6. DB 可打开性与完整性；
+  7. 附件引用一致性。
 - 恢复时**逐文件**校验；不信任 manifest 内的 hash 本身，需与实际文件匹配。
-- 校验失败：拒绝恢复，不触碰现有数据。
+- 任一必需文件校验失败：拒绝恢复，不触碰现有数据。
 - 加密文件：先验证 GCM tag，再解压；tag 失败统一提示“密码错误或文件损坏”。
+- 未加密 ZIP 的 SHA-256 只保证完整性（意外损坏），不提供密码学真实性；需要抗篡改时使用加密备份。
 
 ## 6. 数据库一致性快照
 
-### 6.1 流程
+### 6.1 策略选择
 
-1. 获取 `writeMutex`（阻止新写）。
-2. `PRAGMA wal_checkpoint(TRUNCATE)`。
-3. 复制 `culinary.db` 到临时文件 `culinary.db.tmp`。
-4. 计算 SHA-256。
-5. 用独立只读连接打开临时文件，执行 `PRAGMA quick_check`。
-6. 释放写锁。
-7. 将临时文件放入 ZIP。
+定义 `DatabaseSnapshotter` 接口，优先在线备份，必须有受控回退：
 
-### 6.2 为什么不用 `VACUUM INTO` 作为唯一方案
+| 策略 | 使用条件 | 说明 |
+|---|---|---|
+| `ONLINE_BACKUP`（首选） | 所选 SQLite 驱动暴露 SQLite Online Backup API（`sqlite3_backup_*` 或等价能力） | 不阻塞普通读取；由 SQLite 保证页级一致性；写入可继续但可能延长备份 |
+| `QUIESCED_CHECKPOINT_COPY`（回退） | 驱动不暴露在线备份 API | 获取写屏障，等待活动写事务结束，checkpoint 后复制；期间读取继续、写入排队 |
 
-- API 26 的 SQLite 版本较旧，不保证支持 `VACUUM INTO`。
-- 统一使用“写锁 + checkpoint + 复制”，在所有目标 API 可用。
-- 若运行环境支持 `VACUUM INTO`，可作为优化；必须有回退。
-- 复制期间读可以继续；写等待。复制大库可能数秒，UI 显示进度。
+**重要：** Android 平台 `SupportSQLiteDatabase` 并不直接暴露 `sqlite3_backup_*`。框架阶段必须验证所选驱动是否提供在线备份能力；**未验证前不得声称使用 Online Backup API**。无论哪种策略，都**不允许在写入进行中直接复制数据库文件并宣称备份成功**。
 
-### 6.3 失败处理
+### 6.2 `ONLINE_BACKUP` 顺序
+
+1. 打开源数据库连接（只读或正常连接均可）。
+2. 创建临时目标数据库。
+3. 调用在线备份 API，分步复制直到完成。
+4. 关闭目标连接，确保所有页落盘。
+5. 用独立只读连接打开目标文件，执行：
+   - `PRAGMA quick_check`（失败再 `integrity_check`）；
+   - 读取 `PRAGMA user_version`；
+   - 查询关键表计数。
+6. 计算 SHA-256，写入 manifest。
+7. 将目标文件放入 ZIP。
+
+- 备份期间允许正常读取。
+- 写入可继续；若备份因持续写入反复重启，记录耗时并提示“备份在写入活跃时可能变慢”。
+- 备份完成后必须验证“可正常打开”，不能只检查文件存在。
+
+### 6.3 `QUIESCED_CHECKPOINT_COPY` 顺序
+
+1. 获取全局写屏障（`writeMutex`）：新写请求排队，等待当前写事务结束。
+2. 确认没有活动写事务（事务协调器计数器为 0）。
+3. 执行 `PRAGMA wal_checkpoint(TRUNCATE)`；确认 WAL 已截断。
+4. 复制主数据库文件到临时文件；**不复制正在变化的 `-wal`/`-shm`**。
+5. 用独立只读连接打开临时文件：`quick_check`、`user_version`、关键表计数。
+6. 计算 SHA-256。
+7. 释放写屏障（排队的写继续）。
+8. 将临时文件放入 ZIP。
+
+- 复制期间读取继续；写入等待，不丢写。
+- 写屏障持有时间必须覆盖“checkpoint + 复制”；大库可能数秒，UI 显示“正在创建一致性备份”。
+- 复制完成后不得再把临时文件与活动 DB 混用。
+
+### 6.4 WAL 规则
+
+- WAL 模式下，主 DB 文件可能不包含最新已提交页；必须先 checkpoint，再复制。
+- 不允许只复制主文件而忽略 WAL，也不允许把活动 `-wal` 与主文件拼装后宣称一致。
+- 复制后验证目标文件 `journal_mode` 与 `user_version`；必要时对目标执行一次 checkpoint。
+- 备份期间不删除/重命名活动 `-wal`/`-shm`。
+
+### 6.5 失败处理
 
 - 任一阶段失败：删除临时文件；不覆盖旧备份；记录 `backup_record.status=FAILED`。
-- 磁盘空间不足：提前检查 `database.size * 3 + images.size`，不足则拒绝开始。
+- 磁盘空间不足：提前检查 `database.size * 3 + attachments.size`，不足则拒绝开始。
+- 目标文件打不开/完整性检查失败：备份标记 `FAILED`，不得写入 manifest 的 `VERIFIED`。
+- 备份完成后源数据库必须保持可读写；备份流程不得锁死源库。
 
 ## 7. 图片与附件备份
 
-- v1 的“附件”仅指图片；未来若增加文件附件，复用同一 `files/` 清单与 SHA-256 机制。
-- 只备份 `image_asset` 中未删除的记录。
-- 文件路径必须位于 `filesDir/images/` 下；拒绝绝对路径/`..`。
-- 文件缺失：
-  - 记录 `warnings`；
-  - 备份继续（图片是非核心数据）；
-  - 恢复后该图显示为无图，并记录诊断。
-- 文件哈希不一致：视为损坏；记录 warning，备份继续但标记 `PARTIAL`。
+### 7.1 清单
+
+- v1 的“附件”仅指图片；未来若增加文件附件，复用同一 `files/` 清单与 SHA-256 机制，不另建第二套。
+- 逐文件记录：相对路径、文件大小、MIME 类型、SHA-256、所属 `image_asset`/未来附件记录 ID。
+- 只备份 `image_asset` 中未删除的记录；文件路径必须位于 `filesDir/images/` 下，拒绝绝对路径/`..`。
+
+### 7.2 引用一致性检查
+
+在打包前执行：
+
+1. 数据库引用 → 实际文件：每条未删除 `image_asset` 必须有对应文件。
+2. 实际文件 → 数据库引用：`images/` 下的文件是否被引用（孤立文件）。
+3. 文件大小、MIME、SHA-256 与数据库记录是否一致。
+
+### 7.3 异常分类
+
+| 异常 | 处理 | 备份状态 |
+|---|---|---|
+| 缺失文件（DB 有记录，文件不存在） | 记录具体 `image_asset.id`/路径；默认**使备份失败**，用户可选择“保留异常继续” | `FAILED` 或显式 `PARTIAL` |
+| 损坏文件（hash 不匹配） | 记录文件与期望/实际 hash；默认失败，用户可选择继续 | `FAILED` 或显式 `PARTIAL` |
+| 孤立文件（文件存在，DB 无引用） | 报告数量/路径；**不静默删除**；默认不纳入备份，记录 warning | `VERIFIED` + warning 或 `PARTIAL` |
+| MIME/大小不一致 | 以实际文件为准并记录差异；不静默修正 DB | `PARTIAL` |
+
+- **不允许静默跳过**：manifest 的 `warnings` 与 `integrity.status` 必须反映异常。
+- `PARTIAL` 备份在恢复前必须提示“包含 N 个异常附件”，由用户明确确认。
 - 备份不包含缩略图缓存；恢复后由 Coil 重建。
 
 ## 8. 可选加密
@@ -290,12 +383,13 @@ ext:  zip（无密码） | culinary（有密码）
 ### 11.1 创建后验证
 
 - manifest 可解析、必填字段齐全。
-- 每个文件存在且 SHA-256 匹配。
-- DB `quick_check` = ok。
+- `manifest.sha256` 与 `checksums.sha256` 自身 hash 校验通过。
+- 每个文件存在且 SHA-256 匹配；附件数量/大小/MIME 与 manifest 一致。
+- DB 能在只读连接中打开，`quick_check` = ok。
 - 关键表计数与 manifest 一致（允许 WAL 快照差异为 0）。
-- 图片数量匹配。
+- 附件引用一致性检查结果已写入 `warnings`/`integrity.status`。
 - ZIP 无路径穿越、无超限条目。
-- 全部通过：`status=VERIFIED`；否则 `FAILED`，删除或标记不可用。
+- 全部通过：`status=VERIFIED`；存在异常：`PARTIAL`（需用户确认）或 `FAILED`，不得静默降级。
 
 ### 11.2 定期复验
 
@@ -313,19 +407,35 @@ ext:  zip（无密码） | culinary（有密码）
 | 解压后总大小/条目数在限制内 | 拒绝（防 zip bomb） |
 | 路径无 `..`/绝对路径/符号链接 | 拒绝 |
 | manifest 必填字段齐全 | 拒绝 |
+| `manifest.sha256` 与实际 manifest 一致 | 拒绝 |
+| `checksums.sha256` 自身 hash 一致 | 拒绝 |
+| `integrity.status` 为 `VERIFIED`（或用户明确接受 `PARTIAL`） | 拒绝/需确认 |
 | `format_version` 受支持 | 拒绝 |
 | `schema_version <= 当前 App` | 拒绝（提示升级） |
+| **版本迁移路径存在且经过验证** | 拒绝（不得跳过未验证迁移） |
 | 每个文件 SHA-256 匹配 | 拒绝 |
+| 附件引用一致性通过（缺失/损坏/孤立已报告） | 拒绝/需确认 |
 | DB `integrity_check`/`quick_check` | 拒绝 |
 | `foreign_key_check` 为空 | 拒绝 |
 | 关键表存在、计数合理 | 拒绝 |
+| 备份 DB 能在只读连接中打开 | 拒绝 |
 | 磁盘空间 ≥ 解压大小 × 2 + 当前数据 | 拒绝 |
 | 电量/存储约束 | 警告/阻止 |
-| 密码正确（加密） | 拒绝（提示密码错误/损坏） |
+| 密码正确（加密，GCM tag） | 拒绝（提示密码错误/损坏） |
 
-### 12.1 预检结果展示
+### 12.1 版本迁移预检
 
-- 备份时间、App/DB 版本、大小、图片数、关键表计数。
+恢复前必须根据“备份 schema → 当前 schema”查找已登记的迁移路径：
+
+- 路径存在且所有中间版本有测试：允许；恢复后执行迁移。
+- 路径缺失/未测试：拒绝；不得跳过中间迁移。
+- 迁移执行前创建预恢复备份；迁移失败必须回滚，当前数据库不得被破坏。
+- 备份格式版本与 DB schema 版本分别判断；不得用一个推断另一个。
+
+### 12.2 预检结果展示
+
+- 备份时间、App/DB 版本、格式版本、大小、附件数、关键表计数、`integrity.status`。
+- 显示迁移路径与预计影响；显示异常附件（若有）。
 - 将替换当前数据（全量恢复），并自动创建“恢复前备份”。
 - 需要用户输入确认词（如“恢复”）以防误操作。
 
@@ -372,7 +482,8 @@ sequenceDiagram
 - 预检全部通过后，才创建 `PRE_RESTORE` 备份。
 - 关闭数据库前，等待所有写事务完成（获取写锁并保持）。
 - 当前 DB/图片移动到 `filesDir/rollback/<restoreId>/`，不是删除。
-- 恢复后打开 Room，执行迁移（若备份 schema 较旧）。
+- 恢复后打开 Room，执行迁移（若备份 schema 较旧）；迁移前已有预恢复备份。
+- 迁移失败：关闭 DB，回滚 rollback 目录与预恢复备份；当前数据库保持恢复前状态。
 - 校验通过才删除 rollback；失败立即回滚。
 - 恢复完成后建议重启进程，避免旧连接/缓存。
 
@@ -493,3 +604,4 @@ sequenceDiagram
 |---|---|---|---|
 | 0.1.0 | 2026-11-04 | 初稿；格式、manifest、加密、自动/手动、恢复与测试 | 架构组 |
 | 0.2.0 | 2026-11-04 | 按 D-011 补充 7 项合规矩阵；明确图片/附件完整性 | 架构组 |
+| 0.3.0 | 2026-11-04 | 按负责人标准补：在线备份优先、WAL/写入协调、manifest 自校验、附件异常分类、迁移路径预检 | 架构组 |

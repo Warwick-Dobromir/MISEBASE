@@ -1,0 +1,31 @@
+CULINARY 15-MODULE DEPENDENCY CHECK
+Date: 2026-11-04
+Nodes: 15
+Declared dependency edges: 43
+Result: ACYCLIC (DAG)
+
+Build/topological order (dependencies first):
+   1. core:common
+   2. core:domain
+   3. core:database
+   4. core:designsystem
+   5. core:platform
+   6. core:data
+   7. feature:ingredients
+   8. feature:sauces
+   9. feature:recipes
+  10. feature:products
+  11. feature:inventory
+  12. feature:planning
+  13. feature:procurement
+  14. feature:settings
+  15. app
+
+Forbidden edges asserted (must be absent):
+  feature:* -> feature:*
+  feature:* -> core:data / core:database
+  core:domain -> core:data / core:database / core:platform / android / room / compose
+  core:database -> core:domain / core:data
+  any -> app
+
+Note: root 'app' depends on all features, data, platform, designsystem; no module depends on app.
