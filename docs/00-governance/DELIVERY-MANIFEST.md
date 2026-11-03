@@ -1,7 +1,7 @@
 # CULINARY 交付清单与校验记录
 
 **文档编号**：GOV-MANIFEST
-**版本**：`0.4.0`
+**版本**：`0.5.0`
 **状态**：`Review`
 **日期**：2026-11-04
 **架构基线**：`0.4.0`（修订版，待 G1 签收）
@@ -36,15 +36,16 @@
 | 10 | 数据库并发与事务安全方案 | [E02](../03-engineering/E02-DATABASE-CONCURRENCY.md) | 0.2.0 | Review | `b7065f486d1173d7de8099868fb174cec598958977325819cb2d2835c8b608f5` |
 | 11 | 异常处理与日志规范 | [E03](../03-engineering/E03-ERROR-LOGGING.md) | 0.2.0 | Review | `0318dd7007ce8ebad2f711820de7c6cc35aead06a89f79a71c605b3fa44b619f` |
 | 12 | 代码回档与版本管理方案 | [E04](../03-engineering/E04-GIT-ROLLBACK.md) | 0.2.0 | Review | `fa0f8b251aedc5deb864f6f1e577aa21dc3de40178f590df30f852a2923513ea` |
-| 13 | 数据备份与恢复方案 | [E05](../03-engineering/E05-BACKUP-RESTORE.md) | 0.4.0 | Review | `12be96827792dee4761db0298a9570197ef41b9199517a55a5e584dd11c002c1` |
+| 13 | 数据备份与恢复方案 | [E05](../03-engineering/E05-BACKUP-RESTORE.md) | 0.4.1 | Approved | `cce70d2afb08647e579b8f393127db6c71f1d509d8d52f39c97a2eb41a6034b6` |
 | 14 | 自动化测试与验收标准 | [E06](../03-engineering/E06-TESTING-ACCEPTANCE.md) | 0.1.0 | Review | `80d77582251f676c0ad9f51a7953bfbf1c33aa8cbd39eb9ddb96356428ba8307` |
 | 15 | 框架搭建实施顺序 | [R01](../04-readiness/R01-FRAMEWORK-SEQUENCE.md) | 0.2.0 | Review | `2d1fe012ac4986c47d661607c2475051b177adf41d288fbb8ca48980221f2be8` |
 | 16 | 开发环境与依赖清单 | [R02](../04-readiness/R02-ENVIRONMENT-DEPENDENCIES.md) | 0.2.0 | Review | `52cf8dcd0460713894625fa954bf27943bfa014e528d7201392fc409e3f4cbdc` |
-| 17 | 框架制作前置检查清单 | [R03](../04-readiness/R03-PREFLIGHT-CHECKLIST.md) | 0.3.0 | Review | `5c752e7ec3ffd46c43494b5cd25eb3ebb20dbe85adb8fe4bbd8b57b5818fbdc5` |
-| — | 框架制作启动报告 | [R04](../04-readiness/R04-FRAMEWORK-START-REPORT.md) | 0.4.0 | Review | `2a8efb5409680ca2e93b3c1ff44b8f0d6f4e0ffc1c77f31304262092349af671` |
+| 17 | 框架制作前置检查清单 | [R03](../04-readiness/R03-PREFLIGHT-CHECKLIST.md) | 0.4.0 | Review | `6d2c1c69c78810445329e9460e8a0cbbfe8e10784c2bf574bf070cbe00a519e6` |
+| — | 框架制作启动报告 | [R04](../04-readiness/R04-FRAMEWORK-START-REPORT.md) | 0.5.0 | Review | `93f7a4adf0c1b3c6b21cd6310528a13a2e672705a3176ec988a5353f7d71b00b` |
 | — | 模块拆分审查提案（附件） | [A03A](../02-architecture/A03A-MODULE-DECOMPOSITION-REVIEW.md) | 0.3.0 | Approved | 不计入 17 项；D-004 已接受 |
-| — | G1 最终复核包（附件） | [G1-REVIEW-PACKET](../04-readiness/G1-REVIEW-PACKET.md) | 0.2.0 | Review | 不计入 17 项；D-011 待复核 |
+| — | G1 最终复核包（附件） | [G1-REVIEW-PACKET](../04-readiness/G1-REVIEW-PACKET.md) | 0.3.0 | Approved | 不计入 17 项；G1 签收记录 |
 | — | E05 修订复核包（附件） | [E05A](../03-engineering/E05-REVISION-REVIEW.md) | 0.1.0 | Review | 不计入 17 项；D-011 证据 |
+| — | G1 归档核验（附件） | [G1-ARCHIVE-AUDIT](../04-readiness/G1-ARCHIVE-AUDIT.md) | 0.1.0 | Review | 8 项核验与 G2 准入 |
 | — | 依赖兼容性验证（附件） | [V01](../04-readiness/V01-DEPENDENCY-VALIDATION.md) | 0.1.0 | Review | 见文件；不计入 17 项 |
 | — | ADR-001 ~ ADR-010（附件） | [docs/adr](../adr/) | 0.1.0（ADR-003 0.3.0；ADR-007/008 0.2.0） | Proposed | 10 份 |
 | — | 架构/ER/流程 图（附件） | [docs/diagrams](../diagrams/) | — | — | 3 份 `.mmd` |
@@ -53,11 +54,11 @@
 
 | 检查 | 结果 |
 |---|---|
-| Markdown 文件总数 | 38（含附件/README） |
+| Markdown 文件总数 | 40（含附件/README） |
 | 17 项交付物文件 | 18 个文件全部存在（ER 与字典合并为第 7 项） |
 | 断链 | 0 |
 | UTF-8 替换字符/乱码 | 0 |
-| `Approved` 状态 | A03A 已由负责人批准；其余文档 `Review`，ADR `Proposed`，无虚假批准 |
+| `Approved` 状态 | A03A、E05 已由负责人批准；其余文档 `Review`，ADR `Proposed` |
 | 每份是否有版本/状态/日期 | 是 |
 | 数据库表数量 | 31 |
 | Gradle 模块数量 | 15（D-004 已接受）；16 为历史细粒度参考 |
@@ -71,7 +72,7 @@
 
 | # | 门禁 | 状态 |
 |---|---|---|
-| G1 | 8 项关键决策整体签收 | **PENDING**：D-004 已接受；D-011/E05 0.4.0 待复核 |
+| G1 | 8 项关键决策整体签收 | **PASS**：8 项全部接受；E05 0.4.1 复核通过 |
 | G2 | 依赖解析 | PASS |
 | G3 | JDK/SDK 环境变量 | PASS |
 | G4 | 构建 + 安装启动 | PASS |
@@ -79,7 +80,7 @@
 | G6 | 版本锁定 | PASS |
 | G7 | 无架构级冲突 | PASS |
 
-**结论：** 架构/工程准备已完成；框架开工只剩 G1（D-011 复核）。G5 为发布门禁。
+**结论：** G1 通过，具备进入 G2 的条件；G5 为发布门禁。
 
 ## 5. 重新生成校验值
 
@@ -100,3 +101,4 @@ Get-ChildItem docs -Recurse -Filter *.md |
 | 0.2.0 | 2026-11-04 | 按负责人意见刷新：D-004/D-011 修订、A03A 附件、G5 发布门禁、G1 保持 PENDING | 架构组 |
 | 0.3.0 | 2026-11-04 | 二次修订：15 模块、在线备份/附件异常/manifest 自校验/迁移预检；G1 仍 PENDING | 架构组 |
 | 0.4.0 | 2026-11-04 | D-004 接受；D-011/E05 0.4.0 待复核；G5 接受为发布门禁；G1 仍 PENDING | 架构组 |
+| 0.5.0 | 2026-11-04 | E05 0.4.1 Approved；D-011 接受；G1 PASS；具备进入 G2 条件 | 架构组 |
