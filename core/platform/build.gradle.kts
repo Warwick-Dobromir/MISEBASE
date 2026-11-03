@@ -10,6 +10,8 @@ dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.androidx.work.runtime.ktx)
+    implementation(libs.androidx.camera.core)
+    implementation(libs.mlkit.barcode.scanning)
 
     testImplementation(libs.robolectric)
     testImplementation(libs.androidx.work.testing)
