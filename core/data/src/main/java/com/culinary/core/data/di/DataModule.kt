@@ -9,11 +9,8 @@ import com.culinary.core.common.IdGenerator
 import com.culinary.core.common.SystemClock
 import com.culinary.core.common.UuidV4Generator
 import com.culinary.core.data.logging.TimberAppLogger
-import com.culinary.core.data.startup.StartupCoordinator
-import com.culinary.core.data.transaction.RoomTransactionRunner
 import com.culinary.core.database.CulinaryDatabase
 import com.culinary.core.database.DatabaseFactory
-import com.culinary.core.domain.transaction.TransactionRunner
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -22,7 +19,6 @@ import dagger.hilt.components.SingletonComponent
 import kotlinx.coroutines.sync.Mutex
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
-import javax.inject.Provider
 import javax.inject.Singleton
 
 /**
@@ -73,19 +69,4 @@ object DataModule {
     @Provides
     @Singleton
     fun provideAppLogger(): AppLogger = TimberAppLogger()
-
-    @Provides
-    @Singleton
-    fun provideStartupCoordinator(
-        @ApplicationContext context: Context,
-        databaseProvider: Provider<CulinaryDatabase>,
-    ): StartupCoordinator = StartupCoordinator(context, databaseProvider)
-
-    @Provides
-    @Singleton
-    fun provideTransactionRunner(
-        database: CulinaryDatabase,
-        dispatchers: DispatcherProvider,
-        writeMutex: Mutex,
-    ): TransactionRunner = RoomTransactionRunner(database, dispatchers, writeMutex)
 }

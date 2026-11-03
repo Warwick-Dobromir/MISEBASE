@@ -25,6 +25,7 @@ import com.culinary.navigation.CulinaryDestination
 @Composable
 fun HomeScreen(
     onOpen: (CulinaryDestination) -> Unit,
+    onOpenDebug: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val entries = CulinaryDestination.entries.filter { it != CulinaryDestination.HOME }
@@ -60,6 +61,14 @@ fun HomeScreen(
                         .padding(vertical = 16.dp),
             )
             HorizontalDivider()
+        }
+        item {
+            androidx.compose.material3.TextButton(
+                onClick = onOpenDebug,
+                modifier = Modifier.padding(top = 12.dp),
+            ) {
+                Text(text = stringResource(R.string.home_debug))
+            }
         }
     }
 }

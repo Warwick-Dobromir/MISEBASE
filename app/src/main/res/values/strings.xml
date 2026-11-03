@@ -6,6 +6,8 @@
     <string name="placeholder_body">该模块将在后续阶段实现</string>
     <string name="action_back">返回</string>
     <string name="action_retry">重试</string>
+    <string name="home_debug">调试信息</string>
+    <string name="debug_title">调试信息</string>
     <string name="startup_loading">正在检查数据库…</string>
     <string name="startup_incompatible_title">数据库版本不兼容</string>
     <string name="startup_incompatible_body">数据库版本为 %1$d，当前应用支持 %2$d。请使用匹配版本的应用打开，不要降级或清空数据。</string>

@@ -6,8 +6,11 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.culinary.debug.DebugScreen
 import com.culinary.ui.HomeScreen
 import com.culinary.ui.PlaceholderScreen
+
+private const val DEBUG_ROUTE = "debug"
 
 /**
  * 应用导航图（R01 阶段 6 的“导航占位”）。
@@ -28,7 +31,11 @@ fun CulinaryNavHost(
         composable(CulinaryDestination.HOME.route) {
             HomeScreen(
                 onOpen = { destination -> navController.navigate(destination.route) },
+                onOpenDebug = { navController.navigate(DEBUG_ROUTE) },
             )
+        }
+        composable(DEBUG_ROUTE) {
+            DebugScreen(onBack = { navController.popBackStack() })
         }
         CulinaryDestination.entries
             .filter { it != CulinaryDestination.HOME }
