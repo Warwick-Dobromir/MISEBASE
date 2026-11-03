@@ -1,7 +1,7 @@
 # ADR-007：自定义 ZIP 备份格式
 
 **状态**：Proposed
-**版本**：`0.1.0`
+**版本**：`0.2.0`
 **日期**：2026-11-04
 **决策者**：首席架构师 / 项目负责人
 **关联**：D-011、E05、A07
@@ -31,6 +31,7 @@ magic + header + ciphertext + tag
 - 备份前 checkpoint + 复制 DB；恢复前预检 + 预恢复备份。
 - 自动备份用 WorkManager + SAF；保留 7 日 + 4 周。
 - 不使用 Android Auto Backup 作为唯一方案。
+- 必须满足 [E05](../03-engineering/E05-BACKUP-RESTORE.md) 的 7 项合规矩阵：DB 一致性、图片/附件完整性、manifest、版本兼容、校验、恢复前验证、失败回滚。
 
 ## 理由
 

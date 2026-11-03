@@ -4,8 +4,8 @@
 **版本**：`0.2.0`
 **状态**：`Review`
 **日期**：2026-11-04
-**架构基线**：`0.1.0`
-**Git 检查点**：`checkpoint/architecture-draft-0.1.0`
+**架构基线**：`0.2.0`（修订版，待 G1 签收）
+**Git 检查点**：`checkpoint/architecture-revision-0.2.0`
 
 ---
 
@@ -41,10 +41,10 @@
 | 15 | 框架搭建实施顺序 | [R01](../04-readiness/R01-FRAMEWORK-SEQUENCE.md) | 0.2.0 | Review | `0f023c49565a0d81340475073f2210395213eec66bd438b26fc80c9de1022c44` |
 | 16 | 开发环境与依赖清单 | [R02](../04-readiness/R02-ENVIRONMENT-DEPENDENCIES.md) | 0.2.0 | Review | `52cf8dcd0460713894625fa954bf27943bfa014e528d7201392fc409e3f4cbdc` |
 | 17 | 框架制作前置检查清单 | [R03](../04-readiness/R03-PREFLIGHT-CHECKLIST.md) | 0.2.0 | Review | `e1108fad0796444463ba7bcbf6d0ba0d9d37b83d637d1c9d1aecc05205f5919b` |
-| — | 框架制作启动报告 | [R04](../04-readiness/R04-FRAMEWORK-START-REPORT.md) | 0.2.0 | Review | `fc5307dcbca28141a606f9fefb92018b00a5416e3978cd1dbb4e95396b273d8e` |
+| — | 框架制作启动报告 | [R04](../04-readiness/R04-FRAMEWORK-START-REPORT.md) | 0.2.0 | Review | `986ba1e5586f14aca90bf44b004fba39084c7c6ff9aee2475d9707d85d31ba5d` |
 | — | 模块拆分审查提案（附件） | [A03A](../02-architecture/A03A-MODULE-DECOMPOSITION-REVIEW.md) | 0.1.0 | Review | 不计入 17 项；D-004 待审查 |
 | — | 依赖兼容性验证（附件） | [V01](../04-readiness/V01-DEPENDENCY-VALIDATION.md) | 0.1.0 | Review | 见文件；不计入 17 项 |
-| — | ADR-001 ~ ADR-010（附件） | [docs/adr](../adr/) | 0.1.0（ADR-003 为 0.2.0） | Proposed | 10 份 |
+| — | ADR-001 ~ ADR-010（附件） | [docs/adr](../adr/) | 0.1.0（ADR-003/007 为 0.2.0） | Proposed | 10 份 |
 | — | 架构/ER/流程 图（附件） | [docs/diagrams](../diagrams/) | — | — | 3 份 `.mmd` |
 
 ## 3. 完整性检查
