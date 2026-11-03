@@ -13,7 +13,7 @@ class IngredientErrorMessagesTest {
                 CulinaryError.Validation(field = "ingredient.name", rule = "must not be blank"),
             )
 
-        assertThat(message).isEqualTo("名称不能为空。")
+        assertThat(message).isEqualTo("名称不能为空。（CUL-VAL-001）")
     }
 
     @Test
@@ -23,7 +23,7 @@ class IngredientErrorMessagesTest {
                 CulinaryError.Validation(field = "ingredient.name", rule = "must be at most 120 characters"),
             )
 
-        assertThat(message).isEqualTo("名称过长，请控制在 120 个字符以内。")
+        assertThat(message).isEqualTo("名称过长，请控制在 120 个字符以内。（CUL-VAL-001）")
     }
 
     @Test

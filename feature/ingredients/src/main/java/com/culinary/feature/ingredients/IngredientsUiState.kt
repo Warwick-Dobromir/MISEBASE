@@ -13,13 +13,20 @@ data class IngredientsUiState(
 
 /** 把领域错误转成面向用户的中文提示；未知错误不伪装成业务错误。 */
 object IngredientErrorMessages {
-    fun describe(error: CulinaryError): String =
+    fun describe(error: CulinaryError): String = withCode(error, friendlyMessage(error))
+
+    private fun friendlyMessage(error: CulinaryError): String =
         when (error) {
             is CulinaryError.Validation -> validationMessage(error)
             is CulinaryError.Conflict -> "名称已存在，请换一个名称。"
             is CulinaryError.NotFound -> "食材不存在，可能已被删除。"
-            else -> "操作失败（${error.code.value}），请重试。"
+            else -> "操作失败，请重试。"
         }
+
+    private fun withCode(
+        error: CulinaryError,
+        message: String,
+    ): String = "$message（${error.code.value}）"
 
     private fun validationMessage(error: CulinaryError.Validation): String =
         when (error.field) {
