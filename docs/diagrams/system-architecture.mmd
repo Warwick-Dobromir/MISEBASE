@@ -1,0 +1,57 @@
+flowchart TB
+  subgraph Presentation["表现层"]
+    UI["feature:*<br/>Compose Screen + ViewModel"]
+    DS["core:designsystem"]
+  end
+
+  subgraph Application["应用层"]
+    UC["core:domain<br/>Use Cases / Ports"]
+  end
+
+  subgraph Domain["领域层"]
+    MODEL["core:model<br/>Entities / Value Objects"]
+    RULES["Rules<br/>Recipe Graph / Units / Requirements / Allocation"]
+  end
+
+  subgraph DataAccess["数据访问层"]
+    DATA["core:data<br/>Repository Impl / Mapper / Transaction"]
+    FILES["core:data/files<br/>Images & Files"]
+    BACKUP["core:data/backup<br/>Backup & Restore"]
+  end
+
+  subgraph Persistence["持久化层"]
+    DB["core:database<br/>Room Entity / DAO / Migration"]
+    SQLITE[("SQLite WAL")]
+  end
+
+  subgraph Device["设备能力层"]
+    PLATFORM["core:platform<br/>Camera / Scanner / SAF / WorkManager"]
+  end
+
+  subgraph Infra["基础设施"]
+    COMMON["core:common<br/>Outcome / Errors / Log / Clock / ID"]
+  end
+
+  APP[":app<br/>Composition Root / Navigation / Hilt"]
+
+  APP --> UI
+  APP --> DATA
+  APP --> PLATFORM
+  APP --> DS
+  UI --> UC
+  UI --> DS
+  UC --> MODEL
+  UC --> RULES
+  UC --> DATA
+  DATA --> DB
+  DATA --> FILES
+  BACKUP --> DB
+  BACKUP --> FILES
+  DB --> SQLITE
+  PLATFORM --> COMMON
+  DATA --> COMMON
+  UC --> COMMON
+  MODEL --> COMMON
+
+  UI -. "禁止" .-> DB
+  UI -. "禁止" .-> DATA
