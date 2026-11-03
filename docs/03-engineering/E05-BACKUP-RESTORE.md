@@ -180,6 +180,20 @@ ext:  zip（无密码） | culinary（有密码）
 | `encryption` | 算法、KDF、迭代次数、salt/nonce（加密时） |
 | `warnings` | 非致命异常；不得静默跳过 |
 
+`warnings[]` 每条至少包含：
+
+| 字段 | 说明 |
+|---|---|
+| `code` | 异常码，如 `ATTACHMENT_MISSING` / `ATTACHMENT_MIME_MISMATCH` / `ATTACHMENT_SIZE_MISMATCH` |
+| `image_asset_id` | 对应 `image_asset.id`（未来附件为附件记录 ID） |
+| `path` | 文件相对路径 |
+| `type` | 异常类型 |
+| `expected_mime` / `actual_mime` | 预期/实际 MIME（不适用时为空） |
+| `expected_size` / `actual_size` | 预期/实际字节数（不适用时为空） |
+| `message` | 可读说明；不得包含用户隐私内容 |
+
+`PARTIAL` 的 `warnings[]` 必须覆盖每一个异常附件；仅有 `PARTIAL` 状态而没有对应明细，视为无效备份。
+
 ### 4.3 Manifest 完整性保护（无自引用）
 
 **禁止**：`manifest.json` 不包含自己的 SHA-256，也不包含自己的大小；否则会形成自引用/循环。
@@ -760,6 +774,7 @@ Journal 固定路径：`filesDir/restore.journal`，使用“临时文件 + fsyn
 | 大小不一致（未确认） | **备份失败**；记录预期/实际大小；不生成 `PARTIAL` |
 | MIME/大小不一致（用户明确继续） | 允许生成 `PARTIAL`；逐条记录 `image_asset.id`/路径/类型/预期/实际 |
 | `PARTIAL` 恢复前再次确认 | 展示异常数量与明细；未确认/取消/拒绝时不得替换当前 DB/附件 |
+| `PARTIAL` 无 `warnings[]` 明细 | 视为无效备份；拒绝恢复 |
 | 用户取消恢复 | 当前数据库及附件保持不变；staging 可清理，rollback 不产生替换 |
 | manifest 自引用检查 | manifest 不含自身 hash；`checksums.sha256` 不含自身/manifest 行；校验通过 |
 | manifest 重新序列化（空白/键顺序变化） | `manifest.sha256` 不匹配，拒绝；证明按原始字节校验 |
