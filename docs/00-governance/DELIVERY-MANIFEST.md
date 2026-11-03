@@ -36,7 +36,7 @@
 | 10 | 数据库并发与事务安全方案 | [E02](../03-engineering/E02-DATABASE-CONCURRENCY.md) | 0.1.0 | Review | `948240b7c0689ce7376048d9a25a67c7a0502faf037be90fee8f1dcfd6bd55d0` |
 | 11 | 异常处理与日志规范 | [E03](../03-engineering/E03-ERROR-LOGGING.md) | 0.2.0 | Review | `0318dd7007ce8ebad2f711820de7c6cc35aead06a89f79a71c605b3fa44b619f` |
 | 12 | 代码回档与版本管理方案 | [E04](../03-engineering/E04-GIT-ROLLBACK.md) | 0.2.0 | Review | `fa0f8b251aedc5deb864f6f1e577aa21dc3de40178f590df30f852a2923513ea` |
-| 13 | 数据备份与恢复方案 | [E05](../03-engineering/E05-BACKUP-RESTORE.md) | 0.4.0 | Review | `a81e7abd7a7831c53df04c70aaf0c8f3bcefdabf73a8620f8aa815ba0f7acc41` |
+| 13 | 数据备份与恢复方案 | [E05](../03-engineering/E05-BACKUP-RESTORE.md) | 0.4.0 | Review | `39049e3db3f7233367181940e3cdb67bda52e8de4690da907af6f68b4c66aff3` |
 | 14 | 自动化测试与验收标准 | [E06](../03-engineering/E06-TESTING-ACCEPTANCE.md) | 0.1.0 | Review | `80d77582251f676c0ad9f51a7953bfbf1c33aa8cbd39eb9ddb96356428ba8307` |
 | 15 | 框架搭建实施顺序 | [R01](../04-readiness/R01-FRAMEWORK-SEQUENCE.md) | 0.2.0 | Review | `2d1fe012ac4986c47d661607c2475051b177adf41d288fbb8ca48980221f2be8` |
 | 16 | 开发环境与依赖清单 | [R02](../04-readiness/R02-ENVIRONMENT-DEPENDENCIES.md) | 0.2.0 | Review | `52cf8dcd0460713894625fa954bf27943bfa014e528d7201392fc409e3f4cbdc` |

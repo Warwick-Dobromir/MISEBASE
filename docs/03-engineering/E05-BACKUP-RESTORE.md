@@ -204,6 +204,8 @@ ext:  zip（无密码） | culinary（有密码）
 6. 将以上文件打包为 ZIP；如加密，对整个 ZIP 做 AES-256-GCM。
 7. 打包/加密完成后，可选生成外部 `.sha256` sidecar（用于分发校验，不参与恢复）。
 
+**字节精确性：** `manifest.sha256` 与 `checksums_sha256` 都基于**写入 ZIP 的最终字节**计算；恢复时直接读取原始字节校验，不允许先反序列化再重新序列化后计算（JSON 空白/键顺序变化会导致假失败）。
+
 保护关系：
 
 - **加密备份**：整个内层 ZIP（含 `manifest.json`、`manifest.sha256`、`checksums.sha256`）由 GCM tag 认证；`manifest.sha256` 是内部根，tag 是外部密码学根。
@@ -234,6 +236,20 @@ manifest.json
                                  └─> manifest.sha256 = SHA256(manifest.json)
                                         └─ 外部根，不被内部文件哈希
 ```
+
+计算式：
+
+```text
+H_db        = SHA256(database/culinary.db 的最终字节)
+H_checksums = SHA256(checksums.sha256 的最终字节)
+H_manifest  = SHA256(manifest.json 的最终字节)
+
+manifest.json  = { database: [{sha256: H_db}], ..., integrity: {checksums_sha256: H_checksums} }
+checksums.sha256 = "<H_db>  database/culinary.db\n..."
+manifest.sha256  = H_manifest
+```
+
+不存在 `H_manifest` 写入 `manifest.json` 的边；因此无循环。
 
 ### 5.2 校验顺序
 
@@ -579,12 +595,22 @@ Journal 固定路径：`filesDir/restore.journal`，原子替换 + `fsync`。
 {
   "restore_id": "uuid",
   "phase": "DB_MOVED_ASIDE",
-  "operation": {
-    "kind": "MOVE",
-    "source": "databases/culinary.db",
-    "target": "rollback/<id>/culinary.db",
-    "state": "INTENT"
-  },
+  "operations": [
+    {
+      "id": "op-1",
+      "kind": "MOVE",
+      "source": "databases/culinary.db",
+      "target": "rollback/<id>/culinary.db",
+      "state": "DONE"
+    },
+    {
+      "id": "op-2",
+      "kind": "MOVE",
+      "source": "databases/culinary.db-wal",
+      "target": "rollback/<id>/culinary.db-wal",
+      "state": "INTENT"
+    }
+  ],
   "staging_dir": "cache/restore-staging/<id>",
   "rollback_dir": "filesDir/rollback/<id>",
   "started_at": "2026-11-04T01:30:00Z",
@@ -594,7 +620,7 @@ Journal 固定路径：`filesDir/restore.journal`，原子替换 + `fsync`。
 
 规则：
 
-1. **每次文件移动前**先写 `operation.state=INTENT`（含 source/target），`fsync`；移动成功后写 `state=DONE`，再更新 `phase`，再次 `fsync`。
+1. **每次文件移动前**先在 `operations[]` 追加 `state=INTENT`（含 source/target），`fsync`；移动成功后写 `state=DONE`，再更新 `phase`，再次 `fsync`。
 2. DB、`-wal`、`-shm` 作为一组处理；每个文件都有独立 operation 记录。
 3. 图片目录优先整体 rename；跨文件系统/无法 rename 时逐文件移动，每个文件同样记录 INTENT/DONE。
 4. 所有移动/回滚操作必须**幂等**：
@@ -699,6 +725,10 @@ Journal 固定路径：`filesDir/restore.journal`，原子替换 + `fsync`。
 | 写屏障覆盖后台写入 | WorkManager/后台任务写入被排队；快照一致 |
 | 快照后源库读写 | 读查询成功；`BEGIN IMMEDIATE` 写锁探测成功；无残留锁 |
 | 恢复中强杀（每个文件移动阶段） | 下次启动按 journal + 实际位置幂等恢复/回滚；数据一致 |
+| 强杀于 DB 关闭后 / DB 移走后 / DB 安装后 | 能识别 DB/WAL/SHM 实际位置，回滚或继续；无混合库 |
+| 强杀于附件移走/安装后 | 能识别图片目录位置；必要时回滚 DB 与附件 |
+| 强杀于 MIGRATING / VERIFIED | 重新打开校验；失败回滚到恢复前 |
+| 强杀于 ROLLBACK_STARTED | 回滚幂等继续；失败进入 Recovery |
 | 回滚失败 | 进入 Recovery；保留 staging/rollback；不自动清理 |
 | 磁盘满 | 中止；无部分写入 |
 | zip bomb | 拒绝 |

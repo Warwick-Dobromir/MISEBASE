@@ -131,6 +131,10 @@ PREPARED
 | 11 | 后台任务写入 | 被写屏障排队；快照一致 |
 | 12 | 快照后源库 | 读成功 + BEGIN IMMEDIATE/ROLLBACK 成功 |
 | 13 | 每个文件移动阶段强杀 | 重启后按 journal + 实际位置幂等恢复/回滚 |
+| 13a | 强杀于 DB_CLOSING/DB_MOVED_ASIDE/DB_INSTALLED | DB/WAL/SHM 无混合状态；可回滚 |
+| 13b | 强杀于 ATTACHMENTS_MOVED_ASIDE/INSTALLED | 图片目录可识别；必要时回滚 |
+| 13c | 强杀于 MIGRATING/VERIFIED | 重新校验；失败回滚 |
+| 13d | 强杀于 ROLLBACK_STARTED | 回滚幂等；失败 Recovery |
 | 14 | 回滚失败 | RECOVERY_REQUIRED；保留文件，不自动清理 |
 | 15 | 迁移失败 | 回滚到恢复前，当前库不被破坏 |
 | 16 | 未验证 Online Backup API | 不得标记支持；必须走已验证路径 |
