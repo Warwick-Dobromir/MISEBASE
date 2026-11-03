@@ -7,6 +7,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.culinary.debug.DebugScreen
+import com.culinary.feature.ingredients.IngredientsRoute
 import com.culinary.ui.HomeScreen
 import com.culinary.ui.PlaceholderScreen
 
@@ -34,11 +35,14 @@ fun CulinaryNavHost(
                 onOpenDebug = { navController.navigate(DEBUG_ROUTE) },
             )
         }
+        composable(CulinaryDestination.INGREDIENTS.route) {
+            IngredientsRoute(onBack = { navController.popBackStack() })
+        }
         composable(DEBUG_ROUTE) {
             DebugScreen(onBack = { navController.popBackStack() })
         }
         CulinaryDestination.entries
-            .filter { it != CulinaryDestination.HOME }
+            .filter { it != CulinaryDestination.HOME && it != CulinaryDestination.INGREDIENTS }
             .forEach { destination ->
                 composable(destination.route) {
                     PlaceholderScreen(

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="ingredients_title">食材</string>
+    <string name="ingredients_add">新建</string>
+    <string name="ingredients_empty">还没有食材，点右下角新建。</string>
+    <string name="ingredients_name_label">名称</string>
+    <string name="ingredients_save">保存</string>
+    <string name="ingredients_cancel">取消</string>
+    <string name="ingredients_edit">编辑</string>
+    <string name="ingredients_archive">归档</string>
+    <string name="ingredients_back">返回</string>
+    <string name="ingredients_error_dismiss">知道了</string>
+</resources>

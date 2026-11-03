@@ -11,6 +11,8 @@ import com.culinary.core.common.UuidV4Generator
 import com.culinary.core.data.logging.TimberAppLogger
 import com.culinary.core.database.CulinaryDatabase
 import com.culinary.core.database.DatabaseFactory
+import com.culinary.core.database.dao.IngredientDao
+import com.culinary.core.database.dao.UnitDao
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -49,6 +51,14 @@ object DataModule {
         @WriteExecutor writeExecutor: ExecutorService,
         @ReadExecutor readExecutor: ExecutorService,
     ): CulinaryDatabase = DatabaseFactory.create(context, writeExecutor, readExecutor)
+
+    @Provides
+    @Singleton
+    fun provideIngredientDao(database: CulinaryDatabase): IngredientDao = database.ingredientDao()
+
+    @Provides
+    @Singleton
+    fun provideUnitDao(database: CulinaryDatabase): UnitDao = database.unitDao()
 
     @Provides
     @Singleton

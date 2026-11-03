@@ -2,11 +2,16 @@ package com.culinary.core.data.di
 
 import android.content.Context
 import com.culinary.core.common.DispatcherProvider
+import com.culinary.core.common.IdGenerator
 import com.culinary.core.data.debug.DebugInfoProvider
 import com.culinary.core.data.startup.StartupCoordinator
 import com.culinary.core.data.transaction.RoomTransactionRunner
 import com.culinary.core.database.CulinaryDatabase
+import com.culinary.core.domain.repository.IngredientRepository
 import com.culinary.core.domain.transaction.TransactionRunner
+import com.culinary.core.domain.usecase.ingredient.ArchiveIngredientUseCase
+import com.culinary.core.domain.usecase.ingredient.ListIngredientsUseCase
+import com.culinary.core.domain.usecase.ingredient.SaveIngredientUseCase
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -43,6 +48,26 @@ object AppServicesModule {
             databaseProvider = databaseProvider,
             crashLogDirectory = File(context.filesDir, "crash-logs"),
         )
+
+    @Provides
+    @Singleton
+    fun provideListIngredientsUseCase(repository: IngredientRepository): ListIngredientsUseCase =
+        ListIngredientsUseCase(repository)
+
+    @Provides
+    @Singleton
+    fun provideSaveIngredientUseCase(
+        repository: IngredientRepository,
+        idGenerator: IdGenerator,
+        transactionRunner: TransactionRunner,
+    ): SaveIngredientUseCase = SaveIngredientUseCase(repository, idGenerator, transactionRunner)
+
+    @Provides
+    @Singleton
+    fun provideArchiveIngredientUseCase(
+        repository: IngredientRepository,
+        transactionRunner: TransactionRunner,
+    ): ArchiveIngredientUseCase = ArchiveIngredientUseCase(repository, transactionRunner)
 
     @Provides
     @Singleton
