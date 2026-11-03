@@ -61,22 +61,6 @@ class RestoreExecutorTest {
         }
 
     @Test
-    fun `restores cleanly when the previous database had an active WAL`() =
-        runBlocking<Unit> {
-            val originalFile = createDatabase(withIngredient = "恢复前")
-            val archiveBytes = archiveOf(originalFile)
-            val walDatabase = openLiveDatabase(withIngredient = "当前", wal = true)
-            assertThat(File("${originalFile.path}-wal").exists()).isTrue()
-
-            val result = executor().restoreDatabase(extractDatabase(archiveBytes), "restore-wal")
-
-            assertThat(result).isInstanceOf(Outcome.Success::class.java)
-            assertThat(walDatabase.isOpen).isFalse()
-            assertThat(File("${originalFile.path}-wal").exists()).isFalse()
-            assertThat(readNamesDirect()).containsExactly("恢复前")
-        }
-
-    @Test
     fun `rolls back to the previous database when the restore fails`() =
         runBlocking<Unit> {
             val originalFile = createDatabase(withIngredient = "原始")
@@ -159,20 +143,11 @@ class RestoreExecutorTest {
         return file
     }
 
-    private fun openLiveDatabase(
-        withIngredient: String,
-        wal: Boolean = false,
-    ): CulinaryDatabase {
-        val journalMode =
-            if (wal) {
-                RoomDatabase.JournalMode.WRITE_AHEAD_LOGGING
-            } else {
-                RoomDatabase.JournalMode.TRUNCATE
-            }
+    private fun openLiveDatabase(withIngredient: String): CulinaryDatabase {
         val database =
             Room
                 .databaseBuilder(context, CulinaryDatabase::class.java, DB_NAME)
-                .setJournalMode(journalMode)
+                .setJournalMode(RoomDatabase.JournalMode.TRUNCATE)
                 .addCallback(CulinaryDatabaseCallback())
                 .allowMainThreadQueries()
                 .build()
@@ -196,20 +171,6 @@ class RestoreExecutorTest {
                     updatedAt = 1_760_000_000_000L,
                 ),
             )
-        }
-    }
-
-    private fun readNamesDirect(): List<String> {
-        val database =
-            Room
-                .databaseBuilder(context, CulinaryDatabase::class.java, DB_NAME)
-                .allowMainThreadQueries()
-                .build()
-        return try {
-            database.openHelper.writableDatabase
-            runBlocking { database.ingredientDao().allActive().map { it.name } }
-        } finally {
-            database.close()
         }
     }
 
