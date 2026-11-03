@@ -1,7 +1,7 @@
 # CULINARY 开发环境与依赖清单
 
 **文档编号**：R02
-**版本**：`0.1.0`
+**版本**：`0.2.0`
 **状态**：`Review`
 **日期**：2026-11-04
 **负责人**：首席架构师 / 技术负责人
@@ -119,7 +119,9 @@ kotlin.code.style=official
 - `configuration-cache` 若与某些插件不兼容，可先关闭，逐个排查；不要全局禁用。
 - 内存不要超过物理内存的 1/3（本机 15.8 GB，4 GB 合理）。
 
-### 2.6 签名
+### 2.6 签名（发布前门禁，不阻塞框架）
+
+框架阶段统一使用 Android Debug 签名；**Release keystore 不提前创建**，正式发布前执行：
 
 ```powershell
 keytool -genkeypair -v `
@@ -129,10 +131,16 @@ keytool -genkeypair -v `
   -storetype PKCS12
 ```
 
-- keystore 放仓库外（如 `D:\CULINARY-secrets\`）。
-- `keystore.properties` 不提交。
-- 离线备份两份；丢失将无法覆盖升级已安装应用。
-- 调试构建用 Android 默认 debug key，不用于发布。
+规则：
+
+- Debug 与 Release 签名严格隔离，不共用 keystore。
+- keystore 放仓库外（如 `D:\CULINARY-secrets\`）；不入 Git。
+- 密码不写入源码/`gradle.properties`/CI 日志；用环境变量或受控属性文件。
+- 至少两份独立加密备份；密码与文件分开保管。
+- 发布前验证密钥、密码、证书指纹与 APK 签名。
+- 丢失 keystore 将无法覆盖升级已安装应用。
+
+> 当前不创建、不标记“签名准备完成”；G5 为 Release 门禁。
 
 ## 3. 版本基线
 
@@ -388,7 +396,7 @@ git --version
 | 无真机 | 中 | 扫码/SAF/后台未验证 | 验收前补；模拟器先开发 |
 | C: 空间偏紧 | 中 | Gradle 缓存/模拟器占满 | 缓存迁 D: 或清理 |
 | 无 cmdline-tools | 低 | CI/命令行 SDK 管理不便 | 安装 latest |
-| 签名密钥未建 | 中 | 无法发布/升级 | 阶段 0 创建并离线备份 |
+| 签名密钥未建 | 中 | 无法发布/覆盖升级 | 发布前创建；双备份；不阻塞框架 |
 | JDK 双版本 | 低 | 构建行为不一致 | 固定 Studio JBR 21 |
 | API 26 镜像缺失 | 低 | 最低版本未真机验证 | 补镜像或用 Robolectric |
 
@@ -397,3 +405,4 @@ git --version
 | 版本 | 日期 | 变更 | 作者 |
 |---|---|---|---|
 | 0.1.0 | 2026-11-04 | 初稿；记录本机实际环境、依赖候选与网络阻塞 | 架构组 |
+| 0.2.0 | 2026-11-04 | 依赖/构建/安装已验证；签名改为发布前门禁，补 Debug/Release 隔离规则 | 架构组 |

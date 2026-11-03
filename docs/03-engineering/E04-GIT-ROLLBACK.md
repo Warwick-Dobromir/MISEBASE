@@ -1,7 +1,7 @@
 # CULINARY 代码回档与版本管理方案
 
 **文档编号**：E04
-**版本**：`0.1.0`
+**版本**：`0.2.0`
 **状态**：`Review`
 **日期**：2026-11-04
 **负责人**：首席架构师 / 技术负责人
@@ -196,6 +196,20 @@ git tag -a checkpoint/refactor-plan-20261110 -m "Before plan module refactor"
 - 版本号/CHANGELOG 更新。
 - 签名与产物校验和归档。
 
+### 6.4 签名策略（G5 补充）
+
+| 规则 | 要求 |
+|---|---|
+| Debug/Release 隔离 | Debug 使用 Android debug keystore；Release 使用独立 release keystore；不得共用 |
+| Keystore 位置 | 仓库外（如 `D:\CULINARY-secrets\`）；`.gitignore` 排除 `*.jks`/`*.keystore`/`keystore.properties` |
+| 密码 | 不写入源码、`gradle.properties`、CI 日志；本地通过环境变量/受控属性文件读取 |
+| 创建时机 | 框架阶段不创建；正式发布前创建，G5 为**发布门禁**，不阻塞框架 |
+| 备份 | 至少两份独立加密备份，密码与文件分开保管 |
+| 验证 | 发布前验证密钥别名、密码、证书指纹、APK 签名 |
+| 发布检查 | 签名验证纳入第 6.3 节发布门禁与第 8 节发布流程 |
+
+> 当前不创建、不宣称“签名准备完成”；只记录规则与门禁。
+
 ## 7. 构建产物留档
 
 ### 7.1 产物
@@ -345,3 +359,4 @@ git tag -a v<last-good>-hotfix.1
 | 版本 | 日期 | 变更 | 作者 |
 |---|---|---|---|
 | 0.1.0 | 2026-11-04 | 初稿；Git、标签、CI、产物、回滚与事故模板 | 架构组 |
+| 0.2.0 | 2026-11-04 | 增加签名策略：Debug/Release 隔离、发布前创建、双备份、指纹验证 | 架构组 |

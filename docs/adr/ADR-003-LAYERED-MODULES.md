@@ -1,7 +1,7 @@
 # ADR-003：分层 + 按业务能力分模块
 
 **状态**：Proposed
-**版本**：`0.1.0`
+**版本**：`0.2.0`
 **日期**：2026-11-04
 **决策者**：首席架构师 / 项目负责人
 **关联**：D-004、A02、A03
@@ -12,18 +12,30 @@
 
 ## 决策
 
-采用 16 个 Gradle 模块：
+采用分层 + 按业务能力分模块，但**模块数量暂不锁定**。
+
+推荐 **13 个 Gradle 模块**：
 
 - `:app` 组合根
-- `:core:common`、`:core:model`、`:core:domain`
-- `:core:database`、`:core:data`
-- `:core:platform`、`:core:designsystem`
-- 8 个 `:feature:*`
+- `:core:common`
+- `:core:domain`（含领域模型、端口、Use Case、规则）
+- `:core:database`
+- `:core:data`
+- `:core:designsystem`
+- `:core:platform`
+- `:feature:ingredients`
+- `:feature:formulas`（酱汁 + 菜谱）
+- `:feature:inventory`（商品 + 库存）
+- `:feature:planning`
+- `:feature:procurement`
+- `:feature:settings`
+
+16 模块作为细粒度参考（拆出 `core:model`、`feature:sauces`/`feature:recipes`、`feature:products`），不是默认方案。详见 [A03A](../02-architecture/A03A-MODULE-DECOMPOSITION-REVIEW.md)。
 
 依赖规则：
 
 ```text
-app → feature → domain → model → common
+app → feature → domain → common
 app → data → database
 app → platform
 feature 之间禁止依赖
@@ -34,9 +46,10 @@ database 不依赖 domain
 ## 理由
 
 1. 用 Gradle 边界强制约束，避免“文档分层、代码混写”。
-2. 16 个模块对个人项目可管理；不按页面爆炸拆分。
+2. 13 个模块对个人项目可管理；不按页面爆炸拆分。
 3. domain 纯 Kotlin，可用 JVM 测试核心算法。
 4. database/data 隔离，UI 无法绕过事务直接写表。
+5. 合并模型到 domain、酱汁/菜谱 UI、商品/库存 UI，减少 3 个模块的构建与导航成本；数据表与 Use Case 仍分开。
 
 ## 后果
 
