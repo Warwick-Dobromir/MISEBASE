@@ -1,5 +1,7 @@
 package com.culinary.core.platform.scanner
 
+import android.annotation.SuppressLint
+import androidx.camera.core.ExperimentalGetImage
 import androidx.camera.core.ImageProxy
 import com.culinary.core.common.CulinaryError
 import com.culinary.core.common.ErrorCode
@@ -20,6 +22,8 @@ import kotlin.coroutines.resume
 class MlKitBarcodeDecoder(
     private val scanner: BarcodeScanner = BarcodeScanning.getClient(),
 ) {
+    @SuppressLint("UnsafeOptInUsageError")
+    @OptIn(ExperimentalGetImage::class)
     suspend fun decode(imageProxy: ImageProxy): Outcome<List<BarcodeResult>> =
         suspendCancellableCoroutine { continuation ->
             val mediaImage = imageProxy.image

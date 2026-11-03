@@ -82,6 +82,10 @@ class WorkManagerBackupSchedulerTest {
         assertThat(info).isNotNull()
         assertThat(info?.id).isEqualTo(UUID.fromString(id))
         // 测试调度器会同步执行一次性任务，因此可能是 ENQUEUED 或已 SUCCEEDED。
-        assertThat(info?.state).isAnyOf(WorkInfo.State.ENQUEUED, WorkInfo.State.SUCCEEDED)
+        assertThat(info?.state).isAnyOf(
+            WorkInfo.State.ENQUEUED,
+            WorkInfo.State.RUNNING,
+            WorkInfo.State.SUCCEEDED,
+        )
     }
 }

@@ -17,12 +17,12 @@ import org.junit.runner.RunWith
  */
 @RunWith(AndroidJUnit4::class)
 class CulinaryDatabaseMigrationTest {
-
     @get:Rule
-    val helper = MigrationTestHelper(
-        InstrumentationRegistry.getInstrumentation(),
-        CulinaryDatabase::class.java,
-    )
+    val helper =
+        MigrationTestHelper(
+            InstrumentationRegistry.getInstrumentation(),
+            CulinaryDatabase::class.java,
+        )
 
     @After
     fun tearDown() {
