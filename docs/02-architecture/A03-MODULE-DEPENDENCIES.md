@@ -1,7 +1,7 @@
 # CULINARY 模块职责与依赖关系说明
 
 **文档编号**：A03
-**版本**：`0.2.0`
+**版本**：`0.3.0`
 **状态**：`Review`
 **日期**：2026-11-04
 **负责人**：首席架构师 / 技术负责人
@@ -293,14 +293,23 @@ interface BarcodeScanner {
     suspend fun scan(): Outcome<BarcodeResult>
 }
 
-interface BackupFilePicker {
-    suspend fun pickDirectory(): Outcome<Uri>
-    suspend fun createDocument(fileName: String): Outcome<Uri>
+@JvmInline
+value class StorageHandle(val value: String)
+
+interface BackupStoragePort {
+    suspend fun pickDirectory(): Outcome<StorageHandle>
+    suspend fun createDocument(fileName: String): Outcome<StorageHandle>
+    suspend fun openInput(handle: StorageHandle): Outcome<InputStream>
+    suspend fun openOutput(handle: StorageHandle): Outcome<OutputStream>
 }
 ```
 
-- 平台实现不泄漏 `ActivityResultContract` 到 domain。
+- 平台实现不泄漏 `ActivityResultContract`、`Uri`、`Intent` 到 domain。
+- `StorageHandle` 内部可保存 SAF `Uri` 字符串，但接口只暴露不透明句柄。
 - 权限拒绝返回 `PlatformError.PermissionDenied`，由 UI 提示设置入口。
+- `core:data` 的备份引擎只依赖 `BackupStoragePort`/Java IO，不直接依赖 Android SAF。
+
+> D-004 已接受 15 模块与上述 backup 边界；A03 的 16 模块内容仅作历史参考。
 
 ## 7. 禁止依赖清单（CI 必须检查）
 
@@ -357,3 +366,4 @@ interface BackupFilePicker {
 |---|---|---|---|
 | 0.1.0 | 2026-11-04 | 初稿；建立 16 模块、依赖矩阵、数据归属与测试边界 | 架构组 |
 | 0.2.0 | 2026-11-04 | 明确 16 模块为细粒度参考；D-004 改为模块审查；推荐 15 模块见 A03A | 架构组 |
+| 0.3.0 | 2026-11-04 | D-004 接受 15 模块；platform/data 备份边界与 `BackupStoragePort` 落地到接口规范 | 架构组 |

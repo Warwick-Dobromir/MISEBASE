@@ -1,7 +1,7 @@
 # CULINARY 文档索引
 
 **文档编号**：GOV-INDEX
-**版本**：`0.2.0`
+**版本**：`0.3.0`
 **状态**：`Review`
 **日期**：2026-11-04
 **维护人**：首席架构师 / 技术负责人
@@ -42,6 +42,7 @@
 | [决策登记册](DECISION-REGISTER.md) | 所有需要签收的架构/产品决策，含默认值与影响 |
 | [A03A 模块拆分审查提案](../02-architecture/A03A-MODULE-DECOMPOSITION-REVIEW.md) | D-004 修订：8/15/16 模块方案对比，推荐 15 |
 | [G1 最终复核包](../04-readiness/G1-REVIEW-PACKET.md) | D-004/D-011/G5 证据汇总与签收选项 |
+| [E05 修订复核包](../03-engineering/E05-REVISION-REVIEW.md) | E05 0.4.0 五项修订、哈希结构、journal 与测试 |
 | [ADR-001 原生 Android](../adr/ADR-001-NATIVE-ANDROID.md) | 平台与 UI 技术栈 |
 | [ADR-002 Room/SQLite](../adr/ADR-002-ROOM-SQLITE.md) | 本地数据库与数据访问 |
 | [ADR-003 分层模块化](../adr/ADR-003-LAYERED-MODULES.md) | 分层、模块边界与依赖规则 |

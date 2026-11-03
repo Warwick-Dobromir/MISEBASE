@@ -1,7 +1,7 @@
 # CULINARY 数据备份与恢复方案
 
 **文档编号**：E05
-**版本**：`0.3.0`
+**版本**：`0.4.0`
 **状态**：`Review`
 **日期**：2026-11-04
 **负责人**：首席架构师 / 技术负责人
@@ -146,8 +146,7 @@ ext:  zip（无密码） | culinary（有密码）
   },
   "integrity": {
     "status": "VERIFIED",
-    "manifest_sha256": "...",
-    "manifest_size_bytes": 4096,
+    "hash_algorithm": "SHA-256",
     "checksums_sha256": "..."
   },
   "warnings": [],
@@ -176,30 +175,81 @@ ext:  zip（无密码） | culinary（有密码）
 | `counts` | 关键表行数，用于恢复后校验 |
 | `totals.file_count` / `total_bytes` | 文件数量与总大小 |
 | `integrity.status` | `VERIFIED` / `PARTIAL` / `FAILED` |
-| `integrity.manifest_sha256` / `manifest_size_bytes` | manifest 自身校验 |
-| `integrity.checksums_sha256` | 校验清单自身的 SHA-256 |
+| `integrity.hash_algorithm` | 固定 `SHA-256` |
+| `integrity.checksums_sha256` | `checksums.sha256` 的 SHA-256 |
 | `encryption` | 算法、KDF、迭代次数、salt/nonce（加密时） |
 | `warnings` | 非致命异常；不得静默跳过 |
 
-### 4.3 Manifest 完整性保护
+### 4.3 Manifest 完整性保护（无自引用）
 
-- manifest 生成后计算 SHA-256，写入 `manifest.sha256` 与 `integrity.manifest_sha256`；`checksums.sha256` 本身也计算 SHA-256。
-- 恢复时先校验 `manifest.sha256`，再校验 `checksums.sha256`，最后逐文件校验。
-- 加密备份：整个内层 ZIP（含 manifest）由 AES-GCM 认证，GCM tag 提供密码学完整性。
-- 未加密 ZIP：SHA-256 可发现**意外损坏/截断**，但无法防止恶意同时改写 manifest 与 hash；如需防篡改，必须使用加密备份。此限制必须在 UI/文档中说明。
+**禁止**：`manifest.json` 不包含自己的 SHA-256，也不包含自己的大小；否则会形成自引用/循环。
+
+文件职责：
+
+| 文件 | 内容 | 是否包含自身 hash |
+|---|---|---|
+| `manifest.json` | 业务元数据、DB/附件清单、`checksums_sha256`、完整性状态 | 否 |
+| `checksums.sha256` | 仅 DB 与附件文件的 SHA-256 列表 | 否；明确排除自身 |
+| `manifest.sha256` | 最终 `manifest.json` 字节的 SHA-256 | 否；它是外部根 |
+
+`checksums.sha256` **只列出** `database/*` 与 `attachments/*`，不列出 `manifest.json`、`manifest.sha256`、`checksums.sha256` 自身，避免递归。
+
+生成顺序（每一步基于最终字节）：
+
+1. 生成 DB 快照与附件；逐文件计算 SHA-256。
+2. 写入 `checksums.sha256`（只含 DB/附件行）。
+3. 计算 `checksums.sha256` 的 SHA-256，得到 `checksums_sha256`。
+4. 写入最终 `manifest.json`，其中 `integrity.checksums_sha256 = checksums_sha256`。
+5. 计算最终 `manifest.json` 的 SHA-256，写入 `manifest.sha256`。
+6. 将以上文件打包为 ZIP；如加密，对整个 ZIP 做 AES-256-GCM。
+7. 打包/加密完成后，可选生成外部 `.sha256` sidecar（用于分发校验，不参与恢复）。
+
+保护关系：
+
+- **加密备份**：整个内层 ZIP（含 `manifest.json`、`manifest.sha256`、`checksums.sha256`）由 GCM tag 认证；`manifest.sha256` 是内部根，tag 是外部密码学根。
+- **未加密 ZIP**：`manifest.sha256` 是外部根；可发现意外损坏/截断，但无法防止恶意同时改写 manifest 与 hash。需要抗篡改时必须使用加密备份；此限制必须在 UI/文档中说明。
+- `manifest.sha256` 不被任何内部文件再次哈希；不存在“hash 文件自己的 hash”的循环。
 
 ### 4.4 兼容规则
 
 - `format_version > 当前支持`：拒绝恢复，提示升级 App。
 - `format_version < 当前支持`：由 importer 升级；必须测试并记录迁移路径。
-- `app.schema_version > 当前 App schema`：拒绝恢复。
-- `app.schema_version < 当前 App schema`：允许，但恢复前必须通过迁移兼容性检查；不得跳过未验证的迁移。
+- **`backup_schema > current_schema`：拒绝。**
+- **`backup_schema == current_schema`：允许继续校验。**
+- **`backup_schema < current_schema`：只有存在完整、经过测试的迁移路径才允许恢复。**
+- **迁移路径缺失或未经测试：拒绝，不得跳过中间迁移。**
 - manifest 缺必填字段、`integrity.status != VERIFIED`（除用户明确接受 PARTIAL）：拒绝。
 - **备份格式版本与 DB schema 版本独立**；不得用一个版本号推断另一个。
 
 ## 5. 校验机制
 
-- 每个文件单独 SHA-256，写入 `manifest.json` 与 `checksums.sha256`。
+### 5.1 哈希结构示意
+
+```text
+manifest.json
+  ├─ database[].sha256        ──┐
+  ├─ attachments[].sha256     ──┤
+  └─ integrity.checksums_sha256 ─┼─> checksums.sha256（只列 DB/附件）
+                                 │      └─ 自身不被自己列出
+                                 └─> manifest.sha256 = SHA256(manifest.json)
+                                        └─ 外部根，不被内部文件哈希
+```
+
+### 5.2 校验顺序
+
+1. 容器结构/magic/header。
+2. 加密时验证 GCM tag（失败即“密码错误或文件损坏”）。
+3. 读取 `manifest.json`，校验必填字段。
+4. 计算 `manifest.json` 的 SHA-256，与 `manifest.sha256` 比较。
+5. 计算 `checksums.sha256` 的 SHA-256，与 `manifest.integrity.checksums_sha256` 比较。
+6. 确认 `checksums.sha256` 不含自身、manifest、manifest.sha256 行。
+7. 逐文件校验 DB/附件 SHA-256。
+8. 打开备份 DB，执行完整性检查。
+9. 附件引用一致性检查。
+
+### 5.3 规则
+
+- 每个 DB/附件文件单独 SHA-256，写入 `manifest.json` 与 `checksums.sha256`。
 - `checksums.sha256` 格式：
 
 ```text
@@ -207,18 +257,9 @@ ext:  zip（无密码） | culinary（有密码）
 <sha256>  images/0a/<uuid>.webp
 ```
 
-- `manifest.sha256` 保存 manifest 自身的 SHA-256；`integrity.checksums_sha256` 保存校验清单自身的 SHA-256。
-- 校验顺序：
-  1. 容器结构/magic/header；
-  2. 加密时先验证 GCM tag；
-  3. manifest 自身 hash；
-  4. `checksums.sha256` 自身 hash；
-  5. 逐文件 SHA-256；
-  6. DB 可打开性与完整性；
-  7. 附件引用一致性。
-- 恢复时**逐文件**校验；不信任 manifest 内的 hash 本身，需与实际文件匹配。
+- `manifest.sha256` 保存最终 `manifest.json` 的 SHA-256；**不写入 manifest 自身**。
+- 恢复时逐文件校验；不信任 manifest 内的 hash 本身，需与实际文件匹配。
 - 任一必需文件校验失败：拒绝恢复，不触碰现有数据。
-- 加密文件：先验证 GCM tag，再解压；tag 失败统一提示“密码错误或文件损坏”。
 - 未加密 ZIP 的 SHA-256 只保证完整性（意外损坏），不提供密码学真实性；需要抗篡改时使用加密备份。
 
 ## 6. 数据库一致性快照
@@ -233,6 +274,8 @@ ext:  zip（无密码） | culinary（有密码）
 | `QUIESCED_CHECKPOINT_COPY`（回退） | 驱动不暴露在线备份 API | 获取写屏障，等待活动写事务结束，checkpoint 后复制；期间读取继续、写入排队 |
 
 **重要：** Android 平台 `SupportSQLiteDatabase` 并不直接暴露 `sqlite3_backup_*`。框架阶段必须验证所选驱动是否提供在线备份能力；**未验证前不得声称使用 Online Backup API**。无论哪种策略，都**不允许在写入进行中直接复制数据库文件并宣称备份成功**。
+
+**写屏障覆盖：** 所有应用内写入（前台 Use Case、WorkManager、后台维护）必须经过同一个 `WriteGate`。`ONLINE_BACKUP` 使用 `ALLOW_WRITES` 会话（由 SQLite 保证一致性），`QUIESCED_CHECKPOINT_COPY` 使用 `PAUSE_WRITES` 会话；两种模式都注册到同一屏障，禁止绕过。
 
 ### 6.2 `ONLINE_BACKUP` 顺序
 
@@ -253,18 +296,35 @@ ext:  zip（无密码） | culinary（有密码）
 
 ### 6.3 `QUIESCED_CHECKPOINT_COPY` 顺序
 
-1. 获取全局写屏障（`writeMutex`）：新写请求排队，等待当前写事务结束。
+1. 获取全局写屏障（`WriteGate`）：**所有应用内写入入口**（前台 Use Case、WorkManager、后台备份/维护任务）都必须经过该屏障；新写排队，等待当前写事务结束。
 2. 确认没有活动写事务（事务协调器计数器为 0）。
-3. 执行 `PRAGMA wal_checkpoint(TRUNCATE)`；确认 WAL 已截断。
-4. 复制主数据库文件到临时文件；**不复制正在变化的 `-wal`/`-shm`**。
-5. 用独立只读连接打开临时文件：`quick_check`、`user_version`、关键表计数。
-6. 计算 SHA-256。
-7. 释放写屏障（排队的写继续）。
-8. 将临时文件放入 ZIP。
+3. 执行 `PRAGMA wal_checkpoint(TRUNCATE)`，读取返回的 `(busy, log, checkpointed)`：
+   - `busy == 0` 且 `log == checkpointed`：成功；
+   - `busy != 0` 或 `log != checkpointed`：失败，**不得继续复制**。
+4. checkpoint 失败时：
+   - 若有活动读连接，等待其结束（最多 5 秒），每 250 ms 重试；
+   - 仍失败：释放写屏障，终止备份，返回 `CUL-BACKUP-003`；不得强制关闭用户读连接或跳过 checkpoint。
+5. checkpoint 成功后立即复制主数据库文件到临时文件；**不复制正在变化的 `-wal`/`-shm`**。
+6. 用独立只读连接打开临时文件：`quick_check`、`user_version`、关键表计数。
+7. 计算 SHA-256。
+8. 释放写屏障（排队的写继续）。
+9. **源库健康检查**：
+   - 只读查询成功；
+   - `BEGIN IMMEDIATE` 能获得写锁并 `ROLLBACK`（不写业务数据）；
+   - 无残留锁/长事务。
+10. 将临时文件放入 ZIP。
 
 - 复制期间读取继续；写入等待，不丢写。
 - 写屏障持有时间必须覆盖“checkpoint + 复制”；大库可能数秒，UI 显示“正在创建一致性备份”。
 - 复制完成后不得再把临时文件与活动 DB 混用。
+- 若源库健康检查失败，备份标记 `FAILED`，并进入数据库健康诊断；不得宣称备份成功。
+
+### 6.3.1 写屏障覆盖证明
+
+- 所有写入统一经 `TransactionRunner` → `WriteGate`；Repository/DAO 不自行开写事务。
+- WorkManager/后台任务也通过 Use Case/Repository 写入，禁止直接 `SQLiteDatabase` 写入。
+- 架构测试：扫描 `core:data`、`core:platform`、feature 中是否出现直接 `RoomDatabase`/`SupportSQLiteDatabase` 写调用；有则失败。
+- 备份期间写屏障计数与排队数写入诊断日志，便于验证。
 
 ### 6.4 WAL 规则
 
@@ -306,7 +366,9 @@ ext:  zip（无密码） | culinary（有密码）
 | MIME/大小不一致 | 以实际文件为准并记录差异；不静默修正 DB | `PARTIAL` |
 
 - **不允许静默跳过**：manifest 的 `warnings` 与 `integrity.status` 必须反映异常。
-- `PARTIAL` 备份在恢复前必须提示“包含 N 个异常附件”，由用户明确确认。
+- `PARTIAL` 只能在用户明确选择“保留异常继续”后生成，且必须记录每个异常的 ID/路径/原因。
+- `PARTIAL` 备份在恢复前必须提示“包含 N 个异常附件”，由用户再次明确确认。
+- 默认行为是失败；不得因“图片只是可选”就自动继续。
 - 备份不包含缩略图缓存；恢复后由 Coil 重建。
 
 ## 8. 可选加密
@@ -411,8 +473,10 @@ ext:  zip（无密码） | culinary（有密码）
 | `checksums.sha256` 自身 hash 一致 | 拒绝 |
 | `integrity.status` 为 `VERIFIED`（或用户明确接受 `PARTIAL`） | 拒绝/需确认 |
 | `format_version` 受支持 | 拒绝 |
-| `schema_version <= 当前 App` | 拒绝（提示升级） |
-| **版本迁移路径存在且经过验证** | 拒绝（不得跳过未验证迁移） |
+| `backup_schema > current_schema` | **拒绝** |
+| `backup_schema == current_schema` | 允许继续校验 |
+| `backup_schema < current_schema` 且完整迁移路径已测试 | 允许；恢复后迁移 |
+| `backup_schema < current_schema` 但路径缺失/未测试 | **拒绝**（不得跳过） |
 | 每个文件 SHA-256 匹配 | 拒绝 |
 | 附件引用一致性通过（缺失/损坏/孤立已报告） | 拒绝/需确认 |
 | DB `integrity_check`/`quick_check` | 拒绝 |
@@ -425,11 +489,12 @@ ext:  zip（无密码） | culinary（有密码）
 
 ### 12.1 版本迁移预检
 
-恢复前必须根据“备份 schema → 当前 schema”查找已登记的迁移路径：
+恢复前必须根据“备份 schema → 当前 schema”判断：
 
-- 路径存在且所有中间版本有测试：允许；恢复后执行迁移。
-- 路径缺失/未测试：拒绝；不得跳过中间迁移。
-- 迁移执行前创建预恢复备份；迁移失败必须回滚，当前数据库不得被破坏。
+- `backup_schema > current_schema`：拒绝。
+- `backup_schema == current_schema`：允许继续校验。
+- `backup_schema < current_schema`：只有存在**完整、经过测试**的迁移路径才允许；路径缺失或任一步未测试：拒绝。
+- 不允许跳过中间迁移；迁移执行前创建预恢复备份；迁移失败必须回滚，当前数据库不得被破坏。
 - 备份格式版本与 DB schema 版本分别判断；不得用一个推断另一个。
 
 ### 12.2 预检结果展示
@@ -480,30 +545,90 @@ sequenceDiagram
 
 - 先解压到 `cache/restore-staging/`，绝不直接解压到正式目录。
 - 预检全部通过后，才创建 `PRE_RESTORE` 备份。
-- 关闭数据库前，等待所有写事务完成（获取写锁并保持）。
-- 当前 DB/图片移动到 `filesDir/rollback/<restoreId>/`，不是删除。
+- 关闭数据库前，获取写屏障，等待所有写事务结束；`RoomDatabase.close()` 后确认无连接。
+- 当前 `culinary.db`、`culinary.db-wal`、`culinary.db-shm` 与图片目录移动到 `filesDir/rollback/<restoreId>/`，不是删除。
 - 恢复后打开 Room，执行迁移（若备份 schema 较旧）；迁移前已有预恢复备份。
 - 迁移失败：关闭 DB，回滚 rollback 目录与预恢复备份；当前数据库保持恢复前状态。
 - 校验通过才删除 rollback；失败立即回滚。
 - 恢复完成后建议重启进程，避免旧连接/缓存。
 
-### 13.2 进程被杀的处理
+### 13.2 恢复 journal 状态机
 
-- 操作前写 `filesDir/restore.journal`：
+```text
+PREPARED
+  -> DB_CLOSING
+  -> DB_MOVED_ASIDE
+  -> DB_INSTALLED
+  -> ATTACHMENTS_MOVED_ASIDE
+  -> ATTACHMENTS_INSTALLED
+  -> MIGRATING
+  -> VERIFIED
+  -> DONE
+
+任意失败:
+  -> ROLLBACK_STARTED
+  -> ROLLED_BACK        (回滚成功)
+  -> RECOVERY_REQUIRED  (回滚失败)
+```
+
+Journal 结构：
+
+Journal 固定路径：`filesDir/restore.journal`，原子替换 + `fsync`。
 
 ```json
 {
-  "restore_id": "...",
-  "phase": "PREPARED | DB_MOVED | DB_SWAPPED | IMAGES_SWAPPED | DONE",
-  "rollback_dir": "rollback/<id>",
-  "started_at": "..."
+  "restore_id": "uuid",
+  "phase": "DB_MOVED_ASIDE",
+  "operation": {
+    "kind": "MOVE",
+    "source": "databases/culinary.db",
+    "target": "rollback/<id>/culinary.db",
+    "state": "INTENT"
+  },
+  "staging_dir": "cache/restore-staging/<id>",
+  "rollback_dir": "filesDir/rollback/<id>",
+  "started_at": "2026-11-04T01:30:00Z",
+  "updated_at": "2026-11-04T01:30:01Z"
 }
 ```
 
-- 启动时检测 journal：
-  - `DONE`：清理 staging/rollback，删除 journal。
-  - 未完成：根据 phase 回滚到 rollback 目录；若 rollback 不完整，进入 Recovery，不自动删除。
-- journal 写入需 fsync；phase 更新原子替换。
+规则：
+
+1. **每次文件移动前**先写 `operation.state=INTENT`（含 source/target），`fsync`；移动成功后写 `state=DONE`，再更新 `phase`，再次 `fsync`。
+2. DB、`-wal`、`-shm` 作为一组处理；每个文件都有独立 operation 记录。
+3. 图片目录优先整体 rename；跨文件系统/无法 rename 时逐文件移动，每个文件同样记录 INTENT/DONE。
+4. 所有移动/回滚操作必须**幂等**：
+   - source 存在、target 不存在 → 执行；
+   - source 不存在、target 存在 → 视为已完成；
+   - 两者都存在 → 比较大小/hash，匹配则视为完成，不匹配进入 `RECOVERY_REQUIRED`；
+   - 不允许盲目覆盖。
+5. 启动时同时检查 journal 与**实际文件位置**，不能只信 phase。
+6. 回滚失败：进入 `RECOVERY_REQUIRED`，**保留 staging 与 rollback 文件**，不自动清理；UI 进入 Recovery。
+7. `DONE` 后才允许清理 staging/rollback；`ROLLED_BACK` 经校验后可清理。
+
+### 13.3 中断恢复判定
+
+| 发现状态 | 处理 |
+|---|---|
+| `DONE` | 清理 staging/rollback；删除 journal |
+| `ROLLED_BACK` 且旧库校验通过 | 清理 staging/rollback；删除 journal |
+| `DB_MOVED_ASIDE` / `DB_INSTALLED` 但附件未完成 | 优先回滚 DB 到 rollback；保留 staging |
+| `ATTACHMENTS_INSTALLED` 但迁移未完成 | 尝试打开/迁移/校验；失败回滚 |
+| `MIGRATING` / `VERIFIED` 中途被杀 | 重新打开校验；不通过则回滚 |
+| 回滚/移动不幂等或文件冲突 | `RECOVERY_REQUIRED`；保留全部文件 |
+| journal 缺失但 staging/rollback 存在 | 进入 Recovery，不自动删除 |
+
+### 13.4 数据库文件替换顺序
+
+1. 写屏障 + 等待写事务 + `RoomDatabase.close()`。
+2. 记录 `DB_CLOSING`。
+3. 检查 live `culinary.db`、`-wal`、`-shm`；逐个记录 INTENT，移动到 rollback。
+4. 记录 `DB_MOVED_ASIDE`。
+5. 将 staging DB 移到 live；确保 live 不存在旧 `-wal`/`-shm`。
+6. 记录 `DB_INSTALLED`。
+7. 替换图片目录（或逐文件）。
+8. 打开 Room，执行迁移/校验；记录 `MIGRATING` → `VERIFIED`。
+9. 记录 `DONE`，清理。
 
 ## 14. 导入策略
 
@@ -557,14 +682,24 @@ sequenceDiagram
 | 空库备份/恢复 | 成功；表为空但结构正确 |
 | 全量 round-trip | 数据、图片、元数据一致 |
 | 无图片 | 备份成功；无 images 目录 |
-| 图片缺失 | 备份成功 + warning；恢复后无图可打开 |
-| 损坏一个字节 | 校验失败；现有数据不变 |
+| 图片缺失（默认） | **备份失败**；不生成 `VERIFIED`；现有数据不变 |
+| 图片缺失（用户明确继续） | 生成 `PARTIAL`；manifest 记录具体缺失 `image_asset.id`/路径；恢复前再次确认 |
+| 图片损坏/孤立文件 | 分别记录；默认失败或显式 `PARTIAL`；不静默跳过 |
+| manifest 自引用检查 | manifest 不含自身 hash；`checksums.sha256` 不含自身/manifest 行；校验通过 |
+| 损坏一个字节 | `manifest.sha256`/checksums/文件 hash 失败；现有数据不变 |
 | 截断文件 | 预检失败 |
-| 错误密码 | 拒绝；现有数据不变 |
-| schema 更新 | 拒绝 |
-| schema 较旧 | 恢复 + 迁移成功 |
-| 迁移失败 | 回滚到恢复前状态 |
-| 恢复中强杀 | 下次启动回滚/完成，数据一致 |
+| 错误密码 | GCM tag 失败；拒绝；现有数据不变 |
+| `backup_schema > current` | **拒绝** |
+| `backup_schema == current` | 继续校验，允许恢复 |
+| `backup_schema < current` 且路径完整已测试 | 恢复 + 迁移成功 |
+| `backup_schema < current` 但路径缺失/未测试 | **拒绝**；不跳过迁移 |
+| 迁移失败 | 回滚到恢复前状态；当前库不被破坏 |
+| checkpoint 返回 busy | 等待/重试；仍失败则中止，不复制 |
+| 活动读连接导致 checkpoint 失败 | 按等待/重试/终止策略处理；不强制继续 |
+| 写屏障覆盖后台写入 | WorkManager/后台任务写入被排队；快照一致 |
+| 快照后源库读写 | 读查询成功；`BEGIN IMMEDIATE` 写锁探测成功；无残留锁 |
+| 恢复中强杀（每个文件移动阶段） | 下次启动按 journal + 实际位置幂等恢复/回滚；数据一致 |
+| 回滚失败 | 进入 Recovery；保留 staging/rollback；不自动清理 |
 | 磁盘满 | 中止；无部分写入 |
 | zip bomb | 拒绝 |
 | 路径穿越 | 拒绝 |
@@ -605,3 +740,4 @@ sequenceDiagram
 | 0.1.0 | 2026-11-04 | 初稿；格式、manifest、加密、自动/手动、恢复与测试 | 架构组 |
 | 0.2.0 | 2026-11-04 | 按 D-011 补充 7 项合规矩阵；明确图片/附件完整性 | 架构组 |
 | 0.3.0 | 2026-11-04 | 按负责人标准补：在线备份优先、WAL/写入协调、manifest 自校验、附件异常分类、迁移路径预检 | 架构组 |
+| 0.4.0 | 2026-11-04 | 按 G1 复核意见：移除 manifest 自哈希；修正 schema 方向；缺失图片默认失败；journal 幂等状态机；checkpoint 结果/读连接/写屏障/源库健康检查 | 架构组 |

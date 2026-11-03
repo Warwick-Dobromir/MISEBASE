@@ -1,11 +1,11 @@
 # CULINARY 模块拆分审查提案（15 模块）
 
 **文档编号**：A03A
-**版本**：`0.2.0`
-**状态**：`Review`
+**版本**：`0.3.0`
+**状态**：`Approved`
 **日期**：2026-11-04
 **负责人**：首席架构师 / 技术负责人
-**关联决策**：D-004（REVISION）
+**关联决策**：D-004（ACCEPTED）
 **配套文档**：[A03 模块职责与依赖关系](A03-MODULE-DEPENDENCIES.md)、[A02 整体架构](A02-SYSTEM-ARCHITECTURE.md)
 
 ---
@@ -188,6 +188,34 @@ app
 | 收货建批次 | `PostGoodsReceiptUseCase` 同事务写 receipt + batch + ledger | 采购模块直接改库存余额 |
 | 备份读取 DB/图片 | `core:data/backup` 通过 database/files 端口 | feature 直接复制数据库文件 |
 
+### 8.1 备份能力的 platform/data 边界（D-004 补充）
+
+| 模块 | 负责 | 不负责 |
+|---|---|---|
+| `core:platform` | SAF、系统文件选择器、`Uri` 权限、相机权限、WorkManager 等 Android 平台能力；把 `Uri` 转换为不泄漏 Android 类型的句柄 | 备份格式、manifest、校验、打包/解包、恢复编排 |
+| `core:data` | 备份格式、manifest、SHA-256、打包/解包、预检、恢复编排、journal/rollback | 直接 import `android.net.Uri`；直接调用 SAF；在领域接口暴露 `Intent`/`ActivityResult` |
+
+桥接方式：
+
+```kotlin
+// core:domain（无 Android 类型）
+@JvmInline
+value class StorageHandle(val value: String)
+
+interface BackupStoragePort {
+    suspend fun createDocument(displayName: String, mimeType: String): Outcome<StorageHandle>
+    suspend fun openInput(handle: StorageHandle): Outcome<InputStream>
+    suspend fun openOutput(handle: StorageHandle): Outcome<OutputStream>
+}
+```
+
+- `core:platform` 用 SAF 实现 `BackupStoragePort`，`StorageHandle` 内部保存 `Uri` 字符串，但接口不暴露 `Uri`。
+- `core:data` 只依赖 `BackupStoragePort` 与 Java IO 流，不依赖 Android SAF。
+- `:app` 负责把 platform 的实现注入 data；如需要，可加一层 app 适配，但不改变依赖方向。
+- CI 检查：`core:data` 不得出现 `android.net.Uri`、`android.content.Intent`、`ActivityResult`；`core:platform` 不得包含备份格式/校验逻辑。
+
+> 该边界是 D-004 的附加要求；不得为实现备份破坏既有模块依赖与 DAG。
+
 ## 9. 独立测试范围
 
 | 模块 | 测试 |
@@ -218,15 +246,18 @@ app
 - 构建时间明显受单模块影响；
 - 需要独立替换（如扫码）。
 
-## 11. 审查问题
+## 11. 审查结论（2026-11-04）
 
-1. 是否接受 15 模块为默认方案？
-2. 是否接受 `core:model` 并入 `core:domain`，用包级边界保持模型独立？
-3. 是否接受酱汁/菜谱、商品/库存通过 domain 端口交互，feature 间零依赖？
-4. 是否要求把 `core:database` 或 `core:data` 再拆/合并？
-5. 是否接受“达到拆分触发条件再拆”的演进策略？
+项目负责人已接受：
 
-**未确认前：** 不创建正式工程模块；G1 保持 PENDING。
+1. 15 模块为默认方案；
+2. `core:model` 并入 `core:domain`，用包级边界保持模型独立；
+3. 酱汁/菜谱、商品/库存保持独立，通过 domain 端口交互，feature 间零依赖；
+4. 保持现有依赖方向与 DAG；
+5. 接受“达到拆分触发条件再拆”的演进策略；
+6. 接受第 8.1 节备份能力边界：platform 管 SAF/权限，data 管格式/校验/恢复编排，data 不依赖 Android SAF/Uri。
+
+**D-004 = ACCEPTED。** 该结论不改变 G1：D-011 仍在修订，G1 继续保持 PENDING。
 
 ## 12. 与 A03 的关系
 
@@ -240,3 +271,4 @@ app
 |---|---|---|---|
 | 0.1.0 | 2026-11-04 | 初稿；三方案对比，推荐 13 模块 | 架构组 |
 | 0.2.0 | 2026-11-04 | 按负责人意见改为 15 模块：model 并入 domain；sauces/recipes、products/inventory 保持独立；补完整职责表、依赖图与无环检查 | 架构组 |
+| 0.3.0 | 2026-11-04 | D-004 接受；补 platform/data 备份边界与 `BackupStoragePort`；状态改为 Approved | 架构组 |

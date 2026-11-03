@@ -1,7 +1,7 @@
 # CULINARY 软件整体架构设计书
 
 **文档编号**：A02
-**版本**：`0.1.0`
+**版本**：`0.2.0`
 **状态**：`Review`
 **日期**：2026-11-04
 **负责人**：首席架构师 / 技术负责人
@@ -160,6 +160,7 @@ flowchart TB
 - 管理事务：`TransactionRunner`；把多个 DAO 操作组合为原子写。
 - 把 SQLite/文件异常翻译为领域错误。
 - 管理图片文件生命周期、备份文件、临时文件。
+- 备份格式、manifest、校验、打包/解包、恢复编排。
 - 提供 `Flow` 查询；一次性查询用 `suspend`。
 
 **不负责：**
@@ -168,6 +169,7 @@ flowchart TB
 - 不实现业务规则（例如“什么算缺口”）；规则在领域层。
 - 不直接依赖 feature 模块。
 - 不跨模块直接改别人的表；所有写入通过本模块的 Repository。
+- **不直接依赖 Android SAF/Uri**；通过 `BackupStoragePort`/`StorageHandle` 使用 `core:platform` 的能力。
 
 ### 4.5 本地持久化层（Persistence）
 
@@ -213,6 +215,7 @@ flowchart TB
 - CameraX 预览与扫码、ML Kit 识别。
 - 权限请求与状态。
 - SAF 文件选择、保存、目录授权。
+- 实现 `BackupStoragePort`（SAF → `StorageHandle`，不向 `core:data` 泄漏 `Uri`）。
 - WorkManager 调度。
 - 系统分享、打开文件、设备信息。
 - 把平台异常/权限结果翻译为 `Outcome`。
@@ -221,7 +224,7 @@ flowchart TB
 
 - 不包含配方、库存、采购规则。
 - 不直接写业务数据库。
-- 不决定备份内容（只提供文件/调度能力）。
+- 不决定备份内容；不实现备份格式/manifest/校验/恢复编排（这些在 `core:data`）。
 
 ### 4.8 基础设施层（Infrastructure）
 
@@ -475,3 +478,4 @@ sequenceDiagram
 | 版本 | 日期 | 变更 | 作者 |
 |---|---|---|---|
 | 0.1.0 | 2026-11-04 | 初稿；确定分层、依赖、线程、事务、启动与离线边界 | 架构组 |
+| 0.2.0 | 2026-11-04 | 按 D-004 补 platform/data 备份边界：SAF 在 platform，备份格式/校验/恢复在 data | 架构组 |
