@@ -117,14 +117,19 @@ android.permission.ACCESS_NETWORK_STATE
 
 来源不是应用代码，而是依赖库 manifest 合并（WorkManager/ML Kit 等）。
 
-**处理：** 在应用 manifest 中显式移除：
+**处理：**
+
+- `INTERNET` **必须移除**：它才是“能不能联网”的权限。
+- `ACCESS_NETWORK_STATE` 只授予“查询网络状态”，不授予网络访问；spike 中一并移除，但运行期尚未验证。若 WorkManager 初始化/网络约束需要它，**保留它不会破坏离线承诺**，只移除 `INTERNET` 即可。
 
 ```xml
+<!-- 必须：禁止网络访问 -->
 <uses-permission android:name="android.permission.INTERNET" tools:node="remove" />
+<!-- 可选：若运行期验证 WorkManager 不需要，再移除 -->
 <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" tools:node="remove" />
 ```
 
-再次构建后 `aapt2 dump permissions` 结果不再包含 INTERNET / ACCESS_NETWORK_STATE，仅保留 WorkManager 所需的：
+spike 再次构建后 `aapt2 dump permissions` 结果不再包含 INTERNET / ACCESS_NETWORK_STATE，仅保留：
 
 ```text
 WAKE_LOCK
@@ -135,7 +140,8 @@ FOREGROUND_SERVICE
 **含义：**
 
 - “离线优先、v1 无网络权限”必须通过 manifest 显式移除 + 构建后 `aapt` 验证，不能只靠“代码里没写网络调用”。
-- 每个发布版本都要在 CI 检查权限清单。
+- `ACCESS_NETWORK_STATE` 的移除是运行期优化，不是离线承诺的必要条件；安装启动测试后决定。
+- 每个发布版本都要在 CI 检查权限清单：`INTERNET` 必须不存在。
 - 若未来实现在线查询，再显式加回 INTERNET，并走 ADR。
 
 ### 5.4 未验证项

@@ -32,7 +32,7 @@
 | D-009 | 库存 | 批次 + 储存位置 + 追加式流水；禁止直接改库存数字 | PROPOSED | 是 | A04, A05, ADR-006 |
 | D-010 | 预留时机 | 计划确认时默认创建预留；可配置为仅计算不预留 | OPEN | 否（两种都支持） | A04 |
 | D-011 | 备份格式 | 自定义 ZIP 容器（DB + 图片 + manifest + SHA-256）；可选 AES-256-GCM | PROPOSED | 是 | E05, ADR-007 |
-| D-012 | 依赖注入 | Hilt（KSP，编译期校验） | PROPOSED | 是 | A01, ADR-008 |
+| D-012 | 依赖注入 | Hilt 2.57.2（KSP，编译期校验；2.59+ 要求 AGP 9） | PROPOSED | 是 | A01, ADR-008 |
 | D-013 | 扫码 | CameraX + ML Kit Bundled 条码模型；本地识别；在线查询仅预留接口 | PROPOSED | 是 | A01, ADR-009 |
 | D-014 | 云/AI/协作 | 本阶段不引入云账号、实时同步、多人协作、AI 核心功能 | CONFIRMED | — | P01 |
 | D-015 | 图片存储 | 应用私有目录文件 + 元数据表；数据库不存 BLOB | PROPOSED | 是 | A05, E05 |

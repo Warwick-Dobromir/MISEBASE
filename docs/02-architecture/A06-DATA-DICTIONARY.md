@@ -971,6 +971,8 @@ GROUP BY product_id, stock_unit_id;
 - DAO 返回 Entity/投影；Repository 在 `core:data` 映射。
 - `@DatabaseView` 对应第 10.3 节视图。
 - 所有 FK 建 `@Index`；唯一索引用 `@Index(unique = true)`。
+- **部分唯一索引**（`WHERE deleted_at IS NULL` / `WHERE is_current=1` / `WHERE status='ACTIVE'`）无法用 Room `@Index` 表达，必须在 `RoomDatabase.Callback.onCreate` 与相应 Migration 中执行 `CREATE UNIQUE INDEX IF NOT EXISTS ... WHERE ...`；并加测试。
+- **触发器**（流水只追加、已发布版本保护）同样通过 `onCreate`/Migration 的 `execSQL` 创建；Room 不生成它们。
 - 不使用 `fallbackToDestructiveMigration`。
 
 ## 12. 索引汇总（最低集合）

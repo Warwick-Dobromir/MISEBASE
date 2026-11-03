@@ -422,7 +422,7 @@ sequenceDiagram
 ## 10. 离线与网络边界
 
 - v1 **不申请 `INTERNET` 权限**；从系统层面保证核心功能不可能偷偷依赖网络。
-- 依赖库可能通过 manifest 合并引入 `INTERNET` / `ACCESS_NETWORK_STATE`；必须在应用 manifest 用 `tools:node="remove"` 移除，并在构建后用 `aapt2 dump permissions` 验证（已实测，见 V01）。
+- 依赖库可能通过 manifest 合并引入 `INTERNET` / `ACCESS_NETWORK_STATE`；`INTERNET` 必须用 `tools:node="remove"` 移除，并在构建后用 `aapt2 dump permissions` 验证（已实测，见 V01）。`ACCESS_NETWORK_STATE` 只影响网络状态查询，若运行期无必要可一并移除；保留它不破坏离线承诺。
 - 扫码使用 Bundled 本地模型。
 - 在线商品查询只保留 `ProductLookupSource` 接口，不实现、不注册实现。
 - 未来若增加网络能力：
