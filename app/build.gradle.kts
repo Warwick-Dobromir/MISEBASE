@@ -8,6 +8,17 @@ android {
     defaultConfig {
         applicationId = "com.culinary"
     }
+
+    buildTypes {
+        release {
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro",
+            )
+        }
+    }
 }
 
 // 组合根：只做模块装配，不承载业务规则（A03A §4，D-004）。
