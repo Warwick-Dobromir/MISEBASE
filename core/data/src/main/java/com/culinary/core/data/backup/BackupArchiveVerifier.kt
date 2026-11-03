@@ -19,7 +19,12 @@ import java.util.zip.ZipInputStream
 @Suppress("ReturnCount")
 class BackupArchiveVerifier {
     fun verify(input: InputStream): Outcome<BackupManifest> {
-        val entries = readEntries(input)
+        val entries =
+            try {
+                readEntries(input)
+            } catch (e: BackupFormatException) {
+                return fail(e.message ?: "invalid archive")
+            }
         return readManifest(entries)
             .flatMap { manifest -> verifyChecksums(entries, manifest) }
             .flatMap { manifest -> verifyPayloads(entries, manifest) }
@@ -98,20 +103,56 @@ class BackupArchiveVerifier {
         return Outcome.success(manifest)
     }
 
+    /** 读取 ZIP 条目并做 zip-bomb/路径安全检查（E05 §12）。 */
     private fun readEntries(input: InputStream): Map<String, ByteArray> {
         val result = LinkedHashMap<String, ByteArray>()
-        ZipInputStream(input).use { zip ->
-            var entry = zip.nextEntry
-            while (entry != null) {
-                if (!entry.isDirectory) {
-                    result[entry.name] = zip.readBytes()
-                }
-                zip.closeEntry()
-                entry = zip.nextEntry
-            }
-        }
+        ZipInputStream(input).use { zip -> readZip(zip, result) }
         return result
     }
+
+    private fun readZip(
+        zip: ZipInputStream,
+        result: MutableMap<String, ByteArray>,
+    ) {
+        var totalBytes = 0L
+        var entry = zip.nextEntry
+        while (entry != null) {
+            totalBytes = readOne(zip, entry, result, totalBytes)
+            zip.closeEntry()
+            entry = zip.nextEntry
+        }
+    }
+
+    private fun readOne(
+        zip: ZipInputStream,
+        entry: java.util.zip.ZipEntry,
+        result: MutableMap<String, ByteArray>,
+        totalBytes: Long,
+    ): Long {
+        if (entry.isDirectory) return totalBytes
+        val bytes = zip.readBytes()
+        val problem = validateEntry(entry.name, result.size, totalBytes, bytes.size)
+        if (problem != null) throw BackupFormatException(problem)
+        result[entry.name] = bytes
+        return totalBytes + bytes.size
+    }
+
+    private fun validateEntry(
+        name: String,
+        entryCount: Int,
+        totalBytes: Long,
+        entrySize: Int,
+    ): String? =
+        when {
+            entryCount >= MAX_ENTRIES -> "too many entries"
+            name.startsWith("/") || name.contains("..") || name.contains('\\') -> "unsafe entry $name"
+            totalBytes + entrySize > MAX_TOTAL_BYTES -> "archive too large"
+            else -> null
+        }
+
+    private class BackupFormatException(
+        message: String,
+    ) : Exception(message)
 
     private fun fail(
         reason: String,
@@ -126,6 +167,9 @@ class BackupArchiveVerifier {
         )
 
     private companion object {
+        const val MAX_ENTRIES = 10_000
+        const val MAX_TOTAL_BYTES = 1L * 1024 * 1024 * 1024
+
         val FORBIDDEN_IN_CHECKSUMS =
             listOf(
                 BackupLayout.MANIFEST_JSON,
