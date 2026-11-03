@@ -2,4 +2,17 @@
 <resources>
     <string name="app_name">CULINARY</string>
     <string name="framework_placeholder">CULINARY framework</string>
+    <string name="home_subtitle">专业个人烹饪档案与研发管理</string>
+    <string name="placeholder_body">该模块将在后续阶段实现</string>
+    <string name="action_back">返回</string>
+
+    <string name="destination_home">首页</string>
+    <string name="destination_ingredients">食材</string>
+    <string name="destination_sauces">酱汁</string>
+    <string name="destination_recipes">菜谱</string>
+    <string name="destination_products">商品</string>
+    <string name="destination_inventory">库存</string>
+    <string name="destination_planning">制作计划</string>
+    <string name="destination_procurement">采购</string>
+    <string name="destination_settings">设置</string>
 </resources>
