@@ -8,4 +8,9 @@ dependencies {
     implementation(project(":core:domain"))
     implementation(project(":core:common"))
     implementation(libs.androidx.core.ktx)
+    implementation(libs.kotlinx.coroutines.core)
+    implementation(libs.androidx.work.runtime.ktx)
+
+    testImplementation(libs.robolectric)
+    testImplementation(libs.androidx.work.testing)
 }
