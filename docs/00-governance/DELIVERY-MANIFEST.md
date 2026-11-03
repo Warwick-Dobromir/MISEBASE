@@ -41,8 +41,9 @@
 | 15 | 框架搭建实施顺序 | [R01](../04-readiness/R01-FRAMEWORK-SEQUENCE.md) | 0.2.0 | Review | `2d1fe012ac4986c47d661607c2475051b177adf41d288fbb8ca48980221f2be8` |
 | 16 | 开发环境与依赖清单 | [R02](../04-readiness/R02-ENVIRONMENT-DEPENDENCIES.md) | 0.2.0 | Review | `52cf8dcd0460713894625fa954bf27943bfa014e528d7201392fc409e3f4cbdc` |
 | 17 | 框架制作前置检查清单 | [R03](../04-readiness/R03-PREFLIGHT-CHECKLIST.md) | 0.2.0 | Review | `713cd89ab44c5d235ca9e65f3efdeb0b5546ac232e785e135deb396b7b6d9ae5` |
-| — | 框架制作启动报告 | [R04](../04-readiness/R04-FRAMEWORK-START-REPORT.md) | 0.2.0 | Review | `e5d16f374074691e8cddb12c2c1c6abf6cb037430474d3764290a04b96a00589` |
+| — | 框架制作启动报告 | [R04](../04-readiness/R04-FRAMEWORK-START-REPORT.md) | 0.2.0 | Review | `5886996d159472e59a51fe91f86d1db6587a132a74be3ead45f59a7e01f4632e` |
 | — | 模块拆分审查提案（附件） | [A03A](../02-architecture/A03A-MODULE-DECOMPOSITION-REVIEW.md) | 0.2.0 | Review | 不计入 17 项；D-004 待审查 |
+| — | G1 最终复核包（附件） | [G1-REVIEW-PACKET](../04-readiness/G1-REVIEW-PACKET.md) | 0.1.0 | Review | 不计入 17 项；签收用 |
 | — | 依赖兼容性验证（附件） | [V01](../04-readiness/V01-DEPENDENCY-VALIDATION.md) | 0.1.0 | Review | 见文件；不计入 17 项 |
 | — | ADR-001 ~ ADR-010（附件） | [docs/adr](../adr/) | 0.1.0（ADR-003 0.3.0；ADR-007/008 0.2.0） | Proposed | 10 份 |
 | — | 架构/ER/流程 图（附件） | [docs/diagrams](../diagrams/) | — | — | 3 份 `.mmd` |
@@ -51,7 +52,7 @@
 
 | 检查 | 结果 |
 |---|---|
-| Markdown 文件总数 | 36（含附件/README） |
+| Markdown 文件总数 | 37（含附件/README） |
 | 17 项交付物文件 | 18 个文件全部存在（ER 与字典合并为第 7 项） |
 | 断链 | 0 |
 | UTF-8 替换字符/乱码 | 0 |
