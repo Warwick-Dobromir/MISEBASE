@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "0dd0e6cacaa11ed49cea586b8fe6a5f1",
+    "identityHash": "14bbdbd909e762fc93387400850f50a2",
     "entities": [
       {
         "tableName": "unit",
@@ -472,11 +472,1024 @@
             ]
           }
         ]
+      },
+      {
+        "tableName": "sauce",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `normalized_name` TEXT NOT NULL, `family` TEXT, `texture` TEXT, `flavor_profile` TEXT, `usage_notes` TEXT, `storage_notes` TEXT, `shelf_life_days` INTEGER, `status` TEXT NOT NULL, `created_at` INTEGER NOT NULL, `updated_at` INTEGER NOT NULL, `deleted_at` INTEGER, `revision` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "name",
+            "columnName": "name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "normalizedName",
+            "columnName": "normalized_name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "family",
+            "columnName": "family",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "texture",
+            "columnName": "texture",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "flavorProfile",
+            "columnName": "flavor_profile",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "usageNotes",
+            "columnName": "usage_notes",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "storageNotes",
+            "columnName": "storage_notes",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "shelfLifeDays",
+            "columnName": "shelf_life_days",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "status",
+            "columnName": "status",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "created_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "updatedAt",
+            "columnName": "updated_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "deletedAt",
+            "columnName": "deleted_at",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "revision",
+            "columnName": "revision",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_sauce_status",
+            "unique": false,
+            "columnNames": [
+              "status"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_sauce_status` ON `${TABLE_NAME}` (`status`)"
+          },
+          {
+            "name": "index_sauce_family",
+            "unique": false,
+            "columnNames": [
+              "family"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_sauce_family` ON `${TABLE_NAME}` (`family`)"
+          }
+        ]
+      },
+      {
+        "tableName": "sauce_version",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `sauce_id` TEXT NOT NULL, `version_no` INTEGER NOT NULL, `status` TEXT NOT NULL, `yield_qty` REAL NOT NULL, `yield_unit_id` TEXT NOT NULL, `instructions_md` TEXT, `change_note` TEXT, `based_on_version_id` TEXT, `is_current` INTEGER NOT NULL, `created_at` INTEGER NOT NULL, `published_at` INTEGER, PRIMARY KEY(`id`), FOREIGN KEY(`sauce_id`) REFERENCES `sauce`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE , FOREIGN KEY(`yield_unit_id`) REFERENCES `unit`(`id`) ON UPDATE NO ACTION ON DELETE RESTRICT , FOREIGN KEY(`based_on_version_id`) REFERENCES `sauce_version`(`id`) ON UPDATE NO ACTION ON DELETE SET NULL )",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "sauceId",
+            "columnName": "sauce_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "versionNo",
+            "columnName": "version_no",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "status",
+            "columnName": "status",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "yieldQty",
+            "columnName": "yield_qty",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "yieldUnitId",
+            "columnName": "yield_unit_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "instructionsMd",
+            "columnName": "instructions_md",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "changeNote",
+            "columnName": "change_note",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "basedOnVersionId",
+            "columnName": "based_on_version_id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "isCurrent",
+            "columnName": "is_current",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "created_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "publishedAt",
+            "columnName": "published_at",
+            "affinity": "INTEGER"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_sauce_version_sauce_id_version_no",
+            "unique": true,
+            "columnNames": [
+              "sauce_id",
+              "version_no"
+            ],
+            "orders": [],
+            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_sauce_version_sauce_id_version_no` ON `${TABLE_NAME}` (`sauce_id`, `version_no`)"
+          },
+          {
+            "name": "index_sauce_version_sauce_id_status",
+            "unique": false,
+            "columnNames": [
+              "sauce_id",
+              "status"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_sauce_version_sauce_id_status` ON `${TABLE_NAME}` (`sauce_id`, `status`)"
+          },
+          {
+            "name": "index_sauce_version_yield_unit_id",
+            "unique": false,
+            "columnNames": [
+              "yield_unit_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_sauce_version_yield_unit_id` ON `${TABLE_NAME}` (`yield_unit_id`)"
+          },
+          {
+            "name": "index_sauce_version_based_on_version_id",
+            "unique": false,
+            "columnNames": [
+              "based_on_version_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_sauce_version_based_on_version_id` ON `${TABLE_NAME}` (`based_on_version_id`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "sauce",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "sauce_id"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          },
+          {
+            "table": "unit",
+            "onDelete": "RESTRICT",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "yield_unit_id"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          },
+          {
+            "table": "sauce_version",
+            "onDelete": "SET NULL",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "based_on_version_id"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "sauce_component",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `sauce_version_id` TEXT NOT NULL, `line_no` INTEGER NOT NULL, `component_type` TEXT NOT NULL, `ingredient_id` TEXT, `referenced_sauce_id` TEXT, `referenced_sauce_version_id` TEXT, `referenced_recipe_id` TEXT, `referenced_recipe_version_id` TEXT, `quantity` REAL NOT NULL, `unit_id` TEXT NOT NULL, `preparation_note` TEXT, `is_optional` INTEGER NOT NULL, `group_label` TEXT, `sort_order` INTEGER NOT NULL, `created_at` INTEGER NOT NULL, PRIMARY KEY(`id`), FOREIGN KEY(`sauce_version_id`) REFERENCES `sauce_version`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE , FOREIGN KEY(`ingredient_id`) REFERENCES `ingredient`(`id`) ON UPDATE NO ACTION ON DELETE NO ACTION , FOREIGN KEY(`referenced_sauce_id`) REFERENCES `sauce`(`id`) ON UPDATE NO ACTION ON DELETE NO ACTION , FOREIGN KEY(`referenced_sauce_version_id`) REFERENCES `sauce_version`(`id`) ON UPDATE NO ACTION ON DELETE NO ACTION , FOREIGN KEY(`referenced_recipe_id`) REFERENCES `recipe`(`id`) ON UPDATE NO ACTION ON DELETE NO ACTION , FOREIGN KEY(`referenced_recipe_version_id`) REFERENCES `recipe_version`(`id`) ON UPDATE NO ACTION ON DELETE NO ACTION , FOREIGN KEY(`unit_id`) REFERENCES `unit`(`id`) ON UPDATE NO ACTION ON DELETE RESTRICT )",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "sauceVersionId",
+            "columnName": "sauce_version_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lineNo",
+            "columnName": "line_no",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "componentType",
+            "columnName": "component_type",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "ingredientId",
+            "columnName": "ingredient_id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "referencedSauceId",
+            "columnName": "referenced_sauce_id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "referencedSauceVersionId",
+            "columnName": "referenced_sauce_version_id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "referencedRecipeId",
+            "columnName": "referenced_recipe_id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "referencedRecipeVersionId",
+            "columnName": "referenced_recipe_version_id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "quantity",
+            "columnName": "quantity",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "unitId",
+            "columnName": "unit_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "preparationNote",
+            "columnName": "preparation_note",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "isOptional",
+            "columnName": "is_optional",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "groupLabel",
+            "columnName": "group_label",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "sortOrder",
+            "columnName": "sort_order",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "created_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_sauce_component_sauce_version_id_line_no",
+            "unique": true,
+            "columnNames": [
+              "sauce_version_id",
+              "line_no"
+            ],
+            "orders": [],
+            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_sauce_component_sauce_version_id_line_no` ON `${TABLE_NAME}` (`sauce_version_id`, `line_no`)"
+          },
+          {
+            "name": "index_sauce_component_ingredient_id",
+            "unique": false,
+            "columnNames": [
+              "ingredient_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_sauce_component_ingredient_id` ON `${TABLE_NAME}` (`ingredient_id`)"
+          },
+          {
+            "name": "index_sauce_component_referenced_sauce_id",
+            "unique": false,
+            "columnNames": [
+              "referenced_sauce_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_sauce_component_referenced_sauce_id` ON `${TABLE_NAME}` (`referenced_sauce_id`)"
+          },
+          {
+            "name": "index_sauce_component_referenced_sauce_version_id",
+            "unique": false,
+            "columnNames": [
+              "referenced_sauce_version_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_sauce_component_referenced_sauce_version_id` ON `${TABLE_NAME}` (`referenced_sauce_version_id`)"
+          },
+          {
+            "name": "index_sauce_component_referenced_recipe_id",
+            "unique": false,
+            "columnNames": [
+              "referenced_recipe_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_sauce_component_referenced_recipe_id` ON `${TABLE_NAME}` (`referenced_recipe_id`)"
+          },
+          {
+            "name": "index_sauce_component_referenced_recipe_version_id",
+            "unique": false,
+            "columnNames": [
+              "referenced_recipe_version_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_sauce_component_referenced_recipe_version_id` ON `${TABLE_NAME}` (`referenced_recipe_version_id`)"
+          },
+          {
+            "name": "index_sauce_component_unit_id",
+            "unique": false,
+            "columnNames": [
+              "unit_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_sauce_component_unit_id` ON `${TABLE_NAME}` (`unit_id`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "sauce_version",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "sauce_version_id"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          },
+          {
+            "table": "ingredient",
+            "onDelete": "NO ACTION",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "ingredient_id"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          },
+          {
+            "table": "sauce",
+            "onDelete": "NO ACTION",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "referenced_sauce_id"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          },
+          {
+            "table": "sauce_version",
+            "onDelete": "NO ACTION",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "referenced_sauce_version_id"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          },
+          {
+            "table": "recipe",
+            "onDelete": "NO ACTION",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "referenced_recipe_id"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          },
+          {
+            "table": "recipe_version",
+            "onDelete": "NO ACTION",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "referenced_recipe_version_id"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          },
+          {
+            "table": "unit",
+            "onDelete": "RESTRICT",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "unit_id"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "recipe",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `normalized_name` TEXT NOT NULL, `category` TEXT NOT NULL, `cuisine` TEXT, `description` TEXT, `prep_minutes` INTEGER, `cook_minutes` INTEGER, `difficulty` TEXT, `status` TEXT NOT NULL, `created_at` INTEGER NOT NULL, `updated_at` INTEGER NOT NULL, `deleted_at` INTEGER, `revision` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "name",
+            "columnName": "name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "normalizedName",
+            "columnName": "normalized_name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "category",
+            "columnName": "category",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "cuisine",
+            "columnName": "cuisine",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "description",
+            "columnName": "description",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "prepMinutes",
+            "columnName": "prep_minutes",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "cookMinutes",
+            "columnName": "cook_minutes",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "difficulty",
+            "columnName": "difficulty",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "status",
+            "columnName": "status",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "created_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "updatedAt",
+            "columnName": "updated_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "deletedAt",
+            "columnName": "deleted_at",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "revision",
+            "columnName": "revision",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_recipe_category_status",
+            "unique": false,
+            "columnNames": [
+              "category",
+              "status"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_recipe_category_status` ON `${TABLE_NAME}` (`category`, `status`)"
+          }
+        ]
+      },
+      {
+        "tableName": "recipe_version",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `recipe_id` TEXT NOT NULL, `version_no` INTEGER NOT NULL, `status` TEXT NOT NULL, `yield_qty` REAL NOT NULL, `yield_unit_id` TEXT NOT NULL, `instructions_md` TEXT, `change_note` TEXT, `based_on_version_id` TEXT, `is_current` INTEGER NOT NULL, `created_at` INTEGER NOT NULL, `published_at` INTEGER, PRIMARY KEY(`id`), FOREIGN KEY(`recipe_id`) REFERENCES `recipe`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE , FOREIGN KEY(`yield_unit_id`) REFERENCES `unit`(`id`) ON UPDATE NO ACTION ON DELETE RESTRICT , FOREIGN KEY(`based_on_version_id`) REFERENCES `recipe_version`(`id`) ON UPDATE NO ACTION ON DELETE SET NULL )",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "recipeId",
+            "columnName": "recipe_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "versionNo",
+            "columnName": "version_no",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "status",
+            "columnName": "status",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "yieldQty",
+            "columnName": "yield_qty",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "yieldUnitId",
+            "columnName": "yield_unit_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "instructionsMd",
+            "columnName": "instructions_md",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "changeNote",
+            "columnName": "change_note",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "basedOnVersionId",
+            "columnName": "based_on_version_id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "isCurrent",
+            "columnName": "is_current",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "created_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "publishedAt",
+            "columnName": "published_at",
+            "affinity": "INTEGER"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_recipe_version_recipe_id_version_no",
+            "unique": true,
+            "columnNames": [
+              "recipe_id",
+              "version_no"
+            ],
+            "orders": [],
+            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_recipe_version_recipe_id_version_no` ON `${TABLE_NAME}` (`recipe_id`, `version_no`)"
+          },
+          {
+            "name": "index_recipe_version_recipe_id_status",
+            "unique": false,
+            "columnNames": [
+              "recipe_id",
+              "status"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_recipe_version_recipe_id_status` ON `${TABLE_NAME}` (`recipe_id`, `status`)"
+          },
+          {
+            "name": "index_recipe_version_yield_unit_id",
+            "unique": false,
+            "columnNames": [
+              "yield_unit_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_recipe_version_yield_unit_id` ON `${TABLE_NAME}` (`yield_unit_id`)"
+          },
+          {
+            "name": "index_recipe_version_based_on_version_id",
+            "unique": false,
+            "columnNames": [
+              "based_on_version_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_recipe_version_based_on_version_id` ON `${TABLE_NAME}` (`based_on_version_id`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "recipe",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "recipe_id"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          },
+          {
+            "table": "unit",
+            "onDelete": "RESTRICT",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "yield_unit_id"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          },
+          {
+            "table": "recipe_version",
+            "onDelete": "SET NULL",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "based_on_version_id"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "recipe_component",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `recipe_version_id` TEXT NOT NULL, `line_no` INTEGER NOT NULL, `component_type` TEXT NOT NULL, `ingredient_id` TEXT, `referenced_sauce_id` TEXT, `referenced_sauce_version_id` TEXT, `referenced_recipe_id` TEXT, `referenced_recipe_version_id` TEXT, `quantity` REAL NOT NULL, `unit_id` TEXT NOT NULL, `preparation_note` TEXT, `is_optional` INTEGER NOT NULL, `group_label` TEXT, `sort_order` INTEGER NOT NULL, `created_at` INTEGER NOT NULL, PRIMARY KEY(`id`), FOREIGN KEY(`recipe_version_id`) REFERENCES `recipe_version`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE , FOREIGN KEY(`ingredient_id`) REFERENCES `ingredient`(`id`) ON UPDATE NO ACTION ON DELETE NO ACTION , FOREIGN KEY(`referenced_sauce_id`) REFERENCES `sauce`(`id`) ON UPDATE NO ACTION ON DELETE NO ACTION , FOREIGN KEY(`referenced_sauce_version_id`) REFERENCES `sauce_version`(`id`) ON UPDATE NO ACTION ON DELETE NO ACTION , FOREIGN KEY(`referenced_recipe_id`) REFERENCES `recipe`(`id`) ON UPDATE NO ACTION ON DELETE NO ACTION , FOREIGN KEY(`referenced_recipe_version_id`) REFERENCES `recipe_version`(`id`) ON UPDATE NO ACTION ON DELETE NO ACTION , FOREIGN KEY(`unit_id`) REFERENCES `unit`(`id`) ON UPDATE NO ACTION ON DELETE RESTRICT )",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "recipeVersionId",
+            "columnName": "recipe_version_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lineNo",
+            "columnName": "line_no",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "componentType",
+            "columnName": "component_type",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "ingredientId",
+            "columnName": "ingredient_id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "referencedSauceId",
+            "columnName": "referenced_sauce_id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "referencedSauceVersionId",
+            "columnName": "referenced_sauce_version_id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "referencedRecipeId",
+            "columnName": "referenced_recipe_id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "referencedRecipeVersionId",
+            "columnName": "referenced_recipe_version_id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "quantity",
+            "columnName": "quantity",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "unitId",
+            "columnName": "unit_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "preparationNote",
+            "columnName": "preparation_note",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "isOptional",
+            "columnName": "is_optional",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "groupLabel",
+            "columnName": "group_label",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "sortOrder",
+            "columnName": "sort_order",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "created_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_recipe_component_recipe_version_id_line_no",
+            "unique": true,
+            "columnNames": [
+              "recipe_version_id",
+              "line_no"
+            ],
+            "orders": [],
+            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_recipe_component_recipe_version_id_line_no` ON `${TABLE_NAME}` (`recipe_version_id`, `line_no`)"
+          },
+          {
+            "name": "index_recipe_component_ingredient_id",
+            "unique": false,
+            "columnNames": [
+              "ingredient_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_recipe_component_ingredient_id` ON `${TABLE_NAME}` (`ingredient_id`)"
+          },
+          {
+            "name": "index_recipe_component_referenced_sauce_id",
+            "unique": false,
+            "columnNames": [
+              "referenced_sauce_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_recipe_component_referenced_sauce_id` ON `${TABLE_NAME}` (`referenced_sauce_id`)"
+          },
+          {
+            "name": "index_recipe_component_referenced_sauce_version_id",
+            "unique": false,
+            "columnNames": [
+              "referenced_sauce_version_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_recipe_component_referenced_sauce_version_id` ON `${TABLE_NAME}` (`referenced_sauce_version_id`)"
+          },
+          {
+            "name": "index_recipe_component_referenced_recipe_id",
+            "unique": false,
+            "columnNames": [
+              "referenced_recipe_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_recipe_component_referenced_recipe_id` ON `${TABLE_NAME}` (`referenced_recipe_id`)"
+          },
+          {
+            "name": "index_recipe_component_referenced_recipe_version_id",
+            "unique": false,
+            "columnNames": [
+              "referenced_recipe_version_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_recipe_component_referenced_recipe_version_id` ON `${TABLE_NAME}` (`referenced_recipe_version_id`)"
+          },
+          {
+            "name": "index_recipe_component_unit_id",
+            "unique": false,
+            "columnNames": [
+              "unit_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_recipe_component_unit_id` ON `${TABLE_NAME}` (`unit_id`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "recipe_version",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "recipe_version_id"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          },
+          {
+            "table": "ingredient",
+            "onDelete": "NO ACTION",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "ingredient_id"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          },
+          {
+            "table": "sauce",
+            "onDelete": "NO ACTION",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "referenced_sauce_id"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          },
+          {
+            "table": "sauce_version",
+            "onDelete": "NO ACTION",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "referenced_sauce_version_id"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          },
+          {
+            "table": "recipe",
+            "onDelete": "NO ACTION",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "referenced_recipe_id"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          },
+          {
+            "table": "recipe_version",
+            "onDelete": "NO ACTION",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "referenced_recipe_version_id"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          },
+          {
+            "table": "unit",
+            "onDelete": "RESTRICT",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "unit_id"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
       }
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '0dd0e6cacaa11ed49cea586b8fe6a5f1')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '14bbdbd909e762fc93387400850f50a2')"
     ]
   }
 }

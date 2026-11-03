@@ -1,8 +1,11 @@
 package com.culinary.core.database.converter
 
 import androidx.room.TypeConverter
+import com.culinary.core.database.model.ComponentTypeDb
 import com.culinary.core.database.model.EntityStatusDb
+import com.culinary.core.database.model.RecipeCategoryDb
 import com.culinary.core.database.model.UnitDimensionDb
+import com.culinary.core.database.model.VersionStatusDb
 
 /**
  * 枚举以 TEXT 存储（A06 §1.2）。
@@ -22,4 +25,22 @@ class DatabaseConverters {
 
     @TypeConverter
     fun toEntityStatus(value: String): EntityStatusDb = EntityStatusDb.valueOf(value)
+
+    @TypeConverter
+    fun fromVersionStatus(value: VersionStatusDb): String = value.name
+
+    @TypeConverter
+    fun toVersionStatus(value: String): VersionStatusDb = VersionStatusDb.valueOf(value)
+
+    @TypeConverter
+    fun fromComponentType(value: ComponentTypeDb): String = value.name
+
+    @TypeConverter
+    fun toComponentType(value: String): ComponentTypeDb = ComponentTypeDb.valueOf(value)
+
+    @TypeConverter
+    fun fromRecipeCategory(value: RecipeCategoryDb): String = value.name
+
+    @TypeConverter
+    fun toRecipeCategory(value: String): RecipeCategoryDb = RecipeCategoryDb.valueOf(value)
 }

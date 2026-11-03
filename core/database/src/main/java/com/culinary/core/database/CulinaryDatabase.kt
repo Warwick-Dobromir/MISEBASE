@@ -7,10 +7,22 @@ import com.culinary.core.database.converter.DatabaseConverters
 import com.culinary.core.database.dao.IngredientAliasDao
 import com.culinary.core.database.dao.IngredientDao
 import com.culinary.core.database.dao.IngredientUnitConversionDao
+import com.culinary.core.database.dao.RecipeComponentDao
+import com.culinary.core.database.dao.RecipeDao
+import com.culinary.core.database.dao.RecipeVersionDao
+import com.culinary.core.database.dao.SauceComponentDao
+import com.culinary.core.database.dao.SauceDao
+import com.culinary.core.database.dao.SauceVersionDao
 import com.culinary.core.database.dao.UnitDao
 import com.culinary.core.database.entity.IngredientAliasEntity
 import com.culinary.core.database.entity.IngredientEntity
 import com.culinary.core.database.entity.IngredientUnitConversionEntity
+import com.culinary.core.database.entity.RecipeComponentEntity
+import com.culinary.core.database.entity.RecipeEntity
+import com.culinary.core.database.entity.RecipeVersionEntity
+import com.culinary.core.database.entity.SauceComponentEntity
+import com.culinary.core.database.entity.SauceEntity
+import com.culinary.core.database.entity.SauceVersionEntity
 import com.culinary.core.database.entity.UnitEntity
 
 /**
@@ -25,6 +37,12 @@ import com.culinary.core.database.entity.UnitEntity
         IngredientEntity::class,
         IngredientAliasEntity::class,
         IngredientUnitConversionEntity::class,
+        SauceEntity::class,
+        SauceVersionEntity::class,
+        SauceComponentEntity::class,
+        RecipeEntity::class,
+        RecipeVersionEntity::class,
+        RecipeComponentEntity::class,
     ],
     version = 1,
     exportSchema = true,
@@ -38,6 +56,18 @@ abstract class CulinaryDatabase : RoomDatabase() {
     abstract fun ingredientAliasDao(): IngredientAliasDao
 
     abstract fun ingredientUnitConversionDao(): IngredientUnitConversionDao
+
+    abstract fun sauceDao(): SauceDao
+
+    abstract fun sauceVersionDao(): SauceVersionDao
+
+    abstract fun sauceComponentDao(): SauceComponentDao
+
+    abstract fun recipeDao(): RecipeDao
+
+    abstract fun recipeVersionDao(): RecipeVersionDao
+
+    abstract fun recipeComponentDao(): RecipeComponentDao
 
     companion object {
         const val DATABASE_NAME: String = "culinary.db"

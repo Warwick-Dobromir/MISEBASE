@@ -6,20 +6,89 @@ import androidx.sqlite.db.SupportSQLiteDatabase
  * Room 无法表达、但 A06 要求的 schema 附加项：
  *
  * 1. `CHECK` 约束由 BEFORE INSERT/UPDATE 触发器等价实现（Room 只生成列与索引）；
- * 2. `ingredient.normalized_name` 的部分唯一索引（`WHERE deleted_at IS NULL`）。
+ * 2. `WHERE deleted_at IS NULL` 的部分唯一索引（名称复用）；
+ * 3. "每个聚合至多一个当前版本"的部分唯一索引；
+ * 4. 已发布版本内容不可修改的触发器（应用层校验之外的第二道保护）。
  *
  * 全部语句都带 `IF NOT EXISTS`，可安全地在每次打开时重放。
  */
 internal object CulinarySchemaExtras {
     fun apply(db: SupportSQLiteDatabase) {
-        db.execSQL(INGREDIENT_ACTIVE_NAME_INDEX)
-        db.execSQL(UNIT_CHECK_INSERT)
-        db.execSQL(UNIT_CHECK_UPDATE)
-        db.execSQL(INGREDIENT_CHECK_INSERT)
-        db.execSQL(INGREDIENT_CHECK_UPDATE)
-        db.execSQL(CONVERSION_CHECK_INSERT)
-        db.execSQL(CONVERSION_CHECK_UPDATE)
+        PARTIAL_INDEXES.forEach(db::execSQL)
+
+        installChecks(db, "unit", UNIT_PREDICATE)
+        installChecks(db, "ingredient", INGREDIENT_PREDICATE)
+        installChecks(db, "ingredient_unit_conversion", CONVERSION_PREDICATE)
+        installChecks(db, "sauce", SAUCE_PREDICATE)
+        installChecks(db, "recipe", RECIPE_PREDICATE)
+        installChecks(db, "sauce_version", VERSION_PREDICATE)
+        installChecks(db, "recipe_version", VERSION_PREDICATE)
+        installChecks(db, "sauce_component", COMPONENT_PREDICATE)
+        installChecks(db, "recipe_component", COMPONENT_PREDICATE)
+
+        installPublishedImmutability(db, "sauce_version", "sauce_id")
+        installPublishedImmutability(db, "recipe_version", "recipe_id")
     }
+
+    private fun installChecks(
+        db: SupportSQLiteDatabase,
+        table: String,
+        predicate: String,
+    ) {
+        listOf("INSERT", "UPDATE").forEach { operation ->
+            val suffix = operation.lowercase()
+            db.execSQL(
+                "CREATE TRIGGER IF NOT EXISTS trg_${table}_check_$suffix " +
+                    "BEFORE $operation ON $table WHEN $predicate " +
+                    "BEGIN SELECT RAISE(ABORT, 'CHECK constraint failed: $table'); END",
+            )
+        }
+    }
+
+    private fun installPublishedImmutability(
+        db: SupportSQLiteDatabase,
+        table: String,
+        ownerColumn: String,
+    ) {
+        val contentChanged =
+            """
+            NEW.yield_qty <> OLD.yield_qty
+            OR NEW.yield_unit_id <> OLD.yield_unit_id
+            OR NEW.instructions_md IS NOT OLD.instructions_md
+            OR NEW.version_no <> OLD.version_no
+            OR NEW.$ownerColumn <> OLD.$ownerColumn
+            """.trimIndent()
+        db.execSQL(
+            "CREATE TRIGGER IF NOT EXISTS trg_${table}_published_immutable " +
+                "BEFORE UPDATE ON $table " +
+                "WHEN OLD.status = 'PUBLISHED' AND ($contentChanged) " +
+                "BEGIN SELECT RAISE(ABORT, 'published version is immutable'); END",
+        )
+    }
+
+    private val PARTIAL_INDEXES =
+        listOf(
+            """
+            CREATE UNIQUE INDEX IF NOT EXISTS ux_ingredient_normalized_name
+            ON ingredient(normalized_name) WHERE deleted_at IS NULL
+            """.trimIndent(),
+            """
+            CREATE UNIQUE INDEX IF NOT EXISTS ux_sauce_normalized_name
+            ON sauce(normalized_name) WHERE deleted_at IS NULL
+            """.trimIndent(),
+            """
+            CREATE UNIQUE INDEX IF NOT EXISTS ux_recipe_normalized_name
+            ON recipe(normalized_name) WHERE deleted_at IS NULL
+            """.trimIndent(),
+            """
+            CREATE UNIQUE INDEX IF NOT EXISTS ux_sauce_current
+            ON sauce_version(sauce_id) WHERE is_current = 1
+            """.trimIndent(),
+            """
+            CREATE UNIQUE INDEX IF NOT EXISTS ux_recipe_current
+            ON recipe_version(recipe_id) WHERE is_current = 1
+            """.trimIndent(),
+        )
 
     private const val UNIT_PREDICATE = """
         NEW.dimension NOT IN ('MASS', 'VOLUME', 'COUNT')
@@ -43,70 +112,53 @@ internal object CulinarySchemaExtras {
         OR NEW.from_unit_id = NEW.to_unit_id
     """
 
-    private val INGREDIENT_ACTIVE_NAME_INDEX =
-        """
-        CREATE UNIQUE INDEX IF NOT EXISTS ux_ingredient_normalized_name
-        ON ingredient(normalized_name)
-        WHERE deleted_at IS NULL
-        """.trimIndent()
+    private const val SAUCE_PREDICATE = """
+        NEW.status NOT IN ('ACTIVE', 'ARCHIVED')
+        OR NEW.revision < 1
+        OR NEW.created_at < 0
+        OR NEW.updated_at < 0
+        OR (NEW.shelf_life_days IS NOT NULL AND NEW.shelf_life_days < 0)
+    """
 
-    private val UNIT_CHECK_INSERT =
-        """
-        CREATE TRIGGER IF NOT EXISTS trg_unit_check_insert
-        BEFORE INSERT ON unit
-        WHEN $UNIT_PREDICATE
-        BEGIN
-            SELECT RAISE(ABORT, 'CHECK constraint failed: unit');
-        END
-        """.trimIndent()
+    private const val RECIPE_PREDICATE = """
+        NEW.status NOT IN ('ACTIVE', 'ARCHIVED')
+        OR NEW.revision < 1
+        OR NEW.created_at < 0
+        OR NEW.updated_at < 0
+        OR (NEW.prep_minutes IS NOT NULL AND NEW.prep_minutes < 0)
+        OR (NEW.cook_minutes IS NOT NULL AND NEW.cook_minutes < 0)
+        OR (NEW.difficulty IS NOT NULL AND NEW.difficulty NOT IN ('EASY', 'MEDIUM', 'HARD'))
+        OR NEW.category NOT IN ('STOCK', 'PREP', 'COMPONENT', 'DISH', 'OTHER')
+    """
 
-    private val UNIT_CHECK_UPDATE =
-        """
-        CREATE TRIGGER IF NOT EXISTS trg_unit_check_update
-        BEFORE UPDATE ON unit
-        WHEN $UNIT_PREDICATE
-        BEGIN
-            SELECT RAISE(ABORT, 'CHECK constraint failed: unit');
-        END
-        """.trimIndent()
+    private const val VERSION_PREDICATE = """
+        NEW.status NOT IN ('DRAFT', 'PUBLISHED', 'SUPERSEDED')
+        OR NEW.yield_qty <= 0
+        OR NEW.version_no < 1
+        OR NEW.is_current NOT IN (0, 1)
+        OR (NEW.published_at IS NOT NULL AND NEW.published_at < 0)
+    """
 
-    private val INGREDIENT_CHECK_INSERT =
-        """
-        CREATE TRIGGER IF NOT EXISTS trg_ingredient_check_insert
-        BEFORE INSERT ON ingredient
-        WHEN $INGREDIENT_PREDICATE
-        BEGIN
-            SELECT RAISE(ABORT, 'CHECK constraint failed: ingredient');
-        END
-        """.trimIndent()
-
-    private val INGREDIENT_CHECK_UPDATE =
-        """
-        CREATE TRIGGER IF NOT EXISTS trg_ingredient_check_update
-        BEFORE UPDATE ON ingredient
-        WHEN $INGREDIENT_PREDICATE
-        BEGIN
-            SELECT RAISE(ABORT, 'CHECK constraint failed: ingredient');
-        END
-        """.trimIndent()
-
-    private val CONVERSION_CHECK_INSERT =
-        """
-        CREATE TRIGGER IF NOT EXISTS trg_ingredient_unit_conversion_check_insert
-        BEFORE INSERT ON ingredient_unit_conversion
-        WHEN $CONVERSION_PREDICATE
-        BEGIN
-            SELECT RAISE(ABORT, 'CHECK constraint failed: ingredient_unit_conversion');
-        END
-        """.trimIndent()
-
-    private val CONVERSION_CHECK_UPDATE =
-        """
-        CREATE TRIGGER IF NOT EXISTS trg_ingredient_unit_conversion_check_update
-        BEFORE UPDATE ON ingredient_unit_conversion
-        WHEN $CONVERSION_PREDICATE
-        BEGIN
-            SELECT RAISE(ABORT, 'CHECK constraint failed: ingredient_unit_conversion');
-        END
-        """.trimIndent()
+    private const val COMPONENT_PREDICATE = """
+        NEW.component_type NOT IN ('INGREDIENT', 'SAUCE', 'RECIPE')
+        OR NEW.quantity <= 0
+        OR NEW.is_optional NOT IN (0, 1)
+        OR NEW.line_no < 1
+        OR (NEW.component_type = 'INGREDIENT' AND (
+            NEW.ingredient_id IS NULL
+            OR NEW.referenced_sauce_id IS NOT NULL
+            OR NEW.referenced_sauce_version_id IS NOT NULL
+            OR NEW.referenced_recipe_id IS NOT NULL
+            OR NEW.referenced_recipe_version_id IS NOT NULL))
+        OR (NEW.component_type = 'SAUCE' AND (
+            NEW.ingredient_id IS NOT NULL
+            OR NEW.referenced_sauce_id IS NULL
+            OR NEW.referenced_recipe_id IS NOT NULL
+            OR NEW.referenced_recipe_version_id IS NOT NULL))
+        OR (NEW.component_type = 'RECIPE' AND (
+            NEW.ingredient_id IS NOT NULL
+            OR NEW.referenced_sauce_id IS NOT NULL
+            OR NEW.referenced_sauce_version_id IS NOT NULL
+            OR NEW.referenced_recipe_id IS NULL))
+    """
 }
