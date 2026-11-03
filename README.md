@@ -60,6 +60,13 @@ feature/
 - `core:database` 不依赖 `core:domain`；`core:data` 不直接依赖 Android SAF/`Uri`。
 - 不创建 `:core:model`；领域模型统一放 `core:domain` 的 `model` 包。
 
+## 数据安全约定
+
+- 已发布菜谱/酱汁版本不可修改；新编辑产生新版本。
+- 计划快照不可修改、不可删除；只有**草稿**计划允许删除，已确认计划通过 `CANCELLED` 状态保留历史。
+- 库存只能通过追加流水改变，`inventory_ledger` 与 `change_log` 禁止 UPDATE/DELETE。
+- 备份/恢复遵守 E05；恢复失败不清理现场。
+
 ## 工程治理
 
 - 构建逻辑集中在 `build-logic/convention` 的 6 个约定插件。

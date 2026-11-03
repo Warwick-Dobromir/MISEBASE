@@ -50,7 +50,7 @@
 | [R10 G2 阶段 1 授权记录](../04-readiness/R10-G2-START-AUTHORIZATION.md) | D-012 接受、G2 授权范围、Git 基线与退出条件 |
 | [R11 G2 阶段 1 完成报告](../04-readiness/R11-G2-STAGE1-REPORT.md) | 15 模块骨架、构建/质量/安装实测、偏差与遗留 |
 | [R12 G2 阶段 2 完成报告](../04-readiness/R12-G2-STAGE2-REPORT.md) | 核心契约、领域规则、24 个 JVM 测试、D-005 边界 |
-| [R13 G2 阶段 3 完成报告](../04-readiness/R13-G2-STAGE3-REPORT.md) | Room v1 31 表、约束与触发器、74 例数据库测试、迁移偏差 |
+| [R13 G2 阶段 3 完成报告](../04-readiness/R13-G2-STAGE3-REPORT.md) | Room v1 31 表、约束与触发器、77 例测试、快照/计划删除策略、迁移阻塞项 |
 | [ADR-001 原生 Android](../adr/ADR-001-NATIVE-ANDROID.md) | 平台与 UI 技术栈 |
 | [ADR-002 Room/SQLite](../adr/ADR-002-ROOM-SQLITE.md) | 本地数据库与数据访问 |
 | [ADR-003 分层模块化](../adr/ADR-003-LAYERED-MODULES.md) | 分层、模块边界与依赖规则 |

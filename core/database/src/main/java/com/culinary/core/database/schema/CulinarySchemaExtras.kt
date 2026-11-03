@@ -50,24 +50,24 @@ internal object CulinarySchemaExtras {
         installPublishedImmutability(db, "sauce_version", "sauce_id")
         installPublishedImmutability(db, "recipe_version", "recipe_id")
         installAppendOnly(db, "inventory_ledger")
-        installNoUpdate(db, "production_plan_snapshot")
+        installAppendOnly(db, "production_plan_snapshot")
         installAppendOnly(db, "change_log")
+        installPlanDeletionGuard(db)
     }
 
     /**
-     * 计划快照的 payload 不可改（D-007）。
+     * 计划删除守卫：只有草稿计划允许删除（A04 §"删除草稿 只删草稿"）。
      *
-     * 行删除不在这里禁止：`production_plan_snapshot` 由 `production_plan` 级联删除，
-     * SQLite 触发器无法区分级联与直接删除。DAO 不提供删除方法，直接删除只能通过原始 SQL。
+     * 已确认/进行中/已完成/已取消的计划只能保留或取消，不能删除；这样历史快照
+     * 不会因为计划被删而丢失。快照本身另有 append-only 触发器，即使级联到快照
+     * 也会中止，形成第二道保护。
      */
-    private fun installNoUpdate(
-        db: SupportSQLiteDatabase,
-        table: String,
-    ) {
+    private fun installPlanDeletionGuard(db: SupportSQLiteDatabase) {
         db.execSQL(
-            "CREATE TRIGGER IF NOT EXISTS trg_${table}_no_update " +
-                "BEFORE UPDATE ON $table " +
-                "BEGIN SELECT RAISE(ABORT, '$table payload is immutable'); END",
+            "CREATE TRIGGER IF NOT EXISTS trg_production_plan_delete_guard " +
+                "BEFORE DELETE ON production_plan " +
+                "WHEN OLD.status <> 'DRAFT' " +
+                "BEGIN SELECT RAISE(ABORT, 'only draft plans can be deleted; cancel instead'); END",
         )
     }
 

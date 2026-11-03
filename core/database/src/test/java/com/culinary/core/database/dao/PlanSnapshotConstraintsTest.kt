@@ -7,7 +7,6 @@ import com.culinary.core.database.entity.IngredientEntity
 import com.culinary.core.database.entity.InventoryBatchEntity
 import com.culinary.core.database.entity.InventoryReservationEntity
 import com.culinary.core.database.entity.MaterialRequirementEntity
-import com.culinary.core.database.entity.MaterialRequirementSourceEntity
 import com.culinary.core.database.entity.ProductEntity
 import com.culinary.core.database.entity.ProductionPlanEntity
 import com.culinary.core.database.entity.ProductionPlanItemEntity
@@ -15,7 +14,6 @@ import com.culinary.core.database.entity.ProductionPlanSnapshotEntity
 import com.culinary.core.database.entity.RecipeEntity
 import com.culinary.core.database.entity.RecipeVersionEntity
 import com.culinary.core.database.entity.StorageLocationEntity
-import com.culinary.core.database.model.ComponentTypeDb
 import com.culinary.core.database.model.ConversionStatusDb
 import com.culinary.core.database.model.RecipeCategoryDb
 import com.culinary.core.database.model.UnitDimensionDb
@@ -39,7 +37,6 @@ class PlanSnapshotConstraintsTest {
     private lateinit var planItems: ProductionPlanItemDao
     private lateinit var snapshots: PlanSnapshotDao
     private lateinit var requirements: MaterialRequirementDao
-    private lateinit var sources: MaterialRequirementSourceDao
     private lateinit var reservations: InventoryReservationDao
 
     private val gramId = "00000000-0000-4000-8000-000000000002"
@@ -58,7 +55,6 @@ class PlanSnapshotConstraintsTest {
         planItems = database.productionPlanItemDao()
         snapshots = database.planSnapshotDao()
         requirements = database.materialRequirementDao()
-        sources = database.materialRequirementSourceDao()
         reservations = database.inventoryReservationDao()
     }
 
@@ -165,21 +161,55 @@ class PlanSnapshotConstraintsTest {
     }
 
     @Test
-    fun `cascades plan children when the plan is deleted`() {
-        runBlocking {
-            insertPlanWorld()
-            snapshots.insert(snapshot(id = SNAPSHOT_1, revision = 1))
-            requirements.insert(requirement(id = REQUIREMENT_1, key = "k1"))
-            sources.insert(source())
-        }
+    fun `cascades items when a draft plan is deleted`() {
+        runBlocking { insertPlanWorld() }
 
         runBlocking {
             plans.deleteById(PLAN_ID)
             assertThat(plans.count()).isEqualTo(0)
             assertThat(planItems.count()).isEqualTo(0)
-            assertThat(snapshots.count()).isEqualTo(0)
-            assertThat(requirements.count()).isEqualTo(0)
-            assertThat(sources.count()).isEqualTo(0)
+        }
+    }
+
+    @Test
+    fun `rejects deleting a draft plan that still has a snapshot`() {
+        runBlocking {
+            insertPlanWorld()
+            snapshots.insert(snapshot(id = SNAPSHOT_1, revision = 1))
+        }
+
+        assertThrows(android.database.sqlite.SQLiteException::class.java) {
+            runBlocking { plans.deleteById(PLAN_ID) }
+        }
+    }
+
+    @Test
+    fun `rejects deleting a confirmed plan`() {
+        runBlocking {
+            insertPlanWorld()
+            snapshots.insert(snapshot(id = SNAPSHOT_1, revision = 1))
+            database.openHelper.writableDatabase.execSQL(
+                "UPDATE production_plan SET status = 'CONFIRMED', " +
+                    "current_snapshot_id = '$SNAPSHOT_1' WHERE id = '$PLAN_ID'",
+            )
+        }
+
+        assertThrows(android.database.sqlite.SQLiteException::class.java) {
+            runBlocking { plans.deleteById(PLAN_ID) }
+        }
+    }
+
+    @Test
+    fun `rejects deleting a snapshot directly`() {
+        runBlocking {
+            insertPlanWorld()
+            snapshots.insert(snapshot(id = SNAPSHOT_1, revision = 1))
+        }
+
+        assertThrows(android.database.sqlite.SQLiteException::class.java) {
+            database.openHelper.writableDatabase.execSQL(
+                "DELETE FROM production_plan_snapshot WHERE id = '$SNAPSHOT_1'",
+            )
         }
     }
 
@@ -327,18 +357,6 @@ class PlanSnapshotConstraintsTest {
         createdAt = NOW,
     )
 
-    private fun source() =
-        MaterialRequirementSourceEntity(
-            id = SOURCE_ID,
-            requirementId = REQUIREMENT_1,
-            planItemId = PLAN_ITEM_ID,
-            sourcePath = "item:1/line:1",
-            componentType = ComponentTypeDb.INGREDIENT,
-            componentId = INGREDIENT_ID,
-            quantity = 10.0,
-            unitId = gramId,
-        )
-
     private fun reservation(
         id: String,
         quantity: Double = 5.0,
@@ -366,7 +384,6 @@ class PlanSnapshotConstraintsTest {
         const val SNAPSHOT_2 = "45454545-4545-4545-8545-454545454545"
         const val REQUIREMENT_1 = "55555555-5555-4555-8555-555555555555"
         const val SECOND_REQUIREMENT_ID = "56565656-5656-4565-8565-565656565656"
-        const val SOURCE_ID = "66666666-6666-4666-8666-666666666666"
         const val RESERVATION_1 = "77777777-7777-4777-8777-777777777777"
         const val SECOND_RESERVATION_ID = "78787878-7878-4787-8787-787878787878"
         const val LOCATION_ID = "88888888-8888-4888-8888-888888888888"

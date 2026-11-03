@@ -1,10 +1,10 @@
 # G2 阶段 3（数据库 v1）完成报告
 
 **文档编号**：R13
-**版本**：`1.0.0`
+**版本**：`1.1.0`
 **状态**：`Review`（待项目负责人验收）
 **日期**：2026-11-04
-**实施依据**：[R01 0.2.2](R01-FRAMEWORK-SEQUENCE.md) §6、A06 0.1.0、E02、D-005、D-007、D-009
+**实施依据**：[R01 0.2.2](R01-FRAMEWORK-SEQUENCE.md) §6、A06 0.1.0、A04、E02、D-005、D-007、D-009
 **回档点**：`baseline/g2-stage2-20261104`
 
 ---
@@ -49,15 +49,45 @@
 |---|---|
 | 部分唯一索引 | 在用名称唯一（ingredient/sauce/recipe/supplier）、每聚合一个当前版本、每商品一个主条码、每需求每批次一个 ACTIVE 预留、每归属一张 PRIMARY 图 |
 | CHECK 触发器 | 各表的枚举取值、数量 > 0 / ≥ 0、`reserved ≤ on_hand`、三选一组成目标、已发布版本内容不可改、`cancelled ≤ ordered` 等 |
-| 只追加触发器 | `inventory_ledger` UPDATE/DELETE 拒绝；`change_log` UPDATE/DELETE 拒绝；`production_plan_snapshot` UPDATE 拒绝 |
+| 只追加/不可变触发器 | `inventory_ledger` UPDATE/DELETE 拒绝；`change_log` UPDATE/DELETE 拒绝；`production_plan_snapshot` **UPDATE 与 DELETE 均拒绝** |
+| 删除守卫 | `production_plan` 仅允许删除 `DRAFT`（A04"删除草稿 只删草稿"） |
 
-**已知取舍**：`production_plan_snapshot` 的 **DELETE** 未禁用——计划删除需要级联清理快照，而 SQLite 触发器无法区分级联与直接删除。DAO 不暴露删除方法，只有原始 SQL 才可能直接删；payload 的 UPDATE 仍被拒绝。
+### 2.4 快照与计划的删除策略（D-007 的正式依据）
 
-### 2.4 种子数据
+**决策原文（`DECISION-REGISTER.md` 第 34 行）**：
+
+> D-007｜计划历史｜计划项固定 `recipe_version_id`；确认时生成不可变快照｜**ACCEPTED（2026-11-04）**
+
+**签收记录（同文件签收表）**：
+
+> 2026-11-04｜D-007｜接受｜计划项固定 `recipe_version_id`；确认生成不可变快照；刷新生成新快照并保留历史，不原地修改｜项目负责人
+
+**D-007 要求的**：快照**不可变**（不可原地修改）；刷新时**生成新快照并保留旧快照**。
+**D-007 没有要求的**：计划本身"永不删除"，也没有把快照定义为"永久保留、任何情况下都不可删除"。
+
+支撑事实：
+
+| 文档 | 事实 |
+|---|---|
+| A04 §1 | "历史不可变：已发布配方版本、**已确认计划快照**、库存流水不可原地修改"——约束的是"修改" |
+| A04 §业务流 | "删除草稿｜只删草稿"；已确认计划的状态流转是 **Confirmed → Cancelled**，不是删除 |
+| A04 §计划 | "刷新会生成新快照，**保留旧快照**"——保留指刷新场景，不涉及删除计划 |
+| A06 §7.3 | `production_plan_snapshot.plan_id` 外键 **ON DELETE CASCADE** |
+
+**据此确定的策略**（不扩大 D-007）：
+
+1. 快照 `UPDATE` 与 `DELETE` 都被触发器拒绝，直接删除快照不存在受支持的路径；
+2. 计划只有 `DRAFT` 允许删除；已确认/进行中/已完成/已取消的计划只能保留或走 `CANCELLED` 状态；
+3. 保留 A06 规定的 `ON DELETE CASCADE` 外键，但正常流程下草稿不会产生快照，级联不可达；若异常状态下草稿仍带快照，快照触发器会中止整个删除，形成第二道保护；
+4. `PlanSnapshotDao` 不提供删除方法；`ProductionPlanDao.deleteById` 存在，但非草稿计划会被数据库守卫拒绝。
+
+**边界说明**：这不是"快照永久保留"的通用承诺，而是"不允许通过删除已确认计划来丢失历史快照"，依据是 A04 明确区分"删除草稿"与"取消已确认计划"两条流程。若产品后续要求"计划可被物理删除且保留其快照"，必须新增 ADR 并调整外键与触发器，不能在本阶段静默放宽。
+
+### 2.5 种子数据
 
 15 个单位（`mg/g/kg/ml/l/tsp/tbsp/cup/fl_oz/piece/bunch/clove/slice/pack/portion`），固定 UUID v4 形态 ID，`INSERT OR IGNORE`，重复打开不产生重复行。
 
-### 2.5 模块边界
+### 2.6 模块边界
 
 - `core:database` **不依赖** `core:domain`；枚举在数据库层独立声明（`*Db`），由阶段 4 的 Mapper 转换；
 - DAO 按实体拆分（`SauceVersionDao` 等），符合 E01 的 `<Entity>Dao` 命名；
@@ -69,12 +99,12 @@
 |---|---|---|
 | 1 | 新安装能建库，`user_version=1` | **PASS** |
 | 2 | 外键、唯一、CHECK 生效 | **PASS**（每个约束族都有用例） |
-| 3 | 流水不可 UPDATE/DELETE | **PASS**（`inventory_ledger`） |
+| 3 | 流水不可 UPDATE/DELETE | **PASS**（`inventory_ledger`、`change_log`） |
 | 4 | 库存余额不能为负；预留 ≤ 在手 | **PASS** |
 | 5 | schema JSON 已提交 | **PASS**（31 表，`1.json`） |
-| 6 | 迁移框架可用 | **部分**：`CulinaryMigrations` + 导出 schema 已就绪；`MigrationTestHelper` 的插桩运行推迟到阶段 9（见 §4） |
+| 6 | 迁移框架可用 | **部分**：`CulinaryMigrations` + 导出 schema 已就绪；`MigrationTestHelper` 的插桩运行推迟到阶段 9（见 §4，G2 最终验收阻塞项） |
 
-**测试统计：74 例 / 0 失败**
+**测试统计：77 例 / 0 失败**
 
 | 测试类 | 数量 | 覆盖 |
 |---|---:|---|
@@ -83,10 +113,18 @@
 | `IngredientConstraintsTest` | 11 | 部分唯一（软删除后可复用）、FK RESTRICT、别名/换算 CASCADE、三选一 |
 | `KnowledgeConstraintsTest` | 11 | 版本号唯一、当前版本唯一、组成行唯一、三选一、发布后不可改、级联 |
 | `ExecutionConstraintsTest` | 10 | 商品数量、FK RESTRICT/SET_NULL、条码唯一、批次约束、流水唯一与只追加、位置树 |
-| `PlanSnapshotConstraintsTest` | 9 | 快照版本唯一、payload 不可改、需求键唯一、ACTIVE 预留唯一、级联/限制 |
+| `PlanSnapshotConstraintsTest` | **12** | 快照版本唯一、payload 不可改、**快照不可删**、**已确认计划不可删**、**草稿计划可删**、需求键唯一、ACTIVE 预留唯一、级联/限制 |
 | `ProcurementConstraintsTest` | 10 | PO/收货编号唯一、数量约束、级联与 RESTRICT |
 | `CrossCuttingConstraintsTest` | 8 | 图片路径唯一、主图唯一、日志只追加、元数据 upsert、备份校验 |
 | `SchemaExportTest` | 3 | v1、31 表、迁移表为空 |
+
+针对本次删除策略新增/调整的用例：
+
+- `rejects updating a snapshot`（原有）；
+- `rejects deleting a snapshot directly`（新增）；
+- `rejects deleting a confirmed plan`（新增）；
+- `rejects deleting a draft plan that still has a snapshot`（新增）；
+- `cascades items when a draft plan is deleted`（调整：草稿可删，明细级联）。
 
 全工程门禁（本轮实测）：
 
@@ -95,15 +133,22 @@
 BUILD SUCCESSFUL
 ```
 
-## 4. 失败与偏差
+## 4. 失败、偏差与阻塞项
 
 | 项 | 说明 | 处理 |
 |---|---|---|
-| 快照只追加 vs 级联删除 | SQLite 触发器无法区分级联与直接删除 | 仅禁用 UPDATE，删除交给计划级联；DAO 无删除方法 |
-| `MigrationTestHelper` | 需要插桩上下文与 `androidTest` assets；本阶段只有 Robolectric/JVM 测试 | 导出 schema 与迁移注册已就绪；插桩迁移测试排入阶段 9 CI，**这是阶段 3 唯一未完全满足的退出条件** |
+| `MigrationTestHelper` | 需要插桩上下文与 `androidTest` assets；本阶段只有 Robolectric/JVM 测试 | **不提前实现**，但列为 **G2 最终验收阻塞项**（见下） |
 | detekt `TooManyFunctions` | `@Database` 类随 DAO 数量增长（31） | 阈值调至 35 并注明 Room 结构原因；转换器按域拆分而非继续调阈值 |
 | detekt `LongMethod` | 测试夹具过长 | 拆为 `insertKnowledgeWorld` / `insertExecutionWorld` / `insertPlanWorld` |
 | 组成类型枚举 | `ComponentTarget`（领域）暂不含酱汁 | 数据库层已完整支持 `SAUCE`（A06 要求），领域模型随酱汁功能补齐 |
+
+**迁移测试必须在 G2 最终验收前完成**（不阻塞阶段 4 启动，但阻塞 G2 验收）：
+
+1. 为 `core:database` 配置 androidTest schema assets；
+2. 用 `MigrationTestHelper` 执行真实迁移测试（至少验证 v1 创建与打开，以及未来 v1→v2 的迁移）；
+3. 在模拟器或合适的 Android 测试环境运行 `connectedAndroidTest`；
+4. 纳入 CI 与最终质量门禁；
+5. **迁移测试失败不得通过最终验收**。
 
 ## 5. Git
 
@@ -111,21 +156,23 @@ BUILD SUCCESSFUL
 |---|---|
 | 阶段 1 基线 | `baseline/g2-stage1-20261104` |
 | 阶段 2 基线 | `baseline/g2-stage2-20261104` |
-| 阶段 3 提交 | `feat(db): …`（5 个提交：基础 / 食材 / 知识 / 目录库存 / 计划 / 采购 / 横切） |
-| 阶段 3 基线标签 | `baseline/g2-stage3-20261104` |
+| 阶段 3 提交 | 基础 / 食材 / 知识 / 目录库存 / 计划 / 采购 / 横切 + 本修订 |
+| 阶段 3 基线标签 | `baseline/g2-stage3-20261104`（指向本修订后的提交） |
 
 ## 6. 结论
 
 - A06 的 **31 张表全部落地**，schema v1 已导出并纳入版本管理；
-- 外键、WAL、busy timeout、种子、CHECK、部分唯一索引、只追加触发器均有实测；
-- 74 例数据库测试全绿，全工程质量门禁通过；
-- **唯一未完全满足项**：`MigrationTestHelper` 的插桩运行推迟到阶段 9。
+- 外键、WAL、busy timeout、种子、CHECK、部分唯一索引、只追加/不可变触发器均有实测；
+- 快照"不可改、不可删"与"只有草稿计划可删"由数据库层强制，策略依据见 §2.4；
+- 77 例数据库测试全绿，全工程质量门禁通过；
+- **待办阻塞项**：插桩 `MigrationTestHelper` 迁移测试，必须在 G2 最终验收前完成。
 
-**请项目负责人验收阶段 3。** 验收通过后进入阶段 4（数据层：Repository 实现、Mapper、TransactionRunner、Hilt 绑定）。
-D-005（主键）与 D-007（快照）已在阶段 3 期间接受并记录；D-013/D-015 等仍为 `PROPOSED`，将在对应阶段前提交。
+**请项目负责人验收阶段 3。** 验收通过后才进入阶段 4（数据层：Repository 实现、Mapper、TransactionRunner、Hilt 绑定）。
+D-005（主键）与 D-007（快照）已按正式文本接受并记录；D-013/D-015 等仍为 `PROPOSED`，将在对应阶段前提交。
 
 ## 7. 变更记录
 
 | 版本 | 日期 | 变更 | 作者 |
 |---|---|---|---|
 | 1.0.0 | 2026-11-04 | 记录 31 表、约束/触发器、74 例测试、偏差与基线 | 工程组 |
+| 1.1.0 | 2026-11-04 | 按负责人意见：核对 D-007 正式文本；快照改为 UPDATE+DELETE 均禁止；计划仅草稿可删；新增 3 个针对性用例；MigrationTestHelper 列为 G2 验收阻塞项 | 工程组 |
