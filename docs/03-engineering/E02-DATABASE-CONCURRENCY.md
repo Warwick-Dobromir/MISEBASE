@@ -1,7 +1,7 @@
 # CULINARY 数据库并发与事务安全方案
 
 **文档编号**：E02
-**版本**：`0.1.0`
+**版本**：`0.2.0`
 **状态**：`Review`
 **日期**：2026-11-04
 **负责人**：首席架构师 / 技术负责人
@@ -146,6 +146,7 @@ class RoomTransactionRunner @Inject constructor(
 4. 事务内不调用 `withContext(Dispatchers.IO)` 做文件/网络；直接在事务线程执行 SQL。
 5. 事务内不弹 UI、不等待用户输入。
 6. 事务内不获取其他锁（文件锁、图片锁），避免锁顺序反转。
+7. 备份流程把该 `Mutex` 封装为 `WriteGate`（E05），不新增第二把写锁；所有后台写入也经同一入口。
 
 ### 4.3 为什么 Repository 不自己开事务
 
@@ -435,3 +436,4 @@ suspend fun <T> retryBusy(maxAttempts: Int = 3, block: suspend () -> T): T {
 | 版本 | 日期 | 变更 | 作者 |
 |---|---|---|---|
 | 0.1.0 | 2026-11-04 | 初稿；WAL、单写者、事务、重试、损坏恢复与测试 | 架构组 |
+| 0.2.0 | 2026-11-04 | 明确备份 `WriteGate` 复用同一 `writeMutex`，不新增第二把写锁 | 架构组 |

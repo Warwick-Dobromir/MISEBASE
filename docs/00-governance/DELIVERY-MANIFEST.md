@@ -33,10 +33,10 @@
 | 7 | 数据库 ER 图与数据字典 | [A05](../02-architecture/A05-DATA-MODEL-ER.md) + [A06](../02-architecture/A06-DATA-DICTIONARY.md) | 0.1.0 | Review | `69dd1181a7463d421fd441c4fd826b7984d5482a390a9a466172bd39fbc32960` + `88d5b43376fc2e18a8affff92fbddc709dbb74b9cc8b96ceb548e3e6590969e4` |
 | 8 | 数据版本与迁移设计 | [A07](../02-architecture/A07-VERSIONING-MIGRATION.md) | 0.1.0 | Review | `033ed9f455c0a692dc2c6031736aa042f95fd1b1a5246828502dc42cdfd1d88d` |
 | 9 | 代码规范与工程目录规范 | [E01](../03-engineering/E01-CODE-DIRECTORY-STANDARDS.md) | 0.2.0 | Review | `3a2a08b848c673f8de479d0932bedc4eef6059a1dfb9b84c8bb844c2086744cf` |
-| 10 | 数据库并发与事务安全方案 | [E02](../03-engineering/E02-DATABASE-CONCURRENCY.md) | 0.1.0 | Review | `948240b7c0689ce7376048d9a25a67c7a0502faf037be90fee8f1dcfd6bd55d0` |
+| 10 | 数据库并发与事务安全方案 | [E02](../03-engineering/E02-DATABASE-CONCURRENCY.md) | 0.2.0 | Review | `b7065f486d1173d7de8099868fb174cec598958977325819cb2d2835c8b608f5` |
 | 11 | 异常处理与日志规范 | [E03](../03-engineering/E03-ERROR-LOGGING.md) | 0.2.0 | Review | `0318dd7007ce8ebad2f711820de7c6cc35aead06a89f79a71c605b3fa44b619f` |
 | 12 | 代码回档与版本管理方案 | [E04](../03-engineering/E04-GIT-ROLLBACK.md) | 0.2.0 | Review | `fa0f8b251aedc5deb864f6f1e577aa21dc3de40178f590df30f852a2923513ea` |
-| 13 | 数据备份与恢复方案 | [E05](../03-engineering/E05-BACKUP-RESTORE.md) | 0.4.0 | Review | `39049e3db3f7233367181940e3cdb67bda52e8de4690da907af6f68b4c66aff3` |
+| 13 | 数据备份与恢复方案 | [E05](../03-engineering/E05-BACKUP-RESTORE.md) | 0.4.0 | Review | `12be96827792dee4761db0298a9570197ef41b9199517a55a5e584dd11c002c1` |
 | 14 | 自动化测试与验收标准 | [E06](../03-engineering/E06-TESTING-ACCEPTANCE.md) | 0.1.0 | Review | `80d77582251f676c0ad9f51a7953bfbf1c33aa8cbd39eb9ddb96356428ba8307` |
 | 15 | 框架搭建实施顺序 | [R01](../04-readiness/R01-FRAMEWORK-SEQUENCE.md) | 0.2.0 | Review | `2d1fe012ac4986c47d661607c2475051b177adf41d288fbb8ca48980221f2be8` |
 | 16 | 开发环境与依赖清单 | [R02](../04-readiness/R02-ENVIRONMENT-DEPENDENCIES.md) | 0.2.0 | Review | `52cf8dcd0460713894625fa954bf27943bfa014e528d7201392fc409e3f4cbdc` |

@@ -87,9 +87,9 @@ PREPARED
 ### 4.2 每次文件移动
 
 ```text
-写 journal: operation={kind,source,target,state=INTENT}, fsync
+写 journal: operations[] += {kind,source,target,state=INTENT}, fsync
 执行移动
-写 journal: state=DONE, phase=..., fsync
+写 journal: 该 operation state=DONE, phase=..., fsync
 ```
 
 - DB、`-wal`、`-shm` 分别记录；图片目录优先整体 rename，否则逐文件。
@@ -119,6 +119,8 @@ PREPARED
 | # | 测试 | 预期 |
 |---:|---|---|
 | 1 | manifest 不含自身 hash | 生成/校验均通过；无自引用 |
+| 1a | manifest 重新序列化 | 按原始字节校验失败；不得重算后放行 |
+| 1b | manifest.sha256 缺失/checksums 含自身 | 拒绝恢复 |
 | 2 | checksums 不含自身/manifest | 结构检查通过；含则拒绝 |
 | 3 | `backup_schema > current` | 拒绝，现有数据不变 |
 | 4 | `backup_schema == current` | 继续校验 |

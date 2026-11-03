@@ -337,6 +337,7 @@ manifest.sha256  = H_manifest
 
 ### 6.3.1 写屏障覆盖证明
 
+- `WriteGate` 是 E02 `writeMutex` 之上的备份会话封装，不新增第二把写入锁；所有写事务仍由同一个 `Mutex` 串行化。
 - 所有写入统一经 `TransactionRunner` → `WriteGate`；Repository/DAO 不自行开写事务。
 - WorkManager/后台任务也通过 Use Case/Repository 写入，禁止直接 `SQLiteDatabase` 写入。
 - 架构测试：扫描 `core:data`、`core:platform`、feature 中是否出现直接 `RoomDatabase`/`SupportSQLiteDatabase` 写调用；有则失败。
@@ -589,12 +590,12 @@ PREPARED
 
 Journal 结构：
 
-Journal 固定路径：`filesDir/restore.journal`，原子替换 + `fsync`。
+Journal 固定路径：`filesDir/restore.journal`，使用“临时文件 + fsync + 原子 rename”更新，不原地覆盖；每次写入后 fsync 目录项（API 支持时）。
 
 ```json
 {
   "restore_id": "uuid",
-  "phase": "DB_MOVED_ASIDE",
+  "phase": "DB_CLOSING",
   "operations": [
     {
       "id": "op-1",
@@ -656,6 +657,16 @@ Journal 固定路径：`filesDir/restore.journal`，原子替换 + `fsync`。
 8. 打开 Room，执行迁移/校验；记录 `MIGRATING` → `VERIFIED`。
 9. 记录 `DONE`，清理。
 
+**失败回滚顺序（同样幂等）：**
+
+1. 若 live 已是新 DB：将 live 新 DB 移到 `staging/discard-<id>/`（不删除），记录 INTENT/DONE。
+2. 从 rollback 恢复旧 `culinary.db`、`-wal`、`-shm`；逐个记录 INTENT/DONE。
+3. 从 rollback 恢复旧图片目录；逐文件/目录记录。
+4. 打开旧库校验；成功记 `ROLLED_BACK`。
+5. 任一步冲突/失败：`RECOVERY_REQUIRED`，保留 staging、rollback、discard，不自动清理。
+
+> 回滚移动与正向移动使用同一套 `operations[].state=INTENT/DONE` 记录，确保被杀后可继续或判定冲突。
+
 ## 14. 导入策略
 
 - v1 **只支持整库恢复**，不做合并导入。
@@ -712,6 +723,9 @@ Journal 固定路径：`filesDir/restore.journal`，原子替换 + `fsync`。
 | 图片缺失（用户明确继续） | 生成 `PARTIAL`；manifest 记录具体缺失 `image_asset.id`/路径；恢复前再次确认 |
 | 图片损坏/孤立文件 | 分别记录；默认失败或显式 `PARTIAL`；不静默跳过 |
 | manifest 自引用检查 | manifest 不含自身 hash；`checksums.sha256` 不含自身/manifest 行；校验通过 |
+| manifest 重新序列化（空白/键顺序变化） | `manifest.sha256` 不匹配，拒绝；证明按原始字节校验 |
+| `manifest.sha256` 缺失 | 拒绝恢复 |
+| `checksums.sha256` 包含自身/manifest 行 | 结构检查拒绝 |
 | 损坏一个字节 | `manifest.sha256`/checksums/文件 hash 失败；现有数据不变 |
 | 截断文件 | 预检失败 |
 | 错误密码 | GCM tag 失败；拒绝；现有数据不变 |
