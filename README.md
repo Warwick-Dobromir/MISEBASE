@@ -5,8 +5,8 @@
 | 项目 | 内容 |
 |---|---|
 | 架构基线 | `0.4.1`（G1 已正式签收） |
-| 当前阶段 | **G2 阶段 3（数据库 v1）已完成**，待负责人验收 |
-| 工程状态 | 15 模块可构建、可安装、可启动；Room schema v1 **31 张表**；74 例数据库测试 |
+| 当前阶段 | **G2 阶段 4（数据层）已完成**，待负责人验收 |
+| 工程状态 | 15 模块可构建；Room schema v1 31 表；数据层/图片/备份恢复骨架；**133 例测试** |
 | 数据库 | 尚未创建（阶段 3；D-005 主键策略待确认） |
 | 构建基线 | AGP 8.13.0 / Kotlin 2.2.20 / Gradle 8.14.3 / JDK 21 / minSdk 26 / compile & target 36 |
 | 依赖注入 | Hilt 2.57.2 + KSP（D-012 `ACCEPTED`，禁止 2.59+） |
@@ -79,15 +79,16 @@ feature/
 - **G2 阶段 1** 已完成：15 模块、版本目录、约定插件、最小 Application/Activity。
 - **G2 阶段 2** 已完成：`core:common` 错误/结果契约，`core:domain` 单位、食材、菜谱模型与端口，
   单位换算与配方图循环检测（24 个纯 JVM 测试）。
-- **G2 阶段 3** 已完成：Room schema v1（**31 表**）、外键/WAL/busy timeout、15 条单位种子、
-  部分唯一索引与只追加触发器（74 例数据库测试）。
-- **阶段 4 起未开工**：数据层（Repository 实现、Mapper、TransactionRunner、Hilt 绑定）按 [R01](docs/04-readiness/R01-FRAMEWORK-SEQUENCE.md) 顺序推进。
+- **G2 阶段 3** 已完成：Room schema v1（**31 表**）、外键/WAL/busy timeout、15 条单位种子、部分唯一索引与只追加触发器（77 例数据库测试）。
+- **G2 阶段 4** 已完成：Repository/Mapper、单写者事务协调、原子图片存储、E05 备份归档与恢复预检（32 例数据层测试）。
+- **阶段 5 起未开工**：平台能力（扫码、SAF、WorkManager）按 R01 推进。
 - **仍为 PROPOSED**：D-005（主键）、D-007（计划快照）、D-013、D-015、D-020、D-021、D-025；
   其中 D-005 必须在 DB v1（阶段 3）前确认。
 - **G5 发布门禁**：Release keystore 未创建，不影响框架阶段。
 
 ## 文档
 
+- [G2 阶段 4 报告](docs/04-readiness/R14-G2-STAGE4-REPORT.md)
 - [G2 阶段 3 报告](docs/04-readiness/R13-G2-STAGE3-REPORT.md)
 - [G2 阶段 2 报告](docs/04-readiness/R12-G2-STAGE2-REPORT.md)
 - [G2 阶段 1 报告](docs/04-readiness/R11-G2-STAGE1-REPORT.md)
