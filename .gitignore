@@ -25,7 +25,10 @@ captures/
 keystore.properties
 secrets.properties
 
-# Logs / temp
+# Build outputs / archives
+dist/
+*.zip
+*.sha256
 *.hprof
 tmp/
 .cache/
