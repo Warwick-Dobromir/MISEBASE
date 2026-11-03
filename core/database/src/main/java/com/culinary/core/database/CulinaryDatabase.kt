@@ -6,7 +6,10 @@ import androidx.room.TypeConverters
 import com.culinary.core.database.converter.CoreConverters
 import com.culinary.core.database.converter.InventoryConverters
 import com.culinary.core.database.converter.PlanConverters
+import com.culinary.core.database.converter.ProcurementConverters
 import com.culinary.core.database.dao.BarcodeDao
+import com.culinary.core.database.dao.GoodsReceiptDao
+import com.culinary.core.database.dao.GoodsReceiptItemDao
 import com.culinary.core.database.dao.IngredientAliasDao
 import com.culinary.core.database.dao.IngredientDao
 import com.culinary.core.database.dao.IngredientUnitConversionDao
@@ -16,9 +19,12 @@ import com.culinary.core.database.dao.InventoryReservationDao
 import com.culinary.core.database.dao.MaterialRequirementDao
 import com.culinary.core.database.dao.MaterialRequirementSourceDao
 import com.culinary.core.database.dao.PlanSnapshotDao
+import com.culinary.core.database.dao.ProcurementRequirementDao
 import com.culinary.core.database.dao.ProductDao
 import com.culinary.core.database.dao.ProductionPlanDao
 import com.culinary.core.database.dao.ProductionPlanItemDao
+import com.culinary.core.database.dao.PurchaseOrderDao
+import com.culinary.core.database.dao.PurchaseOrderItemDao
 import com.culinary.core.database.dao.RecipeComponentDao
 import com.culinary.core.database.dao.RecipeDao
 import com.culinary.core.database.dao.RecipeVersionDao
@@ -29,6 +35,8 @@ import com.culinary.core.database.dao.StorageLocationDao
 import com.culinary.core.database.dao.SupplierDao
 import com.culinary.core.database.dao.UnitDao
 import com.culinary.core.database.entity.BarcodeEntity
+import com.culinary.core.database.entity.GoodsReceiptEntity
+import com.culinary.core.database.entity.GoodsReceiptItemEntity
 import com.culinary.core.database.entity.IngredientAliasEntity
 import com.culinary.core.database.entity.IngredientEntity
 import com.culinary.core.database.entity.IngredientUnitConversionEntity
@@ -37,10 +45,13 @@ import com.culinary.core.database.entity.InventoryLedgerEntity
 import com.culinary.core.database.entity.InventoryReservationEntity
 import com.culinary.core.database.entity.MaterialRequirementEntity
 import com.culinary.core.database.entity.MaterialRequirementSourceEntity
+import com.culinary.core.database.entity.ProcurementRequirementEntity
 import com.culinary.core.database.entity.ProductEntity
 import com.culinary.core.database.entity.ProductionPlanEntity
 import com.culinary.core.database.entity.ProductionPlanItemEntity
 import com.culinary.core.database.entity.ProductionPlanSnapshotEntity
+import com.culinary.core.database.entity.PurchaseOrderEntity
+import com.culinary.core.database.entity.PurchaseOrderItemEntity
 import com.culinary.core.database.entity.RecipeComponentEntity
 import com.culinary.core.database.entity.RecipeEntity
 import com.culinary.core.database.entity.RecipeVersionEntity
@@ -81,11 +92,21 @@ import com.culinary.core.database.entity.UnitEntity
         MaterialRequirementEntity::class,
         MaterialRequirementSourceEntity::class,
         InventoryReservationEntity::class,
+        ProcurementRequirementEntity::class,
+        PurchaseOrderEntity::class,
+        PurchaseOrderItemEntity::class,
+        GoodsReceiptEntity::class,
+        GoodsReceiptItemEntity::class,
     ],
     version = 1,
     exportSchema = true,
 )
-@TypeConverters(CoreConverters::class, InventoryConverters::class, PlanConverters::class)
+@TypeConverters(
+    CoreConverters::class,
+    InventoryConverters::class,
+    PlanConverters::class,
+    ProcurementConverters::class,
+)
 abstract class CulinaryDatabase : RoomDatabase() {
     abstract fun unitDao(): UnitDao
 
@@ -130,6 +151,16 @@ abstract class CulinaryDatabase : RoomDatabase() {
     abstract fun materialRequirementSourceDao(): MaterialRequirementSourceDao
 
     abstract fun inventoryReservationDao(): InventoryReservationDao
+
+    abstract fun procurementRequirementDao(): ProcurementRequirementDao
+
+    abstract fun purchaseOrderDao(): PurchaseOrderDao
+
+    abstract fun purchaseOrderItemDao(): PurchaseOrderItemDao
+
+    abstract fun goodsReceiptDao(): GoodsReceiptDao
+
+    abstract fun goodsReceiptItemDao(): GoodsReceiptItemDao
 
     companion object {
         const val DATABASE_NAME: String = "culinary.db"

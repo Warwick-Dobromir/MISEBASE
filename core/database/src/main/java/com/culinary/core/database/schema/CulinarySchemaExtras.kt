@@ -37,6 +37,11 @@ internal object CulinarySchemaExtras {
         installChecks(db, "material_requirement", REQUIREMENT_PREDICATE)
         installChecks(db, "material_requirement_source", REQUIREMENT_SOURCE_PREDICATE)
         installChecks(db, "inventory_reservation", RESERVATION_PREDICATE)
+        installChecks(db, "procurement_requirement", PROCUREMENT_PREDICATE)
+        installChecks(db, "purchase_order", PURCHASE_ORDER_PREDICATE)
+        installChecks(db, "purchase_order_item", PURCHASE_ORDER_ITEM_PREDICATE)
+        installChecks(db, "goods_receipt", RECEIPT_PREDICATE)
+        installChecks(db, "goods_receipt_item", RECEIPT_ITEM_PREDICATE)
 
         installPublishedImmutability(db, "sauce_version", "sauce_id")
         installPublishedImmutability(db, "recipe_version", "recipe_id")
@@ -321,5 +326,36 @@ internal object CulinarySchemaExtras {
         NEW.status NOT IN ('ACTIVE', 'RELEASED', 'CONSUMED')
         OR NEW.quantity <= 0
         OR NEW.released_at IS NOT NULL AND NEW.status = 'ACTIVE'
+    """
+    private const val PROCUREMENT_PREDICATE = """
+        NEW.status NOT IN ('OPEN', 'ORDERED', 'PARTIAL', 'RECEIVED', 'CANCELLED')
+        OR NEW.requested_qty <= 0
+    """
+
+    private const val PURCHASE_ORDER_PREDICATE = """
+        NEW.status NOT IN ('DRAFT', 'ORDERED', 'PARTIALLY_RECEIVED', 'RECEIVED', 'CANCELLED')
+        OR NEW.revision < 1
+        OR NEW.code = ''
+        OR NEW.allow_over_receipt NOT IN (0, 1)
+    """
+
+    private const val PURCHASE_ORDER_ITEM_PREDICATE = """
+        NEW.status NOT IN ('OPEN', 'PARTIAL', 'RECEIVED', 'CANCELLED')
+        OR NEW.ordered_qty <= 0
+        OR NEW.received_qty < 0
+        OR NEW.cancelled_qty < 0
+        OR NEW.cancelled_qty > NEW.ordered_qty
+    """
+
+    private const val RECEIPT_PREDICATE = """
+        NEW.status NOT IN ('DRAFT', 'POSTED', 'VOID')
+        OR NEW.receipt_no = ''
+        OR NEW.received_at < 0
+        OR (NEW.posted_at IS NOT NULL AND NEW.posted_at < 0)
+        OR (NEW.voided_at IS NOT NULL AND NEW.voided_at < 0)
+    """
+
+    private const val RECEIPT_ITEM_PREDICATE = """
+        NEW.quantity <= 0
     """
 }

@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "f27787abf848b43f59ce68ce8f47e5ac",
+    "identityHash": "e9a835f738f62b0a66b65cf3b267e3d2",
     "entities": [
       {
         "tableName": "unit",
@@ -3290,11 +3290,846 @@
             ]
           }
         ]
+      },
+      {
+        "tableName": "procurement_requirement",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `plan_id` TEXT NOT NULL, `snapshot_id` TEXT NOT NULL, `requirement_id` TEXT NOT NULL, `ingredient_id` TEXT NOT NULL, `product_id` TEXT, `requested_qty` REAL NOT NULL, `unit_id` TEXT NOT NULL, `status` TEXT NOT NULL, `purchase_order_item_id` TEXT, `note` TEXT, `created_at` INTEGER NOT NULL, `updated_at` INTEGER NOT NULL, PRIMARY KEY(`id`), FOREIGN KEY(`plan_id`) REFERENCES `production_plan`(`id`) ON UPDATE NO ACTION ON DELETE RESTRICT , FOREIGN KEY(`snapshot_id`) REFERENCES `production_plan_snapshot`(`id`) ON UPDATE NO ACTION ON DELETE RESTRICT , FOREIGN KEY(`requirement_id`) REFERENCES `material_requirement`(`id`) ON UPDATE NO ACTION ON DELETE RESTRICT , FOREIGN KEY(`ingredient_id`) REFERENCES `ingredient`(`id`) ON UPDATE NO ACTION ON DELETE NO ACTION , FOREIGN KEY(`product_id`) REFERENCES `product`(`id`) ON UPDATE NO ACTION ON DELETE SET NULL , FOREIGN KEY(`unit_id`) REFERENCES `unit`(`id`) ON UPDATE NO ACTION ON DELETE RESTRICT , FOREIGN KEY(`purchase_order_item_id`) REFERENCES `purchase_order_item`(`id`) ON UPDATE NO ACTION ON DELETE SET NULL )",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "planId",
+            "columnName": "plan_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "snapshotId",
+            "columnName": "snapshot_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "requirementId",
+            "columnName": "requirement_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "ingredientId",
+            "columnName": "ingredient_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "productId",
+            "columnName": "product_id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "requestedQty",
+            "columnName": "requested_qty",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "unitId",
+            "columnName": "unit_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "status",
+            "columnName": "status",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "purchaseOrderItemId",
+            "columnName": "purchase_order_item_id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "note",
+            "columnName": "note",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "created_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "updatedAt",
+            "columnName": "updated_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_procurement_requirement_plan_id_status",
+            "unique": false,
+            "columnNames": [
+              "plan_id",
+              "status"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_procurement_requirement_plan_id_status` ON `${TABLE_NAME}` (`plan_id`, `status`)"
+          },
+          {
+            "name": "index_procurement_requirement_requirement_id",
+            "unique": false,
+            "columnNames": [
+              "requirement_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_procurement_requirement_requirement_id` ON `${TABLE_NAME}` (`requirement_id`)"
+          },
+          {
+            "name": "index_procurement_requirement_product_id",
+            "unique": false,
+            "columnNames": [
+              "product_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_procurement_requirement_product_id` ON `${TABLE_NAME}` (`product_id`)"
+          },
+          {
+            "name": "index_procurement_requirement_snapshot_id",
+            "unique": false,
+            "columnNames": [
+              "snapshot_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_procurement_requirement_snapshot_id` ON `${TABLE_NAME}` (`snapshot_id`)"
+          },
+          {
+            "name": "index_procurement_requirement_purchase_order_item_id",
+            "unique": false,
+            "columnNames": [
+              "purchase_order_item_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_procurement_requirement_purchase_order_item_id` ON `${TABLE_NAME}` (`purchase_order_item_id`)"
+          },
+          {
+            "name": "index_procurement_requirement_ingredient_id",
+            "unique": false,
+            "columnNames": [
+              "ingredient_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_procurement_requirement_ingredient_id` ON `${TABLE_NAME}` (`ingredient_id`)"
+          },
+          {
+            "name": "index_procurement_requirement_unit_id",
+            "unique": false,
+            "columnNames": [
+              "unit_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_procurement_requirement_unit_id` ON `${TABLE_NAME}` (`unit_id`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "production_plan",
+            "onDelete": "RESTRICT",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "plan_id"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          },
+          {
+            "table": "production_plan_snapshot",
+            "onDelete": "RESTRICT",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "snapshot_id"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          },
+          {
+            "table": "material_requirement",
+            "onDelete": "RESTRICT",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "requirement_id"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          },
+          {
+            "table": "ingredient",
+            "onDelete": "NO ACTION",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "ingredient_id"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          },
+          {
+            "table": "product",
+            "onDelete": "SET NULL",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "product_id"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          },
+          {
+            "table": "unit",
+            "onDelete": "RESTRICT",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "unit_id"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          },
+          {
+            "table": "purchase_order_item",
+            "onDelete": "SET NULL",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "purchase_order_item_id"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "purchase_order",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `code` TEXT NOT NULL, `supplier_id` TEXT, `status` TEXT NOT NULL, `ordered_at` INTEGER, `expected_date` TEXT, `currency_code` TEXT NOT NULL, `allow_over_receipt` INTEGER NOT NULL, `notes` TEXT, `source_plan_id` TEXT, `created_at` INTEGER NOT NULL, `updated_at` INTEGER NOT NULL, `revision` INTEGER NOT NULL, PRIMARY KEY(`id`), FOREIGN KEY(`supplier_id`) REFERENCES `supplier`(`id`) ON UPDATE NO ACTION ON DELETE SET NULL , FOREIGN KEY(`source_plan_id`) REFERENCES `production_plan`(`id`) ON UPDATE NO ACTION ON DELETE SET NULL )",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "code",
+            "columnName": "code",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "supplierId",
+            "columnName": "supplier_id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "status",
+            "columnName": "status",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "orderedAt",
+            "columnName": "ordered_at",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "expectedDate",
+            "columnName": "expected_date",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "currencyCode",
+            "columnName": "currency_code",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "allowOverReceipt",
+            "columnName": "allow_over_receipt",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "notes",
+            "columnName": "notes",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "sourcePlanId",
+            "columnName": "source_plan_id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "created_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "updatedAt",
+            "columnName": "updated_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "revision",
+            "columnName": "revision",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_purchase_order_code",
+            "unique": true,
+            "columnNames": [
+              "code"
+            ],
+            "orders": [],
+            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_purchase_order_code` ON `${TABLE_NAME}` (`code`)"
+          },
+          {
+            "name": "index_purchase_order_status_ordered_at",
+            "unique": false,
+            "columnNames": [
+              "status",
+              "ordered_at"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_purchase_order_status_ordered_at` ON `${TABLE_NAME}` (`status`, `ordered_at`)"
+          },
+          {
+            "name": "index_purchase_order_supplier_id",
+            "unique": false,
+            "columnNames": [
+              "supplier_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_purchase_order_supplier_id` ON `${TABLE_NAME}` (`supplier_id`)"
+          },
+          {
+            "name": "index_purchase_order_source_plan_id",
+            "unique": false,
+            "columnNames": [
+              "source_plan_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_purchase_order_source_plan_id` ON `${TABLE_NAME}` (`source_plan_id`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "supplier",
+            "onDelete": "SET NULL",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "supplier_id"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          },
+          {
+            "table": "production_plan",
+            "onDelete": "SET NULL",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "source_plan_id"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "purchase_order_item",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `purchase_order_id` TEXT NOT NULL, `product_id` TEXT NOT NULL, `ordered_qty` REAL NOT NULL, `unit_id` TEXT NOT NULL, `unit_price_minor` INTEGER, `received_qty` REAL NOT NULL, `cancelled_qty` REAL NOT NULL, `status` TEXT NOT NULL, `note` TEXT, `created_at` INTEGER NOT NULL, `updated_at` INTEGER NOT NULL, PRIMARY KEY(`id`), FOREIGN KEY(`purchase_order_id`) REFERENCES `purchase_order`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE , FOREIGN KEY(`product_id`) REFERENCES `product`(`id`) ON UPDATE NO ACTION ON DELETE RESTRICT , FOREIGN KEY(`unit_id`) REFERENCES `unit`(`id`) ON UPDATE NO ACTION ON DELETE RESTRICT )",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "purchaseOrderId",
+            "columnName": "purchase_order_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "productId",
+            "columnName": "product_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "orderedQty",
+            "columnName": "ordered_qty",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "unitId",
+            "columnName": "unit_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "unitPriceMinor",
+            "columnName": "unit_price_minor",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "receivedQty",
+            "columnName": "received_qty",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "cancelledQty",
+            "columnName": "cancelled_qty",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "status",
+            "columnName": "status",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "note",
+            "columnName": "note",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "created_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "updatedAt",
+            "columnName": "updated_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_purchase_order_item_purchase_order_id",
+            "unique": false,
+            "columnNames": [
+              "purchase_order_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_purchase_order_item_purchase_order_id` ON `${TABLE_NAME}` (`purchase_order_id`)"
+          },
+          {
+            "name": "index_purchase_order_item_product_id",
+            "unique": false,
+            "columnNames": [
+              "product_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_purchase_order_item_product_id` ON `${TABLE_NAME}` (`product_id`)"
+          },
+          {
+            "name": "index_purchase_order_item_unit_id",
+            "unique": false,
+            "columnNames": [
+              "unit_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_purchase_order_item_unit_id` ON `${TABLE_NAME}` (`unit_id`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "purchase_order",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "purchase_order_id"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          },
+          {
+            "table": "product",
+            "onDelete": "RESTRICT",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "product_id"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          },
+          {
+            "table": "unit",
+            "onDelete": "RESTRICT",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "unit_id"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "goods_receipt",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `purchase_order_id` TEXT NOT NULL, `receipt_no` TEXT NOT NULL, `received_at` INTEGER NOT NULL, `location_id` TEXT NOT NULL, `status` TEXT NOT NULL, `note` TEXT, `created_at` INTEGER NOT NULL, `posted_at` INTEGER, `voided_at` INTEGER, PRIMARY KEY(`id`), FOREIGN KEY(`purchase_order_id`) REFERENCES `purchase_order`(`id`) ON UPDATE NO ACTION ON DELETE RESTRICT , FOREIGN KEY(`location_id`) REFERENCES `storage_location`(`id`) ON UPDATE NO ACTION ON DELETE RESTRICT )",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "purchaseOrderId",
+            "columnName": "purchase_order_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "receiptNo",
+            "columnName": "receipt_no",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "receivedAt",
+            "columnName": "received_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "locationId",
+            "columnName": "location_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "status",
+            "columnName": "status",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "note",
+            "columnName": "note",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "created_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "postedAt",
+            "columnName": "posted_at",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "voidedAt",
+            "columnName": "voided_at",
+            "affinity": "INTEGER"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_goods_receipt_receipt_no",
+            "unique": true,
+            "columnNames": [
+              "receipt_no"
+            ],
+            "orders": [],
+            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_goods_receipt_receipt_no` ON `${TABLE_NAME}` (`receipt_no`)"
+          },
+          {
+            "name": "index_goods_receipt_purchase_order_id_status",
+            "unique": false,
+            "columnNames": [
+              "purchase_order_id",
+              "status"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_goods_receipt_purchase_order_id_status` ON `${TABLE_NAME}` (`purchase_order_id`, `status`)"
+          },
+          {
+            "name": "index_goods_receipt_received_at",
+            "unique": false,
+            "columnNames": [
+              "received_at"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_goods_receipt_received_at` ON `${TABLE_NAME}` (`received_at`)"
+          },
+          {
+            "name": "index_goods_receipt_location_id",
+            "unique": false,
+            "columnNames": [
+              "location_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_goods_receipt_location_id` ON `${TABLE_NAME}` (`location_id`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "purchase_order",
+            "onDelete": "RESTRICT",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "purchase_order_id"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          },
+          {
+            "table": "storage_location",
+            "onDelete": "RESTRICT",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "location_id"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "goods_receipt_item",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `goods_receipt_id` TEXT NOT NULL, `purchase_order_item_id` TEXT NOT NULL, `product_id` TEXT NOT NULL, `quantity` REAL NOT NULL, `stock_unit_id` TEXT NOT NULL, `batch_code` TEXT, `expiry_date` TEXT, `unit_cost_minor` INTEGER, `created_batch_id` TEXT, `note` TEXT, PRIMARY KEY(`id`), FOREIGN KEY(`goods_receipt_id`) REFERENCES `goods_receipt`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE , FOREIGN KEY(`purchase_order_item_id`) REFERENCES `purchase_order_item`(`id`) ON UPDATE NO ACTION ON DELETE RESTRICT , FOREIGN KEY(`product_id`) REFERENCES `product`(`id`) ON UPDATE NO ACTION ON DELETE RESTRICT , FOREIGN KEY(`stock_unit_id`) REFERENCES `unit`(`id`) ON UPDATE NO ACTION ON DELETE RESTRICT , FOREIGN KEY(`created_batch_id`) REFERENCES `inventory_batch`(`id`) ON UPDATE NO ACTION ON DELETE SET NULL )",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "goodsReceiptId",
+            "columnName": "goods_receipt_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "purchaseOrderItemId",
+            "columnName": "purchase_order_item_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "productId",
+            "columnName": "product_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "quantity",
+            "columnName": "quantity",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "stockUnitId",
+            "columnName": "stock_unit_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "batchCode",
+            "columnName": "batch_code",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "expiryDate",
+            "columnName": "expiry_date",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "unitCostMinor",
+            "columnName": "unit_cost_minor",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "createdBatchId",
+            "columnName": "created_batch_id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "note",
+            "columnName": "note",
+            "affinity": "TEXT"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_goods_receipt_item_goods_receipt_id",
+            "unique": false,
+            "columnNames": [
+              "goods_receipt_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_goods_receipt_item_goods_receipt_id` ON `${TABLE_NAME}` (`goods_receipt_id`)"
+          },
+          {
+            "name": "index_goods_receipt_item_purchase_order_item_id",
+            "unique": false,
+            "columnNames": [
+              "purchase_order_item_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_goods_receipt_item_purchase_order_item_id` ON `${TABLE_NAME}` (`purchase_order_item_id`)"
+          },
+          {
+            "name": "index_goods_receipt_item_created_batch_id",
+            "unique": false,
+            "columnNames": [
+              "created_batch_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_goods_receipt_item_created_batch_id` ON `${TABLE_NAME}` (`created_batch_id`)"
+          },
+          {
+            "name": "index_goods_receipt_item_product_id",
+            "unique": false,
+            "columnNames": [
+              "product_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_goods_receipt_item_product_id` ON `${TABLE_NAME}` (`product_id`)"
+          },
+          {
+            "name": "index_goods_receipt_item_stock_unit_id",
+            "unique": false,
+            "columnNames": [
+              "stock_unit_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_goods_receipt_item_stock_unit_id` ON `${TABLE_NAME}` (`stock_unit_id`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "goods_receipt",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "goods_receipt_id"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          },
+          {
+            "table": "purchase_order_item",
+            "onDelete": "RESTRICT",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "purchase_order_item_id"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          },
+          {
+            "table": "product",
+            "onDelete": "RESTRICT",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "product_id"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          },
+          {
+            "table": "unit",
+            "onDelete": "RESTRICT",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "stock_unit_id"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          },
+          {
+            "table": "inventory_batch",
+            "onDelete": "SET NULL",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "created_batch_id"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
       }
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'f27787abf848b43f59ce68ce8f47e5ac')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'e9a835f738f62b0a66b65cf3b267e3d2')"
     ]
   }
 }
