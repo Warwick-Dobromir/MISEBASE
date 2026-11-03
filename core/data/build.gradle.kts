@@ -9,4 +9,8 @@ dependencies {
     implementation(project(":core:database"))
     implementation(project(":core:common"))
     implementation(libs.kotlinx.coroutines.core)
+    implementation(libs.androidx.room.ktx)
+
+    testImplementation(libs.robolectric)
+    testImplementation(libs.kotlinx.coroutines.test)
 }
