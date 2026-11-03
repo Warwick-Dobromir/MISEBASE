@@ -6,6 +6,9 @@ import com.culinary.core.common.Outcome
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
+import java.nio.file.AtomicMoveNotSupportedException
+import java.nio.file.Files
+import java.nio.file.StandardCopyOption
 
 /**
  * journal 读写（E05 §13.2）。
@@ -29,13 +32,24 @@ class RestoreJournalStore(
                 output.flush()
                 output.fd.sync()
             }
-            if (!temporary.renameTo(file)) {
-                temporary.delete()
-                return failure("cannot commit restore journal")
-            }
+            moveIntoPlace(temporary)
             Outcome.success(Unit)
         } catch (e: IOException) {
             failure("cannot write restore journal: ${e.message}")
+        }
+    }
+
+    @Suppress("SwallowedException") // ATOMIC_MOVE 不被支持时改用普通移动，属于预期降级
+    private fun moveIntoPlace(temporary: File) {
+        try {
+            Files.move(
+                temporary.toPath(),
+                file.toPath(),
+                StandardCopyOption.REPLACE_EXISTING,
+                StandardCopyOption.ATOMIC_MOVE,
+            )
+        } catch (e: AtomicMoveNotSupportedException) {
+            Files.move(temporary.toPath(), file.toPath(), StandardCopyOption.REPLACE_EXISTING)
         }
     }
 
