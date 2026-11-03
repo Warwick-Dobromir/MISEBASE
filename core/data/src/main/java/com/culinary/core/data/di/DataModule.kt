@@ -1,10 +1,14 @@
 package com.culinary.core.data.di
 
 import android.content.Context
+import com.culinary.core.common.AppLogger
+import com.culinary.core.common.Clock
 import com.culinary.core.common.DefaultDispatcherProvider
 import com.culinary.core.common.DispatcherProvider
 import com.culinary.core.common.IdGenerator
+import com.culinary.core.common.SystemClock
 import com.culinary.core.common.UuidV4Generator
+import com.culinary.core.data.logging.TimberAppLogger
 import com.culinary.core.data.startup.StartupCoordinator
 import com.culinary.core.data.transaction.RoomTransactionRunner
 import com.culinary.core.database.CulinaryDatabase
@@ -61,6 +65,14 @@ object DataModule {
     @Provides
     @Singleton
     fun provideIdGenerator(): IdGenerator = UuidV4Generator()
+
+    @Provides
+    @Singleton
+    fun provideClock(): Clock = SystemClock
+
+    @Provides
+    @Singleton
+    fun provideAppLogger(): AppLogger = TimberAppLogger()
 
     @Provides
     @Singleton

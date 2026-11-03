@@ -1,7 +1,10 @@
 package com.culinary
 
 import android.app.Application
+import com.culinary.crash.CrashLogWriter
 import dagger.hilt.android.HiltAndroidApp
+import timber.log.Timber
+import javax.inject.Inject
 
 /**
  * 应用入口。
@@ -10,4 +13,15 @@ import dagger.hilt.android.HiltAndroidApp
  * 这里不写任何业务规则（A03A §4.1）。
  */
 @HiltAndroidApp
-class CulinaryApplication : Application()
+class CulinaryApplication : Application() {
+    @Inject
+    lateinit var crashLogWriter: CrashLogWriter
+
+    override fun onCreate() {
+        super.onCreate()
+        Timber.plant(Timber.DebugTree())
+        Thread.setDefaultUncaughtExceptionHandler(
+            crashLogWriter.install(Thread.getDefaultUncaughtExceptionHandler()),
+        )
+    }
+}

@@ -12,6 +12,7 @@ dependencies {
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.androidx.room.ktx)
+    implementation(libs.timber)
 
     testImplementation(libs.robolectric)
     testImplementation(libs.kotlinx.coroutines.test)
