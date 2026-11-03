@@ -13,7 +13,8 @@ complexity:
     active: false
   TooManyFunctions:
     thresholdInFiles: 20
-    thresholdInClasses: 20
+    # Room 的 @Database 类必须为每个 DAO 暴露一个访问器，31 表时约 25 个。
+    thresholdInClasses: 30
 
 naming:
   active: true

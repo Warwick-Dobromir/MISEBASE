@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "fd64a0e60fa13951f824ff6265572281",
+    "identityHash": "f27787abf848b43f59ce68ce8f47e5ac",
     "entities": [
       {
         "tableName": "unit",
@@ -2421,11 +2421,880 @@
             ]
           }
         ]
+      },
+      {
+        "tableName": "production_plan",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `title` TEXT NOT NULL, `planned_date` TEXT, `timezone` TEXT NOT NULL, `status` TEXT NOT NULL, `notes` TEXT, `current_snapshot_id` TEXT, `confirmed_at` INTEGER, `completed_at` INTEGER, `created_at` INTEGER NOT NULL, `updated_at` INTEGER NOT NULL, `revision` INTEGER NOT NULL, PRIMARY KEY(`id`), FOREIGN KEY(`current_snapshot_id`) REFERENCES `production_plan_snapshot`(`id`) ON UPDATE NO ACTION ON DELETE SET NULL )",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "title",
+            "columnName": "title",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "plannedDate",
+            "columnName": "planned_date",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "timezone",
+            "columnName": "timezone",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "status",
+            "columnName": "status",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "notes",
+            "columnName": "notes",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "currentSnapshotId",
+            "columnName": "current_snapshot_id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "confirmedAt",
+            "columnName": "confirmed_at",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "completedAt",
+            "columnName": "completed_at",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "created_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "updatedAt",
+            "columnName": "updated_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "revision",
+            "columnName": "revision",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_production_plan_status_planned_date",
+            "unique": false,
+            "columnNames": [
+              "status",
+              "planned_date"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_production_plan_status_planned_date` ON `${TABLE_NAME}` (`status`, `planned_date`)"
+          },
+          {
+            "name": "index_production_plan_current_snapshot_id",
+            "unique": false,
+            "columnNames": [
+              "current_snapshot_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_production_plan_current_snapshot_id` ON `${TABLE_NAME}` (`current_snapshot_id`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "production_plan_snapshot",
+            "onDelete": "SET NULL",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "current_snapshot_id"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "production_plan_item",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `plan_id` TEXT NOT NULL, `recipe_id` TEXT NOT NULL, `recipe_version_id` TEXT NOT NULL, `quantity` REAL NOT NULL, `unit_id` TEXT NOT NULL, `sort_order` INTEGER NOT NULL, `note` TEXT, `status` TEXT NOT NULL, `created_at` INTEGER NOT NULL, `updated_at` INTEGER NOT NULL, PRIMARY KEY(`id`), FOREIGN KEY(`plan_id`) REFERENCES `production_plan`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE , FOREIGN KEY(`recipe_id`) REFERENCES `recipe`(`id`) ON UPDATE NO ACTION ON DELETE RESTRICT , FOREIGN KEY(`recipe_version_id`) REFERENCES `recipe_version`(`id`) ON UPDATE NO ACTION ON DELETE RESTRICT , FOREIGN KEY(`unit_id`) REFERENCES `unit`(`id`) ON UPDATE NO ACTION ON DELETE RESTRICT )",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "planId",
+            "columnName": "plan_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "recipeId",
+            "columnName": "recipe_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "recipeVersionId",
+            "columnName": "recipe_version_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "quantity",
+            "columnName": "quantity",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "unitId",
+            "columnName": "unit_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "sortOrder",
+            "columnName": "sort_order",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "note",
+            "columnName": "note",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "status",
+            "columnName": "status",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "created_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "updatedAt",
+            "columnName": "updated_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_production_plan_item_plan_id_sort_order",
+            "unique": false,
+            "columnNames": [
+              "plan_id",
+              "sort_order"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_production_plan_item_plan_id_sort_order` ON `${TABLE_NAME}` (`plan_id`, `sort_order`)"
+          },
+          {
+            "name": "index_production_plan_item_recipe_version_id",
+            "unique": false,
+            "columnNames": [
+              "recipe_version_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_production_plan_item_recipe_version_id` ON `${TABLE_NAME}` (`recipe_version_id`)"
+          },
+          {
+            "name": "index_production_plan_item_recipe_id",
+            "unique": false,
+            "columnNames": [
+              "recipe_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_production_plan_item_recipe_id` ON `${TABLE_NAME}` (`recipe_id`)"
+          },
+          {
+            "name": "index_production_plan_item_unit_id",
+            "unique": false,
+            "columnNames": [
+              "unit_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_production_plan_item_unit_id` ON `${TABLE_NAME}` (`unit_id`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "production_plan",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "plan_id"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          },
+          {
+            "table": "recipe",
+            "onDelete": "RESTRICT",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "recipe_id"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          },
+          {
+            "table": "recipe_version",
+            "onDelete": "RESTRICT",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "recipe_version_id"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          },
+          {
+            "table": "unit",
+            "onDelete": "RESTRICT",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "unit_id"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "production_plan_snapshot",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `plan_id` TEXT NOT NULL, `revision_no` INTEGER NOT NULL, `engine_version` TEXT NOT NULL, `payload_json` TEXT NOT NULL, `payload_hash` TEXT NOT NULL, `requirement_count` INTEGER NOT NULL, `created_at` INTEGER NOT NULL, PRIMARY KEY(`id`), FOREIGN KEY(`plan_id`) REFERENCES `production_plan`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "planId",
+            "columnName": "plan_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "revisionNo",
+            "columnName": "revision_no",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "engineVersion",
+            "columnName": "engine_version",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "payloadJson",
+            "columnName": "payload_json",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "payloadHash",
+            "columnName": "payload_hash",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "requirementCount",
+            "columnName": "requirement_count",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "created_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_production_plan_snapshot_plan_id_revision_no",
+            "unique": true,
+            "columnNames": [
+              "plan_id",
+              "revision_no"
+            ],
+            "orders": [],
+            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_production_plan_snapshot_plan_id_revision_no` ON `${TABLE_NAME}` (`plan_id`, `revision_no`)"
+          },
+          {
+            "name": "index_production_plan_snapshot_plan_id_created_at",
+            "unique": false,
+            "columnNames": [
+              "plan_id",
+              "created_at"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_production_plan_snapshot_plan_id_created_at` ON `${TABLE_NAME}` (`plan_id`, `created_at`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "production_plan",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "plan_id"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "material_requirement",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `snapshot_id` TEXT NOT NULL, `ingredient_id` TEXT NOT NULL, `required_qty` REAL NOT NULL, `unit_id` TEXT NOT NULL, `dimension` TEXT NOT NULL, `aggregation_key` TEXT NOT NULL, `available_qty_snapshot` REAL NOT NULL, `shortage_qty` REAL NOT NULL, `is_optional` INTEGER NOT NULL, `conversion_status` TEXT NOT NULL, `created_at` INTEGER NOT NULL, PRIMARY KEY(`id`), FOREIGN KEY(`snapshot_id`) REFERENCES `production_plan_snapshot`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE , FOREIGN KEY(`ingredient_id`) REFERENCES `ingredient`(`id`) ON UPDATE NO ACTION ON DELETE RESTRICT , FOREIGN KEY(`unit_id`) REFERENCES `unit`(`id`) ON UPDATE NO ACTION ON DELETE RESTRICT )",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "snapshotId",
+            "columnName": "snapshot_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "ingredientId",
+            "columnName": "ingredient_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "requiredQty",
+            "columnName": "required_qty",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "unitId",
+            "columnName": "unit_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "dimension",
+            "columnName": "dimension",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "aggregationKey",
+            "columnName": "aggregation_key",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "availableQtySnapshot",
+            "columnName": "available_qty_snapshot",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "shortageQty",
+            "columnName": "shortage_qty",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isOptional",
+            "columnName": "is_optional",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "conversionStatus",
+            "columnName": "conversion_status",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "created_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_material_requirement_snapshot_id_aggregation_key",
+            "unique": true,
+            "columnNames": [
+              "snapshot_id",
+              "aggregation_key"
+            ],
+            "orders": [],
+            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_material_requirement_snapshot_id_aggregation_key` ON `${TABLE_NAME}` (`snapshot_id`, `aggregation_key`)"
+          },
+          {
+            "name": "index_material_requirement_snapshot_id",
+            "unique": false,
+            "columnNames": [
+              "snapshot_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_material_requirement_snapshot_id` ON `${TABLE_NAME}` (`snapshot_id`)"
+          },
+          {
+            "name": "index_material_requirement_ingredient_id",
+            "unique": false,
+            "columnNames": [
+              "ingredient_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_material_requirement_ingredient_id` ON `${TABLE_NAME}` (`ingredient_id`)"
+          },
+          {
+            "name": "index_material_requirement_unit_id",
+            "unique": false,
+            "columnNames": [
+              "unit_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_material_requirement_unit_id` ON `${TABLE_NAME}` (`unit_id`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "production_plan_snapshot",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "snapshot_id"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          },
+          {
+            "table": "ingredient",
+            "onDelete": "RESTRICT",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "ingredient_id"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          },
+          {
+            "table": "unit",
+            "onDelete": "RESTRICT",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "unit_id"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "material_requirement_source",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `requirement_id` TEXT NOT NULL, `plan_item_id` TEXT NOT NULL, `source_path` TEXT NOT NULL, `component_type` TEXT NOT NULL, `component_id` TEXT NOT NULL, `component_version_id` TEXT, `quantity` REAL NOT NULL, `unit_id` TEXT NOT NULL, `depth` INTEGER NOT NULL, `is_optional` INTEGER NOT NULL, `note` TEXT, PRIMARY KEY(`id`), FOREIGN KEY(`requirement_id`) REFERENCES `material_requirement`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE , FOREIGN KEY(`plan_item_id`) REFERENCES `production_plan_item`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE , FOREIGN KEY(`unit_id`) REFERENCES `unit`(`id`) ON UPDATE NO ACTION ON DELETE RESTRICT )",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "requirementId",
+            "columnName": "requirement_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "planItemId",
+            "columnName": "plan_item_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "sourcePath",
+            "columnName": "source_path",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "componentType",
+            "columnName": "component_type",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "componentId",
+            "columnName": "component_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "componentVersionId",
+            "columnName": "component_version_id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "quantity",
+            "columnName": "quantity",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "unitId",
+            "columnName": "unit_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "depth",
+            "columnName": "depth",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isOptional",
+            "columnName": "is_optional",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "note",
+            "columnName": "note",
+            "affinity": "TEXT"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_material_requirement_source_requirement_id",
+            "unique": false,
+            "columnNames": [
+              "requirement_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_material_requirement_source_requirement_id` ON `${TABLE_NAME}` (`requirement_id`)"
+          },
+          {
+            "name": "index_material_requirement_source_plan_item_id",
+            "unique": false,
+            "columnNames": [
+              "plan_item_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_material_requirement_source_plan_item_id` ON `${TABLE_NAME}` (`plan_item_id`)"
+          },
+          {
+            "name": "index_material_requirement_source_unit_id",
+            "unique": false,
+            "columnNames": [
+              "unit_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_material_requirement_source_unit_id` ON `${TABLE_NAME}` (`unit_id`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "material_requirement",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "requirement_id"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          },
+          {
+            "table": "production_plan_item",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "plan_item_id"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          },
+          {
+            "table": "unit",
+            "onDelete": "RESTRICT",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "unit_id"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "inventory_reservation",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `plan_id` TEXT NOT NULL, `plan_item_id` TEXT, `requirement_id` TEXT, `batch_id` TEXT NOT NULL, `product_id` TEXT NOT NULL, `quantity` REAL NOT NULL, `stock_unit_id` TEXT NOT NULL, `status` TEXT NOT NULL, `created_at` INTEGER NOT NULL, `released_at` INTEGER, `consumed_at` INTEGER, PRIMARY KEY(`id`), FOREIGN KEY(`plan_id`) REFERENCES `production_plan`(`id`) ON UPDATE NO ACTION ON DELETE RESTRICT , FOREIGN KEY(`plan_item_id`) REFERENCES `production_plan_item`(`id`) ON UPDATE NO ACTION ON DELETE RESTRICT , FOREIGN KEY(`requirement_id`) REFERENCES `material_requirement`(`id`) ON UPDATE NO ACTION ON DELETE RESTRICT , FOREIGN KEY(`batch_id`) REFERENCES `inventory_batch`(`id`) ON UPDATE NO ACTION ON DELETE RESTRICT , FOREIGN KEY(`stock_unit_id`) REFERENCES `unit`(`id`) ON UPDATE NO ACTION ON DELETE RESTRICT )",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "planId",
+            "columnName": "plan_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "planItemId",
+            "columnName": "plan_item_id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "requirementId",
+            "columnName": "requirement_id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "batchId",
+            "columnName": "batch_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "productId",
+            "columnName": "product_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "quantity",
+            "columnName": "quantity",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "stockUnitId",
+            "columnName": "stock_unit_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "status",
+            "columnName": "status",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "created_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "releasedAt",
+            "columnName": "released_at",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "consumedAt",
+            "columnName": "consumed_at",
+            "affinity": "INTEGER"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_inventory_reservation_plan_id_status",
+            "unique": false,
+            "columnNames": [
+              "plan_id",
+              "status"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_inventory_reservation_plan_id_status` ON `${TABLE_NAME}` (`plan_id`, `status`)"
+          },
+          {
+            "name": "index_inventory_reservation_batch_id_status",
+            "unique": false,
+            "columnNames": [
+              "batch_id",
+              "status"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_inventory_reservation_batch_id_status` ON `${TABLE_NAME}` (`batch_id`, `status`)"
+          },
+          {
+            "name": "index_inventory_reservation_requirement_id",
+            "unique": false,
+            "columnNames": [
+              "requirement_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_inventory_reservation_requirement_id` ON `${TABLE_NAME}` (`requirement_id`)"
+          },
+          {
+            "name": "index_inventory_reservation_plan_item_id",
+            "unique": false,
+            "columnNames": [
+              "plan_item_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_inventory_reservation_plan_item_id` ON `${TABLE_NAME}` (`plan_item_id`)"
+          },
+          {
+            "name": "index_inventory_reservation_batch_id",
+            "unique": false,
+            "columnNames": [
+              "batch_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_inventory_reservation_batch_id` ON `${TABLE_NAME}` (`batch_id`)"
+          },
+          {
+            "name": "index_inventory_reservation_stock_unit_id",
+            "unique": false,
+            "columnNames": [
+              "stock_unit_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_inventory_reservation_stock_unit_id` ON `${TABLE_NAME}` (`stock_unit_id`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "production_plan",
+            "onDelete": "RESTRICT",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "plan_id"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          },
+          {
+            "table": "production_plan_item",
+            "onDelete": "RESTRICT",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "plan_item_id"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          },
+          {
+            "table": "material_requirement",
+            "onDelete": "RESTRICT",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "requirement_id"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          },
+          {
+            "table": "inventory_batch",
+            "onDelete": "RESTRICT",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "batch_id"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          },
+          {
+            "table": "unit",
+            "onDelete": "RESTRICT",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "stock_unit_id"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
       }
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'fd64a0e60fa13951f824ff6265572281')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'f27787abf848b43f59ce68ce8f47e5ac')"
     ]
   }
 }

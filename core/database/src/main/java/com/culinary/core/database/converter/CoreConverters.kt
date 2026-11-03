@@ -1,22 +1,19 @@
 package com.culinary.core.database.converter
 
 import androidx.room.TypeConverter
-import com.culinary.core.database.model.BatchStatusDb
 import com.culinary.core.database.model.ComponentTypeDb
 import com.culinary.core.database.model.EntityStatusDb
-import com.culinary.core.database.model.LedgerTypeDb
 import com.culinary.core.database.model.RecipeCategoryDb
 import com.culinary.core.database.model.StorageLocationKindDb
 import com.culinary.core.database.model.UnitDimensionDb
 import com.culinary.core.database.model.VersionStatusDb
 
 /**
- * 枚举以 TEXT 存储（A06 §1.2）。
+ * 知识体系与位置的枚举转换（A06 §1.2）。
  *
- * `valueOf` 遇到未知值会抛异常，而不是静默回退：未知枚举说明数据被外部改动或
- * 迁移不完整，必须暴露为错误而不是猜一个默认值。
+ * 枚举以 TEXT 存储；`valueOf` 遇到未知值会抛异常而不是静默回退。
  */
-class DatabaseConverters {
+class CoreConverters {
     @TypeConverter
     fun fromUnitDimension(value: UnitDimensionDb): String = value.name
 
@@ -52,16 +49,4 @@ class DatabaseConverters {
 
     @TypeConverter
     fun toStorageLocationKind(value: String): StorageLocationKindDb = StorageLocationKindDb.valueOf(value)
-
-    @TypeConverter
-    fun fromBatchStatus(value: BatchStatusDb): String = value.name
-
-    @TypeConverter
-    fun toBatchStatus(value: String): BatchStatusDb = BatchStatusDb.valueOf(value)
-
-    @TypeConverter
-    fun fromLedgerType(value: LedgerTypeDb): String = value.name
-
-    @TypeConverter
-    fun toLedgerType(value: String): LedgerTypeDb = LedgerTypeDb.valueOf(value)
 }

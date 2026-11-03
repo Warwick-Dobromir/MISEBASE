@@ -31,10 +31,34 @@ internal object CulinarySchemaExtras {
         installChecks(db, "storage_location", LOCATION_PREDICATE)
         installChecks(db, "inventory_batch", BATCH_PREDICATE)
         installChecks(db, "inventory_ledger", LEDGER_PREDICATE)
+        installChecks(db, "production_plan", PLAN_PREDICATE)
+        installChecks(db, "production_plan_item", PLAN_ITEM_PREDICATE)
+        installChecks(db, "production_plan_snapshot", SNAPSHOT_PREDICATE)
+        installChecks(db, "material_requirement", REQUIREMENT_PREDICATE)
+        installChecks(db, "material_requirement_source", REQUIREMENT_SOURCE_PREDICATE)
+        installChecks(db, "inventory_reservation", RESERVATION_PREDICATE)
 
         installPublishedImmutability(db, "sauce_version", "sauce_id")
         installPublishedImmutability(db, "recipe_version", "recipe_id")
         installAppendOnly(db, "inventory_ledger")
+        installNoUpdate(db, "production_plan_snapshot")
+    }
+
+    /**
+     * 计划快照的 payload 不可改（D-007）。
+     *
+     * 行删除不在这里禁止：`production_plan_snapshot` 由 `production_plan` 级联删除，
+     * SQLite 触发器无法区分级联与直接删除。DAO 不提供删除方法，直接删除只能通过原始 SQL。
+     */
+    private fun installNoUpdate(
+        db: SupportSQLiteDatabase,
+        table: String,
+    ) {
+        db.execSQL(
+            "CREATE TRIGGER IF NOT EXISTS trg_${table}_no_update " +
+                "BEFORE UPDATE ON $table " +
+                "BEGIN SELECT RAISE(ABORT, '$table payload is immutable'); END",
+        )
     }
 
     /** 库存流水只追加：UPDATE/DELETE 一律拒绝（A06 §6.3 / §10.1）。 */
@@ -117,6 +141,10 @@ internal object CulinarySchemaExtras {
             """
             CREATE UNIQUE INDEX IF NOT EXISTS ux_barcode_primary
             ON barcode(product_id) WHERE is_primary = 1
+            """.trimIndent(),
+            """
+            CREATE UNIQUE INDEX IF NOT EXISTS ux_reservation_active
+            ON inventory_reservation(requirement_id, batch_id) WHERE status = 'ACTIVE'
             """.trimIndent(),
         )
 
@@ -246,5 +274,52 @@ internal object CulinarySchemaExtras {
         OR NEW.idempotency_key = ''
         OR NEW.occurred_at < 0
         OR NEW.created_at < 0
+    """
+    private const val PLAN_PREDICATE = """
+        NEW.status NOT IN ('DRAFT', 'CONFIRMED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED')
+        OR NEW.revision < 1
+        OR NEW.title = ''
+        OR NEW.created_at < 0
+        OR NEW.updated_at < 0
+    """
+
+    private const val PLAN_ITEM_PREDICATE = """
+        NEW.status NOT IN ('PENDING', 'DONE', 'CANCELLED')
+        OR NEW.quantity <= 0
+        OR NEW.sort_order < 0
+        OR NEW.created_at < 0
+        OR NEW.updated_at < 0
+    """
+
+    private const val SNAPSHOT_PREDICATE = """
+        NEW.revision_no < 1
+        OR NEW.requirement_count < 0
+        OR NEW.payload_json = ''
+        OR NEW.payload_hash = ''
+        OR NEW.created_at < 0
+    """
+
+    private const val REQUIREMENT_PREDICATE = """
+        NEW.required_qty < 0
+        OR NEW.available_qty_snapshot < 0
+        OR NEW.shortage_qty < 0
+        OR NEW.is_optional NOT IN (0, 1)
+        OR NEW.conversion_status NOT IN ('OK', 'UNCONVERTIBLE', 'MISSING_PRODUCT', 'UNIT_MISMATCH')
+        OR NEW.dimension NOT IN ('MASS', 'VOLUME', 'COUNT')
+        OR NEW.aggregation_key = ''
+    """
+
+    private const val REQUIREMENT_SOURCE_PREDICATE = """
+        NEW.component_type NOT IN ('INGREDIENT', 'SAUCE', 'RECIPE')
+        OR NEW.quantity <= 0
+        OR NEW.depth < 0
+        OR NEW.is_optional NOT IN (0, 1)
+        OR NEW.source_path = ''
+    """
+
+    private const val RESERVATION_PREDICATE = """
+        NEW.status NOT IN ('ACTIVE', 'RELEASED', 'CONSUMED')
+        OR NEW.quantity <= 0
+        OR NEW.released_at IS NOT NULL AND NEW.status = 'ACTIVE'
     """
 }
