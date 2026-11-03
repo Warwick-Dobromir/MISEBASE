@@ -7,10 +7,8 @@ ksp = "2.2.20-2.0.4"
 hilt = "2.57.2"
 androidxHilt = "1.3.0"
 
-# SDK / 语言
-compileSdk = "36"
-minSdk = "26"
-targetSdk = "36"
+# SDK 基线（min 26 / compile & target 36，D-002）由 build-logic 的 CulinaryConfig 统一持有，
+# 避免与这里的依赖版本形成两个来源。
 
 # AndroidX / Compose
 composeBom = "2025.10.01"
