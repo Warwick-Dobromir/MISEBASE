@@ -5,7 +5,7 @@
 | 项目 | 内容 |
 |---|---|
 | 架构基线 | `0.4.1`（G1 已正式签收） |
-| 当前阶段 | **G2 阶段 9（质量门禁）已完成**，待负责人验收（G2 收口） |
+| 当前阶段 | **G2 已收口**；G3 准备报告待负责人确认（未获开发授权） |
 | 工程状态 | 15 模块；Room v1 31 表；食材 CRUD；算法验证；迁移/恢复完整流程；R8 构建；**188 例测试** |
 | 数据库 | 尚未创建（阶段 3；D-005 主键策略待确认） |
 | 构建基线 | AGP 8.13.0 / Kotlin 2.2.20 / Gradle 8.14.3 / JDK 21 / minSdk 26 / compile & target 36 |
@@ -92,6 +92,8 @@ feature/
 
 ## 文档
 
+- [G2 交接件](docs/00-governance/H-G2-G3-001-G2-HANDOFF.md)
+- [G3 准备报告](docs/05-g3/G3-PREPARATION-REPORT.md)
 - [G2 阶段 9 报告](docs/04-readiness/R19-G2-STAGE9-REPORT.md)
 - [G2 阶段 8 报告](docs/04-readiness/R18-G2-STAGE8-REPORT.md)
 - [G2 阶段 7 报告](docs/04-readiness/R17-G2-STAGE7-REPORT.md)
