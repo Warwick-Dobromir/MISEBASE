@@ -1,7 +1,7 @@
 # G2 阶段 5（平台能力）完成报告
 
 **文档编号**：R15
-**版本**：`1.0.0`
+**版本**：`1.1.0`
 **状态**：`Review`（待项目负责人验收；设备级验证按批准延后到阶段 7）
 **日期**：2026-11-04
 **实施依据**：[R01 0.2.2](R01-FRAMEWORK-SEQUENCE.md) §8、A03A §4/§6.4/§8.1、D-011、D-013、V01
@@ -40,7 +40,24 @@
 - 领域：`BarcodeResult`、`BarcodeScanner`；
 - 手工兜底：`BarcodeParser`（规范化、长度 4–64、拒绝控制字符、`MANUAL` 格式）；
 - 本地解码：`MlKitBarcodeDecoder`（bundled ML Kit，`ImageProxy` → 识别结果，失败 `CUL-SCAN-002`）；
-- 格式映射：`BarcodeFormats`，未知格式返回 `null`，不猜。
+- 格式映射：`BarcodeFormats`，未知格式返回 `null`，不猜；
+- **相机接入**：`CameraBarcodeScanner` 实现 `BarcodeScanner`：`ProcessCameraProvider` →
+  `bindToLifecycle(DEFAULT_BACK_CAMERA)` → `ImageAnalysis`（`KEEP_ONLY_LATEST`）→ 单线程分析器 →
+  `MlKitBarcodeDecoder`；首个条码或 15s 超时后解绑，权限拒绝映射 `CUL-SCAN-001`；
+- 清单：`core:platform` 声明 `CAMERA` 权限（`required=false` 的相机特性），不申请 `INTERNET`。
+
+> `CameraBarcodeScanner` 当前只经过**编译与静态检查**；真机/模拟器扫码属已批准的设备级延后项，
+> 不在本阶段宣称通过。
+
+### 2.5 依赖与产物证据
+
+| 证据 | 实测 |
+|---|---|
+| CameraX | `androidx.camera:camera-core:1.4.2`（`camera-camera2`、`camera-lifecycle` 同版本，来自 `libs.versions.toml`） |
+| ML Kit | `com.google.mlkit:barcode-scanning:17.3.0` |
+| 模型是否随包 | APK 内存在 `assets/mlkit_barcode_models/*.tflite`（oned_auto_regressor、oned_feature_extractor、ssd_mobilenet 等）→ **bundled，离线识别** |
+| 权限 | APK 含 `CAMERA`；**不含 `INTERNET`**（`aapt2 dump permissions`） |
+| 其他合并权限 | `WAKE_LOCK`、`ACCESS_NETWORK_STATE`、`RECEIVE_BOOT_COMPLETED`、`FOREGROUND_SERVICE`（WorkManager/ML Kit） |
 
 ## 3. 测试与验证
 
@@ -71,7 +88,7 @@ FOREGROUND_SERVICE
 
 | # | 条件（R01 §8.2） | 状态 |
 |---|---|---|
-| 1 | 模拟器/真机能扫码（或手工输入兜底） | **延后到阶段 7**：相机 UI 尚未存在；手工兜底逻辑已实现并测试 |
+| 1 | 模拟器/真机能扫码（或手工输入兜底） | 平台实现（CameraX 会话 + ML Kit 解码 + 手工兜底）已存在并通过编译/单测；**设备级验证延后到阶段 7** |
 | 2 | 权限拒绝有可恢复路径 | 逻辑就绪（三态 + 手工兜底）；UI 接线在阶段 7 |
 | 3 | SAF 选择/写入成功 | 适配层与流读写已测（file URI）；**真实 SAF 文档选择器延后到阶段 7 设备验证** |
 | 4 | WorkManager 任务可入队/取消 | **PASS**（Robolectric） |
@@ -80,12 +97,16 @@ FOREGROUND_SERVICE
 延后项已由项目负责人于 2026-11-04 明确同意（决策登记册 0.15.0），
 **阶段 5 不宣称设备级验证已通过**。
 
-## 5. 偏差与遗留
+## 5. 平台实现 / 延后验证 / 尚未实现（三分）
 
-- 相机会话（CameraX 绑定、预览、`ImageAnalysis`）未实现：属于阶段 7 的 UI 接线；
-- 真实 SAF 文档选择器未在设备验证；
-- `AutoBackupWorker` 仅验证调度，未执行备份；
-- 未申请 `CAMERA` 权限：等阶段 7 接入相机时声明并验证。
+| 类别 | 内容 |
+|---|---|
+| **已完成的平台能力** | WorkManager 调度；相机权限三态；SAF 适配与流读写；扫码领域契约、手工兜底、ML Kit 解码、CameraX 会话（`CameraBarcodeScanner`）；`CAMERA` 权限声明 |
+| **已批准延后的设备级验证** | 真实 SAF 文档选择器在设备上的选择/写入；真机或模拟器实际扫码；权限弹窗与永久拒绝的 UI 路径 |
+| **尚未实现（不属于本次延后授权）** | 相机预览 UI（`PreviewView`）与扫码页面；`AutoBackupWorker` 的真实 E05 备份编排（阶段 9）；备份在线快照与恢复执行器（阶段 5+/9） |
+
+- CameraX 平台代码已接入，但只有编译/静态检查证据；**没有**设备端运行证据；
+- `CAMERA` 已声明；APK 仍无 `INTERNET`，ML Kit 模型已随包（离线）。
 
 ## 6. Git
 
@@ -107,3 +128,4 @@ FOREGROUND_SERVICE
 | 版本 | 日期 | 变更 | 作者 |
 |---|---|---|---|
 | 1.0.0 | 2026-11-04 | 记录平台能力实现、19 例测试与延后项 | 工程组 |
+| 1.1.0 | 2026-11-04 | 核实 CameraX/ML Kit 依赖与 bundled 模型；补 `CameraBarcodeScanner` 平台实现与 `CAMERA` 权限；按"已实现/延后验证/尚未实现"三分重述范围 | 工程组 |
