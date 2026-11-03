@@ -12,7 +12,6 @@ import org.junit.Test
 
 /** 需求汇总：可合并与不可合并（R01 阶段 8）。 */
 class RequirementAggregatorTest {
-
     private val aggregator = RequirementAggregator()
     private val flour = IngredientId("flour")
     private val egg = IngredientId("egg")
@@ -24,22 +23,30 @@ class RequirementAggregatorTest {
 
     @Test
     fun `merges the same ingredient in the same unit`() {
-        val groups = aggregate(
-            requirement(flour, 100.0, gram),
-            requirement(flour, 50.0, gram),
-        )
+        val groups =
+            aggregate(
+                requirement(flour, 100.0, gram),
+                requirement(flour, 50.0, gram),
+            )
 
         assertThat(groups).hasSize(1)
         assertThat(groups.single().totals).hasSize(1)
-        assertThat(groups.single().totals.single().amount).isWithin(1e-9).of(150.0)
+        assertThat(
+            groups
+                .single()
+                .totals
+                .single()
+                .amount,
+        ).isWithin(1e-9).of(150.0)
     }
 
     @Test
     fun `merges different mass units into the first unit`() {
-        val groups = aggregate(
-            requirement(flour, 100.0, gram),
-            requirement(flour, 1.0, kilogram),
-        )
+        val groups =
+            aggregate(
+                requirement(flour, 100.0, gram),
+                requirement(flour, 1.0, kilogram),
+            )
 
         val total = groups.single().totals.single()
         assertThat(total.unit).isEqualTo(gram)
@@ -48,24 +55,27 @@ class RequirementAggregatorTest {
 
     @Test
     fun `keeps count units separate instead of guessing a conversion`() {
-        val groups = aggregate(
-            requirement(egg, 2.0, piece),
-            requirement(egg, 3.0, pack),
-        )
+        val groups =
+            aggregate(
+                requirement(egg, 2.0, piece),
+                requirement(egg, 3.0, pack),
+            )
 
         assertThat(groups.single().totals).hasSize(2)
     }
 
     @Test
     fun `marks a group optional only when every line is optional`() {
-        val mixed = aggregate(
-            requirement(flour, 1.0, gram, isOptional = true),
-            requirement(flour, 1.0, gram),
-        )
-        val allOptional = aggregate(
-            requirement(egg, 1.0, piece, isOptional = true),
-            requirement(egg, 2.0, piece, isOptional = true),
-        )
+        val mixed =
+            aggregate(
+                requirement(flour, 1.0, gram, isOptional = true),
+                requirement(flour, 1.0, gram),
+            )
+        val allOptional =
+            aggregate(
+                requirement(egg, 1.0, piece, isOptional = true),
+                requirement(egg, 2.0, piece, isOptional = true),
+            )
 
         assertThat(mixed.single().isOptional).isFalse()
         assertThat(allOptional.single().isOptional).isTrue()
@@ -82,8 +92,7 @@ class RequirementAggregatorTest {
         amount: Double,
         unit: Unit,
         isOptional: Boolean = false,
-    ): ExplodedRequirement =
-        ExplodedRequirement(ingredient, Quantity(amount, unit), isOptional)
+    ): ExplodedRequirement = ExplodedRequirement(ingredient, Quantity(amount, unit), isOptional)
 
     private fun unit(
         id: String,

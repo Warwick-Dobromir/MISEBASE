@@ -11,7 +11,6 @@ import org.junit.Test
 
 /** 缺口计算：满足、不足与库存单位换算（R01 阶段 8）。 */
 class InventoryAllocatorTest {
-
     private val allocator = InventoryAllocator()
     private val flour = IngredientId("flour")
     private val gram = unit("g", UnitDimension.MASS, 1.0)
@@ -34,9 +33,10 @@ class InventoryAllocatorTest {
 
     @Test
     fun `converts kilogram stock to the required gram unit`() {
-        val requirements = listOf(
-            RequirementGroup(flour, listOf(Quantity(1500.0, gram)), isOptional = false),
-        )
+        val requirements =
+            listOf(
+                RequirementGroup(flour, listOf(Quantity(1500.0, gram)), isOptional = false),
+            )
         val stock = listOf(InventoryAvailability(flour, Quantity(1.0, kilogram)))
 
         val result = allocator.allocate(requirements, stock)
@@ -50,9 +50,10 @@ class InventoryAllocatorTest {
         required: Double,
         stock: Double,
     ): RequirementGap {
-        val requirements = listOf(
-            RequirementGroup(flour, listOf(Quantity(required, gram)), isOptional = false),
-        )
+        val requirements =
+            listOf(
+                RequirementGroup(flour, listOf(Quantity(required, gram)), isOptional = false),
+            )
         val availability = listOf(InventoryAvailability(flour, Quantity(stock, gram)))
 
         val result = allocator.allocate(requirements, availability)

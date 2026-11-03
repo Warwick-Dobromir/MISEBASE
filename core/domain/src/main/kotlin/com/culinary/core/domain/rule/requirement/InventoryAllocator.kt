@@ -34,17 +34,18 @@ class InventoryAllocator(
         stock: List<InventoryAvailability>,
         conversions: List<IngredientUnitConversion> = emptyList(),
     ): Outcome<List<RequirementGap>> {
-        val gaps = requirements.flatMap { group ->
-            group.totals.map { required ->
-                val available = availableFor(group.ingredientId, required, stock, conversions)
-                RequirementGap(
-                    ingredientId = group.ingredientId,
-                    required = required,
-                    available = Quantity(available, required.unit),
-                    shortfall = Quantity(maxOf(0.0, required.amount - available), required.unit),
-                )
+        val gaps =
+            requirements.flatMap { group ->
+                group.totals.map { required ->
+                    val available = availableFor(group.ingredientId, required, stock, conversions)
+                    RequirementGap(
+                        ingredientId = group.ingredientId,
+                        required = required,
+                        available = Quantity(available, required.unit),
+                        shortfall = Quantity(maxOf(0.0, required.amount - available), required.unit),
+                    )
+                }
             }
-        }
         return Outcome.success(gaps)
     }
 
@@ -57,7 +58,15 @@ class InventoryAllocator(
         stock
             .filter { it.ingredientId == ingredientId }
             .sumOf { availability ->
-                when (val converted = unitConverter.convert(availability.quantity, required.unit, conversions, ingredientId)) {
+                when (
+                    val converted =
+                        unitConverter.convert(
+                            availability.quantity,
+                            required.unit,
+                            conversions,
+                            ingredientId,
+                        )
+                ) {
                     is Outcome.Success -> converted.value.amount
                     is Outcome.Failure -> 0.0
                 }

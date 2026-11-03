@@ -15,73 +15,83 @@ import org.junit.Test
 
 /** 保存/归档食材：校验、规范化与事务边界（阶段 7）。 */
 class SaveIngredientUseCaseTest {
-
     private val repository = FakeIngredientRepository()
-    private val useCase = SaveIngredientUseCase(
-        repository = repository,
-        idGenerator = IdGenerator { "id-1" },
-        transactionRunner = ImmediateTransactionRunner,
-    )
+    private val useCase =
+        SaveIngredientUseCase(
+            repository = repository,
+            idGenerator = IdGenerator { "id-1" },
+            transactionRunner = ImmediateTransactionRunner,
+        )
 
     @Test
-    fun `rejects a blank name`() = runBlocking<Unit> {
-        val result = useCase(SaveIngredientInput(name = "   "))
+    fun `rejects a blank name`() =
+        runBlocking<Unit> {
+            val result = useCase(SaveIngredientInput(name = "   "))
 
-        assertThat(result).isInstanceOf(Outcome.Failure::class.java)
-        val error = (result as Outcome.Failure).error
-        assertThat(error.code.value).isEqualTo("CUL-VAL-001")
-        assertThat(repository.saved).isEmpty()
-    }
-
-    @Test
-    fun `rejects a name over the length limit`() = runBlocking<Unit> {
-        val result = useCase(SaveIngredientInput(name = "a".repeat(121)))
-
-        assertThat((result as Outcome.Failure).error.code.value).isEqualTo("CUL-VAL-001")
-        assertThat(repository.saved).isEmpty()
-    }
+            assertThat(result).isInstanceOf(Outcome.Failure::class.java)
+            val error = (result as Outcome.Failure).error
+            assertThat(error.code.value).isEqualTo("CUL-VAL-001")
+            assertThat(repository.saved).isEmpty()
+        }
 
     @Test
-    fun `creates an active ingredient with a normalized name`() = runBlocking<Unit> {
-        val result = useCase(SaveIngredientInput(name = "  Soy   Sauce "))
+    fun `rejects a name over the length limit`() =
+        runBlocking<Unit> {
+            val result = useCase(SaveIngredientInput(name = "a".repeat(121)))
 
-        assertThat(result).isInstanceOf(Outcome.Success::class.java)
-        assertThat((result as Outcome.Success).value.value).isEqualTo("id-1")
-        val saved = repository.saved.single()
-        assertThat(saved.name).isEqualTo("Soy   Sauce")
-        assertThat(saved.normalizedName).isEqualTo("soy sauce")
-        assertThat(saved.status).isEqualTo(EntityStatus.ACTIVE)
-    }
+            assertThat((result as Outcome.Failure).error.code.value).isEqualTo("CUL-VAL-001")
+            assertThat(repository.saved).isEmpty()
+        }
 
     @Test
-    fun `keeps the id when editing an existing ingredient`() = runBlocking<Unit> {
-        useCase(SaveIngredientInput(name = "酱油", id = IngredientId("existing")))
+    fun `creates an active ingredient with a normalized name`() =
+        runBlocking<Unit> {
+            val result = useCase(SaveIngredientInput(name = "  Soy   Sauce "))
 
-        assertThat(repository.saved.single().id.value).isEqualTo("existing")
-    }
+            assertThat(result).isInstanceOf(Outcome.Success::class.java)
+            assertThat((result as Outcome.Success).value.value).isEqualTo("id-1")
+            val saved = repository.saved.single()
+            assertThat(saved.name).isEqualTo("Soy   Sauce")
+            assertThat(saved.normalizedName).isEqualTo("soy sauce")
+            assertThat(saved.status).isEqualTo(EntityStatus.ACTIVE)
+        }
 
     @Test
-    fun `archives through the repository inside a transaction`() = runBlocking<Unit> {
-        val archive = ArchiveIngredientUseCase(repository, ImmediateTransactionRunner)
+    fun `keeps the id when editing an existing ingredient`() =
+        runBlocking<Unit> {
+            useCase(SaveIngredientInput(name = "酱油", id = IngredientId("existing")))
 
-        val result = archive(IngredientId("id-1"))
+            assertThat(
+                repository.saved
+                    .single()
+                    .id.value,
+            ).isEqualTo("existing")
+        }
 
-        assertThat(result).isInstanceOf(Outcome.Success::class.java)
-        assertThat(repository.archived).containsExactly(IngredientId("id-1"))
-    }
+    @Test
+    fun `archives through the repository inside a transaction`() =
+        runBlocking<Unit> {
+            val archive = ArchiveIngredientUseCase(repository, ImmediateTransactionRunner)
+
+            val result = archive(IngredientId("id-1"))
+
+            assertThat(result).isInstanceOf(Outcome.Success::class.java)
+            assertThat(repository.archived).containsExactly(IngredientId("id-1"))
+        }
 
     private class FakeIngredientRepository : IngredientRepository {
         val saved = mutableListOf<Ingredient>()
         val archived = mutableListOf<IngredientId>()
 
-        override fun observeActive(): Flow<List<Ingredient>> =
-            flowOf(saved.filter { it.status == EntityStatus.ACTIVE })
+        override fun observeActive(): Flow<List<Ingredient>> = flowOf(saved.filter { it.status == EntityStatus.ACTIVE })
 
         override suspend fun get(id: IngredientId): Outcome<Ingredient> =
-            saved.firstOrNull { it.id == id }
+            saved
+                .firstOrNull { it.id == id }
                 ?.let { Outcome.success(it) }
                 ?: Outcome.failure(
-                    com.culinary.core.common.CulinaryError.NotFound("ingredient", id.value),
+                    com.culinary.core.common.CulinaryError
+                        .NotFound("ingredient", id.value),
                 )
 
         override suspend fun save(ingredient: Ingredient): Outcome<IngredientId> {

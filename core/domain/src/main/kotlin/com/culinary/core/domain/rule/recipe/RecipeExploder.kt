@@ -45,14 +45,15 @@ class RecipeExploder(
         }
 
         val requirements = mutableListOf<ExplodedRequirement>()
-        val error = expand(
-            versionId = rootVersionId,
-            factor = multiplier,
-            source = source,
-            includeOptional = includeOptional,
-            requirements = requirements,
-            visiting = LinkedHashSet(),
-        )
+        val error =
+            expand(
+                versionId = rootVersionId,
+                factor = multiplier,
+                source = source,
+                includeOptional = includeOptional,
+                requirements = requirements,
+                visiting = LinkedHashSet(),
+            )
         return if (error == null) Outcome.success(requirements) else Outcome.failure(error)
     }
 
@@ -67,26 +68,29 @@ class RecipeExploder(
         if (!visiting.add(versionId)) {
             return cycleError(visiting + versionId)
         }
-        val version = source.findVersion(versionId)
-            ?: return CulinaryError.NotFound(entity = "recipe_version", id = versionId.value)
+        val version =
+            source.findVersion(versionId)
+                ?: return CulinaryError.NotFound(entity = "recipe_version", id = versionId.value)
 
         for (component in version.components) {
             if (component.isOptional && !includeOptional) continue
             val scaled = Quantity(component.quantity.amount * factor, component.quantity.unit)
-            val error = when (val target = component.target) {
-                is ComponentTarget.Ingredient -> {
-                    requirements += ExplodedRequirement(target.id, scaled, component.isOptional)
-                    null
+            val error =
+                when (val target = component.target) {
+                    is ComponentTarget.Ingredient -> {
+                        requirements += ExplodedRequirement(target.id, scaled, component.isOptional)
+                        null
+                    }
+                    is ComponentTarget.Recipe ->
+                        expandChild(
+                            target = target,
+                            scaled = scaled,
+                            source = source,
+                            includeOptional = includeOptional,
+                            requirements = requirements,
+                            visiting = visiting,
+                        )
                 }
-                is ComponentTarget.Recipe -> expandChild(
-                    target = target,
-                    scaled = scaled,
-                    source = source,
-                    includeOptional = includeOptional,
-                    requirements = requirements,
-                    visiting = visiting,
-                )
-            }
             if (error != null) {
                 visiting -= versionId
                 return error
@@ -105,13 +109,15 @@ class RecipeExploder(
         requirements: MutableList<ExplodedRequirement>,
         visiting: LinkedHashSet<RecipeVersionId>,
     ): CulinaryError? {
-        val child = source.findVersion(target.versionId)
-            ?: return CulinaryError.NotFound(entity = "recipe_version", id = target.versionId.value)
+        val child =
+            source.findVersion(target.versionId)
+                ?: return CulinaryError.NotFound(entity = "recipe_version", id = target.versionId.value)
 
-        val converted = when (val result = unitConverter.convert(scaled, child.yield.unit)) {
-            is Outcome.Failure -> return result.error
-            is Outcome.Success -> result.value
-        }
+        val converted =
+            when (val result = unitConverter.convert(scaled, child.yield.unit)) {
+                is Outcome.Failure -> return result.error
+                is Outcome.Success -> result.value
+            }
         val childFactor = converted.amount / child.yield.amount
         return expand(
             versionId = target.versionId,

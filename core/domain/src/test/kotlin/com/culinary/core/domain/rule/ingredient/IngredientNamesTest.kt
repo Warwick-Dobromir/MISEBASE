@@ -4,7 +4,6 @@ import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 
 class IngredientNamesTest {
-
     @Test
     fun `applies NFKC so full width letters match`() {
         assertThat(IngredientNames.normalize("Ｃｕｌｉｎａｒｙ")).isEqualTo("culinary")

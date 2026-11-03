@@ -17,20 +17,20 @@ import org.junit.Test
 
 /** 配方展开：产量缩放、子配方换算、可选行、错误与 200 节点基准（R01 阶段 8）。 */
 class RecipeExploderTest {
-
     private val exploder = RecipeExploder()
 
-    private val gram = Unit(
-        id = UnitId("g"),
-        code = "g",
-        name = "gram",
-        symbol = "g",
-        dimension = UnitDimension.MASS,
-        baseFactor = 1.0,
-        isBase = true,
-        isApproximate = false,
-        displayPrecision = 1,
-    )
+    private val gram =
+        Unit(
+            id = UnitId("g"),
+            code = "g",
+            name = "gram",
+            symbol = "g",
+            dimension = UnitDimension.MASS,
+            baseFactor = 1.0,
+            isBase = true,
+            isApproximate = false,
+            displayPrecision = 1,
+        )
 
     private val flour = IngredientId("flour")
     private val sugar = IngredientId("sugar")
@@ -49,11 +49,12 @@ class RecipeExploderTest {
     @Test
     fun `converts a sub recipe reference against the child yield`() {
         val child = version("child", yield = 500.0, components = listOf(line(1, flour, 100.0)))
-        val root = version(
-            "root",
-            yield = 1000.0,
-            components = listOf(recipeLine(1, "child", 250.0)),
-        )
+        val root =
+            version(
+                "root",
+                yield = 1000.0,
+                components = listOf(recipeLine(1, "child", 250.0)),
+            )
         val result = explode("root", mapOf("root" to root, "child" to child))
 
         val requirements = (result as Outcome.Success).value
@@ -64,14 +65,16 @@ class RecipeExploderTest {
 
     @Test
     fun `excludes optional components unless requested`() {
-        val version = version(
-            "root",
-            yield = 100.0,
-            components = listOf(
-                line(1, sugar, 10.0),
-                line(2, flour, 5.0, isOptional = true),
-            ),
-        )
+        val version =
+            version(
+                "root",
+                yield = 100.0,
+                components =
+                    listOf(
+                        line(1, sugar, 10.0),
+                        line(2, flour, 5.0, isOptional = true),
+                    ),
+            )
         val source = mapOf("root" to version)
 
         val withoutOptional = (explode("root", source) as Outcome.Success).value
@@ -84,11 +87,12 @@ class RecipeExploderTest {
 
     @Test
     fun `reports a missing child version`() {
-        val root = version(
-            "root",
-            yield = 100.0,
-            components = listOf(recipeLine(1, "missing", 10.0)),
-        )
+        val root =
+            version(
+                "root",
+                yield = 100.0,
+                components = listOf(recipeLine(1, "missing", 10.0)),
+            )
 
         val result = explode("root", mapOf("root" to root))
 
@@ -107,17 +111,20 @@ class RecipeExploderTest {
 
     @Test
     fun `expands 200 nodes within 500 ms`() {
-        val versions = (0 until 200).associate { index ->
-            val id = "v$index"
-            id to version(
-                id = id,
-                yield = 100.0,
-                components = listOfNotNull(
-                    line(1, IngredientId("ingredient-$index"), 1.0),
-                    if (index < 199) recipeLine(2, "v${index + 1}", 10.0) else null,
-                ),
-            )
-        }
+        val versions =
+            (0 until 200).associate { index ->
+                val id = "v$index"
+                id to
+                    version(
+                        id = id,
+                        yield = 100.0,
+                        components =
+                            listOfNotNull(
+                                line(1, IngredientId("ingredient-$index"), 1.0),
+                                if (index < 199) recipeLine(2, "v${index + 1}", 10.0) else null,
+                            ),
+                    )
+            }
 
         val started = System.nanoTime()
         val result = explode("v0", versions)

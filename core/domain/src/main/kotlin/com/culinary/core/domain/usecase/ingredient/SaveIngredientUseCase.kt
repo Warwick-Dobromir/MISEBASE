@@ -39,13 +39,14 @@ class SaveIngredientUseCase(
             return invalid("must be at most $MAX_NAME_LENGTH characters")
         }
 
-        val ingredient = Ingredient(
-            id = input.id ?: IngredientId(idGenerator.newId()),
-            name = name,
-            normalizedName = IngredientNames.normalize(name),
-            defaultUnitId = input.defaultUnitId,
-            status = EntityStatus.ACTIVE,
-        )
+        val ingredient =
+            Ingredient(
+                id = input.id ?: IngredientId(idGenerator.newId()),
+                name = name,
+                normalizedName = IngredientNames.normalize(name),
+                defaultUnitId = input.defaultUnitId,
+                status = EntityStatus.ACTIVE,
+            )
 
         return transactionRunner.write { repository.save(ingredient) }.flatMap { it }
     }
