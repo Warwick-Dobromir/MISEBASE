@@ -5,6 +5,7 @@ import com.culinary.core.common.DefaultDispatcherProvider
 import com.culinary.core.common.DispatcherProvider
 import com.culinary.core.common.IdGenerator
 import com.culinary.core.common.UuidV4Generator
+import com.culinary.core.data.startup.StartupCoordinator
 import com.culinary.core.data.transaction.RoomTransactionRunner
 import com.culinary.core.database.CulinaryDatabase
 import com.culinary.core.database.DatabaseFactory
@@ -17,6 +18,7 @@ import dagger.hilt.components.SingletonComponent
 import kotlinx.coroutines.sync.Mutex
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
+import javax.inject.Provider
 import javax.inject.Singleton
 
 /**
@@ -59,6 +61,13 @@ object DataModule {
     @Provides
     @Singleton
     fun provideIdGenerator(): IdGenerator = UuidV4Generator()
+
+    @Provides
+    @Singleton
+    fun provideStartupCoordinator(
+        @ApplicationContext context: Context,
+        databaseProvider: Provider<CulinaryDatabase>,
+    ): StartupCoordinator = StartupCoordinator(context, databaseProvider)
 
     @Provides
     @Singleton
