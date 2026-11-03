@@ -32,9 +32,10 @@
 | cmdline-tools | **未安装** | 需补（CI/命令行） |
 | Gradle | 无系统 Gradle；Wrapper 缓存 `8.14.3`、`9.0.0` | 用 8.14.3 |
 | Git | `2.56.0.windows.3` | 可用 |
-| `JAVA_HOME` | **未设置** | 需配置 |
-| `ANDROID_HOME` / `ANDROID_SDK_ROOT` | **未设置** | 需配置 |
+| `JAVA_HOME` | 已设置：Studio JBR 21 | 已配置 |
+| `ANDROID_HOME` / `ANDROID_SDK_ROOT` | 已设置：SDK 路径 | 已配置 |
 | 已连接真机 | **无** | 验收前必须补 |
+| 模拟器安装验证 | `Pixel_5` + `-feature -Vulkan`：install/launch 成功 | PASS |
 | Google Maven | 直连失败；阿里云镜像可用 | 已用镜像构建验证 |
 | 依赖构建验证 | `tools/dependency-spike` 构建成功 | 通过（见 V01） |
 

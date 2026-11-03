@@ -25,13 +25,13 @@
 |---|---|---|
 | G1 | 8 项架构决策已签收（D-001/002/003/004/006/008/009/011） | PENDING |
 | G2 | Google Maven 依赖解析已验证（能拉取 AGP/Compose/Room/Hilt） | PASS（镜像 + V01） |
-| G3 | JDK 21 + Android SDK 36 环境变量配置完成 | FAIL |
-| G4 | 空 Android 工程可 `assembleDebug` 并安装 | PENDING（构建 PASS；安装待模拟器） |
+| G3 | JDK 21 + Android SDK 36 环境变量配置完成 | PASS（用户级已设置） |
+| G4 | 空 Android 工程可 `assembleDebug` 并安装 | PASS（V01：构建 + 安装 + 启动） |
 | G5 | Release 签名 keystore 已创建并离线备份 | PENDING |
 | G6 | 版本目录实际版本锁定（非候选/占位） | PASS（版本值已实测；`libs.versions.toml` 阶段 1 建） |
 | G7 | 无未解决的架构级冲突（P0） | PASS |
 
-> 结论：**当前仍不满足开工门禁**，但阻塞项已从 6 项减少到 4 项（G1/G3/G4 安装/G5）。依赖兼容性与版本锁定已用实际构建验证。
+> 结论：**当前仍不满足开工门禁**，剩余 2 项：G1 决策签收、G5 签名 keystore。依赖解析、版本锁定、构建、安装/启动均已通过。
 
 ## 3. 产品与架构
 
@@ -44,7 +44,7 @@
 | A05 | 分层架构 | 层职责/禁止/通信 | PASS | A02 | 否 |
 | A06 | 模块边界 | 16 模块、依赖矩阵 | PASS | A03 | 否 |
 | A07 | 数据模型 | ER + 字典 + 约束 | PASS | A05/A06 | 否 |
-| A08 | 版本与迁移 | 五类版本、兼容矩阵 | PASS | A07 | 否 |
+| A08 | 版本与迁移 | 六类版本、兼容矩阵 | PASS | A07 | 否 |
 | A09 | 并发方案 | WAL/单写者/重试/恢复 | PASS | E02 | 否 |
 | A10 | 备份恢复 | 格式/校验/回滚 | PASS | E05 | 否 |
 | A11 | 测试体系 | 分层/场景/验收 | PASS | E06 | 否 |
@@ -56,14 +56,14 @@
 | # | 检查项 | 要求 | 状态 | 证据/行动 | 阻塞 |
 |---|---|---|---|---|---|
 | E01 | JDK 21 | Studio JBR 21.0.8 | PASS | `java -version` | 否 |
-| E02 | JAVA_HOME | 指向 JBR 21 | FAIL | 设置用户环境变量 | **是** |
+| E02 | JAVA_HOME | 指向 JBR 21 | PASS | 用户级已设置 | 否 |
 | E03 | Android SDK 36 | platforms/build-tools | PASS | SDK 目录 | 否 |
-| E04 | ANDROID_HOME | 指向 SDK | FAIL | 设置用户环境变量 | **是** |
+| E04 | ANDROID_HOME | 指向 SDK | PASS | 用户级已设置 | 否 |
 | E05 | adb | 可用，能列设备 | PASS | `adb version` | 否 |
 | E06 | Gradle Wrapper | 8.14.3 + 校验和 | PENDING | 阶段 0 创建 | 否 |
 | E07 | cmdline-tools | latest | PENDING | sdkmanager 安装 | 否 |
 | E08 | API 26 镜像 | 最低版本测试 | PENDING | 安装 system image | 否 |
-| E09 | 模拟器 | API 33/36 可启动 | PENDING | AVD 存在；headless 启动未成功 | 否 |
+| E09 | 模拟器 | API 33/36 可启动 | PASS | `Pixel_5` + `-feature -Vulkan` 启动 | 否 |
 | E10 | 真机 | 至少一台 Android 手机 | PENDING | 验收前连接 | 否（验收） |
 | E11 | 磁盘空间 | ≥ 30 GB 可用 | PASS | D: 156.4 GB | 否 |
 | E12 | 内存 | ≥ 8 GB | PASS | 15.8 GB | 否 |
@@ -89,7 +89,7 @@
 | # | 检查项 | 要求 | 状态 | 证据/行动 | 阻塞 |
 |---|---|---|---|---|---|
 | B01 | 空工程构建 | `assembleDebug` | PASS | V01 构建成功 | 否 |
-| B02 | 安装启动 | 模拟器安装打开 | PENDING | 阶段 1 | 是 |
+| B02 | 安装启动 | 模拟器安装打开 | PASS | V01：install Success + Activity resumed | 否 |
 | B03 | Release 构建 | R8 + 签名 | PENDING | 阶段 9 | 否 |
 | B04 | Keystore | 创建 + 两处离线备份 | PENDING | 阶段 0 | 是（发布） |
 | B05 | 版本号规则 | versionName/Code | PASS | E01 | 否 |
@@ -182,8 +182,6 @@
 | ID | 项 | 行动 | 责任 |
 |---|---|---|---|
 | G1 | 8 项决策签收 | 项目负责人签收 | 负责人 |
-| G3/E02/E04 | JAVA_HOME/ANDROID_HOME | 设置环境变量 | 开发 |
-| G4/B02 | 模拟器安装/启动 | 修模拟器或连接真机验证 | 开发 |
 | G5/B04 | 签名 keystore | 创建 + 备份 | 负责人 |
 
 ### 12.2 非阻塞但需跟进
@@ -192,7 +190,7 @@
 - 依赖许可证核查（D06）。
 - 文档小问题已清理，签收时复核。
 
-> 已解除：G2 依赖解析、G6 版本锁定、B01 构建、D01/D03/D05/D08。
+> 已解除：G2 依赖解析、G3 环境变量、G4 构建/安装、G6 版本锁定、B01/B02。
 > 证据：[V01 技术验证](V01-DEPENDENCY-VALIDATION.md)。
 
 ## 13. 开工前最后一步

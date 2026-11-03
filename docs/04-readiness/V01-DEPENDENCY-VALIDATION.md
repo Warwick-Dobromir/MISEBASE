@@ -146,7 +146,7 @@ FOREGROUND_SERVICE
 
 ### 5.4 未验证项
 
-- 真机安装/启动（模拟器安装见第 6 节，若完成）。
+- 真机安装/启动（模拟器已安装/启动，见第 6 节）。
 - 扫码、SAF、WorkManager 后台限制。
 - Release R8 构建。
 - 数据库迁移（spike 只有 v1）。
@@ -158,11 +158,13 @@ FOREGROUND_SERVICE
 
 | 项 | 结果 |
 |---|---|
-| 模拟器 | `Medium_Phone_API_36.1`（headless）启动尝试超时 |
-| `adb install` | **PENDING**（无可用设备） |
-| 启动 Activity | **PENDING** |
+| 模拟器 | `Pixel_5`（headless，`-feature -Vulkan`） |
+| `adb install` | **Success** |
+| 启动 Activity | `com.culinary.spike/.MainActivity` 已 `mResumedActivity` |
+| 进程 | `pidof com.culinary.spike` 返回 PID |
+| 设备端权限 | `dumpsys package` 仅 WAKE_LOCK / RECEIVE_BOOT_COMPLETED / FOREGROUND_SERVICE；**无 INTERNET / ACCESS_NETWORK_STATE** |
 
-> 构建成功已足够验证“依赖能否协同”；安装验证属于阶段 0 门禁，需先解决模拟器启动或连接真机。该 PENDING 不影响依赖选型结论，但不能把“可安装”标为已通过。
+> 首次 headless 启动因 Vulkan 加载失败崩溃；加 `-feature -Vulkan` 后正常启动。该参数仅用于本机模拟器验证，不影响产品代码。安装、启动与设备端权限检查均通过。
 
 ## 7. 复现命令
 

@@ -10,6 +10,7 @@
 - `build-log-2.txt` 是成功构建日志（Hilt 2.57.2）。
 - `build-log.txt` 是 Hilt 2.59.2 失败记录（证明 2.59+ 要求 AGP 9）。
 - `build-log-3.txt` 是移除 INTERNET/ACCESS_NETWORK_STATE 后的构建与权限检查记录。
+- `build-log-4.txt` 是模拟器安装前的增量构建日志；安装/启动验证记录见 V01 第 6 节。
 
 ## 构建
 

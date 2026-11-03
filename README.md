@@ -33,7 +33,7 @@
 - **领域难点**：配方递归展开、循环检测、单位不可换算、版本快照、批次库存、预留与实扣分离。
 - **工程底线**：数据库迁移禁止破坏性回退；恢复/导入必须先备份、先校验、可回滚；代码回档不等于数据回档。
 - **依赖验证**：AGP 8.13 / Kotlin 2.2.20 / Hilt 2.57.2 / Room 2.8.5 / Compose 2025.10.01 已实际构建通过；v1 网络权限可在 manifest 中移除并经 `aapt` 验证。见 [V01 技术验证](docs/04-readiness/V01-DEPENDENCY-VALIDATION.md)。
-- **当前门禁**：架构层面已具备开工条件；工程层面还差 4 项（决策签收、JDK/SDK 环境变量、模拟器安装、签名 keystore）。见 [R04 启动报告](docs/04-readiness/R04-FRAMEWORK-START-REPORT.md)。
+- **当前门禁**：架构层面已具备开工条件；工程层面还差 2 项（决策签收、签名 keystore）。见 [R04 启动报告](docs/04-readiness/R04-FRAMEWORK-START-REPORT.md)。
 - **未决事项**：见 [决策登记册](docs/00-governance/DECISION-REGISTER.md)。所有 `PROPOSED` 决策需负责人签收后才可标为 `Approved`。
 
 ## 文档状态规则
