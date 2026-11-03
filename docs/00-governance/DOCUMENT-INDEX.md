@@ -1,7 +1,7 @@
 # CULINARY 文档索引
 
 **文档编号**：GOV-INDEX
-**版本**：`0.4.0`
+**版本**：`0.5.0`
 **状态**：`Review`
 **日期**：2026-11-04
 **维护人**：首席架构师 / 技术负责人
@@ -44,6 +44,7 @@
 | [G1 最终复核包](../04-readiness/G1-REVIEW-PACKET.md) | D-004/D-011/G5 证据汇总与签收选项 |
 | [E05 修订复核包](../03-engineering/E05-REVISION-REVIEW.md) | E05 0.4.0 五项修订、哈希结构、journal 与测试 |
 | [G1 归档核验与 G2 准入报告](../04-readiness/G1-ARCHIVE-AUDIT.md) | 17 份文档、ER/字典、技术栈、并发、备份、测试、环境的 8 项核验 |
+| [R08 G1 最终定点修订报告](../04-readiness/R08-FINAL-REVISION-REPORT.md) | R01 0.2.2、七项 PROPOSED 门禁、状态统一、归档重提交 |
 | [ADR-001 原生 Android](../adr/ADR-001-NATIVE-ANDROID.md) | 平台与 UI 技术栈 |
 | [ADR-002 Room/SQLite](../adr/ADR-002-ROOM-SQLITE.md) | 本地数据库与数据访问 |
 | [ADR-003 分层模块化](../adr/ADR-003-LAYERED-MODULES.md) | 分层、模块边界与依赖规则 |

@@ -1,7 +1,7 @@
 # CULINARY 框架搭建实施顺序
 
 **文档编号**：R01
-**版本**：`0.2.1`
+**版本**：`0.2.2`
 **状态**：`Review`
 **日期**：2026-11-04
 **负责人**：首席架构师 / 技术负责人
@@ -35,7 +35,7 @@
 | 阶段 | 名称 | 产出 | 退出条件 | 规模 |
 |---|---|---|---|---|
 | 0 | 环境门禁 | JDK/SDK/Gradle/网络/Debug 构建 | 能解析依赖并构建空工程 | S |
-| 1 | 工程骨架 | D-004 审查后的模块集（推荐 15）、版本目录、约定插件 | `assembleDebug` 成功 | M |
+| 1 | 工程骨架 | D-004 已接受的 15 模块、版本目录、约定插件 | `assembleDebug` 成功 | M |
 | 2 | 核心契约 | common/domain（含模型）接口与错误 | 纯 JVM 单测通过 | M |
 | 3 | 数据库 v1 | Room schema、DAO、迁移框架、种子 | 建库/约束/迁移测试通过 | L |
 | 4 | 数据层 | Repository、Mapper、事务、文件 | 集成测试通过 | L |
@@ -73,7 +73,7 @@
 
 ### 4.1 任务
 
-- 按 D-004 审查结论创建模块（推荐 15；细粒度参考 16，见 A03/A03A），每个模块有最小 `build.gradle.kts`。
+- 按 D-004 已接受的 15 模块创建模块（见 A03/A03A），每个模块有最小 `build.gradle.kts`。
 - `settings.gradle.kts` 集中 include；模块命名与路径一致。
 - `build-logic/convention` 提供：
   - `culinary.android.application`
@@ -90,7 +90,7 @@
 
 ### 4.2 退出条件
 
-- [ ] `./gradlew projects` 显示 D-004 审查确定的模块集。
+- [ ] `./gradlew projects` 显示 D-004 已接受的 15 模块。
 - [ ] `./gradlew assembleDebug` 成功。
 - [ ] `./gradlew ktlintCheck detekt` 成功。
 - [ ] 依赖版本全部来自 version catalog，无硬编码。
@@ -102,7 +102,7 @@
 ### 5.1 任务
 
 - `core:common`：`Outcome`、`CulinaryError`、错误码、`Clock`、`IdGenerator`、`DispatcherProvider`、`AppLogger` 接口。
-- 领域模型：核心实体/值对象（先覆盖食材、单位、配方、库存、计划的最小字段）。推荐方案放 `core:domain` 的 `model` 包；若 D-004 保留独立模块则放 `core:model`。
+- 领域模型：核心实体/值对象（先覆盖食材、单位、配方、库存、计划的最小字段）统一放在 `:core:domain` 的 `model` 包。**不创建独立的 `:core:model` 模块**；模型与 `domain` 内的 `rule`、`usecase`、`repository` 包按既定包级职责组织，保持 D-004 已接受的 15 模块结构。
 - `core:domain`：Repository 端口（先食材、单位、配方、库存、计划），Use Case 接口/类。
 - 领域服务骨架：
   - `UnitConverter`
@@ -264,7 +264,7 @@
 
 ## 13. 框架完成定义（DoD）
 
-- D-004 审查确定的模块集可构建，依赖方向可检查。
+- D-004 已接受的 15 模块可构建，依赖方向可检查。
 - 数据库 v1 + 迁移框架 + 种子数据可用。
 - 事务/错误/日志/DI/导航/主题可用。
 - 食材纵向切片可用。
@@ -316,3 +316,4 @@
 | 0.1.0 | 2026-11-04 | 初稿；10 阶段、退出条件、DoD 与后续顺序 | 架构组 |
 | 0.2.0 | 2026-11-04 | 按 D-004 将“16 模块”改为审查后的模块集（推荐 15） | 架构组 |
 | 0.2.1 | 2026-11-04 | 将 Release keystore/正式签名从阶段 0 与框架 DoD 移除，归入 G5 发布门禁；保留 Debug 与 Release/R8 构建验证 | 架构组 |
+| 0.2.2 | 2026-11-04 | 清除 §5.1 的 `core:model` 条件分支；明确领域模型统一放 `:core:domain/model`，不创建独立模块 | 架构组 |
