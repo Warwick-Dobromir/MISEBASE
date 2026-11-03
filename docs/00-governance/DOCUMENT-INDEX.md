@@ -38,6 +38,7 @@
 
 | 文档 | 用途 |
 |---|---|
+| [交付清单与校验记录](DELIVERY-MANIFEST.md) | 17 项交付物、SHA-256、完整性检查与开工门禁快照 |
 | [决策登记册](DECISION-REGISTER.md) | 所有需要签收的架构/产品决策，含默认值与影响 |
 | [ADR-001 原生 Android](../adr/ADR-001-NATIVE-ANDROID.md) | 平台与 UI 技术栈 |
 | [ADR-002 Room/SQLite](../adr/ADR-002-ROOM-SQLITE.md) | 本地数据库与数据访问 |
