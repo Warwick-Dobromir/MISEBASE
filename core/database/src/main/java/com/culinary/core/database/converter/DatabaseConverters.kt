@@ -1,9 +1,12 @@
 package com.culinary.core.database.converter
 
 import androidx.room.TypeConverter
+import com.culinary.core.database.model.BatchStatusDb
 import com.culinary.core.database.model.ComponentTypeDb
 import com.culinary.core.database.model.EntityStatusDb
+import com.culinary.core.database.model.LedgerTypeDb
 import com.culinary.core.database.model.RecipeCategoryDb
+import com.culinary.core.database.model.StorageLocationKindDb
 import com.culinary.core.database.model.UnitDimensionDb
 import com.culinary.core.database.model.VersionStatusDb
 
@@ -43,4 +46,22 @@ class DatabaseConverters {
 
     @TypeConverter
     fun toRecipeCategory(value: String): RecipeCategoryDb = RecipeCategoryDb.valueOf(value)
+
+    @TypeConverter
+    fun fromStorageLocationKind(value: StorageLocationKindDb): String = value.name
+
+    @TypeConverter
+    fun toStorageLocationKind(value: String): StorageLocationKindDb = StorageLocationKindDb.valueOf(value)
+
+    @TypeConverter
+    fun fromBatchStatus(value: BatchStatusDb): String = value.name
+
+    @TypeConverter
+    fun toBatchStatus(value: String): BatchStatusDb = BatchStatusDb.valueOf(value)
+
+    @TypeConverter
+    fun fromLedgerType(value: LedgerTypeDb): String = value.name
+
+    @TypeConverter
+    fun toLedgerType(value: String): LedgerTypeDb = LedgerTypeDb.valueOf(value)
 }

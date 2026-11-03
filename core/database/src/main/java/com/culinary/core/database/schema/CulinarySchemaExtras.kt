@@ -25,9 +25,31 @@ internal object CulinarySchemaExtras {
         installChecks(db, "recipe_version", VERSION_PREDICATE)
         installChecks(db, "sauce_component", COMPONENT_PREDICATE)
         installChecks(db, "recipe_component", COMPONENT_PREDICATE)
+        installChecks(db, "supplier", SUPPLIER_PREDICATE)
+        installChecks(db, "product", PRODUCT_PREDICATE)
+        installChecks(db, "barcode", BARCODE_PREDICATE)
+        installChecks(db, "storage_location", LOCATION_PREDICATE)
+        installChecks(db, "inventory_batch", BATCH_PREDICATE)
+        installChecks(db, "inventory_ledger", LEDGER_PREDICATE)
 
         installPublishedImmutability(db, "sauce_version", "sauce_id")
         installPublishedImmutability(db, "recipe_version", "recipe_id")
+        installAppendOnly(db, "inventory_ledger")
+    }
+
+    /** 库存流水只追加：UPDATE/DELETE 一律拒绝（A06 §6.3 / §10.1）。 */
+    private fun installAppendOnly(
+        db: SupportSQLiteDatabase,
+        table: String,
+    ) {
+        listOf("UPDATE", "DELETE").forEach { operation ->
+            val suffix = operation.lowercase()
+            db.execSQL(
+                "CREATE TRIGGER IF NOT EXISTS trg_${table}_no_$suffix " +
+                    "BEFORE $operation ON $table " +
+                    "BEGIN SELECT RAISE(ABORT, '$table is append-only'); END",
+            )
+        }
     }
 
     private fun installChecks(
@@ -87,6 +109,14 @@ internal object CulinarySchemaExtras {
             """
             CREATE UNIQUE INDEX IF NOT EXISTS ux_recipe_current
             ON recipe_version(recipe_id) WHERE is_current = 1
+            """.trimIndent(),
+            """
+            CREATE UNIQUE INDEX IF NOT EXISTS ux_supplier_normalized_name
+            ON supplier(normalized_name) WHERE deleted_at IS NULL
+            """.trimIndent(),
+            """
+            CREATE UNIQUE INDEX IF NOT EXISTS ux_barcode_primary
+            ON barcode(product_id) WHERE is_primary = 1
             """.trimIndent(),
         )
 
@@ -160,5 +190,61 @@ internal object CulinarySchemaExtras {
             OR NEW.referenced_sauce_id IS NOT NULL
             OR NEW.referenced_sauce_version_id IS NOT NULL
             OR NEW.referenced_recipe_id IS NULL))
+    """
+
+    private const val SUPPLIER_PREDICATE = """
+        NEW.status NOT IN ('ACTIVE', 'ARCHIVED')
+        OR NEW.revision < 1
+        OR NEW.created_at < 0
+        OR NEW.updated_at < 0
+        OR NEW.name = ''
+    """
+
+    private const val PRODUCT_PREDICATE = """
+        NEW.status NOT IN ('ACTIVE', 'ARCHIVED')
+        OR NEW.revision < 1
+        OR NEW.content_qty <= 0
+        OR NEW.stock_to_content_factor <= 0
+        OR NEW.created_at < 0
+        OR NEW.updated_at < 0
+        OR (NEW.shelf_life_days IS NOT NULL AND NEW.shelf_life_days < 0)
+        OR (NEW.last_unit_price_minor IS NOT NULL AND NEW.last_unit_price_minor < 0)
+    """
+
+    private const val BARCODE_PREDICATE = """
+        NEW.code = ''
+        OR NEW.is_primary NOT IN (0, 1)
+    """
+
+    private const val LOCATION_PREDICATE = """
+        NEW.kind NOT IN ('PANTRY', 'FRIDGE', 'FREEZER', 'DRY', 'OTHER')
+        OR NEW.status NOT IN ('ACTIVE', 'ARCHIVED')
+        OR NEW.revision < 1
+        OR NEW.sort_order < 0
+        OR NEW.created_at < 0
+        OR NEW.updated_at < 0
+    """
+
+    private const val BATCH_PREDICATE = """
+        NEW.status NOT IN ('ACTIVE', 'DEPLETED', 'EXPIRED', 'DISCARDED')
+        OR NEW.quantity_on_hand < 0
+        OR NEW.quantity_reserved < 0
+        OR NEW.quantity_reserved > NEW.quantity_on_hand
+        OR NEW.revision < 1
+        OR NEW.created_at < 0
+        OR NEW.updated_at < 0
+    """
+
+    private const val LEDGER_PREDICATE = """
+        NEW.type NOT IN (
+            'PURCHASE_RECEIPT', 'PRODUCTION_ISSUE', 'RESERVE', 'RELEASE',
+            'ADJUSTMENT_IN', 'ADJUSTMENT_OUT', 'WASTE', 'TRANSFER_OUT',
+            'TRANSFER_IN', 'RETURN', 'VOID_RECEIPT')
+        OR NEW.on_hand_after < 0
+        OR NEW.reserved_after < 0
+        OR NEW.reserved_after > NEW.on_hand_after
+        OR NEW.idempotency_key = ''
+        OR NEW.occurred_at < 0
+        OR NEW.created_at < 0
     """
 }
