@@ -42,11 +42,16 @@ internal object CulinarySchemaExtras {
         installChecks(db, "purchase_order_item", PURCHASE_ORDER_ITEM_PREDICATE)
         installChecks(db, "goods_receipt", RECEIPT_PREDICATE)
         installChecks(db, "goods_receipt_item", RECEIPT_ITEM_PREDICATE)
+        installChecks(db, "image_asset", IMAGE_PREDICATE)
+        installChecks(db, "change_log", CHANGE_LOG_PREDICATE)
+        installChecks(db, "backup_record", BACKUP_PREDICATE)
+        installChecks(db, "app_metadata", APP_METADATA_PREDICATE)
 
         installPublishedImmutability(db, "sauce_version", "sauce_id")
         installPublishedImmutability(db, "recipe_version", "recipe_id")
         installAppendOnly(db, "inventory_ledger")
         installNoUpdate(db, "production_plan_snapshot")
+        installAppendOnly(db, "change_log")
     }
 
     /**
@@ -146,6 +151,11 @@ internal object CulinarySchemaExtras {
             """
             CREATE UNIQUE INDEX IF NOT EXISTS ux_barcode_primary
             ON barcode(product_id) WHERE is_primary = 1
+            """.trimIndent(),
+            """
+            CREATE UNIQUE INDEX IF NOT EXISTS ux_image_primary
+            ON image_asset(owner_type, owner_id)
+            WHERE role = 'PRIMARY' AND deleted_at IS NULL
             """.trimIndent(),
             """
             CREATE UNIQUE INDEX IF NOT EXISTS ux_reservation_active
@@ -357,5 +367,37 @@ internal object CulinarySchemaExtras {
 
     private const val RECEIPT_ITEM_PREDICATE = """
         NEW.quantity <= 0
+    """
+    private const val IMAGE_PREDICATE = """
+        NEW.role NOT IN ('PRIMARY', 'PROCESS', 'REFERENCE')
+        OR NEW.owner_type NOT IN (
+            'INGREDIENT', 'SAUCE', 'SAUCE_VERSION', 'RECIPE', 'RECIPE_VERSION',
+            'PRODUCT', 'INVENTORY_BATCH', 'PLAN', 'RECEIPT')
+        OR NEW.relative_path = ''
+        OR NEW.mime_type = ''
+        OR NEW.sha256 = ''
+        OR NEW.byte_size < 0
+        OR NEW.sort_order < 0
+    """
+
+    private const val CHANGE_LOG_PREDICATE = """
+        NEW.action NOT IN (
+            'CREATE', 'UPDATE', 'DELETE', 'PUBLISH', 'CONFIRM', 'RECEIVE',
+            'ADJUST', 'IMPORT', 'RESTORE')
+        OR NEW.entity_type = ''
+        OR NEW.entity_id = ''
+    """
+
+    private const val BACKUP_PREDICATE = """
+        NEW.kind NOT IN ('AUTO', 'MANUAL', 'PRE_MIGRATION', 'PRE_RESTORE')
+        OR NEW.status NOT IN ('SUCCESS', 'FAILED', 'VERIFIED')
+        OR NEW.file_name = ''
+        OR NEW.sha256 = ''
+        OR NEW.size_bytes < 0
+        OR NEW.schema_version < 1
+    """
+
+    private const val APP_METADATA_PREDICATE = """
+        NEW.key = ''
     """
 }

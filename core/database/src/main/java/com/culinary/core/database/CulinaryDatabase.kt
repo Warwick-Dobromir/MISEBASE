@@ -4,12 +4,17 @@ import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import com.culinary.core.database.converter.CoreConverters
+import com.culinary.core.database.converter.CrossCuttingConverters
 import com.culinary.core.database.converter.InventoryConverters
 import com.culinary.core.database.converter.PlanConverters
 import com.culinary.core.database.converter.ProcurementConverters
+import com.culinary.core.database.dao.AppMetadataDao
+import com.culinary.core.database.dao.BackupRecordDao
 import com.culinary.core.database.dao.BarcodeDao
+import com.culinary.core.database.dao.ChangeLogDao
 import com.culinary.core.database.dao.GoodsReceiptDao
 import com.culinary.core.database.dao.GoodsReceiptItemDao
+import com.culinary.core.database.dao.ImageAssetDao
 import com.culinary.core.database.dao.IngredientAliasDao
 import com.culinary.core.database.dao.IngredientDao
 import com.culinary.core.database.dao.IngredientUnitConversionDao
@@ -34,9 +39,13 @@ import com.culinary.core.database.dao.SauceVersionDao
 import com.culinary.core.database.dao.StorageLocationDao
 import com.culinary.core.database.dao.SupplierDao
 import com.culinary.core.database.dao.UnitDao
+import com.culinary.core.database.entity.AppMetadataEntity
+import com.culinary.core.database.entity.BackupRecordEntity
 import com.culinary.core.database.entity.BarcodeEntity
+import com.culinary.core.database.entity.ChangeLogEntity
 import com.culinary.core.database.entity.GoodsReceiptEntity
 import com.culinary.core.database.entity.GoodsReceiptItemEntity
+import com.culinary.core.database.entity.ImageAssetEntity
 import com.culinary.core.database.entity.IngredientAliasEntity
 import com.culinary.core.database.entity.IngredientEntity
 import com.culinary.core.database.entity.IngredientUnitConversionEntity
@@ -97,6 +106,10 @@ import com.culinary.core.database.entity.UnitEntity
         PurchaseOrderItemEntity::class,
         GoodsReceiptEntity::class,
         GoodsReceiptItemEntity::class,
+        ImageAssetEntity::class,
+        ChangeLogEntity::class,
+        BackupRecordEntity::class,
+        AppMetadataEntity::class,
     ],
     version = 1,
     exportSchema = true,
@@ -106,6 +119,7 @@ import com.culinary.core.database.entity.UnitEntity
     InventoryConverters::class,
     PlanConverters::class,
     ProcurementConverters::class,
+    CrossCuttingConverters::class,
 )
 abstract class CulinaryDatabase : RoomDatabase() {
     abstract fun unitDao(): UnitDao
@@ -161,6 +175,14 @@ abstract class CulinaryDatabase : RoomDatabase() {
     abstract fun goodsReceiptDao(): GoodsReceiptDao
 
     abstract fun goodsReceiptItemDao(): GoodsReceiptItemDao
+
+    abstract fun imageAssetDao(): ImageAssetDao
+
+    abstract fun changeLogDao(): ChangeLogDao
+
+    abstract fun backupRecordDao(): BackupRecordDao
+
+    abstract fun appMetadataDao(): AppMetadataDao
 
     companion object {
         const val DATABASE_NAME: String = "culinary.db"
