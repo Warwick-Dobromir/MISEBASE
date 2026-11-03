@@ -2,6 +2,7 @@ package com.culinary.core.data.backup
 
 import com.culinary.core.common.Clock
 import com.culinary.core.common.SystemClock
+import com.culinary.core.data.util.Sha256
 import java.io.File
 import java.io.OutputStream
 import java.util.UUID

@@ -4,6 +4,7 @@ import com.culinary.core.common.CulinaryError
 import com.culinary.core.common.ErrorCode
 import com.culinary.core.common.Outcome
 import com.culinary.core.common.flatMap
+import com.culinary.core.data.util.Sha256
 import java.io.InputStream
 import java.util.zip.ZipInputStream
 
