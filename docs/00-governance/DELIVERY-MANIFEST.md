@@ -1,7 +1,7 @@
 # CULINARY 交付清单与校验记录
 
 **文档编号**：GOV-MANIFEST
-**版本**：`0.6.0`
+**版本**：`0.7.0`
 **状态**：`Review`
 **日期**：2026-11-04
 **架构基线**：`0.4.0`（修订版，待 G1 签收）
@@ -40,14 +40,15 @@
 | 14 | 自动化测试与验收标准 | [E06](../03-engineering/E06-TESTING-ACCEPTANCE.md) | 0.1.0 | Review | `80d77582251f676c0ad9f51a7953bfbf1c33aa8cbd39eb9ddb96356428ba8307` |
 | 15 | 框架搭建实施顺序 | [R01](../04-readiness/R01-FRAMEWORK-SEQUENCE.md) | 0.2.2 | Review | `1e18ee641027ed81280a45617b596f5deca5065254dacb701c3e89960757903f` |
 | 16 | 开发环境与依赖清单 | [R02](../04-readiness/R02-ENVIRONMENT-DEPENDENCIES.md) | 0.2.0 | Review | `52cf8dcd0460713894625fa954bf27943bfa014e528d7201392fc409e3f4cbdc` |
-| 17 | 框架制作前置检查清单 | [R03](../04-readiness/R03-PREFLIGHT-CHECKLIST.md) | 0.4.1 | Review | `23c88690f0221b1773adfdd01474c333cac668a34ad39d83d003c0bbbacddd0e` |
-| — | 框架制作启动报告 | [R04](../04-readiness/R04-FRAMEWORK-START-REPORT.md) | 0.6.0 | Review | `c1a228f7243477269e79f21c46eff3786c16b0a6f8b06cf96bbcbd29277b08fc` |
+| 17 | 框架制作前置检查清单 | [R03](../04-readiness/R03-PREFLIGHT-CHECKLIST.md) | 0.5.0 | Review | `f9125f91e3445ca6bdab36df667d6550fa1406d2b5eb629690c4d5d360456001` |
+| — | 框架制作启动报告 | [R04](../04-readiness/R04-FRAMEWORK-START-REPORT.md) | 0.7.0 | Review | `d9d6f4c5f835c26e33a5a85958620bdca93668e6f293dd8c8286a243af638bf1` |
 | — | 模块拆分审查提案（附件） | [A03A](../02-architecture/A03A-MODULE-DECOMPOSITION-REVIEW.md) | 0.3.0 | Approved | 不计入 17 项；D-004 已接受 |
-| — | G1 最终复核包（附件） | [G1-REVIEW-PACKET](../04-readiness/G1-REVIEW-PACKET.md) | 0.4.0 | Review | 不计入 17 项；技术/归档复核记录 |
+| — | G1 最终复核包（附件） | [G1-REVIEW-PACKET](../04-readiness/G1-REVIEW-PACKET.md) | 0.5.0 | Review | 不计入 17 项；技术/归档复核记录 |
 | — | E05 修订复核包（附件） | [E05A](../03-engineering/E05-REVISION-REVIEW.md) | 0.1.0 | Review | 不计入 17 项；D-011 证据 |
-| — | G1 归档核验（附件） | [G1-ARCHIVE-AUDIT](../04-readiness/G1-ARCHIVE-AUDIT.md) | 0.2.0 | Review | 8 项核验；技术/签收/G2 分层 |
-| — | G1 最终材料提交报告（历史） | [R07](../04-readiness/R07-FINAL-MATERIALS-REPORT.md) | 0.2.0 | Deprecated | 由 R08 取代 |
-| — | G1 最终修订报告 | [R08](../04-readiness/R08-FINAL-REVISION-REPORT.md) | 0.1.0 | Review | 本次定点修订报告 |
+| — | G1 归档核验（附件） | [G1-ARCHIVE-AUDIT](../04-readiness/G1-ARCHIVE-AUDIT.md) | 0.3.0 | Review | 8 项核验；G1 ACCEPTED / G2 WAITING |
+| — | G1 最终材料提交报告（历史） | [R07](../04-readiness/R07-FINAL-MATERIALS-REPORT.md) | 0.2.0 | Deprecated | 由 R09 取代 |
+| — | G1 最终修订报告（历史） | [R08](../04-readiness/R08-FINAL-REVISION-REPORT.md) | 0.2.0 | Deprecated | 由 R09 取代 |
+| — | G1→G2 最终交接说明 | [R09](../04-readiness/R09-G1-TO-G2-HANDOFF.md) | 1.0.0 | Review | 当前交接材料 |
 | — | 依赖兼容性验证（附件） | [V01](../04-readiness/V01-DEPENDENCY-VALIDATION.md) | 0.1.0 | Review | 见文件；不计入 17 项 |
 | — | ADR-001 ~ ADR-010（附件） | [docs/adr](../adr/) | 0.1.0（ADR-003 0.3.0；ADR-007/008 0.2.0） | Proposed | 10 份 |
 | — | 架构/ER/流程 图（附件） | [docs/diagrams](../diagrams/) | — | — | 3 份 `.mmd` |
@@ -56,7 +57,7 @@
 
 | 检查 | 结果 |
 |---|---|
-| Markdown 文件总数 | 42（含附件/README） |
+| Markdown 文件总数 | 43（含附件/README） |
 | 17 项交付物文件 | 18 个文件全部存在（ER 与字典合并为第 7 项） |
 | 断链 | 0 |
 | UTF-8 替换字符/乱码 | 0 |
@@ -74,7 +75,7 @@
 
 | # | 门禁 | 状态 |
 |---|---|---|
-| G1 | 8 项关键决策整体签收 | **技术/归档 PASS；正式签收 PENDING**：8 项接受；E05 0.4.1 通过 |
+| G1 | 8 项关键决策整体签收 | **ACCEPTED**：8 项接受；E05 0.4.1 通过；项目负责人正式签收 |
 | G2 | 依赖解析 | PASS |
 | G3 | JDK/SDK 环境变量 | PASS |
 | G4 | 构建 + 安装启动 | PASS |
@@ -82,7 +83,7 @@
 | G6 | 版本锁定 | PASS |
 | G7 | 无架构级冲突 | PASS |
 
-**结论：** 技术准备/归档核验完成；G1 正式签收待定，G2 未授权。D-012 阻塞 G2 阶段 1；D-005 阻塞 DB v1；G5 为发布门禁。
+**结论：** G1 已正式签收；G2 等待负责人授权。D-012 阻塞 G2 阶段 1；D-005 阻塞 DB v1；G5 为发布门禁。
 
 ## 5. 重新生成校验值
 
@@ -105,3 +106,4 @@ Get-ChildItem docs -Recurse -Filter *.md |
 | 0.4.0 | 2026-11-04 | D-004 接受；D-011/E05 0.4.0 待复核；G5 接受为发布门禁；G1 仍 PENDING | 架构组 |
 | 0.5.0 | 2026-11-04 | E05 0.4.1 Approved；D-011 接受；G1 PASS；具备进入 G2 条件 | 架构组 |
 | 0.6.0 | 2026-11-04 | R01 0.2.2、R03 0.4.1、R04 0.6.0、R06 0.2.0、R08；修正 G1 为技术/归档完成、正式签收待定、G2 未授权 | 架构组 |
+| 0.7.0 | 2026-11-04 | G1 ACCEPTED；R03 0.5.0、R04 0.7.0、R06 0.3.0、R09 1.0.0；R07/R08 标记历史；G2 等待授权 | 架构组 |
