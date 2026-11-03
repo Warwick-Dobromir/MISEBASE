@@ -29,3 +29,7 @@ style:
     maxLineLength: 120
   ForbiddenComment:
     active: false
+  # 允许守卫式提前返回：前置检查（未命中/已访问/缺失）不算"多出口"。
+  ReturnCount:
+    max: 4
+    excludeGuardClauses: true

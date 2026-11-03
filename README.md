@@ -5,8 +5,8 @@
 | 项目 | 内容 |
 |---|---|
 | 架构基线 | `0.4.1`（G1 已正式签收） |
-| 当前阶段 | **G2 阶段 1（工程骨架）已完成**，待负责人验收 |
-| 工程状态 | 15 模块可构建、可安装、可启动；无业务功能 |
+| 当前阶段 | **G2 阶段 2（核心契约）已完成**，待负责人验收 |
+| 工程状态 | 15 模块可构建、可安装、可启动；core:common / core:domain 契约与领域规则可用 |
 | 数据库 | 尚未创建（阶段 3；D-005 主键策略待确认） |
 | 构建基线 | AGP 8.13.0 / Kotlin 2.2.20 / Gradle 8.14.3 / JDK 21 / minSdk 26 / compile & target 36 |
 | 依赖注入 | Hilt 2.57.2 + KSP（D-012 `ACCEPTED`，禁止 2.59+） |
@@ -70,13 +70,16 @@ feature/
 ## 当前状态与未决
 
 - **G2 阶段 1** 已完成：15 模块、版本目录、约定插件、最小 Application/Activity。
-- **阶段 2 起未开工**：核心契约、数据库、数据层等按 [R01](docs/04-readiness/R01-FRAMEWORK-SEQUENCE.md) 顺序推进。
+- **G2 阶段 2** 已完成：`core:common` 错误/结果契约，`core:domain` 单位、食材、菜谱模型与端口，
+  单位换算与配方图循环检测（24 个纯 JVM 测试）。
+- **阶段 3 起未开工**：数据库 v1、数据层等按 [R01](docs/04-readiness/R01-FRAMEWORK-SEQUENCE.md) 顺序推进。
 - **仍为 PROPOSED**：D-005（主键）、D-007（计划快照）、D-013、D-015、D-020、D-021、D-025；
   其中 D-005 必须在 DB v1（阶段 3）前确认。
 - **G5 发布门禁**：Release keystore 未创建，不影响框架阶段。
 
 ## 文档
 
+- [G2 阶段 2 报告](docs/04-readiness/R12-G2-STAGE2-REPORT.md)
 - [G2 阶段 1 报告](docs/04-readiness/R11-G2-STAGE1-REPORT.md)
 - [G2 开工授权记录](docs/04-readiness/R10-G2-START-AUTHORIZATION.md)
 - [决策登记册](docs/00-governance/DECISION-REGISTER.md)（0.8.0）
