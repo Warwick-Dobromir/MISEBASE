@@ -32,13 +32,19 @@ interface IngredientDao {
         "UPDATE ingredient SET deleted_at = :at, updated_at = :at, revision = revision + 1 " +
             "WHERE id = :id",
     )
-    suspend fun softDelete(id: String, at: Long)
+    suspend fun softDelete(
+        id: String,
+        at: Long,
+    )
 
     @Query(
         "UPDATE ingredient SET status = 'ARCHIVED', updated_at = :at, revision = revision + 1 " +
             "WHERE id = :id",
     )
-    suspend fun archive(id: String, at: Long): Int
+    suspend fun archive(
+        id: String,
+        at: Long,
+    ): Int
 
     @Query("DELETE FROM ingredient WHERE id = :id")
     suspend fun deleteById(id: String)

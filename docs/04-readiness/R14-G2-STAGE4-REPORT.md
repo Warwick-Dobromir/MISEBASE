@@ -1,7 +1,7 @@
 # G2 阶段 4（数据层）完成报告
 
 **文档编号**：R14
-**版本**：`1.0.0`
+**版本**：`1.1.0`
 **状态**：`Review`（待项目负责人验收）
 **日期**：2026-11-04
 **实施依据**：[R01 0.2.2](R01-FRAMEWORK-SEQUENCE.md) §7、E02、E03、E05 0.4.1、A03A §8.1、D-005、D-011、D-015
@@ -58,10 +58,10 @@
 | 2 | 事务回滚（中途异常无残留） | **PASS** |
 | 3 | 并发写（20 协程） | **PASS** |
 | 4 | 图片写入原子；缺失不阻塞读取 | **PASS**（4 例） |
-| 5 | 备份往返（空库 + 有数据） | **PASS**（归档级：空附件与含图片各一例） |
+| 5 | 备份往返（空库 + 有数据） | **PASS**（真实 Room DB：空库与 2 条食材；不含恢复执行器，见 3.1） |
 | 6 | 数据库异常映射为错误码 | **PASS** |
 
-**数据层测试：32 例 / 0 失败**
+**数据层测试：34 例 / 0 失败**
 
 | 测试类 | 数量 | 覆盖 |
 |---|---:|---|
@@ -69,10 +69,37 @@
 | `RoomTransactionRunnerTest` | 4 | 提交/回滚/20 并发/约束映射 |
 | `BusyRetryPolicyTest` | 3 | 重试成功/耗尽/非 BUSY 不重试 |
 | `LocalImageStorageTest` | 4 | 原子写/缺失降级/越界/幂等删除 |
-| `BackupArchiveTest` | 4 | 有数据/空附件/篡改/缺 manifest |
+| `BackupArchiveTest` | 4 | 归档级：有数据/空附件/篡改/缺 manifest |
+| `BackupRoundTripTest` | 2 | 真实 Room DB：空库与含食材数据的归档往返 |
 | `RestoreJournalTest` | 5 | 往返/原子/缺失/损坏/清理 |
 | `RestorePrecheckTest` | 7 | 版本矩阵与 PARTIAL 二次确认 |
 
+### 3.1 备份往返：实际测试方法名与结果
+
+| 场景 | 测试类 / 方法 | 结果 |
+|---|---|---|
+| 空数据库归档 | `BackupRoundTripTest` / `backs up and verifies an empty database archive` | **PASS** |
+| 含业务数据（2 条食材） | `BackupRoundTripTest` / `backs up and verifies an archive with ingredient data` | **PASS** |
+| 归档级：空附件 | `BackupArchiveTest` / `supports an empty attachment set` | **PASS** |
+| 归档级：DB + 图片 | `BackupArchiveTest` / `writes and verifies a backup with a database and image` | **PASS** |
+
+执行证据（`:core:data:testDebugUnitTest --tests ...BackupRoundTripTest`）：
+
+```text
+tests=2 failures=0
+PASSED: backs up and verifies an empty database archive
+PASSED: backs up and verifies an archive with ingredient data
+```
+
+**“往返”的确切范围**：
+
+- 覆盖：生成归档 → 解包 → 校验（`manifest.sha256`、`checksums.sha256`、逐文件 SHA-256）→
+  只读打开备份 DB，统计 `ingredient` 行数（空库 0、含数据 2）；
+- **不覆盖**：恢复执行器（关闭数据库、文件移动/替换、回滚、重新打开）。该执行器尚未实现，
+  本报告**不声称**恢复流程已通过测试。
+
+这两个测试使用真实 Room 文件数据库（关闭后取主 DB 文件），不是合成字节；
+但它们是**干净关闭**后的快照，E05 §6 的写屏障 + checkpoint 在线快照仍未实现（见 §4）。
 全工程门禁（本轮实测）：
 
 ```text
@@ -80,7 +107,7 @@
 BUILD SUCCESSFUL
 ```
 
-工程测试总数 **133**（契约 24 + 数据库 77 + 数据层 32）。
+工程测试总数 **135**（契约 24 + 数据库 77 + 数据层 34）。
 
 ## 4. 偏差与未覆盖（明确边界）
 
@@ -101,6 +128,8 @@ BUILD SUCCESSFUL
 | 阶段 3 基线 | `baseline/g2-stage3-20261104` |
 | 阶段 4 提交 | `feat(data)` / `feat(backup)` / `feat(file)` / `feat(restore)` |
 | 阶段 4 基线标签 | `baseline/g2-stage4-20261104` |
+| 基线对应提交 | 见 §7 修订记录 1.1.0（标签落定后补记） |
+| 工作区状态 | clean（`git status --short` 无输出） |
 
 ## 6. 结论
 
@@ -114,3 +143,4 @@ R01 §7.2 的 6 项退出条件全部满足；数据层、图片存储、备份�
 | 版本 | 日期 | 变更 | 作者 |
 |---|---|---|---|
 | 1.0.0 | 2026-11-04 | 记录数据层、图片存储、备份/恢复骨架与 32 例测试 | 工程组 |
+| 1.1.0 | 2026-11-04 | 补真实 Room DB 的备份往返测试方法与结果；明确“往返”不含恢复执行器；补基线 commit 与工作区状态 | 工程组 |

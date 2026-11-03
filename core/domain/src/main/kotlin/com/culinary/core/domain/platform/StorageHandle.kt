@@ -7,7 +7,9 @@ package com.culinary.core.domain.platform
  * 当字符串处理，不解析、不拼接。
  */
 @JvmInline
-value class StorageHandle(val value: String) {
+value class StorageHandle(
+    val value: String,
+) {
     init {
         require(value.isNotBlank()) { "storage handle must not be blank" }
     }
