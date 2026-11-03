@@ -22,4 +22,7 @@ interface UnitDao {
 
     @Insert
     suspend fun insert(unit: UnitEntity)
+
+    @Query("DELETE FROM unit WHERE id = :id")
+    suspend fun deleteById(id: String)
 }

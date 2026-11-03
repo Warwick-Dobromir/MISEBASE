@@ -4,7 +4,13 @@ import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import com.culinary.core.database.converter.DatabaseConverters
+import com.culinary.core.database.dao.IngredientAliasDao
+import com.culinary.core.database.dao.IngredientDao
+import com.culinary.core.database.dao.IngredientUnitConversionDao
 import com.culinary.core.database.dao.UnitDao
+import com.culinary.core.database.entity.IngredientAliasEntity
+import com.culinary.core.database.entity.IngredientEntity
+import com.culinary.core.database.entity.IngredientUnitConversionEntity
 import com.culinary.core.database.entity.UnitEntity
 
 /**
@@ -16,6 +22,9 @@ import com.culinary.core.database.entity.UnitEntity
 @Database(
     entities = [
         UnitEntity::class,
+        IngredientEntity::class,
+        IngredientAliasEntity::class,
+        IngredientUnitConversionEntity::class,
     ],
     version = 1,
     exportSchema = true,
@@ -23,6 +32,12 @@ import com.culinary.core.database.entity.UnitEntity
 @TypeConverters(DatabaseConverters::class)
 abstract class CulinaryDatabase : RoomDatabase() {
     abstract fun unitDao(): UnitDao
+
+    abstract fun ingredientDao(): IngredientDao
+
+    abstract fun ingredientAliasDao(): IngredientAliasDao
+
+    abstract fun ingredientUnitConversionDao(): IngredientUnitConversionDao
 
     companion object {
         const val DATABASE_NAME: String = "culinary.db"
