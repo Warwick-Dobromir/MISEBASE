@@ -80,6 +80,9 @@ class CulinaryMigrationV1ToV2Test {
             assertThat(ingredientCount(sqlite)).isEqualTo(1)
             assertThat(indexExists(sqlite, "ux_ingredient_normalized_name")).isTrue()
             assertThat(indexExists(sqlite, "ux_recipe_current")).isTrue()
+            RESTORED_PARTIAL_INDEXES.forEach { name ->
+                assertThat(indexExists(sqlite, name)).isTrue()
+            }
             assertThat(dormantTableSql()).isEqualTo(dormantBefore)
             assertIntegrity(sqlite)
         }
@@ -328,6 +331,19 @@ class CulinaryMigrationV1ToV2Test {
                 "purchase_order_item",
                 "goods_receipt",
                 "goods_receipt_item",
+            )
+
+        val RESTORED_PARTIAL_INDEXES =
+            listOf(
+                "ux_ingredient_normalized_name",
+                "ux_sauce_normalized_name",
+                "ux_recipe_normalized_name",
+                "ux_sauce_current",
+                "ux_recipe_current",
+                "ux_supplier_normalized_name",
+                "ux_barcode_primary",
+                "ux_image_primary",
+                "ux_reservation_active",
             )
     }
 }
