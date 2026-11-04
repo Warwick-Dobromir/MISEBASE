@@ -1,14 +1,17 @@
 # MB-S1-01 Stage 1 执行报告
 
 **文档编号**：MB-S1-01
-**版本**：`0.1.1`
-**状态**：`Review`（提交审查）
+**版本**：`0.2.0`
+**状态**：`CLOSED`（Stage 1 审查通过并关闭）
 **日期**：2026-11-04
 **任务书**：MB-S1-001 Stage 1 工程范围清理
 **工作区**：`D:\MISEBASE`；分支 `misebase/main`
 **执行前 HEAD**：`f8de1bc3a9b4326b5817edea68c9352611456c77`（工作树 clean）
+**关闭前 HEAD**：`2ccc0adc4d2634e55025a51f0c722f7542cb2350`
+**关闭提交**：`docs(stage1): close stage 1 after review`（哈希见 §12.4）
+**关闭标签**：`checkpoint/misebase-stage1-closed-20261104`、`checkpoint/misebase-stage2-start-20261104`
 **接管基线**：`705e0ca`；代码基线 `2b523de`（`framework-0.1.0`）
-**结论**：Stage 1 允许范围内的工作已完成；无 Schema/备份实现/功能页面变更；**具备审查条件**。
+**结论**：Stage 1 审查通过并关闭；无 Schema/备份实现/功能页面变更。
 
 ---
 
@@ -248,6 +251,8 @@ $env:ANDROID_HOME = "$env:LOCALAPPDATA\Android\Sdk"
 |---|---|
 | `checkpoint/misebase-stage1-20261104` | `93d0d92`（提交；标签对象 `4010536`） |
 | `checkpoint/misebase-stage1-reviewed-20261104` | `22851dc`（提交；标签对象 `2dff911`） |
+| `checkpoint/misebase-stage1-closed-20261104` | 关闭标签；解析见 [MB-S1-10 §6.2](MB-S1-10-STAGE1-CLOSE-RECORD.md) |
+| `checkpoint/misebase-stage2-start-20261104` | Stage 2 起点标签；解析见 [MB-S1-10 §6.2](MB-S1-10-STAGE1-CLOSE-RECORD.md) |
 | `framework-0.1.0` | `2b523de`（未移动） |
 
 ### 12.3 变更范围
@@ -322,6 +327,15 @@ M	settings.gradle.kts
 > 审查补记：导航边界、`f8de1bc` 实际起点、`git diff/status` 证据、仪器化测试缺口与备份状态，
 > 见 [MB-S1-09 审查回执](MB-S1-09-REVIEW-RECEIPT.md)。
 
+### 12.4 关闭
+
+| 项 | 值 |
+|---|---|
+| 关闭前 HEAD | `2ccc0adc4d2634e55025a51f0c722f7542cb2350` |
+| 关闭提交 | `docs(stage1): close stage 1 after review`（哈希见 [MB-S1-10 §6.1](MB-S1-10-STAGE1-CLOSE-RECORD.md)） |
+| `checkpoint/misebase-stage1-closed-20261104` | 解析见 [MB-S1-10 §6.2](MB-S1-10-STAGE1-CLOSE-RECORD.md) |
+| `checkpoint/misebase-stage2-start-20261104` | 解析见 [MB-S1-10 §6.2](MB-S1-10-STAGE1-CLOSE-RECORD.md) |
+
 ## 13. 未解决问题与风险
 
 | # | 事项 | 状态/影响 |
@@ -337,9 +351,9 @@ M	settings.gradle.kts
 | 9 | `app -> core:common` 显式允许 | 因 `api` 暴露；已在配置与文档说明 |
 | 10 | 依赖检查为词法扫描 | 不覆盖反射/同包；Gradle 依赖兜底 |
 
-## 14. Stage 1 是否具备审查条件
+## 14. Stage 1 审查与关闭结论
 
-**具备。** 理由：
+**审查通过并关闭（CLOSED）。** 理由：
 
 - 模块集实际为 13，构建/测试通过；
 - 依赖检查可复现、能捕获注入违规；
@@ -352,9 +366,13 @@ M	settings.gradle.kts
 
 **审查注意**：MB-D-007 仍是备份实现的硬阻塞；Stage 1 的备份结论仅为分析与方案，不是修复完成。
 
+**关闭**：Stage 1 状态为 `CLOSED`；关闭前 HEAD `2ccc0adc4d2634e55025a51f0c722f7542cb2350`；
+关闭提交与两个关闭标签见 §12.2 与 [MB-S1-10](MB-S1-10-STAGE1-CLOSE-RECORD.md)。
+
 ## 15. 变更记录
 
 | 版本 | 日期 | 变更 | 作者 |
 |---|---|---|---|
 | 0.1.0 | 2026-11-04 | Stage 1 执行报告：范围、模块、依赖、休眠表、迁移、备份、UI、测试、Git | 接管工程组 |
 | 0.1.1 | 2026-11-04 | 审查补记：导航非 MB-D-009、仪器化测试未运行、备份未修复、审查回执链接 | 接管工程组 |
+| 0.2.0 | 2026-11-04 | Stage 1 审查通过并关闭；状态改为 CLOSED；补记关闭前 HEAD、关闭提交与标签 | 接管工程组 |
