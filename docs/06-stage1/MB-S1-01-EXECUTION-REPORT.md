@@ -228,13 +228,13 @@ $env:ANDROID_HOME = "$env:LOCALAPPDATA\Android\Sdk"
 | 5 | `07ace2e09c211573fdf39bfaeb7e906310531120` | `docs(db): add migration readiness templates and rollback plan` |
 | 6 | `20ba3881f1202869ad35c4a746fb11d18e777fbe` | `docs(backup): analyse R-02/R-10/R-11 gaps without implementation changes` |
 | 7 | `4a0944f858874e9e6ee7873092faa0a4432d3b86` | `docs(ui): establish UI and business isolation rules` |
-| 8 | `（本报告提交）` | `docs(stage1): add execution report and stage checks` |
+| 8 | `93d0d92cc5df57093e0ab5b8c8014a491e10c746` | `docs(stage1): add execution report and stage checks` |
 
 ### 12.2 标签
 
 | 标签 | 解析 |
 |---|---|
-| `checkpoint/misebase-stage1-20261104` | `（本报告提交打标签）` |
+| `checkpoint/misebase-stage1-20261104` | `93d0d92`（提交；标签对象 `4010536`） |
 | `framework-0.1.0` | `2b523de`（未移动） |
 
 ### 12.3 变更范围
@@ -242,10 +242,69 @@ $env:ANDROID_HOME = "$env:LOCALAPPDATA\Android\Sdk"
 `git diff --name-status 2b523de..HEAD` 摘要：
 
 ```text
-（见下方实际输出）
+M	README.md
+M	app/build.gradle.kts
+M	app/src/main/java/com/culinary/navigation/CulinaryDestination.kt
+M	app/src/main/java/com/culinary/ui/HomeScreen.kt
+M	app/src/main/res/values/strings.xml
+M	app/src/test/java/com/culinary/navigation/CulinaryDestinationTest.kt
+A	config/dormant-tables.json
+A	config/module-dependencies.json
+A	docs/00-governance/A-G2-001-G2-ARCHIVE.md
+M	docs/00-governance/DOCUMENT-INDEX.md
+M	docs/01-product/P01-PRODUCT-BASELINE.md
+M	docs/02-architecture/A03A-MODULE-DECOMPOSITION-REVIEW.md
+M	docs/02-architecture/A05-DATA-MODEL-ER.md
+M	docs/02-architecture/A06-DATA-DICTIONARY.md
+A	docs/02-architecture/module-dependency-check-13.txt
+A	docs/05-handover/MB-S0-01-INTAKE-AUDIT.md
+A	docs/05-handover/MB-S0-02-SCOPE-FREEZE.md
+A	docs/05-handover/MB-S0-03-MATERIAL-REQUESTS.md
+A	docs/05-handover/MB-S0-04-TAKEOVER-CHECKLIST.md
+A	docs/05-handover/MB-S0-05-MODULE-RESPONSIBILITY.md
+A	docs/05-handover/MB-S0-06-SAFETY-ROLLBACK.md
+A	docs/05-handover/MB-S0-07-DECISION-REGISTER.md
+A	docs/05-handover/MB-S0-08-FILE-INDEX.md
+A	docs/05-handover/README.md
+A	docs/05-handover/S0-01-BASELINE-REPORT.md
+A	docs/05-handover/S0-02-ARCHITECTURE-REPORT.md
+A	docs/05-handover/S0-03-DECISION-REVIEW.md
+A	docs/05-handover/S0-04-RISK-REGISTER.md
+A	docs/05-handover/S0-04A-DOCUMENT-CONSISTENCY.md
+A	docs/05-handover/S0-05-OWNER-SIGNOFF.md
+A	docs/05-handover/S0-06-STAGE-REPORT.md
+A	docs/05-handover/S0-07-REVISION-REPORT.md
+A	docs/06-stage1/MB-S1-01-EXECUTION-REPORT.md
+A	docs/06-stage1/MB-S1-02-MODULE-ADJUSTMENT.md
+A	docs/06-stage1/MB-S1-03-DEPENDENCY-CHECK.md
+A	docs/06-stage1/MB-S1-04-DORMANT-TABLES.md
+A	docs/06-stage1/MB-S1-05-MIGRATION-READINESS.md
+A	docs/06-stage1/MB-S1-06-BACKUP-GAP-ANALYSIS.md
+A	docs/06-stage1/MB-S1-07-UI-ISOLATION.md
+A	docs/06-stage1/MB-S1-08-DOC-CORRECTIONS.md
+A	docs/06-stage1/templates/MIGRATION-BACKUP-ROLLBACK-CHECKLIST.md
+A	docs/06-stage1/templates/MIGRATION-SPEC-TEMPLATE.md
+A	docs/06-stage1/templates/MigrationTestTemplate.kt.txt
+A	docs/design/MISEBASE-UI-DESIGN-SPEC.md
+D	feature/planning/build.gradle.kts
+D	feature/planning/src/main/java/com/culinary/feature/planning/FeaturePlanningModule.kt
+D	feature/procurement/build.gradle.kts
+D	feature/procurement/src/main/java/com/culinary/feature/procurement/FeatureProcurementModule.kt
+M	feature/products/src/main/java/com/culinary/feature/products/FeatureProductsModule.kt
+A	scripts/check-doc-consistency.ps1
+A	scripts/check-dormant-tables.ps1
+M	scripts/check-module-deps.ps1
+A	scripts/check-stage1-scope.ps1
+A	scripts/test-module-deps.ps1
+M	settings.gradle.kts
 ```
 
+> 该范围从代码基线 `2b523de` 起算，包含 Stage 0 新增的 `docs/05-handover/*` 与设计文档；
+> Stage 1 自身的变更起点是 `f8de1bc`。`scripts/check-stage1-scope.ps1` 以 `f8de1bc` 为默认起点。
+> 不涉及 `core/database`、`core/data/src/main`、`core/platform/src/main` 的修改。
+
 范围检查脚本：`scripts/check-stage1-scope.ps1`（PASS）。
+文档一致性：`scripts/check-doc-consistency.ps1`（PASS：13 模块、197 例、P01/A03A/A-G2-001 修订标记、5/18 决策状态、链接可解析）。
 
 ## 13. 未解决问题与风险
 
