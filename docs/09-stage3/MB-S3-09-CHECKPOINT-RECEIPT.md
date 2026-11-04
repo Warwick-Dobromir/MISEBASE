@@ -13,11 +13,11 @@
 |---|---|
 | 标签名 | `checkpoint/misebase-stage3-20261104` |
 | 类型 | annotated tag |
-| 对象哈希 | `531b5f1cf596e90eaaec14b175d593aa1427eaca` |
-| 解析提交 | `0779c0470349d717e9c0fd1eaf6587168aea42dd` |
-| 解析提交信息 | `docs(stage3): record stage 3 execution report and index` |
+| 对象哈希 | `e31e45fd6c996fa240cd5eb8432bc217f37baf43` |
+| 解析提交 | `cf61e10159b5c9e1f240c8ff8d4721914bacb644` |
+| 解析提交信息 | `docs(stage3): record dormant scan resolution` |
 | 标签信息 | `MISEBASE Stage 3 review checkpoint: three archives, N1 navigation, design system A` |
-| 打标签时间 | 2026-11-04 22:22:44 +0800 |
+| 打标签时间 | 2026-11-04 22:25:55 +0800 |
 
 ## 2. 标签完整性
 
