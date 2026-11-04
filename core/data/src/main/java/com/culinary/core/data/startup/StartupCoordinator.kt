@@ -98,7 +98,14 @@ class StartupCoordinator(
         }
 
     private companion object {
-        const val EXPECTED_SCHEMA_VERSION = 1
+        /**
+         * 应用期望的数据库 Schema 版本。
+         *
+         * **必须与 [com.culinary.core.database.CulinaryDatabase] 的 `@Database(version = 2)`
+         * 保持同步。** 升级 Schema 时必须同时修改两处，并补“已持久化库再次启动”的回归测试；
+         * 否则会把当前版本的库误判为“更新版本”，把应用锁在 [StartupState.Incompatible]。
+         */
+        const val EXPECTED_SCHEMA_VERSION = 2
 
         val SQLITE_HEADER: ByteArray = "SQLite format 3\u0000".toByteArray(Charsets.ISO_8859_1)
 
