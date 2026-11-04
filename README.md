@@ -126,6 +126,7 @@ MB-D-014 库存扣减、MB-D-015 可选配料、MB-D-016 采购清单形态、MB
 - [备份/恢复缺口与方案](docs/06-stage1/MB-S1-06-BACKUP-GAP-ANALYSIS.md)
 - [UI 与业务隔离基础](docs/06-stage1/MB-S1-07-UI-ISOLATION.md)
 - [文档修正记录](docs/06-stage1/MB-S1-08-DOC-CORRECTIONS.md)
+- [Stage 1 审查回执](docs/06-stage1/MB-S1-09-REVIEW-RECEIPT.md)
 - [G2 收档文件](docs/00-governance/A-G2-001-G2-ARCHIVE.md)
 - [决策登记册](docs/00-governance/DECISION-REGISTER.md)
 - [MISEBASE 决策登记册](docs/05-handover/MB-S0-07-DECISION-REGISTER.md)

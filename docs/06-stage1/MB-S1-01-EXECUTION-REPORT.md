@@ -1,7 +1,7 @@
 # MB-S1-01 Stage 1 执行报告
 
 **文档编号**：MB-S1-01
-**版本**：`0.1.0`
+**版本**：`0.1.1`
 **状态**：`Review`（提交审查）
 **日期**：2026-11-04
 **任务书**：MB-S1-001 Stage 1 工程范围清理
@@ -78,8 +78,13 @@
 |---|---|
 | MB-D-004 扫码 UI 归属 | **不新建 `feature:scan`、不实现扫码 UI**；products 仅保留商品主数据范围 |
 | MB-D-007 备份一致性 | **不改任何备份/恢复实现**；只做分析/方案（MB-S1-06） |
-| MB-D-008/009 视觉/导航 | **不做视觉定稿、不重排导航**；导航仅删除已删模块的两个占位入口 |
+| MB-D-008/009 视觉/导航 | **不做视觉定稿、不重排导航**；导航仅删除已删模块的编译引用 |
 | 其余 MB-D | 未签收；未写成 ACCEPTED |
+
+> **导航变更边界（审查补记）**：本次导航变更**仅删除已删除模块的编译引用**——
+> `CulinaryDestination` 的 `PLANNING`/`PROCUREMENT` 两个枚举、`strings.xml` 两个字符串、
+> 导航测试断言 8→6。它**不是 MB-D-009 的导航信息架构决策**：未新增入口、未调整其余入口顺序、
+> 未改变首页结构。`MB-D-009` 仍为 `PROPOSED`。
 
 ## 4. 文档修正结果
 
@@ -178,7 +183,10 @@ products → recipes → sauces → settings → app`。
 | S0-R-11 自动备份假成功 | OPEN（高） | 5 项缺口 + 修复方案 + 6 项验证 |
 
 **未修改** `AutoBackupWorker`、`BackupArchiveWriter`、`RestoreExecutor`、写屏障、checkpoint。
-详见 [MB-S1-06](MB-S1-06-BACKUP-GAP-ANALYSIS.md)。
+
+> **备份结论（审查补记）**：备份/恢复**未修复，仅做了分析与方案**；S0-R-02、S0-R-11 仍为
+> **OPEN（高）**，S0-R-10 仍为 PARTIAL。本阶段没有把任何备份能力标记为“一致备份”或“已修复”。
+> 详见 [MB-S1-06](MB-S1-06-BACKUP-GAP-ANALYSIS.md)。
 
 ## 10. UI 隔离基础
 
@@ -213,6 +221,10 @@ $env:ANDROID_HOME = "$env:LOCALAPPDATA\Android\Sdk"
 | detekt | PASS |
 | 仪器化迁移测试 | 2 例，**未运行**（需设备/模拟器） |
 
+> **证据边界（审查补记）**：`CulinaryDatabaseMigrationTest` 的 2 例仪器化迁移测试**未运行**，
+> 因为本轮没有设备/模拟器。**Stage 1 的 PASS 不包含仪器化迁移测试证据**，不能据此宣称
+> 迁移测试通过；该证据缺口保留到具备设备时补跑。
+
 测试数未下降：删除的两个模块没有测试；导航测试仍 3 例，仅断言从 8 个入口改为 6 个。
 
 ## 12. Git 提交 / 标签 / 变更范围
@@ -235,6 +247,7 @@ $env:ANDROID_HOME = "$env:LOCALAPPDATA\Android\Sdk"
 | 标签 | 解析 |
 |---|---|
 | `checkpoint/misebase-stage1-20261104` | `93d0d92`（提交；标签对象 `4010536`） |
+| `checkpoint/misebase-stage1-reviewed-20261104` | `{{REVIEWED_TAG}}` |
 | `framework-0.1.0` | `2b523de`（未移动） |
 
 ### 12.3 变更范围
@@ -306,6 +319,9 @@ M	settings.gradle.kts
 范围检查脚本：`scripts/check-stage1-scope.ps1`（PASS）。
 文档一致性：`scripts/check-doc-consistency.ps1`（PASS：13 模块、197 例、P01/A03A/A-G2-001 修订标记、5/18 决策状态、链接可解析）。
 
+> 审查补记：导航边界、`f8de1bc` 实际起点、`git diff/status` 证据、仪器化测试缺口与备份状态，
+> 见 [MB-S1-09 审查回执](MB-S1-09-REVIEW-RECEIPT.md)。
+
 ## 13. 未解决问题与风险
 
 | # | 事项 | 状态/影响 |
@@ -341,3 +357,4 @@ M	settings.gradle.kts
 | 版本 | 日期 | 变更 | 作者 |
 |---|---|---|---|
 | 0.1.0 | 2026-11-04 | Stage 1 执行报告：范围、模块、依赖、休眠表、迁移、备份、UI、测试、Git | 接管工程组 |
+| 0.1.1 | 2026-11-04 | 审查补记：导航非 MB-D-009、仪器化测试未运行、备份未修复、审查回执链接 | 接管工程组 |

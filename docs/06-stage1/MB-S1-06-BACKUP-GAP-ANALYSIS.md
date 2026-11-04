@@ -8,6 +8,10 @@
 **边界**：本文件不修改 `AutoBackupWorker` 返回逻辑、`BackupArchiveWriter`、`RestoreExecutor`、
 写屏障、WAL checkpoint 或任何备份/恢复行为；只做缺口分析、测试方案、修复方案与验证方案。
 
+> **结论（审查补记）**：备份/恢复**未修复，仅分析与方案**。S0-R-02（WAL/备份一致性）与
+> S0-R-11（自动备份假成功）仍为 **OPEN（高）**；S0-R-10（恢复中断）仍为 PARTIAL。
+> 本阶段没有实施写屏障、checkpoint、Worker 编排或恢复原子性改造。
+
 ---
 
 ## 1. 现状（代码事实）
