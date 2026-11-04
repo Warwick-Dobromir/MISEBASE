@@ -24,7 +24,7 @@ Stage 2 在**不修改 Schema v1、不修改 Entity 字段、不新增表、不�
 | 新增业务规则 | 6 组（单位展示精度、份数缩放、版本固定、库存扣减、缺料口径、采购清单） |
 | Repository | 4 个端口 + 2 个基础实现 + 4 个 fake + 契约测试 |
 | JVM 测试 | **264 例 / 0 失败**（G2 基线 197 + Stage 2 新增 67） |
-| Debug APK | 构建成功（`app/build/outputs/apk/debug/app-debug.apk`，36,856,444 字节） |
+| Debug APK | 构建成功（`app/build/outputs/apk/debug/app-debug.apk`，36,856,488 字节） |
 | Schema / Entity / 迁移 | **0 变更**；Schema 仍 v1 / 31 表；11 张休眠表 0 新引用 |
 | 备份/恢复 | **0 变更** |
 | Compose / 导航 / 扫码 UI | **0 变更**；未新建模块 |
@@ -146,7 +146,7 @@ DAO 仅新增查询/受约束更新方法（`RecipeDao.listActive`、`InventoryB
 
 - 失败 **0**，错误 **0**；
 - 相比 G2 基线 **197** 增加 **67**（domain +60、data +7），无测试删除或迁移；
-- `assembleDebug` 成功，产物 `app/build/outputs/apk/debug/app-debug.apk`（36,856,444 字节）；
+- `assembleDebug` 成功，产物 `app/build/outputs/apk/debug/app-debug.apk`（36,856,488 字节）；
 - 仪器化迁移测试仍为 Stage 1 记录的“需设备、未运行”，本阶段未改变该状态。
 
 规则到用例的覆盖矩阵见 [MB-S2-03](MB-S2-03-RULES-TEST-MATRIX.md)。
