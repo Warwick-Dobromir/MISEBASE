@@ -1,0 +1,91 @@
+// 数据库迁移测试模板（vN -> vN+1）
+//
+// 状态：TEMPLATE，不参与编译。复制到 core/database/src/androidTest/java/ 后再填写。
+// 截至 2026-11-04 没有正式 Schema v2，本模板不对应任何已实施迁移。
+//
+// 依赖：androidx.room:room-testing、androidx.test.ext:junit。
+
+package com.culinary.core.database
+
+import androidx.room.testing.MigrationTestHelper
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.platform.app.InstrumentationRegistry
+import org.junit.After
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
+import org.junit.Rule
+import org.junit.Test
+import org.junit.runner.RunWith
+
+@RunWith(AndroidJUnit4::class)
+class CulinaryDatabaseMigrationV<FROM>ToV<TO>Test {
+    @get:Rule
+    val helper =
+        MigrationTestHelper(
+            InstrumentationRegistry.getInstrumentation(),
+            CulinaryDatabase::class.java,
+        )
+
+    @After
+    fun tearDown() {
+        InstrumentationRegistry.getInstrumentation().targetContext.deleteDatabase(DATABASE_NAME)
+    }
+
+    @Test
+    fun migratesFromV<FROM>ToV<TO>AndPreservesExistingRows() {
+        // 1) 用旧 schema 建库，并写入真实形状的旧数据。
+        helper.createDatabase(DATABASE_NAME, <FROM>).use { oldDb ->
+            oldDb.execSQL(
+                "INSERT INTO ingredient (id, name, normalized_name, status, created_at, updated_at) " +
+                    "VALUES ('00000000-0000-4000-8000-000000000001', '黄油', '黄油', 'ACTIVE', 0, 0)",
+            )
+        }
+
+        // 2) 执行迁移并由 room-testing 校验 schema/identity hash。
+        val migrated =
+            helper.runMigrationsAndValidate(
+                DATABASE_NAME,
+                <TO>,
+                true,
+                CulinaryMigrations.MIGRATION_<FROM>_<TO>,
+            )
+
+        // 3) 数据保留断言。
+        migrated.query("SELECT COUNT(*) FROM ingredient").use { cursor ->
+            assertTrue(cursor.moveToFirst())
+            assertEquals(1, cursor.getInt(0))
+        }
+
+        // 4) 新结构断言（列/索引/触发器）。
+        migrated.query("PRAGMA table_info(<table>)").use { cursor ->
+            val columns = buildSet { while (cursor.moveToNext()) add(cursor.getString(1)) }
+            assertTrue(columns.contains("<new_column>"))
+        }
+
+        // 5) 完整性断言。
+        migrated.query("PRAGMA foreign_key_check").use { cursor ->
+            assertTrue("foreign_key_check must be empty", !cursor.moveToFirst())
+        }
+        migrated.query("PRAGMA integrity_check").use { cursor ->
+            assertTrue(cursor.moveToFirst())
+            assertEquals("ok", cursor.getString(0))
+        }
+
+        // 6) 休眠表结构未被改动（11 张，逐表断言）。
+        // TODO: 按 config/dormant-tables.json 逐表比对 sqlite_master。
+
+        migrated.close()
+    }
+
+    @Test
+    fun failsFastWhenMigrationSqlIsBroken() {
+        // 失败注入：复制迁移并制造错误 SQL，断言抛异常且原库仍可打开。
+        // 该测试用于验证回滚/恢复方案，不进入生产迁移路径。
+        helper.createDatabase(DATABASE_NAME, <FROM>).close()
+        // TODO: 注入故障并断言失败不删除现场。
+    }
+
+    private companion object {
+        const val DATABASE_NAME = "migration-v<FROM>-to-v<TO>-test.db"
+    }
+}
