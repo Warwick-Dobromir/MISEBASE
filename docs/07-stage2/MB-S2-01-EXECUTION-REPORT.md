@@ -166,15 +166,18 @@ DAO 仅新增查询/受约束更新方法（`RecipeDao.listActive`、`InventoryB
 | `73f80732ea352958adea8a63d5cc59d24a553084` | Repository 契约、fake、基础实现 |
 | `04ca5fc2146642b0f47536ea3d957e4d719fcba5` | 代码格式（`ktlintFormat`，无行为变更） |
 
-本报告提交与检查点标签对象由后续簿记提交回填到 §8.2；标签指向报告提交，不随簿记提交移动。
+本报告提交为 `83d1051184fd04a02c59e4cbe87740ebb4eee4a3`；检查点标签指向该提交，
+对象哈希见 §8.2。§8.2 由后续簿记提交回填，标签不随簿记提交移动。
 
 ### 8.2 检查点
 
 ```text
 checkpoint/misebase-stage2-20261104
-  tag object: 待簿记提交回填
-  commit:     待簿记提交回填
+  tag object: c39f87488c00b0e3b570f49ba9252a3b85aadf51
+  commit:     83d1051184fd04a02c59e4cbe87740ebb4eee4a3
 ```
+
+标签指向**报告提交**（不是后续簿记提交）；§9 的风险与 §10 的审查条件不因簿记提交改变。
 
 ### 8.3 变更范围（`stage2-start..HEAD`）
 
