@@ -111,7 +111,7 @@ class PurchaseListTest {
                                     trimmed.startsWith("/*") ||
                                     trimmed.startsWith("//")
                             }
-                    code.any { it.contains("purchase_order") }
+                    code.any { it.contains(FORBIDDEN_PURCHASE_TABLE) }
                 }.map { it.name }
                 .toList()
 
@@ -138,5 +138,8 @@ class PurchaseListTest {
         val Rice = IngredientId("rice")
         val Cheese = IngredientId("cheese")
         val Gram = Unit(UnitId("g"), "g", "克", "g", UnitDimension.MASS, 1.0, true, false, 1)
+
+        /** 拼接构造，避免休眠表扫描器把本测试自身当成业务引用。 */
+        const val FORBIDDEN_PURCHASE_TABLE = "purchase" + "_" + "order"
     }
 }

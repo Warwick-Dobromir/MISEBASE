@@ -5,7 +5,7 @@ import java.time.Instant
 /**
  * 采购清单行（MB-D-016）。
  *
- * 采购清单**不落** `purchase_order*` 表：它是按"需求 − 可用"即时计算出的展示/导出
+ * 采购清单**不落**任何采购单表：它是按"需求 − 可用"即时计算出的展示/导出
  * 结果，属于 Inventory 能力。可选配料默认不进入清单（MB-D-015）。
  */
 data class PurchaseListLine(

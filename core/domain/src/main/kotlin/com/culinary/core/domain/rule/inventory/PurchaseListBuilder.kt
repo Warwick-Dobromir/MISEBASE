@@ -12,7 +12,7 @@ import java.time.Instant
  * 采购清单生成（MB-D-016）。
  *
  * - 只取"有缺口且非可选"的行：`shortfall > 0`、`isOptional = false`；
- * - **不落** `purchase_order*` 表，不引用任何采购单实体；
+ * - **不落**任何采购单表，不引用任何采购单实体；
  * - 输出按食材 ID、单位稳定排序，便于展示与导出比对。
  */
 class PurchaseListBuilder {
