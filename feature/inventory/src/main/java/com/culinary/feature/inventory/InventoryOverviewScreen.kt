@@ -162,9 +162,14 @@ private fun InventoryOverviewRowItem(
         } else {
             stringResource(R.string.inventory_expiry) + " " + formatDate(row.nearestExpiry)
         }
+    val quantityLabel =
+        stringResource(R.string.inventory_on_hand) + " " + formatAmount(row.onHand) + " " +
+            row.stockUnit.symbol + " · " + stringResource(R.string.inventory_reserved) + " " +
+            formatAmount(row.reserved)
     val subtitle =
         listOfNotNull(
             row.ingredientName,
+            quantityLabel,
             row.locationNames.takeIf { it.isNotEmpty() }?.joinToString(" / "),
             batchLabel,
             expiryLabel,
