@@ -1,13 +1,10 @@
 package com.culinary.navigation
 
-import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
-import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import com.culinary.core.designsystem.theme.CulinaryTheme
-import com.culinary.ui.PlaceholderScreen
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -72,17 +69,20 @@ class NavigationShellTest {
     }
 
     @Test
-    fun `inventory placeholder explains the stage boundary`() {
+    fun `inventory top level renders the real inventory title and settings action`() {
         compose.setContent {
             CulinaryTheme {
-                PlaceholderScreen(
-                    title = "库存",
-                    description = "库存总览、流水与采购清单在 Stage 4 实现；当前只保留一级入口。",
+                AppTopBar(
+                    currentRoute = "inventory",
+                    topLevel = CulinaryDestination.INVENTORY,
+                    showBack = false,
+                    onOpenSettings = {},
+                    onBack = {},
                 )
             }
         }
 
-        compose.onAllNodesWithText("库存").assertCountEquals(1)
-        compose.onNodeWithText("Stage 4", substring = true).assertIsDisplayed()
+        compose.onNodeWithText("库存").assertIsDisplayed()
+        compose.onNodeWithContentDescription("设置").assertIsDisplayed()
     }
 }

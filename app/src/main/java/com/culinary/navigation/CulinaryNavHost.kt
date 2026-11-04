@@ -29,6 +29,12 @@ import com.culinary.feature.ingredients.IngredientDetailRoute
 import com.culinary.feature.ingredients.IngredientEditorRoute
 import com.culinary.feature.ingredients.IngredientsRoute
 import com.culinary.feature.ingredients.IngredientsRoutes
+import com.culinary.feature.inventory.InventoryDetailRoute
+import com.culinary.feature.inventory.InventoryLedgerRoute
+import com.culinary.feature.inventory.InventoryRoute
+import com.culinary.feature.inventory.InventoryRoutes
+import com.culinary.feature.inventory.RequirementPlanRoute
+import com.culinary.feature.inventory.StockMovementRoute
 import com.culinary.feature.recipes.RecipeDetailRoute
 import com.culinary.feature.recipes.RecipeEditorRoute
 import com.culinary.feature.recipes.RecipesRoute
@@ -43,7 +49,7 @@ import com.culinary.ui.PlaceholderScreen
  * 应用导航外壳（MB-D-009 方案 N1）。
  *
  * 结构：顶栏（页面标题 + 设置）+ 内容 + 底部五个一级入口。
- * 一级入口顺序固定；库存与扫码在本阶段只显示占位内容，不实现业务。
+ * 一级入口顺序固定；库存为 Stage 4 真实页面，扫码仍为占位（MB-D-004 PROPOSED）。
  */
 @Composable
 fun CulinaryNavHost(
@@ -134,6 +140,7 @@ private fun AppNavGraph(
         sauceGraph(navController)
         ingredientGraph(navController)
         recipeGraph(navController)
+        inventoryGraph(navController)
         placeholderGraph()
     }
 }
@@ -190,13 +197,33 @@ private fun NavGraphBuilder.recipeGraph(navController: NavHostController) {
     }
 }
 
-private fun NavGraphBuilder.placeholderGraph() {
+private fun NavGraphBuilder.inventoryGraph(navController: NavHostController) {
     composable(CulinaryDestination.INVENTORY.route) {
-        PlaceholderScreen(
-            title = stringResource(R.string.destination_inventory),
-            description = stringResource(R.string.placeholder_inventory_body),
+        InventoryRoute(
+            onOpenProduct = { productId -> navController.navigate(InventoryRoutes.product(productId)) },
+            onReceipt = { navController.navigate(InventoryRoutes.receipt()) },
+            onOpenLedger = { navController.navigate(InventoryRoutes.ledger()) },
+            onOpenPlan = { navController.navigate(InventoryRoutes.plan()) },
         )
     }
+    composable(InventoryRoutes.PRODUCT) {
+        InventoryDetailRoute(
+            onIssueBatch = { batchId -> navController.navigate(InventoryRoutes.issue(batchId)) },
+            onAdjustBatch = { batchId -> navController.navigate(InventoryRoutes.adjust(batchId)) },
+        )
+    }
+    composable(InventoryRoutes.LEDGER) {
+        InventoryLedgerRoute()
+    }
+    composable(InventoryRoutes.MOVEMENT) {
+        StockMovementRoute(onSaved = { navController.popBackStack() })
+    }
+    composable(InventoryRoutes.PLAN) {
+        RequirementPlanRoute()
+    }
+}
+
+private fun NavGraphBuilder.placeholderGraph() {
     composable(CulinaryDestination.SCAN.route) {
         PlaceholderScreen(
             title = stringResource(R.string.destination_scan),
@@ -239,6 +266,7 @@ private fun titleFor(
         currentRoute.startsWith("sauces") -> stringResource(R.string.destination_sauces)
         currentRoute.startsWith("ingredients") -> stringResource(R.string.destination_ingredients)
         currentRoute.startsWith("recipes") -> stringResource(R.string.destination_recipes)
+        currentRoute.startsWith("inventory") -> stringResource(R.string.destination_inventory)
         currentRoute == SETTINGS_ROUTE -> stringResource(R.string.destination_settings)
         else -> stringResource(R.string.app_name)
     }
