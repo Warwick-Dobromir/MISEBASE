@@ -1,13 +1,14 @@
-# CULINARY
+# MISEBASE
 
-**专业个人烹饪档案与研发管理系统 — Android 原生应用**
+**个人烹饪档案与库存管理系统 — Android 原生应用**
 
 | 项目 | 内容 |
 |---|---|
-| 架构基线 | `0.4.1`（G1 已正式签收） |
-| 当前阶段 | **G2 已收档**（`framework-0.1.0` / `2b523de`） |
-| 工程状态 | 15 模块；Room v1 31 表；食材 CRUD；算法验证；迁移/恢复完整流程；R8 构建；**188 例测试** |
-| 数据库 | 尚未创建（阶段 3；D-005 主键策略待确认） |
+| 品牌/项目名 | MISEBASE（包名暂留 `com.culinary`，发布前按 D-017/MB-D-001 决定） |
+| 架构基线 | `0.4.1`（G1 已签收）；G2 已收档于 `framework-0.1.0` / `2b523de` |
+| 当前阶段 | **Stage 1 完成**（2026-11-04）：范围冻结、13 模块、依赖检查、休眠表边界、迁移/备份准备物 |
+| 工程状态 | **13 模块**；Room schema **v1 / 31 表**（11 表 `DORMANT`）；食材 CRUD；配方展开/需求/缺口算法；Debug APK 可构建；**197 例 JVM 测试** |
+| 数据库 | **已创建**：schema v1（31 表），导出 `1.json`；本阶段未创建 v2、未改 Schema/Entity/DAO |
 | 构建基线 | AGP 8.13.0 / Kotlin 2.2.20 / Gradle 8.14.3 / JDK 21 / minSdk 26 / compile & target 36 |
 | 依赖注入 | Hilt 2.57.2 + KSP（D-012 `ACCEPTED`，禁止 2.59+） |
 | 离线承诺 | 无 `INTERNET` 权限（manifest 移除 + `aapt2` 已验证） |
@@ -18,9 +19,13 @@
 $env:JAVA_HOME = 'C:\Program Files\Android\Android Studio\jbr'
 $env:ANDROID_HOME = "$env:LOCALAPPDATA\Android\Sdk"
 
-.\gradlew.bat :app:assembleDebug
+.\gradlew.bat test assembleDebug --console=plain --no-daemon
 .\gradlew.bat ktlintCheck detekt
+
 powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\check-module-deps.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\test-module-deps.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\check-dormant-tables.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\check-doc-consistency.ps1
 
 adb install -r app\build\outputs\apk\debug\app-debug.apk
 adb shell am start -n com.culinary/.MainActivity
@@ -35,77 +40,97 @@ sdk.dir=C\:\\Users\\<user>\\AppData\\Local\\Android\\Sdk
 依赖仓库为镜像优先、官方回退（R02 §6.3）；`build-logic` 额外需要 Gradle Plugin Portal
 （ktlint-gradle 未同步到镜像）。
 
-## 15 模块（D-004 已接受，不得增删改）
+## 13 模块（MB-D-003 ACCEPTED，MISEBASE 目标）
 
 ```text
 app
 core/
   common        Outcome、错误模型、Clock、IdGenerator、Dispatcher、日志门面
-  domain        领域模型（model 包）、Repository 端口、Use Case、配方/单位规则
-  database      Room 实体/DAO/迁移/Schema
+  domain        领域模型、Repository 端口、Use Case、配方/单位规则（纯 JVM）
+  database      Room 实体/DAO/迁移/Schema；11 张休眠表仅保留结构
   data          Repository 实现、Mapper、事务协调、文件与备份
   designsystem  主题、颜色、通用组件
   platform      SAF、权限、CameraX、WorkManager
 feature/
-  ingredients sauces recipes products inventory planning procurement settings
+  ingredients sauces recipes products inventory settings
 ```
 
-`:core` 与 `:feature` 是 Gradle 结构容器（无构建脚本），不计入 15 个模块。
-模块依赖检查实测 **15 节点 / 43 条边**，与 G1 记录的 DAG 一致。
+`:core` 与 `:feature` 是 Gradle 结构容器（无构建脚本），不计入 13 个模块。
+`feature:planning`、`feature:procurement` 已按 MB-D-003 删除；采购清单归 `feature:inventory`，
+计划/采购不再作为独立模块。依赖检查实测 **13 节点 / 35 条声明边**，拓扑排序无环。
+
+`feature:products` 的范围是**商品 / 包装规格 / 条码 / 食材映射**，为扫码与库存提供商品主数据；
+**不包含供应商管理**，也**不包含扫码 UI**（扫码 UI 归属仍为 MB-D-004 `PROPOSED`，Stage 1 未新建
+`feature:scan`，未实现扫码页面）。
 
 ## 架构边界
 
-- `feature` 之间零依赖；跨 feature 通过 `core:domain` 端口与 `app` 导航协作。
+- `feature` 之间零直接依赖；跨 feature 通过 `core:domain` 端口与 `app` 导航协作。
 - `core:domain` 是纯 JVM 模块，不依赖 Android/Room/Compose/Hilt。
 - `core:database` 不依赖 `core:domain`；`core:data` 不直接依赖 Android SAF/`Uri`。
+- Compose 页面不直接操作 DAO/SQLite，不实现库存计算/单位换算/配方展开；ViewModel 协调状态，
+  Domain 管规则，Data 管持久化（详见 [UI 隔离基础](docs/06-stage1/MB-S1-07-UI-ISOLATION.md)）。
 - 不创建 `:core:model`；领域模型统一放 `core:domain` 的 `model` 包。
 
 ## 数据安全约定
 
 - 已发布菜谱/酱汁版本不可修改；新编辑产生新版本。
-- 计划快照不可修改、不可删除；只有**草稿**计划允许删除，已确认计划通过 `CANCELLED` 状态保留历史。
-- 库存只能通过追加流水改变，`inventory_ledger` 与 `change_log` 禁止 UPDATE/DELETE。
-- 备份/恢复遵守 E05；恢复失败不清理现场。
+- 库存只能通过追加流水改变；`inventory_ledger` 与 `change_log` 禁止 UPDATE/DELETE。
+- 11 张规划/采购/供应商表标记 `DORMANT`：保留 v1 结构，不删表、不迁移、不改造；
+  禁止新代码引用（见 [休眠表清单](docs/06-stage1/MB-S1-04-DORMANT-TABLES.md)）。
+- 备份/恢复遵守 E05；恢复失败不清理现场。**MB-D-007 仍为 `PROPOSED`**：本阶段未修改
+  `AutoBackupWorker`、`BackupArchiveWriter`、`RestoreExecutor`、写屏障或 checkpoint。
+- 迁移只准备了规范/模板/验证方案，**未创建 Schema v2、未实施迁移**。
 
 ## 工程治理
 
 - 构建逻辑集中在 `build-logic/convention` 的 6 个约定插件。
 - 依赖版本只来自 `gradle/libs.versions.toml`；模块脚本不得硬编码版本。
-- 质量门禁：`ktlintCheck`、`detekt`、`check-module-deps.ps1`。
+- 质量门禁：`ktlintCheck`、`detekt`、`check-module-deps.ps1`、`check-dormant-tables.ps1`、
+  `check-doc-consistency.ps1`。
 - Git：每个阶段打 `checkpoint/*` 与 `baseline/*` 标签，见 [E04](docs/03-engineering/E04-GIT-ROLLBACK.md)。
+
+## 决策状态（2026-11-04）
+
+已接受（5/18，负责人授权，见 [S0-05](docs/05-handover/S0-05-OWNER-SIGNOFF.md)）：
+
+- MB-D-001 接管基线与项目身份；
+- MB-D-002 范围冻结（五项功能；采购清单归 Inventory）；
+- MB-D-003 目标 13 模块；
+- MB-D-005 11 张休眠表保留并标 `DORMANT`；
+- MB-D-018 纯文档修正授权。
+
+仍为 `PROPOSED`（不得当作已批准）：MB-D-004 扫码 UI 归属、MB-D-006 测试口径、MB-D-007 备份一致性、
+MB-D-008/009 UI 视觉与导航、MB-D-010 CI、MB-D-011 真机、MB-D-012 签名、MB-D-013 子配方版本、
+MB-D-014 库存扣减、MB-D-015 可选配料、MB-D-016 采购清单形态、MB-D-017 计划快照替代。
+
+> G2 历史决策 `D-005`/`D-007` 与 MISEBASE 的 `MB-D-005`/`MB-D-007` 不是同一体系，禁止互相替代。
+> G2 `D-005`、`D-007`、`D-013`、`D-015` 已 `ACCEPTED`；这不等于对应 `MB-D-*` 已签收。
 
 ## 当前状态与未决
 
-- **G2 阶段 1** 已完成：15 模块、版本目录、约定插件、最小 Application/Activity。
-- **G2 阶段 2** 已完成：`core:common` 错误/结果契约，`core:domain` 单位、食材、菜谱模型与端口，
-  单位换算与配方图循环检测（24 个纯 JVM 测试）。
-- **G2 阶段 3** 已完成：Room schema v1（**31 表**）、外键/WAL/busy timeout、15 条单位种子、部分唯一索引与只追加触发器（77 例数据库测试）。
-- **G2 阶段 4** 已完成：Repository/Mapper、单写者事务协调、原子图片存储、E05 备份归档与恢复预检（34 例数据层测试）。
-- **G2 阶段 5** 已完成（设备级验证延后到阶段 7）：WorkManager 调度、相机权限三态、SAF 适配、ML Kit 解码与手工兜底（19 例平台测试）。
-- **G2 阶段 6** 已完成：Navigation Compose、启动门禁与 Recovery、崩溃日志、调试入口（设备实测）。
-- **G2 阶段 7** 已完成：食材列表/新建/编辑/归档全链路，设备 E2E。
-- **G2 阶段 8** 已完成：配方展开、需求汇总、缺口计算、快照 payload；200 节点 < 500 ms。
-- **G2 阶段 9** 已完成：CI workflow、迁移测试、R8 Release、恢复演练、离线冒烟、基线标签。
-- **仍为 PROPOSED**：D-005（主键）、D-007（计划快照）、D-013、D-015、D-020、D-021、D-025；
-  其中 D-005 必须在 DB v1（阶段 3）前确认。
-- **G5 发布门禁**：Release keystore 未创建，不影响框架阶段。
+- **G2 阶段 1–9** 已完成并归档；`framework-0.1.0` 固定在 `2b523de`，未移动。
+- **Stage 0** 已关闭；Stage 1 完成范围清理，未开发五项功能页面。
+- **Stage 1 未做**：扫码 UI、视觉定稿、导航重排、备份/恢复实现修改、Schema v2、休眠表删除/迁移。
+- **仍为 PROPOSED 的阻塞项**：MB-D-007 未签收前备份一致性不得实现；MB-D-008/009 未签收前
+  不做视觉定稿与导航重排；MB-D-004 未签收前不新建 `feature:scan`。
+- **G5 发布门禁**：Release keystore 未创建，不影响当前阶段。
 
 ## 文档
 
+- [Stage 1 执行报告](docs/06-stage1/MB-S1-01-EXECUTION-REPORT.md)
+- [模块调整前后清单与依赖图](docs/06-stage1/MB-S1-02-MODULE-ADJUSTMENT.md)
+- [依赖检查与违规注入测试](docs/06-stage1/MB-S1-03-DEPENDENCY-CHECK.md)
+- [休眠表 DORMANT 清单](docs/06-stage1/MB-S1-04-DORMANT-TABLES.md)
+- [迁移准备物](docs/06-stage1/MB-S1-05-MIGRATION-READINESS.md)
+- [备份/恢复缺口与方案](docs/06-stage1/MB-S1-06-BACKUP-GAP-ANALYSIS.md)
+- [UI 与业务隔离基础](docs/06-stage1/MB-S1-07-UI-ISOLATION.md)
+- [文档修正记录](docs/06-stage1/MB-S1-08-DOC-CORRECTIONS.md)
 - [G2 收档文件](docs/00-governance/A-G2-001-G2-ARCHIVE.md)
-- [G2 阶段 9 报告](docs/04-readiness/R19-G2-STAGE9-REPORT.md)
-- [G2 阶段 8 报告](docs/04-readiness/R18-G2-STAGE8-REPORT.md)
-- [G2 阶段 7 报告](docs/04-readiness/R17-G2-STAGE7-REPORT.md)
-- [G2 阶段 6 报告](docs/04-readiness/R16-G2-STAGE6-REPORT.md)
-- [G2 阶段 5 报告](docs/04-readiness/R15-G2-STAGE5-REPORT.md)
-- [G2 阶段 4 报告](docs/04-readiness/R14-G2-STAGE4-REPORT.md)
-- [G2 阶段 3 报告](docs/04-readiness/R13-G2-STAGE3-REPORT.md)
-- [G2 阶段 2 报告](docs/04-readiness/R12-G2-STAGE2-REPORT.md)
-- [G2 阶段 1 报告](docs/04-readiness/R11-G2-STAGE1-REPORT.md)
-- [G2 开工授权记录](docs/04-readiness/R10-G2-START-AUTHORIZATION.md)
-- [决策登记册](docs/00-governance/DECISION-REGISTER.md)（0.8.0）
+- [决策登记册](docs/00-governance/DECISION-REGISTER.md)
+- [MISEBASE 决策登记册](docs/05-handover/MB-S0-07-DECISION-REGISTER.md)
 - [文档索引](docs/00-governance/DOCUMENT-INDEX.md)
-- [G1→G2 交接说明](docs/04-readiness/R09-G1-TO-G2-HANDOFF.md)
+- [G2 阶段 9 报告](docs/04-readiness/R19-G2-STAGE9-REPORT.md)
 
 ## 文档状态规则
 
@@ -115,5 +140,6 @@ feature/
 | `Review` | 已自检，等待负责人确认 | 仅可作为讨论依据 |
 | `Approved` | 已由项目负责人明确签收 | 是 |
 | `Deprecated` | 已废弃，保留追溯 | 否 |
+| `Superseded` | 被新决策取代，保留原文追溯 | 否 |
 
 任何影响模块边界、数据库结构、备份格式或锁定技术栈的修改，必须先走 ADR 与负责人签收。

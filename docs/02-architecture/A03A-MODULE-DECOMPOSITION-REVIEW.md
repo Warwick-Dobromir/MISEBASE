@@ -1,12 +1,31 @@
 # CULINARY 模块拆分审查提案（15 模块）
 
 **文档编号**：A03A
-**版本**：`0.3.0`
-**状态**：`Approved`
+**版本**：`0.3.1`
+**状态**：`Approved`（G2 历史结论）；**MISEBASE 模块集已由 MB-D-003 修订为 13**
 **日期**：2026-11-04
 **负责人**：首席架构师 / 技术负责人
-**关联决策**：D-004（ACCEPTED）
+**关联决策**：D-004（ACCEPTED，G2）；MB-D-003（ACCEPTED，MISEBASE）
 **配套文档**：[A03 模块职责与依赖关系](A03-MODULE-DEPENDENCIES.md)、[A02 整体架构](A02-SYSTEM-ARCHITECTURE.md)
+
+---
+
+> **MISEBASE 修订说明（2026-11-04；MB-D-003 / MB-D-018 已接受）**
+>
+> 本文的「15 模块」是 G2 阶段的历史事实（D-004 ACCEPTED，基线 `framework-0.1.0` / `2b523de`），
+> 按 MB-D-018 **保留正文不改**。MISEBASE 的目标模块集是 **13 模块**，由 MB-D-003 修订：
+>
+> | 变更 | 模块 | 说明 |
+> |---|---|---|
+> | 删除 | `feature:planning` | 不建独立制作计划；需求/缺口归 Inventory 计算 |
+> | 删除 | `feature:procurement` | 不建采购/到货/供应商；缺料清单归 Inventory |
+> | 缩减 | `feature:products` | 仅商品 / 包装规格 / 条码 / 食材映射；不含供应商管理、不含扫码 UI |
+> | 保留 | `app` + 6 core + 5 feature | `ingredients`、`sauces`、`recipes`、`inventory`、`settings` |
+> | 不新建 | `feature:scan` | 扫码 UI 归属（MB-D-004）仍 PROPOSED，Stage 1 不新建、不实现 |
+>
+> 13 = 15 − 2；这是 MISEBASE 的目标，不是对 G2 历史的改写。§4 表中第 11/13/14 行的职责描述
+> 按上表理解；其余职责、依赖方向与 §8.1 备份边界继续有效。实际落地与前后对照见
+> [MB-S1-02](../06-stage1/MB-S1-02-MODULE-ADJUSTMENT.md)。
 
 ---
 
@@ -44,7 +63,10 @@ D-004 要求：不预先强制锁定模块数量，先提交完整模块清单�
 
 > 15 = 16 − `core:model`。酱汁/菜谱、商品/库存均保持独立，满足负责人要求。
 
-## 4. 推荐：15 模块职责表
+## 4. 推荐：15 模块职责表（G2 历史；MISEBASE 见顶部修订）
+
+> 下表是 G2 的 15 模块职责。MISEBASE 目标为 13：第 11 行 `products` 去掉供应商、扫码 UI 待定；
+> 第 13 行 `planning`、第 14 行 `procurement` 已删除；第 15 行 `settings` 保留。历史正文不改。
 
 | # | 模块 | 类型 | 职责 | 数据归属（逻辑） | 允许依赖 | 禁止依赖 |
 |---:|---|---|---|---|---|---|
@@ -265,10 +287,36 @@ interface BackupStoragePort {
 - 本文给出 **15 模块**数量决策与依赖检查；
 - D-004 审查通过后，按本文第 4 节建模块；A03 的 `core:model` 部分作为拆分参考。
 
-## 13. 变更记录
+## 13. MISEBASE 13 模块目标（2026-11-04）
+
+| # | 模块 | 相对 G2 | MISEBASE 职责 |
+|---:|---|---|---|
+| 1 | `:app` | 保留 | 组合根、导航、Hilt 入口、启动/恢复编排 |
+| 2 | `:core:common` | 保留 | Outcome/错误码/Clock/ID/日志门面 |
+| 3 | `:core:domain` | 保留并扩展 | 领域模型、端口、Use Case、配方/单位/库存规则（纯 JVM） |
+| 4 | `:core:database` | 保留，冻结 v1 | Room 实体/DAO/Schema；11 张休眠表只保留结构 |
+| 5 | `:core:data` | 保留并扩展 | Repository 实现、事务、文件、备份编排 |
+| 6 | `:core:designsystem` | 保留 | 主题与通用组件（Stage 1 不做视觉定稿） |
+| 7 | `:core:platform` | 保留 | SAF、权限、CameraX、WorkManager |
+| 8 | `:feature:ingredients` | 保留 | 食材库 |
+| 9 | `:feature:sauces` | 保留 | 酱汁库 |
+| 10 | `:feature:recipes` | 保留 | 菜谱库 |
+| 11 | `:feature:products` | **缩减** | 商品 / 包装规格 / 条码 / 食材映射；无供应商管理、无扫码 UI |
+| 12 | `:feature:inventory` | 保留 | 库存、需求计算、缺料/采购清单（内部能力） |
+| 13 | `:feature:settings` | 保留 | 备份/恢复/诊断入口（后续阶段接线） |
+
+**依赖边**：`app` → 6 feature + `core:data`/`core:platform`/`core:designsystem`；
+feature → `core:domain`/`core:designsystem`/`core:common`；core 内部保持单向。
+实测 13 节点 / 35 条声明边，拓扑排序无环（见 [MB-S1-02](../06-stage1/MB-S1-02-MODULE-ADJUSTMENT.md)）。
+
+**不新建**：`feature:scan`、`core:model`；扫码 UI 归属仍待 MB-D-004 签收。
+**不实现**：独立计划/采购/供应商页面与模块；采购清单不落 `purchase_order*` 表。
+
+## 14. 变更记录
 
 | 版本 | 日期 | 变更 | 作者 |
 |---|---|---|---|
 | 0.1.0 | 2026-11-04 | 初稿；三方案对比，推荐 13 模块 | 架构组 |
 | 0.2.0 | 2026-11-04 | 按负责人意见改为 15 模块：model 并入 domain；sauces/recipes、products/inventory 保持独立；补完整职责表、依赖图与无环检查 | 架构组 |
 | 0.3.0 | 2026-11-04 | D-004 接受；补 platform/data 备份边界与 `BackupStoragePort`；状态改为 Approved | 架构组 |
+| 0.3.1 | 2026-11-04 | MISEBASE：顶部加 13 模块修订说明；§4 标注历史；新增 §13 目标模块集；保留 G2 正文 | 接管工程组 |

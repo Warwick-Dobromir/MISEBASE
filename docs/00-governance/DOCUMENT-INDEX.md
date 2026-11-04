@@ -1,7 +1,7 @@
 # CULINARY 文档索引
 
 **文档编号**：GOV-INDEX
-**版本**：`0.16.0`
+**版本**：`0.17.0`
 **状态**：`Review`
 **日期**：2026-11-04
 **维护人**：首席架构师 / 技术负责人
@@ -14,7 +14,7 @@
 
 | # | 交付物 | 文档 | 版本 | 状态 | 主要读者 |
 |---|---|---|---|---|---|
-| 1 | 产品需求基线 | [P01 产品需求基线](../01-product/P01-PRODUCT-BASELINE.md) | 0.1.0 | Review | 产品、架构、测试 |
+| 1 | 产品需求基线 | [P01 产品需求基线](../01-product/P01-PRODUCT-BASELINE.md) | 0.1.1 | Superseded（§4.2/§6.2 部分） | 产品、架构、测试 |
 | 2 | 已确认需求与待确认事项清单 | [P02 需求与待确认清单](../01-product/P02-REQUIREMENTS-OPEN-ITEMS.md) | 0.1.0 | Review | 产品、架构 |
 | 3 | 技术选型对比与最终决策 | [A01 技术选型](../02-architecture/A01-TECH-STACK-DECISION.md) | 0.1.0 | Review | 架构、开发 |
 | 4 | 软件整体架构设计书 | [A02 整体架构](../02-architecture/A02-SYSTEM-ARCHITECTURE.md) | 0.1.0 | Review | 全体 |
@@ -40,7 +40,7 @@
 |---|---|
 | [交付清单与校验记录](DELIVERY-MANIFEST.md) | 17 项交付物、SHA-256、完整性检查与开工门禁快照 |
 | [决策登记册](DECISION-REGISTER.md) | 所有需要签收的架构/产品决策，含默认值与影响 |
-| [A03A 模块拆分审查提案](../02-architecture/A03A-MODULE-DECOMPOSITION-REVIEW.md) | D-004 修订：8/15/16 模块方案对比，推荐 15 |
+| [A03A 模块拆分审查提案](../02-architecture/A03A-MODULE-DECOMPOSITION-REVIEW.md) | G2 的 15 模块历史；MISEBASE 13 模块目标见 §13 与 MB-D-003 |
 | [G1 最终复核包](../04-readiness/G1-REVIEW-PACKET.md) | D-004/D-011/G5 证据汇总与签收选项 |
 | [E05 修订复核包](../03-engineering/E05-REVISION-REVIEW.md) | E05 0.4.0 五项修订、哈希结构、journal 与测试 |
 | [G1 归档核验与 G2 准入报告](../04-readiness/G1-ARCHIVE-AUDIT.md) | 17 份文档、ER/字典、技术栈、并发、备份、测试、环境的 8 项核验 |
@@ -67,6 +67,21 @@
 | [ADR-008 Hilt](../adr/ADR-008-HILT.md) | 依赖注入 |
 | [ADR-009 扫码方案](../adr/ADR-009-BARCODE-SCANNING.md) | CameraX + ML Kit，本地优先 |
 | [ADR-010 暂不做同步](../adr/ADR-010-NO-SYNC-YET.md) | 离线单用户，保留同步缝 |
+| [A-G2-001 G2 收档文件](A-G2-001-G2-ARCHIVE.md) | G2 基线、验收证据与遗留；§14 Errata 更正测试数 188→197 |
+| [MB-DECISIONS 决策登记册](../05-handover/MB-S0-07-DECISION-REGISTER.md) | MISEBASE 18 项决策；5 项 ACCEPTED、13 项 PROPOSED；G2-S1 测试口径 |
+
+### 2.1 MISEBASE Stage 1 文档（2026-11-04）
+
+| 文档 | 用途 |
+|---|---|
+| [MB-S1-01 执行报告](../06-stage1/MB-S1-01-EXECUTION-REPORT.md) | Stage 1 目标、变更、测试、构建、Git、风险、未决 |
+| [MB-S1-02 模块调整](../06-stage1/MB-S1-02-MODULE-ADJUSTMENT.md) | 15→13 前后清单、依赖图、构建与回档 |
+| [MB-S1-03 依赖检查](../06-stage1/MB-S1-03-DEPENDENCY-CHECK.md) | 配置化检查、源码 import 扫描、拓扑排序、违规注入 |
+| [MB-S1-04 休眠表](../06-stage1/MB-S1-04-DORMANT-TABLES.md) | 11 表 DORMANT 清单、引用扫描、禁止规则 |
+| [MB-S1-05 迁移准备物](../06-stage1/MB-S1-05-MIGRATION-READINESS.md) | 迁移规范、测试模板、备份/回滚验证、回档点；未实施 |
+| [MB-S1-06 备份缺口分析](../06-stage1/MB-S1-06-BACKUP-GAP-ANALYSIS.md) | S0-R-02/R-10/R-11 测试缺口、修复方案、验证方案 |
+| [MB-S1-07 UI 隔离基础](../06-stage1/MB-S1-07-UI-ISOLATION.md) | Compose/ViewModel/Domain/Data 分层约束；未开发页面 |
+| [MB-S1-08 文档修正记录](../06-stage1/MB-S1-08-DOC-CORRECTIONS.md) | MB-D-018 修正项与历史正文不变证明 |
 
 ## 3. 图表
 
@@ -115,3 +130,4 @@
 | 0.14.0 | 2026-11-04 | 补 R18（G2 阶段 8 算法验证） | 工程组 |
 | 0.15.0 | 2026-11-04 | 补 R19（G2 阶段 9 质量门禁） | 工程组 |
 | 0.16.0 | 2026-11-04 | 新增 A-G2-001 G2 收档文件 | 工程组 |
+| 0.17.0 | 2026-11-04 | Stage 1：新增 8 份 Stage 1 文档；记录 P01 Superseded、A03A 13 模块目标、A-G2-001 Errata | 接管工程组 |

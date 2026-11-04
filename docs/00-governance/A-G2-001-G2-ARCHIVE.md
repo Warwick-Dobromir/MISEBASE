@@ -193,3 +193,39 @@ powershell -File scripts/check-module-deps.ps1
 
 **G2：ARCHIVED**
 **归档基线：`framework-0.1.0` / `2b523de`**
+
+---
+
+## 14. Errata（2026-11-04；MB-D-006 / MB-D-018 授权，正文不改）
+
+> 本节只追加更正，不修改上文任何历史正文。Errata 与正文冲突时，以本节为准。
+
+### E-01 测试总数 188 → 197
+
+- 原文位置：§3 阶段 9 行「188 例（累计）」；§8「工程测试 **188 例**」。
+- 更正：G2 收口实测为 **197 例 / 0 失败**，分布为
+  `core:common 9 / core:domain 40 / core:database 77 / core:data 43 / core:platform 19 / app 6 / feature 3`。
+- 差额原因：原统计漏计 `core:common` 的 9 例；197 − 9 = 188。其余模块数字不变。
+- 复现：`./gradlew test` 后按模块汇总 `build/test-results/testDebugUnitTest/*.xml`；
+  Stage 0 复核实测见 [S0-01 §4.3](../05-handover/S0-01-BASELINE-REPORT.md)。
+
+### E-02 R11 / R12 的说明
+
+- **R11（G2 阶段 1）**：原文「阶段 1 不写业务逻辑，`testDebugUnitTest` 为空」是阶段事实，仍然有效；
+  R11 不构成最终测试总数来源，不应据此推算 188 或 197。
+- **R12（G2 阶段 2）**：原文「24 例」= `core:common` 9 例（`ErrorCodeTest` 3 + `OutcomeTest` 6）
+  + `core:domain` 15 例（`UnitConverterTest` 10 + `RecipeGraphValidatorTest` 5）。这 24 例本身正确；
+  但后续收口统计在累加时漏掉了其中 `core:common` 的 9 例，导致最终写成 188。
+- R11/R12 正文属于历史报告，按 MB-D-018 **不修改**；以本节 + §8 更正后的 197 为最终口径。
+
+### E-03 S1 说明（决策登记册 G2-S1）
+
+- 在 [决策登记册](DECISION-REGISTER.md) 增补 **G2-S1** 说明：G2 最终 JVM 测试总数为 **197**；
+  历史文档中的 188 是漏计 `core:common` 9 例的旧口径，不再作为验收基线。
+- §3 阶段 6–9 的累计数（164/167/183/188）保留当时记录，属历史快照；不与最终 197 相加或互相换算。
+  需要单一事实时，使用 §8 的 197 与 S0-01 §4.3 的模块分布。
+
+### E-04 影响范围
+
+- 仅更正测试计数口径；不改变 G2 的代码基线、模块集、schema、`framework-0.1.0` 指向或验收结论。
+- `framework-0.1.0` 仍指向 `2b523de`，未移动。
