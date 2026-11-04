@@ -78,8 +78,9 @@ feature/
 - 库存只能通过追加流水改变；`inventory_ledger` 与 `change_log` 禁止 UPDATE/DELETE。
 - 11 张规划/采购/供应商表标记 `DORMANT`：保留 v1 结构，不删表、不迁移、不改造；
   禁止新代码引用（见 [休眠表清单](docs/06-stage1/MB-S1-04-DORMANT-TABLES.md)）。
-- 备份/恢复遵守 E05；恢复失败不清理现场。**MB-D-007 仍为 `PROPOSED`**：本阶段未修改
-  `AutoBackupWorker`、`BackupArchiveWriter`、`RestoreExecutor`、写屏障或 checkpoint。
+- 备份/恢复遵守 E05；恢复失败不清理现场。**MB-D-007 已签收（2026-11-04，Stage 4 强制前置）**，
+  但**备份修复尚未实施**：当前未修改 `AutoBackupWorker`、`BackupArchiveWriter`、`RestoreExecutor`、
+  写屏障或 checkpoint；修复完成并审查签收前不得启动 Stage 4。
 - 迁移只准备了规范/模板/验证方案，**未创建 Schema v2、未实施迁移**。
 
 ## 工程治理
@@ -92,12 +93,13 @@ feature/
 
 ## 决策状态（2026-11-04）
 
-已接受（12/18，负责人授权，见 [S0-05](docs/05-handover/S0-05-OWNER-SIGNOFF.md)）：
+已接受（13/18，负责人授权，见 [S0-05](docs/05-handover/S0-05-OWNER-SIGNOFF.md)）：
 
 - MB-D-001 接管基线与项目身份；
 - MB-D-002 范围冻结（五项功能；采购清单归 Inventory）；
 - MB-D-003 目标 13 模块；
 - MB-D-005 11 张休眠表保留并标 `DORMANT`；
+- MB-D-007 备份一致性（**Stage 4 强制前置**；修复尚未实施）；
 - MB-D-008 UI 视觉方向 A（专业厨房档案：暖中性 + Orange 强调）；
 - MB-D-009 导航 N1（酱汁/食材/菜谱/库存/扫码五个底部入口 + 顶栏设置）；
 - MB-D-013 子配方版本固定（发布时写入明确版本 ID）；
@@ -107,8 +109,11 @@ feature/
 - MB-D-017 计算记录快照（确认后不可变）；
 - MB-D-018 纯文档修正授权。
 
-仍为 `PROPOSED`（不得当作已批准，6 项）：MB-D-004 扫码 UI 归属、MB-D-006 测试口径、
-MB-D-007 备份一致性、MB-D-010 CI、MB-D-011 真机、MB-D-012 签名。
+仍为 `PROPOSED`（不得当作已批准，5 项）：MB-D-004 扫码 UI 归属、MB-D-006 测试口径、
+MB-D-010 CI、MB-D-011 真机、MB-D-012 签名。
+
+> 历史记录：本次签收之前，MB-D-007 仍为 `PROPOSED`；2026-11-04 已由负责人签收为 `ACCEPTED`，
+> 并作为 Stage 4 强制前置。
 
 > G2 历史决策 `D-005`/`D-007` 与 MISEBASE 的 `MB-D-005`/`MB-D-007` 不是同一体系，禁止互相替代。
 > G2 的 `ACCEPTED` 不自动构成对应 `MB-D-*` 的 `ACCEPTED`；MB-D 状态以本仓库签收记录为准。
@@ -123,9 +128,12 @@ MB-D-007 备份一致性、MB-D-010 CI、MB-D-011 真机、MB-D-012 签名。
 - **两项 Schema 变更请求已授权**（计算记录持久化、`recipe_version.servings`），合并为一次独立
   Schema 变更任务，在 Stage 3 开始前执行；授权不等于已修改数据库，当前仍为 Schema v1。
 - **Schema 变更任务待执行**；Stage 3 未启动，须在 Schema 变更签收后才可启动。
+- **MB-D-007 已签收，作为 Stage 4 强制前置；Stage 4 未授权。** 备份修复尚未实施，须完成六项技术事项、
+  验收与负责人审查签收后才可启动 Stage 4。
 - **Stage 1/2 未做**：扫码 UI、视觉定稿、导航重排、备份/恢复实现修改、Schema v2、休眠表删除/迁移。
-- **仍为 PROPOSED 的阻塞项**：MB-D-007 未签收前备份一致性不得实现；MB-D-004 未签收前不新建
-  `feature:scan`；MB-D-008/009 已签收，视觉与导航可在 Stage 3 任务书内细化（不得改变 IA）。
+- **仍为 PROPOSED 的阻塞项**：MB-D-004 未签收前不新建 `feature:scan`；MB-D-008/009 已签收，
+  视觉与导航可在 Stage 3 任务书内细化（不得改变 IA）；MB-D-007 已签收并作为 Stage 4 强制前置，
+  修复完成前 Stage 4 不得启动。
 - **G5 发布门禁**：Release keystore 未创建，不影响当前阶段。
 
 ## 文档
