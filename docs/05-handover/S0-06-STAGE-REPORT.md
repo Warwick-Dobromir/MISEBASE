@@ -1,9 +1,9 @@
 # S0-06 Stage 0 完成报告
 
-**任务编号**：MB-S0-001；第二轮修正 MB-S0-002
+**任务编号**：MB-S0-001；第二轮修正 MB-S0-002；关闭记录 MB-S0-003
 **文档编号**：S0-06
-**版本**：`1.0.1`
-**状态**：`Review`（工程核验完成；第二轮修正已提交；等待负责人签收）
+**版本**：`1.0.2`
+**状态**：`CLOSED`（Stage 0 已关闭；Stage 1 已授权，等待新对话执行）
 **日期**：2026-11-04
 **阶段**：Stage 0 — Project Takeover & Baseline Establishment
 **工作区**：`D:\MISEBASE`
@@ -13,10 +13,11 @@
 
 ## 1. 结论
 
-> **Stage 0 的工程核验工作已完成；Stage 1 尚未授权。**
+> **Stage 0：CLOSED（2026-11-04）。Stage 1：AUTHORIZED（2026-11-04），等待新对话执行。**
 >
 > 基线可信、可构建、可回档；G2 代码与交接资料一致；G3-1 未混入。  
-> 但项目范围、模块集、数据库残留、备份一致性、UI 方向仍需负责人签收；在这些决策前，不进行代码清理或业务开发。
+> 负责人已签收 MB-D-001/002/003/005/018；MB-D-007、MB-D-008/009 及其余 MB-D 仍为 `PROPOSED`。  
+> 本次只做关闭记录，不执行 Stage 1 代码。
 
 ---
 
@@ -118,43 +119,31 @@ BUILD SUCCESSFUL in 1m 1s
 | 5 | 所有新决策状态清晰 | **PASS**（18 项均 PROPOSED） |
 | 6 | 高风险问题已登记 | **PASS**（15 项） |
 | 7 | 负责人待签收事项已整理 | **PASS**（S0-05） |
-| 8 | 后续阶段阻塞条件明确 | **PASS**（Stage 1 需 5 项签字） |
+| 8 | 后续阶段阻塞条件明确 | **PASS**（5 项已签收；Stage 1 AUTHORIZED） |
+| 9 | 负责人关闭授权 | **PASS**（2026-11-04，MB-S0-003） |
 
 **Stage 0 工程核验：完成。**  
-**Stage 1 启动：未授权。**
+**Stage 0 状态：CLOSED（2026-11-04）。**  
+**Stage 1 状态：AUTHORIZED，等待新对话执行。**
 
 ---
 
-## 6. Stage 1 阻塞条件
+## 6. Stage 1 放行与边界
 
-开始 Stage 1 代码清理前，必须签收：
+以下 5 项已于 2026-11-04 **ACCEPTED**；Stage 1 已授权，等待新对话执行：
 
-1. MB-D-001 接管基线；
-2. MB-D-002 范围冻结；
-3. MB-D-003 目标模块集（13）；
-4. MB-D-005 数据库残留处置；
-5. MB-D-018 文档修正授权。
+- [x] MB-D-001 接管基线；
+- [x] MB-D-002 范围冻结；
+- [x] MB-D-003 目标模块集（13）；
+- [x] MB-D-005 数据库残留处置；
+- [x] MB-D-018 文档修正授权。
 
-改备份代码前，必须签收：
+仍有效的限制：
 
-6. MB-D-007 备份一致性。
-
-**MB-D-007 签收前**：不得修改 `AutoBackupWorker` 返回逻辑、`BackupArchiveWriter`、`RestoreExecutor`、写屏障、WAL checkpoint 或其他备份/恢复行为；只允许测试、分析、修复方案。
-
-开发页面前，必须签收：
-
-7. MB-D-008 视觉方向；
-8. MB-D-009 导航方案。
-
-**数据库阶段边界**：Stage 0 不改 schema；Stage 1 只准备迁移规范/测试模板/备份与回滚验证，不创建正式 Schema v2，不删除/迁移 11 张休眠表；实际 v2 需 MB-D-005 及单独授权。
-
-未签收前，允许的只有：
-
-- 补充现有行为的测试；
-- 重写依赖检查脚本（不改变模块集）；
-- 采集构建/测试证据；
-- 起草文档修订（不提交生效）；
-- 分析备份/迁移方案（不修改实现）。
+- **MB-D-007 仍 PROPOSED**：不得修改 `AutoBackupWorker` 返回逻辑、`BackupArchiveWriter`、`RestoreExecutor`、写屏障、WAL checkpoint 或其他备份/恢复行为；只允许测试、分析、修复方案。
+- **MB-D-008/009 仍 PROPOSED**：页面视觉与导航方案签收前，不得按某个候选方案开发页面。
+- **数据库**：Stage 1 只准备迁移规范/测试模板/备份与回滚验证，不创建正式 Schema v2，不删除/迁移 11 张休眠表；实际 v2 需 MB-D-005 + 单独任务授权。
+- Stage 1 已授权不等于备份/页面已授权；两者仍按上述决策边界执行。
 
 ---
 
@@ -184,17 +173,19 @@ BUILD SUCCESSFUL in 1m 1s
 | 分支 | `misebase/main` |
 | 第一轮检查时 HEAD | `dc72025` |
 | 第二轮执行前 HEAD | `501426d`（MB-S0-001 报告提交） |
+| 关闭前 HEAD | **`61c7d8e`** |
 | 工作基线 | `705e0ca` |
 | 第一轮回档标签 | `checkpoint/misebase-s0-submission-20261104` |
 | 第二轮修改前检查点 | `checkpoint/misebase-s0-r2-pre-20261104` |
-| 第二轮提交/标签 | 本次 `docs(stage0): correct MB-S0-002 review findings` 提交；`checkpoint/misebase-s0-r2-20261104`（提交后创建） |
+| 第二轮提交/标签 | `61c7d8e`；`checkpoint/misebase-s0-r2-20261104` |
+| 关闭提交/标签 | 本次关闭提交；`checkpoint/misebase-stage0-closed-20261104`、`checkpoint/misebase-stage1-start-20261104`（哈希与解析见 S0-07 §12.3） |
 | 未移动 | `framework-0.1.0`、`baseline/g2-*`、`checkpoint/g1-*`、`checkpoint/g2-*` |
 
 ---
 
-## 9. 下一步
+## 9. Stage 1 起点与停止条件
 
-### 若负责人签收全部 Stage 1 前置
+**Stage 1 已授权，但不在本对话执行。** 新对话应基于关闭标签与以下顺序启动：
 
 1. 修正 README/P01/A03A/A-G2-001（纯文档，MB-D-018）；
 2. 删除 planning/procurement 模块，products 缩减（MB-D-003）；
@@ -204,11 +195,7 @@ BUILD SUCCESSFUL in 1m 1s
 6. 更新导航到五项功能 + 设置（MB-D-009 未签前只做结构准备，不改视觉）；
 7. 输出 Stage 1 完成报告与阶段标签。
 
-### 若负责人修改/拒绝
-
-- 按签收意见更新 MB-DECISIONS 与 Stage 0 报告；
-- 如需再提交，进入第 3 轮审查（总任务书规定的绝对上限）；
-- 不进入 Stage 1。
+**本对话停止条件**：完成 S0-05/S0-06/S0-07 关闭记录、提交、打标签后停止；不执行 Stage 1 代码工作。
 
 ---
 
@@ -243,3 +230,4 @@ BUILD SUCCESSFUL in 1m 1s
 |---|---|---|---|
 | 1.0.0 | 2026-11-04 | 提交 Stage 0 六份交付报告；完成核验与签收清单 | 接管工程组 |
 | 1.0.1 | 2026-11-04 | MB-S0-002：更新风险统计、备份权限、数据库阶段边界与第二轮 Git 记录 | 接管工程组 |
+| 1.0.2 | 2026-11-04 | MB-S0-003：记录 Stage 0 CLOSED、Stage 1 AUTHORIZED、5 项签收与关闭标签 | 接管工程组 |
