@@ -179,7 +179,7 @@
 
 ## 7. 说明
 
-1. 本轮**没有新增或修改任何测试用例**；测试数量变化来自 MB-S5-08 幂等修复补充的用例。
+1. 本轮**没有新增或修改任何测试用例**；857/540 为 Stage 5 之后（含 MB-S5-08 幂等修复）的仓库稳定口径，与 README 记录一致。
 2. 真机用例为人工/脚本驱动的冒烟与升级验证，不是 instrumentation 断言；
    `connectedAndroidTest` 未在本轮执行（Stage 5 的 ML Kit 解码用例已单独在真机通过）。
 3. 所有证据均为本机原始输出（`adb exec-out screencap -p` 截图、`uiautomator dump` XML、SQLite 只读查询）。

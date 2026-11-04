@@ -139,7 +139,7 @@ application-label:'MISEBASE'
 | `core:common` | 9 | 0 |
 
 > 执行次数大于唯一用例数，是因为 `test` 同时跑 debug 与 release 两个单元测试变体；
-> 540 与 Stage 5 之后的 533 相比，增量来自 MB-S5-08 幂等修复补充的用例。
+> 540 唯一用例是 Stage 5 之后（含 MB-S5-08 幂等修复）的仓库稳定口径，与 README 记录一致。
 
 ### 5.3 静态检查
 
@@ -307,6 +307,12 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\build-release.ps1
 
 ## 13. 提交记录
 
-```text
-（提交后回填：commit hash / 提交信息）
-```
+| 项 | 值 |
+|---|---|
+| 分支 | `main` |
+| 实现提交 | `72712af` — `feat(release): 自适应图标、发布签名与升级验证（MB-S6-001）` |
+| 本次文档回填 | 见紧随其后的 `docs(stage6): 回填发布提交哈希与证据时间线` 提交 |
+| 标签 | 未创建（按任务书停止条件，不 tag、不发布） |
+| 状态 | `Review` |
+
+本报告 §5 的测试数字、§8 的 APK/keystore 指纹、§6 的真机证据均取自实现提交 `72712af` 的构建与真机执行。
