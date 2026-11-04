@@ -1,7 +1,7 @@
 # MB-S3-01 Stage 3 三大档案库执行报告
 
 **文档编号**：MB-S3-01
-**版本**：`1.1.0`
+**版本**：`1.1.1`
 **状态**：`CLOSED`
 **日期**：2026-11-04
 **范围**：酱汁库、食材库、菜谱库、N1 导航、设计系统扩展、`SAUCE` 映射边界、Repository 事务边界
@@ -300,9 +300,9 @@ Stage 3 在既有 Schema v2（33 表）、13 模块与已签收的 MB-D-008 A / 
 | 文档状态 | `CLOSED` |
 | 关闭记录 | [MB-S3-CLOSE-001](MB-S3-CLOSE-001-STAGE3-CLOSE-RECORD.md) |
 | 关闭前 HEAD | `2daa282ba088d1d5e8e9380f8c5029303a04d118` |
-| 关闭提交 | 关闭提交后由 MB-S3-CLOSE-001 §3.1 记录 |
-| `checkpoint/misebase-stage3-closed-20261104` | 对象哈希与解析提交见 MB-S3-CLOSE-001 §3.2 |
-| `checkpoint/misebase-stage4-start-20261104` | 对象哈希与解析提交见 MB-S3-CLOSE-001 §3.2 |
+| 关闭提交 | `84a6d533e8c55d46c32902a6a8bbe1fa2e61ab9e`（`docs(stage3): close stage 3 after review`） |
+| `checkpoint/misebase-stage3-closed-20261104` | 对象 `fdb3e22e1b3bb1a4883518e5932dd5069e80c347`；解析提交 `84a6d533e8c55d46c32902a6a8bbe1fa2e61ab9e` |
+| `checkpoint/misebase-stage4-start-20261104` | 对象 `c5ea6feeef0a843b4f84590c7ea7f72b0e6693f2`；解析提交 `84a6d533e8c55d46c32902a6a8bbe1fa2e61ab9e` |
 | 保留项 | 见 MB-S3-CLOSE-001 §5（7 项） |
 
 ---
@@ -313,3 +313,4 @@ Stage 3 在既有 Schema v2（33 表）、13 模块与已签收的 MB-D-008 A / 
 |---|---|---|---|
 | 1.0.0 | 2026-11-04 | Stage 3 执行报告（Review）；记录实现、测试、Git 与边界 | 接管工程组 |
 | 1.1.0 | 2026-11-04 | MB-S3-CLOSE-001：审查有条件通过，状态改 `CLOSED`，补记关闭提交、标签与保留项 | 接管工程组 |
+| 1.1.1 | 2026-11-04 | 补记关闭提交 `84a6d53` 与两个标签的对象哈希/解析提交 | 接管工程组 |
