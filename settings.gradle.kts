@@ -24,7 +24,9 @@ dependencyResolutionManagement {
 
 rootProject.name = "culinary"
 
-// D-004 已接受的 15 模块，顺序与拓扑序一致。
+// MB-D-003 已接受的 13 模块（MISEBASE 目标），顺序与拓扑序一致。
+// 删除 :feature:planning 与 :feature:procurement；采购清单归 :feature:inventory；
+// :feature:products 缩减为商品/包装/条码/食材映射（不含扫码 UI）。
 include(":app")
 
 include(":core:common")
@@ -39,6 +41,4 @@ include(":feature:sauces")
 include(":feature:recipes")
 include(":feature:products")
 include(":feature:inventory")
-include(":feature:planning")
-include(":feature:procurement")
 include(":feature:settings")

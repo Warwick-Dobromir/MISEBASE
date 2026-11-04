@@ -20,7 +20,5 @@
     <string name="destination_recipes">菜谱</string>
     <string name="destination_products">商品</string>
     <string name="destination_inventory">库存</string>
-    <string name="destination_planning">制作计划</string>
-    <string name="destination_procurement">采购</string>
     <string name="destination_settings">设置</string>
 </resources>

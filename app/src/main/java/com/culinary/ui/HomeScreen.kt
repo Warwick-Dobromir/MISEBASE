@@ -18,9 +18,10 @@ import com.culinary.R
 import com.culinary.navigation.CulinaryDestination
 
 /**
- * 首页：八个业务入口 + 设置。
+ * 首页：五项功能入口 + 设置。
  *
- * 阶段 6 只做导航占位；真正的列表/详情在阶段 7+ 的 feature 中实现。
+ * Stage 1 只做导航占位；真正的列表/详情在后续阶段的 feature 中实现。
+ * 不开发功能页面，不做视觉定稿，不重排导航（MB-D-008/009 仍 PROPOSED）。
  */
 @Composable
 fun HomeScreen(

@@ -19,7 +19,5 @@ enum class CulinaryDestination(
     RECIPES("recipes", R.string.destination_recipes),
     PRODUCTS("products", R.string.destination_products),
     INVENTORY("inventory", R.string.destination_inventory),
-    PLANNING("planning", R.string.destination_planning),
-    PROCUREMENT("procurement", R.string.destination_procurement),
     SETTINGS("settings", R.string.destination_settings),
 }
