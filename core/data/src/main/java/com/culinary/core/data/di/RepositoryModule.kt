@@ -1,9 +1,11 @@
 package com.culinary.core.data.di
 
+import com.culinary.core.data.repository.CalculationRecordRepositoryImpl
 import com.culinary.core.data.repository.IngredientRepositoryImpl
 import com.culinary.core.data.repository.InventoryRepositoryImpl
 import com.culinary.core.data.repository.RecipeRepositoryImpl
 import com.culinary.core.data.repository.UnitRepositoryImpl
+import com.culinary.core.domain.repository.CalculationRecordRepository
 import com.culinary.core.domain.repository.IngredientRepository
 import com.culinary.core.domain.repository.InventoryRepository
 import com.culinary.core.domain.repository.RecipeRepository
@@ -33,4 +35,8 @@ abstract class RepositoryModule {
     @Binds
     @Singleton
     abstract fun bindInventoryRepository(impl: InventoryRepositoryImpl): InventoryRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindCalculationRecordRepository(impl: CalculationRecordRepositoryImpl): CalculationRecordRepository
 }

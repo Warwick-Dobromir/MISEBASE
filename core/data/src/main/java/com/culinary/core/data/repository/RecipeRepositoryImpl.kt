@@ -99,6 +99,7 @@ class RecipeRepositoryImpl
                     },
                 yieldQty = version.yield.amount,
                 yieldUnitId = version.yield.unit.id.value,
+                servings = version.servings,
                 isCurrent = isCurrent,
                 createdAt = createdAt,
                 publishedAt = publishedAt,

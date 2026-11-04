@@ -28,8 +28,8 @@ import com.culinary.core.domain.model.VersionStatus
  * 菜谱 Entity ↔ 领域模型。
  *
  * 阶段 2 边界：`SAUCE` 组成行暂不能映射为领域目标（酱汁档案在 Stage 3 落地），
- * 遇到时返回 `CUL-REP-004`，不静默丢弃。`recipe_version` 暂无 `servings` 列，
- * 映射按"整批 = 1 份"处理。
+ * 遇到时返回 `CUL-REP-004`，不静默丢弃。v2 起 `recipe_version.servings` 直接映射到
+ * 领域模型；v1 历史数据迁移后为 1（整批 = 1 份）。
  */
 object RecipeMapper {
     fun toDomain(entity: RecipeEntity): Recipe =
@@ -95,6 +95,7 @@ object RecipeMapper {
                     },
                 yield = Quantity(version.yieldQty, yieldUnit),
                 components = mapped,
+                servings = version.servings,
             ),
         )
     }

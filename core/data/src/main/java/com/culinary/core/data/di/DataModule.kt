@@ -11,6 +11,7 @@ import com.culinary.core.common.UuidV4Generator
 import com.culinary.core.data.logging.TimberAppLogger
 import com.culinary.core.database.CulinaryDatabase
 import com.culinary.core.database.DatabaseFactory
+import com.culinary.core.database.dao.CalculationRecordDao
 import com.culinary.core.database.dao.IngredientDao
 import com.culinary.core.database.dao.UnitDao
 import dagger.Module
@@ -31,6 +32,7 @@ import javax.inject.Singleton
  */
 @Module
 @InstallIn(SingletonComponent::class)
+@Suppress("TooManyFunctions") // 数据库/执行器/时钟/日志的唯一装配点；拆分模块不会降低复杂度
 object DataModule {
     @Provides
     @Singleton
@@ -59,6 +61,10 @@ object DataModule {
     @Provides
     @Singleton
     fun provideUnitDao(database: CulinaryDatabase): UnitDao = database.unitDao()
+
+    @Provides
+    @Singleton
+    fun provideCalculationRecordDao(database: CulinaryDatabase): CalculationRecordDao = database.calculationRecordDao()
 
     @Provides
     @Singleton
