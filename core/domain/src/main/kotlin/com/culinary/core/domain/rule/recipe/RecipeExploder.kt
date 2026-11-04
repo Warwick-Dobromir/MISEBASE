@@ -8,6 +8,7 @@ import com.culinary.core.domain.model.ComponentTarget
 import com.culinary.core.domain.model.IngredientId
 import com.culinary.core.domain.model.Quantity
 import com.culinary.core.domain.model.RecipeVersionId
+import com.culinary.core.domain.model.Servings
 import com.culinary.core.domain.rule.unit.UnitConverter
 
 /** 展开后的一条食材需求（仍保留原单位，汇总阶段再统一）。 */
@@ -55,6 +56,30 @@ class RecipeExploder(
                 visiting = LinkedHashSet(),
             )
         return if (error == null) Outcome.success(requirements) else Outcome.failure(error)
+    }
+
+    /**
+     * 按"份数"展开：以根版本标注的 `servings` 为基准，倍数 = 目标份数 / 基准份数。
+     *
+     * 根版本缺失时返回 `CUL-NF-001`；份数必须为正（[Servings] 已保证）。
+     */
+    fun explodeForServings(
+        rootVersionId: RecipeVersionId,
+        servings: Servings,
+        source: RecipeGraphSource,
+        includeOptional: Boolean = false,
+    ): Outcome<List<ExplodedRequirement>> {
+        val root =
+            source.findVersion(rootVersionId)
+                ?: return Outcome.failure(
+                    CulinaryError.NotFound(entity = "recipe_version", id = rootVersionId.value),
+                )
+        return explode(
+            rootVersionId = rootVersionId,
+            source = source,
+            multiplier = servings.scaleFactor(Servings(root.servings.toDouble())),
+            includeOptional = includeOptional,
+        )
     }
 
     private fun expand(

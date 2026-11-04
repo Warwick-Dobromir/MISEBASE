@@ -4,11 +4,14 @@ import com.culinary.core.common.CulinaryError
 import com.culinary.core.common.DomainDetail
 import com.culinary.core.common.ErrorCode
 import com.culinary.core.common.Outcome
+import com.culinary.core.domain.model.DisplayQuantity
 import com.culinary.core.domain.model.IngredientId
 import com.culinary.core.domain.model.IngredientUnitConversion
 import com.culinary.core.domain.model.Quantity
 import com.culinary.core.domain.model.Unit
 import com.culinary.core.domain.model.UnitDimension
+import java.math.BigDecimal
+import java.math.RoundingMode
 
 /**
  * 单位换算（D-008 / ADR-005）。
@@ -20,7 +23,8 @@ import com.culinary.core.domain.model.UnitDimension
  * 4. 跨维度只允许食材级显式换算（`1 from = factor × to`），反向用 `1/factor`；
  * 5. 没有依据时返回 `CUL-UNIT-001`，绝不猜密度或默认值。
  *
- * 本类不做四舍五入：显示精度由 UI 按 `Unit.displayPrecision` 处理，计算保留原始精度。
+ * 计算保留原始精度；展示用 [display] / [convertForDisplay]，按目标单位
+ * `displayPrecision` 做 HALF_UP 舍入，并标记近似单位。
  */
 class UnitConverter {
     fun convert(
@@ -43,6 +47,38 @@ class UnitConverter {
             }
         return scaled(quantity, target, factor, ingredientId)
     }
+
+    /** 同单位展示：按该单位精度舍入，近似单位打标。 */
+    fun display(quantity: Quantity): DisplayQuantity =
+        DisplayQuantity(
+            amount = round(quantity.amount, quantity.unit),
+            unit = quantity.unit,
+            isApproximate = quantity.unit.isApproximate,
+        )
+
+    /** 换算 + 按目标单位精度舍入；换算失败时透传 `CUL-UNIT-001/002`。 */
+    fun convertForDisplay(
+        quantity: Quantity,
+        target: Unit,
+        ingredientConversions: List<IngredientUnitConversion> = emptyList(),
+        ingredientId: IngredientId? = null,
+    ): Outcome<DisplayQuantity> =
+        when (val converted = convert(quantity, target, ingredientConversions, ingredientId)) {
+            is Outcome.Failure -> converted
+            is Outcome.Success ->
+                Outcome.success(
+                    DisplayQuantity(
+                        amount = round(converted.value.amount, target),
+                        unit = target,
+                        isApproximate = quantity.unit.isApproximate || target.isApproximate,
+                    ),
+                )
+        }
+
+    private fun round(
+        amount: Double,
+        unit: Unit,
+    ): Double = BigDecimal.valueOf(amount).setScale(unit.displayPrecision, RoundingMode.HALF_UP).toDouble()
 
     private fun scaled(
         quantity: Quantity,
