@@ -214,6 +214,7 @@ class InventoryRepositoryImpl
                 }
             }
 
+        @Suppress("ReturnCount") // 余额/预留/并发三类守卫必须显式失败，合并会掩盖原因。
         private suspend fun applyNewEntry(entry: InventoryLedgerEntry): Outcome<Boolean> {
             val batch =
                 batchDao.findById(entry.batchId.value)

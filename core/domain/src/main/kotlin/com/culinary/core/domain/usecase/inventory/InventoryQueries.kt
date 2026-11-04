@@ -10,10 +10,12 @@ import com.culinary.core.domain.model.InventoryItem
 import com.culinary.core.domain.model.InventoryItemDetail
 import com.culinary.core.domain.model.InventoryLedgerRow
 import com.culinary.core.domain.model.InventoryOverviewRow
+import com.culinary.core.domain.model.InventoryProductDetail
 import com.culinary.core.domain.model.StorageLocation
 import com.culinary.core.domain.repository.IngredientRepository
 import com.culinary.core.domain.repository.InventoryRepository
 import com.culinary.core.domain.repository.RecipeRepository
+import com.culinary.core.domain.repository.UnitRepository
 import kotlinx.coroutines.flow.first
 
 /** 库存总览：按商品聚合批次，展示在手/预留/可用/位置/最近到期。 */
@@ -82,6 +84,7 @@ class GetInventoryItemDetailUseCase(
     private val ingredientRepository: IngredientRepository,
     private val recipeRepository: RecipeRepository,
 ) {
+    @Suppress("CyclomaticComplexMethod", "ReturnCount")
     suspend operator fun invoke(batchId: BatchId): Outcome<InventoryItemDetail> {
         val item =
             when (val result = inventoryRepository.findItem(batchId)) {
@@ -115,7 +118,7 @@ class GetInventoryItemDetailUseCase(
                 }
             } ?: "未关联食材"
         val related =
-            product?.ingredientId?.let { relatedRecipes(it) }.orEmpty()
+            product?.ingredientId?.let { relatedRecipesFor(recipeRepository, it) }.orEmpty()
         return Outcome.success(
             InventoryItemDetail(
                 batch = summary(item, location),
@@ -125,20 +128,6 @@ class GetInventoryItemDetailUseCase(
                 relatedRecipeNames = related,
             ),
         )
-    }
-
-    private suspend fun relatedRecipes(ingredientId: com.culinary.core.domain.model.IngredientId): List<String> {
-        val recipes = runCatching { recipeRepository.observeActive().first() }.getOrDefault(emptyList())
-        return recipes
-            .filter { recipe ->
-                recipeRepository.listVersions(recipe.id).any { version ->
-                    version.components.any { component ->
-                        (component.target as? ComponentTarget.Ingredient)?.id == ingredientId
-                    }
-                }
-            }.map { it.name }
-            .distinct()
-            .sorted()
     }
 
     private fun summary(
@@ -151,6 +140,81 @@ class GetInventoryItemDetailUseCase(
             receivedAt = item.receivedAt,
             locationName = location?.name,
         )
+}
+
+/** 商品级详情：全部批次、流水与关联菜谱，供物料详情页使用。 */
+class GetInventoryProductDetailUseCase(
+    private val inventoryRepository: InventoryRepository,
+    private val ingredientRepository: IngredientRepository,
+    private val recipeRepository: RecipeRepository,
+) {
+    @Suppress("ReturnCount")
+    suspend operator fun invoke(productId: com.culinary.core.domain.model.ProductId): Outcome<InventoryProductDetail> {
+        val product =
+            when (val result = inventoryRepository.findProduct(productId)) {
+                is Outcome.Failure -> return result
+                is Outcome.Success ->
+                    result.value
+                        ?: return Outcome.failure(CulinaryError.NotFound("product", productId.value))
+            }
+        val items =
+            when (val result = inventoryRepository.listItems()) {
+                is Outcome.Failure -> return result
+                is Outcome.Success -> result.value.filter { it.productId == productId }
+            }
+        val locations =
+            when (val result = inventoryRepository.listLocations()) {
+                is Outcome.Failure -> return result
+                is Outcome.Success -> result.value
+            }
+        val ledger =
+            when (val result = inventoryRepository.ledger()) {
+                is Outcome.Failure -> return result
+                is Outcome.Success -> result.value.filter { it.productId == productId }
+            }
+        val ingredientName =
+            when (val result = ingredientRepository.get(product.ingredientId)) {
+                is Outcome.Success -> result.value.name
+                is Outcome.Failure -> "未关联食材"
+            }
+        val locationsById = locations.associateBy { it.id }
+        return Outcome.success(
+            InventoryProductDetail(
+                product = product,
+                ingredientName = ingredientName,
+                batches =
+                    items
+                        .sortedWith(compareBy({ it.expiresOn ?: java.time.LocalDate.MAX }, { it.batchId.value }))
+                        .map { item ->
+                            InventoryBatchSummary(
+                                item = item,
+                                batchCode = item.batchCode,
+                                receivedAt = item.receivedAt,
+                                locationName = locationsById[item.locationId]?.name,
+                            )
+                        },
+                ledger = ledger.sortedWith(compareByDescending { it.occurredAt }),
+                relatedRecipeNames = relatedRecipesFor(recipeRepository, product.ingredientId),
+            ),
+        )
+    }
+}
+
+internal suspend fun relatedRecipesFor(
+    recipeRepository: RecipeRepository,
+    ingredientId: com.culinary.core.domain.model.IngredientId,
+): List<String> {
+    val recipes = runCatching { recipeRepository.observeActive().first() }.getOrDefault(emptyList())
+    return recipes
+        .filter { recipe ->
+            recipeRepository.listVersions(recipe.id).any { version ->
+                version.components.any { component ->
+                    (component.target as? ComponentTarget.Ingredient)?.id == ingredientId
+                }
+            }
+        }.map { it.name }
+        .distinct()
+        .sorted()
 }
 
 /** 库存流水：按时间倒序，筛选由 UI 在已解析行上完成。 */
@@ -202,6 +266,7 @@ class ListInventoryLedgerUseCase(
 class ListInventoryFormOptionsUseCase(
     private val inventoryRepository: InventoryRepository,
     private val ingredientRepository: IngredientRepository,
+    private val unitRepository: UnitRepository,
 ) {
     suspend operator fun invoke(): Outcome<InventoryFormOptions> {
         val products =
@@ -214,13 +279,35 @@ class ListInventoryFormOptionsUseCase(
                 is Outcome.Failure -> return result
                 is Outcome.Success -> result.value
             }
+        val items =
+            when (val result = inventoryRepository.listItems()) {
+                is Outcome.Failure -> return result
+                is Outcome.Success -> result.value
+            }
         val ingredients =
             runCatching { ingredientRepository.observeActive().first() }.getOrDefault(emptyList())
+        val locationsById = locations.associateBy { it.id }
         return Outcome.success(
             InventoryFormOptions(
                 products = products.sortedBy { it.name },
                 locations = locations.sortedBy { it.name },
                 ingredients = ingredients.sortedBy { it.name },
+                units = unitRepository.all(),
+                batches =
+                    items
+                        .map { item ->
+                            InventoryBatchSummary(
+                                item = item,
+                                batchCode = item.batchCode,
+                                receivedAt = item.receivedAt,
+                                locationName = locationsById[item.locationId]?.name,
+                            )
+                        }.sortedWith(
+                            compareBy(
+                                { it.item.expiresOn ?: java.time.LocalDate.MAX },
+                                { it.item.batchId.value },
+                            ),
+                        ),
             ),
         )
     }

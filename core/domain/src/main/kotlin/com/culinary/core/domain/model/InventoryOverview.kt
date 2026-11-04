@@ -43,6 +43,15 @@ data class InventoryItemDetail(
     val relatedRecipeNames: List<String>,
 )
 
+/** 商品级详情：全部批次 + 该商品流水 + 关联菜谱。 */
+data class InventoryProductDetail(
+    val product: Product,
+    val ingredientName: String,
+    val batches: List<InventoryBatchSummary>,
+    val ledger: List<InventoryLedgerEntry>,
+    val relatedRecipeNames: List<String>,
+)
+
 /** 流水展示行：把商品、食材、位置名称解析好，UI 不再查库。 */
 data class InventoryLedgerRow(
     val entry: InventoryLedgerEntry,
@@ -56,4 +65,6 @@ data class InventoryFormOptions(
     val products: List<Product>,
     val locations: List<StorageLocation>,
     val ingredients: List<Ingredient>,
+    val units: List<Unit> = emptyList(),
+    val batches: List<InventoryBatchSummary> = emptyList(),
 )

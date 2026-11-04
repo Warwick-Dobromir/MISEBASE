@@ -45,6 +45,7 @@ class ConfirmRequirementDeductionUseCase(
             .write { execute(recipeVersionId, targetServings) }
             .flatMap { it }
 
+    @Suppress("LongMethod", "CyclomaticComplexMethod", "ReturnCount")
     private suspend fun execute(
         recipeVersionId: RecipeVersionId,
         targetServings: Double,

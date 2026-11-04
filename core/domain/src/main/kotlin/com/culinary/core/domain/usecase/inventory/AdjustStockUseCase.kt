@@ -29,6 +29,7 @@ class AdjustStockUseCase(
             .write { execute(input) }
             .flatMap { it }
 
+    @Suppress("LongMethod", "CyclomaticComplexMethod", "ReturnCount")
     private suspend fun execute(input: StockAdjustmentInput): Outcome<StockMovementResult> {
         if (!input.countedQuantity.amount.isFinite() || input.countedQuantity.amount < 0.0) {
             return invalid("countedQuantity", "must be a finite non negative number")
@@ -105,6 +106,7 @@ class AdjustStockUseCase(
         return Outcome.success(StockMovementResult(entry = entry, item = updated))
     }
 
+    @Suppress("ReturnCount") // 幂等重放需要分别处理查键/读批次/缺失三条失败路径。
     private suspend fun existingReplay(key: String): Outcome<StockMovementResult>? {
         val existing =
             when (val result = inventoryRepository.findByIdempotencyKey(key)) {

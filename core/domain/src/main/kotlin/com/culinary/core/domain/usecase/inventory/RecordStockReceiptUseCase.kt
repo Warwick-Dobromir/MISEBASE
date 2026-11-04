@@ -40,6 +40,7 @@ class RecordStockReceiptUseCase(
             .write { execute(input) }
             .flatMap { it }
 
+    @Suppress("LongMethod", "CyclomaticComplexMethod", "ReturnCount")
     private suspend fun execute(input: StockReceiptInput): Outcome<StockMovementResult> {
         val validation = validate(input)
         if (validation != null) return validation
@@ -119,6 +120,7 @@ class RecordStockReceiptUseCase(
         return Outcome.success(StockMovementResult(entry = entry, item = item))
     }
 
+    @Suppress("ReturnCount") // 幂等重放需要分别处理查键/读批次/缺失三条失败路径。
     private suspend fun existingReplay(key: String): Outcome<StockMovementResult>? {
         val existing =
             when (val result = inventoryRepository.findByIdempotencyKey(key)) {
@@ -156,6 +158,7 @@ class RecordStockReceiptUseCase(
             else -> invalid("productId", "product or ingredient is required")
         }
 
+    @Suppress("ReturnCount")
     private suspend fun resolveProductForIngredient(
         ingredientId: com.culinary.core.domain.model.IngredientId,
     ): Outcome<Product> {

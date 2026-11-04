@@ -88,6 +88,7 @@ class ExpandRecipeUseCase(
         )
     }
 
+    @Suppress("LoopWithTooManyJumpStatements") // 双队列（配方/酱汁）各自去重，continue 比嵌套 if 更清晰。
     private suspend fun prefetch(root: RecipeVersionId): RecipeGraph? {
         val recipes = mutableMapOf<RecipeVersionId, RecipeVersion>()
         val sauces = mutableMapOf<SauceVersionId, SauceVersion>()

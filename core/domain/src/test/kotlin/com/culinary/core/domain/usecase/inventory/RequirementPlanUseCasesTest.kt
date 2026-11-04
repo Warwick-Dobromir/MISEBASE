@@ -211,6 +211,7 @@ class RequirementPlanUseCasesTest {
             clock = clock,
         )
 
+    @Suppress("LongMethod") // 测试数据一次性铺好，避免跨测试共享可变夹具。
     private fun seedGraph(
         stockUnit: Unit = gram,
         flourStock: Double = 200.0,

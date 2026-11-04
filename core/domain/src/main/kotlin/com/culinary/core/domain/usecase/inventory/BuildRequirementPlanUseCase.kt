@@ -51,6 +51,7 @@ class BuildRequirementPlanUseCase(
     private val idGenerator: IdGenerator,
     private val clock: Clock,
 ) {
+    @Suppress("LongMethod", "CyclomaticComplexMethod", "NestedBlockDepth", "ReturnCount")
     suspend operator fun invoke(
         recipeVersionId: RecipeVersionId,
         targetServings: Double,

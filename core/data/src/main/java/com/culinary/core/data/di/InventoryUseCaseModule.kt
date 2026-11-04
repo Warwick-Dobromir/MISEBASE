@@ -14,6 +14,7 @@ import com.culinary.core.domain.usecase.inventory.ConfirmRequirementDeductionUse
 import com.culinary.core.domain.usecase.inventory.GeneratePurchaseListUseCase
 import com.culinary.core.domain.usecase.inventory.GetCalculationRecordUseCase
 import com.culinary.core.domain.usecase.inventory.GetInventoryItemDetailUseCase
+import com.culinary.core.domain.usecase.inventory.GetInventoryProductDetailUseCase
 import com.culinary.core.domain.usecase.inventory.ListCalculationRecordsUseCase
 import com.culinary.core.domain.usecase.inventory.ListInventoryFormOptionsUseCase
 import com.culinary.core.domain.usecase.inventory.ListInventoryLedgerUseCase
@@ -50,6 +51,15 @@ object InventoryUseCaseModule {
 
     @Provides
     @Singleton
+    fun provideGetInventoryProductDetailUseCase(
+        inventoryRepository: InventoryRepository,
+        ingredientRepository: IngredientRepository,
+        recipeRepository: RecipeRepository,
+    ): GetInventoryProductDetailUseCase =
+        GetInventoryProductDetailUseCase(inventoryRepository, ingredientRepository, recipeRepository)
+
+    @Provides
+    @Singleton
     fun provideListInventoryLedgerUseCase(
         inventoryRepository: InventoryRepository,
         ingredientRepository: IngredientRepository,
@@ -60,7 +70,9 @@ object InventoryUseCaseModule {
     fun provideListInventoryFormOptionsUseCase(
         inventoryRepository: InventoryRepository,
         ingredientRepository: IngredientRepository,
-    ): ListInventoryFormOptionsUseCase = ListInventoryFormOptionsUseCase(inventoryRepository, ingredientRepository)
+        unitRepository: UnitRepository,
+    ): ListInventoryFormOptionsUseCase =
+        ListInventoryFormOptionsUseCase(inventoryRepository, ingredientRepository, unitRepository)
 
     @Provides
     @Singleton
