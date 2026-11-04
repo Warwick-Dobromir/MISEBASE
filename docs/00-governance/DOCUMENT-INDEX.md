@@ -1,7 +1,7 @@
 # CULINARY 文档索引
 
 **文档编号**：GOV-INDEX
-**版本**：`0.28.0`
+**版本**：`0.29.0`
 **状态**：`Review`
 **日期**：2026-11-05
 **维护人**：首席架构师 / 技术负责人
@@ -126,20 +126,21 @@
 | [MB-S3-09 检查点回执](../09-stage3/MB-S3-09-CHECKPOINT-RECEIPT.md) | Stage 3 检查点标签对象哈希与解析提交 |
 | [MB-S3-CLOSE-001 关闭记录](../09-stage3/MB-S3-CLOSE-001-STAGE3-CLOSE-RECORD.md) | Stage 3 有条件通过、关闭 HEAD、关闭/Stage 4 起点标签、7 项保留项；不进入 Stage 4 |
 
-### 2.4A MISEBASE Stage 4 文档（2026-11-05，状态 Review）
+### 2.4A MISEBASE Stage 4 文档（2026-11-05，状态 CLOSED）
 
 | 文档 | 用途 |
 |---|---|
-| [MB-S4-01 执行报告](../11-stage4/MB-S4-01-EXECUTION-REPORT.md) | 前置检查、库存、需求/采购/记录、酱汁展开、编辑器保护、导航、测试、Git、风险；状态 `Review` |
+| [MB-S4-01 执行报告](../11-stage4/MB-S4-01-EXECUTION-REPORT.md) | 前置检查、库存、需求/采购/记录、酱汁展开、编辑器保护、导航、测试、Git、风险；状态 `CLOSED`（有条件通过） |
 | [MB-S4-02 库存页面说明](../11-stage4/MB-S4-02-INVENTORY-PAGES.md) | 总览/详情/入库/出库/调整/流水路由、字段、状态与限制 |
 | [MB-S4-03 需求汇总与缺口](../11-stage4/MB-S4-03-REQUIREMENT-GAP.md) | 份数缩放、汇总、可用库存、必需/可选缺口 |
 | [MB-S4-04 采购清单](../11-stage4/MB-S4-04-PURCHASE-LIST.md) | 即时计算、不落采购单表、稳定排序、CSV |
 | [MB-S4-05 计算记录业务接线](../11-stage4/MB-S4-05-CALCULATION-RECORD.md) | 确认时写入、不可变、payload hash、回放、事务 |
 | [MB-S4-06 酱汁图展开](../11-stage4/MB-S4-06-SAUCE-EXPANSION.md) | 递归、循环、缺失、可选、单位与测试 |
 | [MB-S4-07 编辑器组成行限制](../11-stage4/MB-S4-07-EDITOR-COMPONENT-LIMITS.md) | 子菜谱/子酱汁行只读保留与回写 |
-| [MB-S4-08 测试矩阵](../11-stage4/MB-S4-08-TEST-MATRIX.md) | 416 唯一用例 / 0 失败；新增套件与需求覆盖 |
+| [MB-S4-08 测试矩阵](../11-stage4/MB-S4-08-TEST-MATRIX.md) | 416 唯一用例 / 0 失败；新增套件与需求覆盖；状态 `CLOSED` |
 | [MB-S4-09 决策映射](../11-stage4/MB-S4-09-DECISION-MAPPING.md) | MB-D-014/015/016/017 落地；5 项 PROPOSED 边界 |
 | [MB-S4-10 检查点回执](../11-stage4/MB-S4-10-CHECKPOINT-RECEIPT.md) | Stage 4 检查点标签对象哈希与解析提交 |
+| [MB-S4-CLOSE-001 关闭记录](../11-stage4/MB-S4-CLOSE-RECORD.md) | 有条件通过、关闭提交/标签、保留项、S0-04 风险更新、Stage 5 前置与停止声明 |
 
 ### 2.5 备份一致性授权（2026-11-04）
 
@@ -238,3 +239,4 @@
 | 0.21.0 | 2026-11-04 | 新增 MB-SC-01～07 Schema v1→v2 执行/验证文档；报告状态 `Review`；MB-SC-00 标记已实施 | 接管工程组 |
 | 0.21.1 | 2026-11-04 | 新增 MB-SC-CLOSE-001；MB-SC-06 改为 `CLOSED`（有条件通过）；补记关闭标签 | 接管工程组 |
 | 0.28.0 | 2026-11-05 | Stage 4：新增 MB-S4-01～10（执行报告/页面/需求/采购/计算记录/酱汁展开/编辑器保护/测试矩阵/决策映射/检查点）；状态 `Review`，不关闭 Stage 4 | 接管工程组 |
+| 0.29.0 | 2026-11-05 | MB-S4-CLOSE-001：新增关闭记录；MB-S4-01/MB-S4-08 状态改为 `CLOSED`；Stage 4 文档组标记 CLOSED；记录关闭/Stage 5 起点标签；不进入 Stage 5 | 接管工程组 |

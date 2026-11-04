@@ -1,0 +1,149 @@
+# MB-S4-CLOSE-001 Stage 4 关闭记录
+
+**文档编号**：MB-S4-CLOSE-001
+**版本**：`1.0.0`
+**状态**：`CLOSED`
+**日期**：2026-11-05
+**关闭对象**：Stage 4 库存与自动采购清单（MB-S4-001）
+**审查结论**：**有条件通过**
+**范围**：仅关闭记录、执行报告/测试矩阵状态、S0-04 风险登记与文档索引；不改业务代码、Schema/Entity/迁移、备份/恢复、导航或模块集；**不进入 Stage 5**
+
+---
+
+## 1. 审查结论
+
+Stage 4 **有条件通过**：
+
+- **主体合规**：库存总览、商品详情、入库、出库、盘点调整、流水、需求汇总与缺口、采购清单、计算记录业务接线、酱汁图展开、编辑器组成行只读保护、N1 库存入口切换均已完成；
+- **无重大范围偏离**：未修改 Schema/Entity/表结构/迁移/数据库文件；未修改备份/恢复实现；未新建模块或 `feature:scan`；未开发扫码识别/导入/CameraX 页面；未使用 `purchase_order*` 表；
+- **质量门禁通过**：660 次 JVM 测试执行 / 416 唯一用例 / 0 失败；Debug APK 构建成功；`ktlintCheck`、`detekt` 全仓通过；模块依赖、休眠表、文档一致性脚本 PASS；
+- **保留项已记录并接受**，见 §4；
+- **Stage 5 前置**：进入 Stage 5 前必须签收 MB-D-004 与 MB-D-011。
+
+本结论把 Stage 4 置为 `CLOSED`，**不构成 Stage 5 开发授权**。
+
+---
+
+## 2. 关闭前 HEAD
+
+| 项 | 值 |
+|---|---|
+| 分支 | `misebase/main` |
+| 关闭前实际 HEAD（执行前） | `d6bfcb7610626e416902e23c2333ed0ed2da86c0` |
+| 该 HEAD 提交信息 | `docs(stage4): avoid a stale line-count snapshot in the checkpoint receipt` |
+| 该 HEAD 状态 | MB-S4-01 / MB-S4-08 为 `Review`；Stage 4 检查点 `checkpoint/misebase-stage4-20261105` 已创建；工作树为空 |
+| 该 HEAD 的 Schema | v2，33 表；未变更 |
+| 该 HEAD 的模块集 | 13 模块；无 `feature:scan` |
+
+关闭动作在此 HEAD 之上只增加文档；不改变代码、Schema、备份、导航或模块集。
+
+---
+
+## 3. 关闭提交与标签
+
+### 3.1 关闭提交
+
+| 项 | 值 |
+|---|---|
+| 关闭提交完整哈希 | `PENDING-CLOSE-COMMIT` |
+| 提交信息 | `docs(stage4): close stage 4 after review` |
+| 提交内容 | 本关闭记录、MB-S4-01 状态与关闭补记、MB-S4-08 状态、S0-04 风险项、文档索引 |
+| 变更类型 | 仅文档 |
+
+### 3.2 关闭标签
+
+| 项 | 值 |
+|---|---|
+| 关闭标签 | `checkpoint/misebase-stage4-closed-20261105` |
+| Stage 5 起点标签 | `checkpoint/misebase-stage5-start-20261105` |
+| 类型 | annotated tag |
+| 对象哈希（关闭标签） | `PENDING-CLOSE-TAG-OBJECT` |
+| 解析提交（关闭标签） | `PENDING-CLOSE-TAG-COMMIT` |
+| 对象哈希（Stage 5 起点） | `PENDING-STAGE5-TAG-OBJECT` |
+| 解析提交（Stage 5 起点） | `PENDING-STAGE5-TAG-COMMIT` |
+| 打标签时间 | `PENDING-TAG-TIME` |
+
+两个标签均标记「Stage 4 审查关闭」这一文档提交坐标；**Stage 5 起点标签不表示 Stage 5 已启动或已获授权**。
+
+### 3.3 标签完整性
+
+关闭前核对：
+
+| 项 | 值 |
+|---|---|
+| `framework-0.1.0` | `2b523de4b87e37a2eb08b4c7c851549350ad811a`，未移动 |
+| `checkpoint/misebase-stage4-go-20261104` | `e76c452911da5141e7ab6d1b76b1246ade96d05d`，未移动 |
+| `checkpoint/misebase-stage4-20261105` | `f743c665a3a20b47ffabc3a6170eb904c405bae1`（对象 `c8c95e13cec8b003e3d68de79a0fd70b43defbdb`），未移动 |
+| 关闭前标签数量 | 46 |
+| 关闭后标签数量 | 48（仅新增两个关闭/起点标签） |
+| 既有 `checkpoint/*` / `baseline/*` | 全部未移动 |
+
+---
+
+## 4. 保留项（已接受）
+
+| # | 保留项 | 影响 | 关闭处置与后续阶段 |
+|---:|---|---|---|
+| 1 | 单位不可合并导致可用高估 | 同一食材多单位时各行分别读取库存，缺口可能偏小 | **已写入 S0-04 S0-R-16**；Stage 4 已知限制，后续阶段处理；建议 Stage 5 评估，Stage 6 验收前复测 |
+| 2 | 默认商品映射 | 食材有多个商品时默认取第一个启用商品，扣减分布可能非预期 | **已写入 S0-04 S0-R-17**；Stage 4 已知限制，后续阶段处理；建议 Stage 5 商品/库存映射细化时处理 |
+| 3 | 商品自动创建 | 首次入库按食材自动创建商品，商品主数据简化 | 保留；后续商品管理/商品选择任务处理；本阶段页面已展示商品名 |
+| 4 | 回放未跨版本搜索 | 计算记录按菜谱版本列历史，跨版本检索成本较高 | 保留；后续可在记录检索/归档任务扩展；当前 payload hash 与需求行完整 |
+| 5 | 未真机验收 | CameraX/SAF/真实设备行为未验证 | 保留；**MB-D-011 PROPOSED**；Stage 6 真机验收补跑，不得以 JVM/Robolectric 替代 |
+| 6 | 未启用远端 CI | 仅本地门禁 | 保留；**MB-D-010 PROPOSED**；未启用，不阻塞本阶段关闭 |
+| 7 | 未创建发布签名 | 无 Release 签名 | 保留；**MB-D-012 PROPOSED**；后续发布阶段处理 |
+| 8 | `WorkManagerBackupSchedulerTest` 偶发失败 | 首次全量运行出现一次既有异步 `FAILED`，单测与后续全量重跑通过 | 保留；未修改备份/平台实现；Stage 6 稳定性复测时观察 |
+| 9 | 扫码占位 | 扫码识别/导入/CameraX 页面未实现 | 保留；**MB-D-004 PROPOSED**；底部入口继续占位 |
+| 10 | 附件/SAF/生产触发点未接线 | 备份恢复只覆盖 DB；自动备份默认不运行 | 保留；属 MB-D-007 关闭记录已列保留项，后续备份/设置任务处理 |
+
+---
+
+## 5. 风险登记册更新
+
+[S0-04](../05-handover/S0-04-RISK-REGISTER.md) 升级为 `1.2.0`：
+
+| 风险 | 等级 | 状态 | 说明 |
+|---|---|---|---|
+| S0-R-16 单位不可合并导致可用高估 | 中 | `OPEN` | Stage 4 已知限制，后续阶段处理；Stage 5 评估、Stage 6 复测 |
+| S0-R-17 默认商品映射 | 中 | `OPEN` | Stage 4 已知限制，后续阶段处理；Stage 5 商品/库存映射细化 |
+
+风险矩阵更新为 **17 项**：高 5 + 中 10 + 低 2。第 1、2 项已明确写入风险登记册。
+
+---
+
+## 6. Stage 5 前置条件
+
+进入 Stage 5 前必须同时满足：
+
+1. **MB-D-004（扫码 UI 归属）签收**：当前为 `PROPOSED`，未签收前不得新建 `feature:scan`、不得实现扫码识别/导入/CameraX 页面；
+2. **MB-D-011（真机验证设备）签收**：当前为 `PROPOSED`，未签收前不得做真机验收，真机验证留 Stage 6。
+
+Stage 5 起点标签只记录阶段边界，**不替代上述签收**。
+
+---
+
+## 7. 关闭后的边界
+
+- 不进入 Stage 5；
+- 不修改业务代码、Schema/Entity/迁移、数据库文件；
+- 不修改备份/恢复、写屏障、WAL checkpoint；
+- 不修改导航、Compose 页面、设计系统或模块集；
+- 不新建 `feature:scan` 或其他模块；
+- 不移动 `framework-0.1.0`、既有 `checkpoint/*` / `baseline/*` 或 `checkpoint/misebase-stage4-20261105`；
+- 不把任何 `PROPOSED` 写成 `ACCEPTED`；
+- README 不在本次允许修改范围，未改动；其 Stage 4 文案由后续文档修正任务同步。
+
+---
+
+## 8. 停止声明
+
+Stage 4 在关闭记录、报告/测试矩阵状态更新、S0-04 风险更新、索引更新与两个标签创建后停止。
+
+**未进入 Stage 5。**
+
+---
+
+## 9. 变更记录
+
+| 版本 | 日期 | 变更 | 作者 |
+|---|---|---|---|
+| 1.0.0 | 2026-11-05 | 记录 Stage 4 有条件通过、关闭前 HEAD、保留项、风险更新、Stage 5 前置与边界 | 接管工程组 |
