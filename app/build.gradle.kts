@@ -25,7 +25,7 @@ android {
     }
 }
 
-// 组合根：只做模块装配，不承载业务规则（A03A §4；MB-D-003 的 13 模块）。
+// 组合根：只做模块装配，不承载业务规则（A03A §4；MB-D-004 的 14 模块）。
 dependencies {
     implementation(project(":core:data"))
     implementation(project(":core:platform"))
@@ -36,6 +36,7 @@ dependencies {
     implementation(project(":feature:recipes"))
     implementation(project(":feature:products"))
     implementation(project(":feature:inventory"))
+    implementation(project(":feature:scan"))
     implementation(project(":feature:settings"))
 
     implementation(libs.androidx.core.ktx)

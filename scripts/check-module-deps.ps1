@@ -1,6 +1,7 @@
-﻿# MISEBASE 模块依赖检查（MB-S1-001 / MB-D-003）
+﻿# MISEBASE 模块依赖检查（MB-S5-001 / MB-D-004）
 #
-# 规则来源：config/module-dependencies.json（13 模块白名单 + 允许边 + 源码 import 规则）。
+# 规则来源：config/module-dependencies.json（14 模块白名单 + 允许边 + 源码 import 规则）。
+# MB-D-004：Stage 5 起模块集为 14（Stage 1–4 的 13 + :feature:scan）。
 # 检查内容：
 #   1. settings.gradle.kts 的模块集与配置一致；
 #   2. 每个模块 build.gradle.kts 的 project(...) 声明边落在允许集合；
@@ -364,11 +365,13 @@ function Invoke-SelfTest {
         Write-InjectedFile -Path (Join-Path $tempRoot 'core/domain/src/main/java/com/culinary/core/domain/InjectedAndroidImport.kt') -Package 'com.culinary.core.domain' -Imports @('androidx.room.RoomDatabase')
         # 注入 5：Compose 页面 -> Room DAO
         Write-InjectedFile -Path (Join-Path $tempRoot 'feature/recipes/src/main/java/com/culinary/feature/recipes/InjectedUiDaoImport.kt') -Package 'com.culinary.feature.recipes' -Imports @('androidx.compose.runtime.Composable', 'androidx.room.Query')
+        # 注入 8：feature:scan -> feature:products（扫码不得依赖商品/库存实现）
+        Write-InjectedFile -Path (Join-Path $tempRoot 'feature/scan/src/main/java/com/culinary/feature/scan/InjectedScanFeatureImport.kt') -Package 'com.culinary.feature.scan' -Imports @('com.culinary.feature.products.FeatureProductsModule')
 
         $injected = Invoke-DependencyCheck -ProjectRoot $tempRoot -Config $Config
         $codes = Get-ViolationCodes -Result $injected
         Write-Host ("  injected imports: violations={0}, codes={1}" -f $injected.Violations.Count, ($codes -join ','))
-        foreach ($expected in @('V-FEATURE-FEATURE', 'V-FEATURE-IMPL', 'V-DB-REVERSE', 'V-DOMAIN-ANDROID', 'V-UI-DAO')) {
+        foreach ($expected in @('V-FEATURE-FEATURE', 'V-FEATURE-IMPL', 'V-DB-REVERSE', 'V-DOMAIN-ANDROID', 'V-UI-DAO', 'V-IMPORT-UNDECLARED')) {
             if ($codes -notcontains $expected) {
                 $failures.Add("failed to detect injected violation: $expected")
             }
@@ -428,7 +431,7 @@ if ($SelfTest) {
 
 $result = Invoke-DependencyCheck -ProjectRoot $Root -Config $config
 $lines = New-Object 'System.Collections.Generic.List[string]'
-$lines.Add('MISEBASE 13-MODULE DEPENDENCY CHECK')
+$lines.Add('MISEBASE 14-MODULE DEPENDENCY CHECK')
 $lines.Add("Decision: $($config.decision); stage: $($config.stage)")
 $lines.Add("Modules: $($result.Modules.Count) (expected $($config.expectedModuleCount))")
 $lines.Add("Declared dependency edges: $($result.DeclaredEdges.Count)")
@@ -452,7 +455,7 @@ if ($result.Violations.Count -gt 0) {
 
 if ($ReportPath -ne '') {
     $report = New-Object 'System.Collections.Generic.List[string]'
-    $report.Add('# MISEBASE 13 模块依赖检查结果（生成物）')
+    $report.Add('# MISEBASE 14 模块依赖检查结果（生成物）')
     $report.Add('')
     $report.Add(('生成时间：{0}' -f (Get-Date -Format 'yyyy-MM-dd HH:mm:ss zzz')))
     $report.Add('')
@@ -469,5 +472,5 @@ if ($ReportPath -ne '') {
 
 if ($result.Violations.Count -gt 0) { exit 1 }
 Write-Host ''
-Write-Host 'PASS: module set, declared edges, source imports and topology match MB-D-003.'
+Write-Host 'PASS: module set, declared edges, source imports and topology match MB-D-004.'
 exit 0

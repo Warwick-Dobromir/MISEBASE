@@ -56,7 +56,7 @@ function Assert-NotContains {
     }
 }
 
-# 1. 模块集
+# 1. 模块集（MB-D-004：Stage 5 起 14 模块）
 $settingsPath = Join-Path $Root 'settings.gradle.kts'
 if (-not (Test-Path -LiteralPath $settingsPath)) {
     $failures.Add('缺少 settings.gradle.kts')
@@ -64,13 +64,13 @@ if (-not (Test-Path -LiteralPath $settingsPath)) {
     $settings = Get-Content -LiteralPath $settingsPath -Raw -Encoding UTF8
     $modules = @([regex]::Matches($settings, 'include\(":([^"]+)"\)') | ForEach-Object { $_.Groups[1].Value } | Where-Object { $_ -ne 'build-logic' })
     $expected = @('app', 'core:common', 'core:domain', 'core:database', 'core:data', 'core:designsystem', 'core:platform',
-        'feature:ingredients', 'feature:sauces', 'feature:recipes', 'feature:products', 'feature:inventory', 'feature:settings')
-    if ($modules.Count -eq 13) { $checks.Add('OK  settings.gradle.kts 模块数 = 13') }
-    else { $failures.Add("settings.gradle.kts 模块数应为 13，实际 $($modules.Count)") }
+        'feature:ingredients', 'feature:sauces', 'feature:recipes', 'feature:products', 'feature:inventory', 'feature:scan', 'feature:settings')
+    if ($modules.Count -eq 14) { $checks.Add('OK  settings.gradle.kts 模块数 = 14') }
+    else { $failures.Add("settings.gradle.kts 模块数应为 14，实际 $($modules.Count)") }
     foreach ($id in $expected) {
         if ($modules -notcontains $id) { $failures.Add("settings.gradle.kts 缺少模块 :$id") }
     }
-    foreach ($forbidden in @('feature:planning', 'feature:procurement', 'feature:scan', 'core:model')) {
+    foreach ($forbidden in @('feature:planning', 'feature:procurement', 'core:model')) {
         if ($modules -contains $forbidden) { $failures.Add("settings.gradle.kts 仍包含禁止模块 :$forbidden") }
     }
 }

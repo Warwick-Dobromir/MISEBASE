@@ -1,13 +1,12 @@
 {
   "schemaVersion": 1,
-  "stage": "MB-S1-001",
-  "decision": "MB-D-003",
-  "expectedModuleCount": 13,
+  "stage": "MB-S5-001",
+  "decision": "MB-D-004",
+  "expectedModuleCount": 14,
   "forbiddenModuleIds": [
     "core:model",
     "feature:planning",
-    "feature:procurement",
-    "feature:scan"
+    "feature:procurement"
   ],
   "modules": [
     { "id": "app", "dir": "app", "package": "com.culinary", "type": "app" },
@@ -22,6 +21,7 @@
     { "id": "feature:recipes", "dir": "feature/recipes", "package": "com.culinary.feature.recipes", "type": "feature" },
     { "id": "feature:products", "dir": "feature/products", "package": "com.culinary.feature.products", "type": "feature" },
     { "id": "feature:inventory", "dir": "feature/inventory", "package": "com.culinary.feature.inventory", "type": "feature" },
+    { "id": "feature:scan", "dir": "feature/scan", "package": "com.culinary.feature.scan", "type": "feature" },
     { "id": "feature:settings", "dir": "feature/settings", "package": "com.culinary.feature.settings", "type": "feature" }
   ],
   "allowedDependencies": {
@@ -35,6 +35,7 @@
       "feature:recipes",
       "feature:products",
       "feature:inventory",
+      "feature:scan",
       "feature:settings"
     ],
     "core:common": [],
@@ -48,6 +49,7 @@
     "feature:recipes": ["core:domain", "core:designsystem", "core:common"],
     "feature:products": ["core:domain", "core:designsystem", "core:common"],
     "feature:inventory": ["core:domain", "core:designsystem", "core:common"],
+    "feature:scan": ["core:domain", "core:designsystem", "core:common"],
     "feature:settings": ["core:domain", "core:designsystem", "core:common"]
   },
   "rules": {

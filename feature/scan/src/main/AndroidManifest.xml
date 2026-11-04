@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- 扫码只使用相机：本地识别，不引入网络权限（D-013 / V01 §5.3）。 -->
+    <uses-permission android:name="android.permission.CAMERA" />
+
+    <!-- 相机不是硬性要求：无相机设备仍可用手工输入兜底。 -->
+    <uses-feature
+        android:name="android.hardware.camera"
+        android:required="false" />
+    <uses-feature
+        android:name="android.hardware.camera.autofocus"
+        android:required="false" />
+    <uses-feature
+        android:name="android.hardware.camera.flash"
+        android:required="false" />
+
+</manifest>
