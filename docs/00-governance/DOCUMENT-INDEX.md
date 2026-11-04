@@ -1,7 +1,7 @@
 # CULINARY 文档索引
 
 **文档编号**：GOV-INDEX
-**版本**：`0.26.0`
+**版本**：`0.27.0`
 **状态**：`Review`
 **日期**：2026-11-04
 **维护人**：首席架构师 / 技术负责人
@@ -136,7 +136,7 @@
 
 | 文档 | 用途 |
 |---|---|
-| [MB-BK-001 执行报告](../10-backup/MB-BK-001-EXECUTION-REPORT.md) | 六项技术事项、前置检查、测试/构建、Git、风险、未决与停止声明；状态 `Review` |
+| [MB-BK-001 执行报告](../10-backup/MB-BK-001-EXECUTION-REPORT.md) | 六项技术事项、前置检查、测试/构建、Git、风险、未决与停止声明；状态 `CLOSED` |
 | [MB-BK-001 设计说明](../10-backup/MB-BK-001-BACKUP-CONSISTENCY-DESIGN.md) | 写屏障、WAL checkpoint、Worker 返回语义、恢复原子性、测试矩阵 |
 | [MB-BK-001 WAL 验证](../10-backup/MB-BK-001-WAL-VERIFICATION.md) | checkpoint 时机/结果、WAL 未 checkpoint 事务、恢复完整性证据 |
 | [MB-BK-001 Worker 记录](../10-backup/MB-BK-001-WORKER-TEST-RECORD.md) | 返回语义、单测、取消清理、Scheduler→Worker 集成 |
@@ -148,9 +148,17 @@
 
 | 文档 | 用途 |
 |---|---|
-| [MB-BK-002 修复报告](../10-backup/MB-BK-002-STARTUP-SCHEMA-FIX.md) | `EXPECTED_SCHEMA_VERSION` 2 对齐、持久化 v2/v1 迁移/ v3 拒绝测试、全量结果与新检查点 |
+| [MB-BK-002 修复报告](../10-backup/MB-BK-002-STARTUP-SCHEMA-FIX.md) | `EXPECTED_SCHEMA_VERSION` 2 对齐、持久化 v2/v1 迁移/ v3 拒绝测试、全量结果与新检查点；状态 `CLOSED` |
 | [MB-BK-002 检查点回执](../10-backup/MB-BK-002-CHECKPOINT-RECEIPT.md) | 新检查点标签对象哈希、解析提交与旧标签未移动证明 |
 | [MB-BK-001 执行报告（统计更正）](../10-backup/MB-BK-001-EXECUTION-REPORT.md) | 唯一用例口径 344 → 374；本修复后为 376 |
+
+### 2.8 MB-D-007 关闭记录（2026-11-04）
+
+| 文档 | 用途 |
+|---|---|
+| [MB-D-007 关闭记录](../10-backup/MB-D-007-CLOSE-RECORD.md) | 审查通过、六项完成摘要、Schema 版本阻断修复、612/376/0 证据、v2 检查点、风险、保留项与 Stage 4 启动条件 |
+| [S0-05 负责人签收清单](../05-handover/S0-05-OWNER-SIGNOFF.md) | MB-D-007 更新为 `CLOSED`；Stage 4 强制前置已满足 |
+| [MB-S0-07 决策登记册](../05-handover/MB-S0-07-DECISION-REGISTER.md) | MB-D-007 状态 `CLOSED`；签收记录补记关闭结论 |
 
 ## 3. 图表
 
@@ -204,6 +212,7 @@
 | 0.24.0 | 2026-11-04 | MB-D-007 签收（Stage 4 强制前置）；新增备份一致性授权文档；决策计数 13/18、5 项 PROPOSED | 接管工程组 |
 | 0.25.0 | 2026-11-04 | MB-BK-001：新增备份一致性设计、执行报告、WAL/Worker/一致性/失败回滚验证与检查点回执；索引决策计数修正为 13/5 | 接管工程组 |
 | 0.26.0 | 2026-11-04 | MB-BK-002：新增 Schema 版本阻断修复报告与检查点回执；索引记录旧标签未移动、新检查点后继关系 | 接管工程组 |
+| 0.27.0 | 2026-11-04 | MB-D-007-CLOSE-001：新增关闭记录；S0-05/MB-S0-07/README 更新为 CLOSED；记录关闭标签与 Stage 4 可启动状态 | 接管工程组 |
 | 0.16.0 | 2026-11-04 | 新增 A-G2-001 G2 收档文件 | 工程组 |
 | 0.17.0 | 2026-11-04 | Stage 1：新增 8 份 Stage 1 文档；记录 P01 Superseded、A03A 13 模块目标、A-G2-001 Errata | 接管工程组 |
 | 0.17.1 | 2026-11-04 | Stage 1 审查回执：新增 MB-S1-09；补证据边界 | 接管工程组 |

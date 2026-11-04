@@ -2,10 +2,11 @@
 
 **文档编号**：MB-BK-002-REPORT
 **版本**：`1.0.0`
-**状态**：`Review`
+**状态**：`CLOSED`（2026-11-04，随 MB-D-007 关闭）
 **日期**：2026-11-04
 **任务书**：MB-BK-002（修复 `StartupCoordinator.EXPECTED_SCHEMA_VERSION` 阻断缺陷）
 **依据**：MB-BK-001 审查澄清（问题一确认阻断级；问题二为报告口径错误）
+**关闭依据**：[MB-D-007 关闭记录](MB-D-007-CLOSE-RECORD.md)
 **分支**：`misebase/main`
 
 ---

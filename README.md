@@ -6,9 +6,9 @@
 |---|---|
 | 品牌/项目名 | MISEBASE（包名暂留 `com.culinary`，发布前按 D-017/MB-D-001 决定） |
 | 架构基线 | `0.4.1`（G1 已签收）；G2 已收档于 `framework-0.1.0` / `2b523de` |
-| 当前阶段 | **Stage 2 CLOSED（2026-11-04，审查结论：有条件通过）**：核心领域模型、单位/展开规则、版本固定、库存扣减、缺料与采购清单、计算记录快照、Repository 契约；**Schema 变更任务待执行**，Stage 3 未启动 |
-| 工程状态 | **13 模块**；Room schema **v1 / 31 表**（11 表 `DORMANT`）；食材 CRUD；配方展开/需求/缺口算法；Debug APK 可构建；**197 例 JVM 测试**（G2 基线），Stage 2 后合计 **264 例** |
-| 数据库 | **已创建**：schema v1（31 表），导出 `1.json`；本阶段未创建 v2、未改 Schema/Entity/DAO |
+| 当前阶段 | **Stage 3 CLOSED（2026-11-04）**；**MB-D-007 备份一致性已 CLOSED（2026-11-04，审查通过）**；**Stage 4 可启动，等待任务书与负责人启动确认** |
+| 工程状态 | **13 模块**；Room schema **v1 / 31 表**（G2 历史；当前已迁移 v2 / 33 表，11 表 `DORMANT`）；三大档案库可用；库存/扫码为占位；**197 例 JVM 测试**（G2 基线；当前 612 次执行 / 376 唯一用例 / 0 失败） |
+| 数据库 | **已创建**：schema v2（33 表），导出 `1.json`、`2.json`；`1→2` 迁移已落地；本次备份一致性修复未改 Schema/Entity/DAO |
 | 构建基线 | AGP 8.13.0 / Kotlin 2.2.20 / Gradle 8.14.3 / JDK 21 / minSdk 26 / compile & target 36 |
 | 依赖注入 | Hilt 2.57.2 + KSP（D-012 `ACCEPTED`，禁止 2.59+） |
 | 离线承诺 | 无 `INTERNET` 权限（manifest 移除 + `aapt2` 已验证） |
@@ -78,10 +78,10 @@ feature/
 - 库存只能通过追加流水改变；`inventory_ledger` 与 `change_log` 禁止 UPDATE/DELETE。
 - 11 张规划/采购/供应商表标记 `DORMANT`：保留 v1 结构，不删表、不迁移、不改造；
   禁止新代码引用（见 [休眠表清单](docs/06-stage1/MB-S1-04-DORMANT-TABLES.md)）。
-- 备份/恢复遵守 E05；恢复失败不清理现场。**MB-D-007 已签收（2026-11-04，Stage 4 强制前置）**，
-  但**备份修复尚未实施**：当前未修改 `AutoBackupWorker`、`BackupArchiveWriter`、`RestoreExecutor`、
-  写屏障或 checkpoint；修复完成并审查签收前不得启动 Stage 4。
-- 迁移只准备了规范/模板/验证方案，**未创建 Schema v2、未实施迁移**。
+- 备份/恢复遵守 E05；恢复失败不清理现场。**MB-D-007 已 CLOSED（2026-11-04，审查通过）**：
+  写屏障、WAL checkpoint、Worker 真实返回、恢复原子性、Worker 单测与 WAL 恢复测试已落地；
+  Stage 4 强制前置已满足。
+- Schema v2 已创建（33 表）；`1→2` 迁移已落地，仍禁止 destructive migration、清库或删除现场。
 
 ## 工程治理
 
@@ -99,7 +99,7 @@ feature/
 - MB-D-002 范围冻结（五项功能；采购清单归 Inventory）；
 - MB-D-003 目标 13 模块；
 - MB-D-005 11 张休眠表保留并标 `DORMANT`；
-- MB-D-007 备份一致性（**Stage 4 强制前置**；修复尚未实施）；
+- MB-D-007 备份一致性（**已 CLOSED，2026-11-04 审查通过**；Stage 4 前置已满足）；
 - MB-D-008 UI 视觉方向 A（专业厨房档案：暖中性 + Orange 强调）；
 - MB-D-009 导航 N1（酱汁/食材/菜谱/库存/扫码五个底部入口 + 顶栏设置）；
 - MB-D-013 子配方版本固定（发布时写入明确版本 ID）；
@@ -113,7 +113,7 @@ feature/
 MB-D-010 CI、MB-D-011 真机、MB-D-012 签名。
 
 > 历史记录：本次签收之前，MB-D-007 仍为 `PROPOSED`；2026-11-04 已由负责人签收为 `ACCEPTED`，
-> 并作为 Stage 4 强制前置。
+> 并作为 Stage 4 强制前置；同日完成 MB-BK-001/002 并通过审查，状态更新为 **`CLOSED`**。
 
 > G2 历史决策 `D-005`/`D-007` 与 MISEBASE 的 `MB-D-005`/`MB-D-007` 不是同一体系，禁止互相替代。
 > G2 的 `ACCEPTED` 不自动构成对应 `MB-D-*` 的 `ACCEPTED`；MB-D 状态以本仓库签收记录为准。
@@ -121,19 +121,16 @@ MB-D-010 CI、MB-D-011 真机、MB-D-012 签名。
 ## 当前状态与未决
 
 - **G2 阶段 1–9** 已完成并归档；`framework-0.1.0` 固定在 `2b523de`，未移动。
-- **Stage 0** 已关闭；**Stage 1 审查通过并关闭（CLOSED）**；**Stage 2 审查通过并关闭（CLOSED）**
-  （2026-11-04，有条件通过），未进入 Stage 3。
-- Stage 2 由 MB-S2-001 任务书授权启动；关闭记录见
-  [MB-S2-06](docs/07-stage2/MB-S2-06-STAGE2-CLOSE-RECORD.md)。
-- **两项 Schema 变更请求已授权**（计算记录持久化、`recipe_version.servings`），合并为一次独立
-  Schema 变更任务，在 Stage 3 开始前执行；授权不等于已修改数据库，当前仍为 Schema v1。
-- **Schema 变更任务待执行**；Stage 3 未启动，须在 Schema 变更签收后才可启动。
-- **MB-D-007 已签收，作为 Stage 4 强制前置；Stage 4 未授权。** 备份修复尚未实施，须完成六项技术事项、
-  验收与负责人审查签收后才可启动 Stage 4。
-- **Stage 1/2 未做**：扫码 UI、视觉定稿、导航重排、备份/恢复实现修改、Schema v2、休眠表删除/迁移。
-- **仍为 PROPOSED 的阻塞项**：MB-D-004 未签收前不新建 `feature:scan`；MB-D-008/009 已签收，
-  视觉与导航可在 Stage 3 任务书内细化（不得改变 IA）；MB-D-007 已签收并作为 Stage 4 强制前置，
-  修复完成前 Stage 4 不得启动。
+- **Stage 0/1/2/3 均已关闭**；Schema 变更任务已关闭（v2 / 33 表）；三大档案库可用，库存/扫码仍为占位。
+- **MB-D-007 已 CLOSED（2026-11-04，审查通过）**：六项技术事项、Schema 版本阻断修复、
+  `612 / 376 / 0` 测试与 v2 检查点均已落库；详见
+  [MB-D-007 关闭记录](docs/10-backup/MB-D-007-CLOSE-RECORD.md)。
+- **Stage 4 可启动，当前等待单独任务书与负责人启动确认**；本 README 不构成 Stage 4 启动授权，
+  也未开始库存业务开发。
+- **仍为 PROPOSED 的阻塞项**：MB-D-004 未签收前不新建 `feature:scan`；MB-D-010 CI、
+  MB-D-011 真机、MB-D-012 签名仍未签收。
+- 保留项：附件恢复、SAF 目标、生产自动备份触发点未接线；真机 kill/断电未验证；
+  目录 fsync 为 best-effort；v1 测试夹具为反向构造。Stage 4 不得把这些保留项当作已完成。
 - **G5 发布门禁**：Release keystore 未创建，不影响当前阶段。
 
 ## 文档
