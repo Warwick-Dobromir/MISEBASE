@@ -13,11 +13,11 @@
 |---|---|
 | 标签名 | `checkpoint/misebase-stage3-20261104` |
 | 类型 | annotated tag |
-| 对象哈希 | 待标签创建后填写 |
-| 解析提交 | 待标签创建后填写 |
+| 对象哈希 | `5dffa09e6006c127f5382949efab5eb0b380ee79` |
+| 解析提交 | `a276f7eee3f6263f5fa3943d40ee1c16a8f878b6` |
 | 解析提交信息 | `docs(stage3): finalize stage 3 checkpoint report` |
 | 标签信息 | `MISEBASE Stage 3 review checkpoint: three archives, N1 navigation, design system A` |
-| 打标签时间 | 待标签创建后填写 |
+| 打标签时间 | 2026-11-04 22:27:32 +0800 |
 
 ## 2. 标签完整性
 
