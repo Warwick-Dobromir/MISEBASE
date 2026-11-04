@@ -6,8 +6,11 @@ import com.culinary.core.common.IdGenerator
 import com.culinary.core.common.Outcome
 import com.culinary.core.database.CulinaryDatabase
 import com.culinary.core.database.CulinaryDatabaseCallback
+import com.culinary.core.database.entity.SauceEntity
+import com.culinary.core.database.entity.SauceVersionEntity
 import com.culinary.core.database.entity.UnitEntity
 import com.culinary.core.database.model.UnitDimensionDb
+import com.culinary.core.database.model.VersionStatusDb
 import com.culinary.core.domain.model.ComponentTarget
 import com.culinary.core.domain.model.EntityStatus
 import com.culinary.core.domain.model.Quantity
@@ -17,6 +20,8 @@ import com.culinary.core.domain.model.RecipeComponent
 import com.culinary.core.domain.model.RecipeId
 import com.culinary.core.domain.model.RecipeVersion
 import com.culinary.core.domain.model.RecipeVersionId
+import com.culinary.core.domain.model.SauceId
+import com.culinary.core.domain.model.SauceVersionId
 import com.culinary.core.domain.model.Unit
 import com.culinary.core.domain.model.UnitDimension
 import com.culinary.core.domain.model.UnitId
@@ -129,6 +134,58 @@ class RecipeRepositoryTest {
             assertThat(target.versionId).isEqualTo(RecipeVersionId(CHILD_VERSION_ID))
         }
 
+    @Test
+    fun `sauce component maps to a pinned sauce target`() =
+        runBlocking {
+            seed()
+            database.sauceDao().insert(
+                SauceEntity(
+                    id = SAUCE_ID,
+                    name = "基础酱",
+                    normalizedName = "基础酱",
+                    createdAt = NOW,
+                    updatedAt = NOW,
+                ),
+            )
+            database.sauceVersionDao().insert(
+                SauceVersionEntity(
+                    id = SAUCE_VERSION_ID,
+                    sauceId = SAUCE_ID,
+                    versionNo = 1,
+                    status = VersionStatusDb.PUBLISHED,
+                    yieldQty = 500.0,
+                    yieldUnitId = UNIT_ID,
+                    isCurrent = true,
+                    createdAt = NOW,
+                    publishedAt = NOW,
+                ),
+            )
+            val repository = repository()
+            repository.save(recipe(PARENT_ID, "主菜"))
+            repository.saveDraft(
+                version(
+                    recipeId = PARENT_ID,
+                    versionId = VERSION_ID,
+                    versionNo = 1,
+                    servings = 2,
+                    components =
+                        listOf(
+                            RecipeComponent(
+                                lineNo = 1,
+                                target = ComponentTarget.Sauce(SauceId(SAUCE_ID), SauceVersionId(SAUCE_VERSION_ID)),
+                                quantity = Quantity(50.0, gram()),
+                            ),
+                        ),
+                ),
+            )
+
+            val loaded = repository.getVersion(RecipeVersionId(VERSION_ID))!!
+            val target = loaded.components.single().target as ComponentTarget.Sauce
+
+            assertThat(target.sauceId).isEqualTo(SauceId(SAUCE_ID))
+            assertThat(target.versionId).isEqualTo(SauceVersionId(SAUCE_VERSION_ID))
+        }
+
     private fun repository(): RecipeRepositoryImpl =
         RecipeRepositoryImpl(
             recipeDao = database.recipeDao(),
@@ -187,8 +244,7 @@ class RecipeRepositoryTest {
             servings = servings,
         )
 
-    private fun gram(): Unit =
-        Unit(UnitId(UNIT_ID), "tg", "测试克", "tg", UnitDimension.MASS, 1.0, false, false, 1)
+    private fun gram(): Unit = Unit(UnitId(UNIT_ID), "tg", "测试克", "tg", UnitDimension.MASS, 1.0, false, false, 1)
 
     private companion object {
         const val NOW = 1_760_000_000_000L
@@ -198,5 +254,7 @@ class RecipeRepositoryTest {
         const val VERSION_ID = "recipe-parent-v1"
         const val VERSION_ID_2 = "recipe-parent-v2"
         const val CHILD_VERSION_ID = "recipe-child-v1"
+        const val SAUCE_ID = "sauce-1"
+        const val SAUCE_VERSION_ID = "sauce-v1"
     }
 }

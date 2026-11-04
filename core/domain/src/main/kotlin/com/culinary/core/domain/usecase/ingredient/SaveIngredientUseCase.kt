@@ -33,19 +33,9 @@ class SaveIngredientUseCase(
     private val transactionRunner: TransactionRunner,
 ) {
     suspend operator fun invoke(input: SaveIngredientInput): Outcome<IngredientId> {
+        val error = validate(input)
+        if (error != null) return Outcome.failure(error)
         val name = input.name.trim()
-        if (name.isEmpty()) return invalid("ingredient.name", "must not be blank")
-        if (name.length > MAX_NAME_LENGTH) {
-            return invalid("ingredient.name", "must be at most $MAX_NAME_LENGTH characters")
-        }
-        val category = input.category.blankToNull()
-        if (category != null && category.length > MAX_CATEGORY_LENGTH) {
-            return invalid("ingredient.category", "must be at most $MAX_CATEGORY_LENGTH characters")
-        }
-        val description = input.description.blankToNull()
-        if (description != null && description.length > MAX_DESCRIPTION_LENGTH) {
-            return invalid("ingredient.description", "must be at most $MAX_DESCRIPTION_LENGTH characters")
-        }
 
         val ingredient =
             Ingredient(
@@ -54,17 +44,36 @@ class SaveIngredientUseCase(
                 normalizedName = NameText.normalize(name),
                 defaultUnitId = input.defaultUnitId,
                 status = EntityStatus.ACTIVE,
-                category = category,
-                description = description,
+                category = input.category.blankToNull(),
+                description = input.description.blankToNull(),
             )
 
         return transactionRunner.write { repository.save(ingredient) }.flatMap { it }
     }
 
-    private fun invalid(
+    private fun validate(input: SaveIngredientInput): CulinaryError? {
+        val name = input.name.trim()
+        val category = input.category.blankToNull()
+        val description = input.description.blankToNull()
+        return when {
+            name.isEmpty() -> validation("ingredient.name", "must not be blank")
+            name.length > MAX_NAME_LENGTH ->
+                validation("ingredient.name", "must be at most $MAX_NAME_LENGTH characters")
+
+            category != null && category.length > MAX_CATEGORY_LENGTH ->
+                validation("ingredient.category", "must be at most $MAX_CATEGORY_LENGTH characters")
+
+            description != null && description.length > MAX_DESCRIPTION_LENGTH ->
+                validation("ingredient.description", "must be at most $MAX_DESCRIPTION_LENGTH characters")
+
+            else -> null
+        }
+    }
+
+    private fun validation(
         field: String,
         rule: String,
-    ): Outcome<Nothing> = Outcome.failure(CulinaryError.Validation(field = field, rule = rule))
+    ): CulinaryError = CulinaryError.Validation(field = field, rule = rule)
 
     private fun String?.blankToNull(): String? = this?.trim()?.takeIf { it.isNotEmpty() }
 

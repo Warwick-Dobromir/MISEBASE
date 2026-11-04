@@ -46,6 +46,7 @@ import com.culinary.core.domain.model.Ingredient
 import com.culinary.core.domain.model.RecipeCategory
 import com.culinary.core.domain.model.RecipeComponentKind
 import com.culinary.core.domain.usecase.recipe.RecipeOption
+import com.culinary.core.domain.usecase.sauce.SauceOption
 import com.culinary.core.domain.model.Unit as UnitModel
 
 /** 菜谱编辑器路由：档案信息、基准份数、组成行（食材/子菜谱），保存草稿或发布。 */
@@ -72,6 +73,7 @@ fun RecipeEditorRoute(
         onServingsChange = viewModel::onServingsChange,
         onAddIngredient = { picker = EditorPicker.INGREDIENT },
         onAddRecipe = { picker = EditorPicker.RECIPE },
+        onAddSauce = { picker = EditorPicker.SAUCE },
         onLineAmountChange = viewModel::onLineAmountChange,
         onToggleOptional = viewModel::toggleOptional,
         onRemoveLine = viewModel::removeLine,
@@ -100,6 +102,10 @@ fun RecipeEditorRoute(
             viewModel.addRecipeOption(it)
             picker = EditorPicker.NONE
         },
+        onSelectSauce = {
+            viewModel.addSauceOption(it)
+            picker = EditorPicker.NONE
+        },
         onDismiss = { picker = EditorPicker.NONE },
     )
 }
@@ -110,6 +116,7 @@ private enum class EditorPicker {
     CATEGORY,
     INGREDIENT,
     RECIPE,
+    SAUCE,
 }
 
 @Composable
@@ -120,6 +127,7 @@ private fun RecipeEditorDialogs(
     onSelectCategory: (RecipeCategory) -> Unit,
     onSelectIngredient: (Ingredient) -> Unit,
     onSelectOption: (RecipeOption) -> Unit,
+    onSelectSauce: (SauceOption) -> Unit,
     onDismiss: () -> Unit,
 ) {
     when (active) {
@@ -152,6 +160,13 @@ private fun RecipeEditorDialogs(
                 onSelect = onSelectOption,
                 onDismiss = onDismiss,
             )
+
+        EditorPicker.SAUCE ->
+            SaucePickerDialog(
+                options = state.sauceOptions,
+                onSelect = onSelectSauce,
+                onDismiss = onDismiss,
+            )
     }
 }
 
@@ -165,6 +180,7 @@ private fun RecipeEditorScreen(
     onServingsChange: (String) -> Unit,
     onAddIngredient: () -> Unit,
     onAddRecipe: () -> Unit,
+    onAddSauce: () -> Unit,
     onLineAmountChange: (String, String) -> Unit,
     onToggleOptional: (String) -> Unit,
     onRemoveLine: (String) -> Unit,
@@ -187,6 +203,7 @@ private fun RecipeEditorScreen(
                 onServingsChange = onServingsChange,
                 onAddIngredient = onAddIngredient,
                 onAddRecipe = onAddRecipe,
+                onAddSauce = onAddSauce,
                 onLineAmountChange = onLineAmountChange,
                 onToggleOptional = onToggleOptional,
                 onRemoveLine = onRemoveLine,
@@ -207,6 +224,7 @@ private fun RecipeEditorForm(
     onServingsChange: (String) -> Unit,
     onAddIngredient: () -> Unit,
     onAddRecipe: () -> Unit,
+    onAddSauce: () -> Unit,
     onLineAmountChange: (String, String) -> Unit,
     onToggleOptional: (String) -> Unit,
     onRemoveLine: (String) -> Unit,
@@ -236,6 +254,7 @@ private fun RecipeEditorForm(
             state = state,
             onAddIngredient = onAddIngredient,
             onAddRecipe = onAddRecipe,
+            onAddSauce = onAddSauce,
             onLineAmountChange = onLineAmountChange,
             onToggleOptional = onToggleOptional,
             onRemoveLine = onRemoveLine,
@@ -333,6 +352,7 @@ private fun RecipeComponentsEditor(
     state: RecipeEditorUiState,
     onAddIngredient: () -> Unit,
     onAddRecipe: () -> Unit,
+    onAddSauce: () -> Unit,
     onLineAmountChange: (String, String) -> Unit,
     onToggleOptional: (String) -> Unit,
     onRemoveLine: (String) -> Unit,
@@ -362,6 +382,9 @@ private fun RecipeComponentsEditor(
         }
         OutlinedButton(onClick = onAddRecipe) {
             Text(text = stringResource(R.string.recipes_add_recipe))
+        }
+        OutlinedButton(onClick = onAddSauce) {
+            Text(text = stringResource(R.string.recipes_add_sauce))
         }
     }
 }
@@ -502,6 +525,36 @@ private fun RecipePickerDialog(
                                 option.recipe.name + stringResource(R.string.recipes_recipe_no_version)
                             } else {
                                 option.recipe.name + " · v" + version.versionNo
+                            }
+                        label to false
+                    },
+            ) { onSelect(options[it]) }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) { Text(text = stringResource(R.string.recipes_cancel)) }
+        },
+    )
+}
+
+@Composable
+private fun SaucePickerDialog(
+    options: List<SauceOption>,
+    onSelect: (SauceOption) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(text = stringResource(R.string.recipes_sauce_picker_title)) },
+        text = {
+            PickerColumn(
+                items =
+                    options.map { option ->
+                        val version = option.currentVersion
+                        val label =
+                            if (version == null) {
+                                option.sauce.name + stringResource(R.string.recipes_recipe_no_version)
+                            } else {
+                                option.sauce.name + " · v" + version.versionNo
                             }
                         label to false
                     },

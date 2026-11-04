@@ -13,6 +13,7 @@ import com.culinary.core.domain.usecase.recipe.PublishRecipeDraftUseCase
 import com.culinary.core.domain.usecase.recipe.PublishStoredRecipeVersionUseCase
 import com.culinary.core.domain.usecase.recipe.SaveRecipeDraftUseCase
 import com.culinary.core.domain.usecase.recipe.SaveRecipeUseCase
+import com.culinary.core.domain.usecase.sauce.ListSauceOptionsUseCase
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -25,8 +26,7 @@ import javax.inject.Singleton
 object RecipeUseCaseModule {
     @Provides
     @Singleton
-    fun provideListRecipesUseCase(repository: RecipeRepository): ListRecipesUseCase =
-        ListRecipesUseCase(repository)
+    fun provideListRecipesUseCase(repository: RecipeRepository): ListRecipesUseCase = ListRecipesUseCase(repository)
 
     @Provides
     @Singleton
@@ -35,12 +35,16 @@ object RecipeUseCaseModule {
 
     @Provides
     @Singleton
+    fun provideListSauceOptionsUseCase(repository: SauceRepository): ListSauceOptionsUseCase =
+        ListSauceOptionsUseCase(repository)
+
+    @Provides
+    @Singleton
     fun provideGetRecipeDetailUseCase(
         recipeRepository: RecipeRepository,
         ingredientRepository: IngredientRepository,
         sauceRepository: SauceRepository,
-    ): GetRecipeDetailUseCase =
-        GetRecipeDetailUseCase(recipeRepository, ingredientRepository, sauceRepository)
+    ): GetRecipeDetailUseCase = GetRecipeDetailUseCase(recipeRepository, ingredientRepository, sauceRepository)
 
     @Provides
     @Singleton

@@ -12,6 +12,7 @@ import com.culinary.core.domain.model.RecipeVersionId
 import com.culinary.core.domain.model.SauceId
 import com.culinary.core.domain.model.SauceVersionId
 import com.culinary.core.domain.usecase.recipe.RecipeOption
+import com.culinary.core.domain.usecase.sauce.SauceOption
 import com.culinary.core.domain.model.Unit as UnitModel
 
 /** 菜谱列表行。 */
@@ -69,6 +70,7 @@ data class RecipeEditorUiState(
     val units: List<UnitModel> = emptyList(),
     val ingredients: List<Ingredient> = emptyList(),
     val recipeOptions: List<RecipeOption> = emptyList(),
+    val sauceOptions: List<SauceOption> = emptyList(),
     val lines: List<RecipeLineEditor> = emptyList(),
     val isLoading: Boolean = true,
     val isSaving: Boolean = false,

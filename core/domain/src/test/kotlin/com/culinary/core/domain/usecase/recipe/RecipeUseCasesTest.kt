@@ -14,7 +14,6 @@ import com.culinary.core.domain.model.RecipeComponent
 import com.culinary.core.domain.model.RecipeId
 import com.culinary.core.domain.model.RecipeVersion
 import com.culinary.core.domain.model.RecipeVersionId
-import com.culinary.core.domain.model.Unit as UnitModel
 import com.culinary.core.domain.model.UnitDimension
 import com.culinary.core.domain.model.UnitId
 import com.culinary.core.domain.model.VersionStatus
@@ -26,6 +25,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.runBlocking
 import org.junit.Test
+import com.culinary.core.domain.model.Unit as UnitModel
 
 /** 菜谱用例：当前版本固定、循环拒绝、按份数展开与可选配料标记。 */
 class RecipeUseCasesTest {
@@ -188,6 +188,39 @@ class RecipeUseCasesTest {
         }
 
     @Test
+    fun `expansion rejects a sauce target with an explicit domain error`() =
+        runBlocking<Unit> {
+            val versionId = RecipeVersionId("sauce-parent-v1")
+            recipes.versions[versionId] =
+                RecipeVersion(
+                    id = versionId,
+                    recipeId = RecipeId("sauce-parent"),
+                    versionNo = 1,
+                    status = VersionStatus.PUBLISHED,
+                    yield = Quantity(1000.0, gram()),
+                    servings = 1,
+                    components =
+                        listOf(
+                            RecipeComponent(
+                                lineNo = 1,
+                                target =
+                                    ComponentTarget.Sauce(
+                                        com.culinary.core.domain.model
+                                            .SauceId("sauce-1"),
+                                        com.culinary.core.domain.model
+                                            .SauceVersionId("sauce-v1"),
+                                    ),
+                                quantity = Quantity(50.0, gram()),
+                            ),
+                        ),
+                )
+
+            val result = expand(versionId, targetServings = 1.0)
+
+            assertThat((result as Outcome.Failure).error.code.value).isEqualTo("CUL-REP-004")
+        }
+
+    @Test
     fun `rejects invalid servings and non positive quantities`() =
         runBlocking<Unit> {
             val (parentId, _) = seedRecipes()
@@ -203,7 +236,10 @@ class RecipeUseCasesTest {
                         100.0,
                         gram(),
                         servings = 1,
-                        components = listOf(RecipeLineInput(RecipeLineTarget.Ingredient(IngredientId("x")), 0.0, gram())),
+                        components =
+                            listOf(
+                                RecipeLineInput(RecipeLineTarget.Ingredient(IngredientId("x")), 0.0, gram()),
+                            ),
                     ),
                 )
 
@@ -253,8 +289,7 @@ class RecipeUseCasesTest {
                 ),
         )
 
-    private fun gram(): UnitModel =
-        UnitModel(UnitId("g"), "g", "克", "g", UnitDimension.MASS, 1.0, true, false, 0)
+    private fun gram(): UnitModel = UnitModel(UnitId("g"), "g", "克", "g", UnitDimension.MASS, 1.0, true, false, 0)
 
     private class FakeRecipeRepository : RecipeRepository {
         val recipes = mutableListOf<Recipe>()

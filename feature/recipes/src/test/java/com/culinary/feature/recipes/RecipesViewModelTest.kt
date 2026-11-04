@@ -38,6 +38,8 @@ import com.culinary.core.domain.usecase.recipe.PublishStoredRecipeVersionUseCase
 import com.culinary.core.domain.usecase.recipe.RecipeOption
 import com.culinary.core.domain.usecase.recipe.SaveRecipeDraftUseCase
 import com.culinary.core.domain.usecase.recipe.SaveRecipeUseCase
+import com.culinary.core.domain.usecase.sauce.ListSauceOptionsUseCase
+import com.culinary.core.domain.usecase.sauce.SauceOption
 import com.culinary.core.domain.usecase.unit.ListUnitsUseCase
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.Dispatchers
@@ -212,6 +214,46 @@ class RecipesViewModelTest {
         }
 
     @Test
+    fun `editor references a sauce with a pinned sauce version`() =
+        runTest {
+            val sauce = Sauce(SauceId(SAUCE_ID), "基础酱", "基础酱", EntityStatus.ACTIVE)
+            val sauceVersion =
+                SauceVersion(
+                    id = SauceVersionId(SAUCE_VERSION_ID),
+                    sauceId = sauce.id,
+                    versionNo = 1,
+                    status = VersionStatus.PUBLISHED,
+                    yield = Quantity(500.0, gram()),
+                    components = emptyList(),
+                    isCurrent = true,
+                )
+            sauces.sauces += sauce
+            sauces.versions[sauceVersion.id] = sauceVersion
+            sauces.current[sauce.id.value] = sauceVersion.id
+            val viewModel = editorViewModel(null)
+            advanceUntilIdle()
+
+            viewModel.onNameChange("酱汁菜")
+            viewModel.onYieldAmountChange("1000")
+            viewModel.onServingsChange("1")
+            viewModel.addSauceOption(SauceOption(sauce = sauce, currentVersion = sauceVersion))
+            viewModel.onLineAmountChange(
+                viewModel.uiState.value.lines
+                    .single()
+                    .key,
+                "30",
+            )
+            viewModel.save(publish = true)
+            advanceUntilIdle()
+
+            assertThat(viewModel.uiState.value.error).isNull()
+            val published = recipes.versions.values.single()
+            val target = published.components.single().target as ComponentTarget.Sauce
+            assertThat(target.sauceId).isEqualTo(sauce.id)
+            assertThat(target.versionId).isEqualTo(sauceVersion.id)
+        }
+
+    @Test
     fun `editor rejects a blank name without writing`() =
         runTest {
             val viewModel = editorViewModel(null)
@@ -263,6 +305,7 @@ class RecipesViewModelTest {
             listUnits = ListUnitsUseCase(units),
             listIngredients = ListIngredientsUseCase(ingredients),
             listRecipeOptions = ListRecipeOptionsUseCase(recipes),
+            listSauceOptions = ListSauceOptionsUseCase(sauces),
         )
 
     private suspend fun seedRecipeWithVersion(
@@ -395,25 +438,41 @@ class RecipesViewModelTest {
     }
 
     private class FakeSauceRepository : SauceRepository {
-        override fun observeActive(): Flow<List<Sauce>> = flowOf(emptyList())
+        val sauces = mutableListOf<Sauce>()
+        val versions = mutableMapOf<SauceVersionId, SauceVersion>()
+        val current = mutableMapOf<String, SauceVersionId>()
+
+        override fun observeActive(): Flow<List<Sauce>> = flowOf(sauces.filter { it.isActive })
 
         override suspend fun get(id: SauceId): Outcome<Sauce> =
-            Outcome.failure(CulinaryError.NotFound("sauce", id.value))
+            sauces.firstOrNull { it.id == id }?.let { Outcome.success(it) }
+                ?: Outcome.failure(CulinaryError.NotFound("sauce", id.value))
 
         override suspend fun getVersion(id: SauceVersionId): Outcome<SauceVersion> =
-            Outcome.failure(CulinaryError.NotFound("sauce_version", id.value))
+            versions[id]?.let { Outcome.success(it) }
+                ?: Outcome.failure(CulinaryError.NotFound("sauce_version", id.value))
 
-        override suspend fun listVersions(sauceId: SauceId): List<SauceVersion> = emptyList()
+        override suspend fun listVersions(sauceId: SauceId): List<SauceVersion> =
+            versions.values.filter { it.sauceId == sauceId }.sortedByDescending { it.versionNo }
 
-        override suspend fun findCurrentVersion(sauceId: SauceId): SauceVersion? = null
+        override suspend fun findCurrentVersion(sauceId: SauceId): SauceVersion? =
+            current[sauceId.value]?.let { versions[it] }
 
-        override suspend fun nextVersionNo(sauceId: SauceId): Int = 1
+        override suspend fun nextVersionNo(sauceId: SauceId): Int =
+            (versions.values.filter { it.sauceId == sauceId }.maxOfOrNull { it.versionNo } ?: 0) + 1
 
         override suspend fun save(sauce: Sauce): Outcome<SauceId> = Outcome.success(sauce.id)
 
-        override suspend fun saveDraft(version: SauceVersion): Outcome<SauceVersionId> = Outcome.success(version.id)
+        override suspend fun saveDraft(version: SauceVersion): Outcome<SauceVersionId> {
+            versions[version.id] = version
+            return Outcome.success(version.id)
+        }
 
-        override suspend fun savePublished(version: SauceVersion): Outcome<SauceVersionId> = Outcome.success(version.id)
+        override suspend fun savePublished(version: SauceVersion): Outcome<SauceVersionId> {
+            versions[version.id] = version
+            current[version.sauceId.value] = version.id
+            return Outcome.success(version.id)
+        }
     }
 
     private class FakeUnitRepository : UnitRepository {
@@ -440,5 +499,7 @@ class RecipesViewModelTest {
         const val VERSION_ID = "recipe-v1"
         const val INGREDIENT_ID = "ingredient-flour"
         const val UNIT_ID = "unit-g"
+        const val SAUCE_ID = "sauce-1"
+        const val SAUCE_VERSION_ID = "sauce-v1"
     }
 }

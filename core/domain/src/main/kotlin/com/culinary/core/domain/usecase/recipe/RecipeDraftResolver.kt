@@ -29,33 +29,47 @@ internal class RecipeDraftResolver(
     private val validator = RecipeGraphValidator()
 
     suspend fun pin(draft: RecipeVersionDraft): Outcome<Pinned> {
+        val currentVersions =
+            when (val result = resolveCurrentVersions(draft)) {
+                is Outcome.Failure -> return result
+                is Outcome.Success -> result.value
+            }
+        val versions =
+            when (val result = prefetch(draft, currentVersions)) {
+                is Outcome.Failure -> return result
+                is Outcome.Success -> result.value
+            }
+        val source = RecipeGraphSource { versions[it] }
+        val currentSource = CurrentVersionSource { currentVersions[it] }
+        return when (val pinned = pinRule.pin(draft, source, currentSource)) {
+            is Outcome.Failure -> pinned
+            is Outcome.Success -> Outcome.success(Pinned(components = pinned.value, versions = versions))
+        }
+    }
+
+    private suspend fun resolveCurrentVersions(draft: RecipeVersionDraft): Outcome<Map<RecipeId, RecipeVersionId>> {
         val currentVersions = mutableMapOf<RecipeId, RecipeVersionId>()
         for (component in draft.components) {
-            val target = component.target
-            if (target is ComponentTargetDraft.RecipeCurrent) {
-                val current =
-                    repository.getCurrentVersion(target.recipeId)
-                        ?: return Outcome.failure(
-                            CulinaryError.NotFound(
-                                entity = "recipe_current_version",
-                                id = target.recipeId.value,
-                            ),
-                        )
-                currentVersions[target.recipeId] = current.id
-            }
+            val target = component.target as? ComponentTargetDraft.RecipeCurrent ?: continue
+            val current =
+                repository.getCurrentVersion(target.recipeId)
+                    ?: return Outcome.failure(
+                        CulinaryError.NotFound(
+                            entity = "recipe_current_version",
+                            id = target.recipeId.value,
+                        ),
+                    )
+            currentVersions[target.recipeId] = current.id
         }
-        val roots = mutableSetOf<RecipeVersionId>()
-        for (component in draft.components) {
-            when (val target = component.target) {
-                is ComponentTargetDraft.Ingredient -> Unit
-                is ComponentTargetDraft.RecipePinned -> roots += target.versionId
-                is ComponentTargetDraft.RecipeCurrent ->
-                    currentVersions[target.recipeId]?.let(roots::add)
-                is ComponentTargetDraft.SaucePinned -> Unit
-            }
-        }
+        return Outcome.success(currentVersions)
+    }
+
+    private suspend fun prefetch(
+        draft: RecipeVersionDraft,
+        currentVersions: Map<RecipeId, RecipeVersionId>,
+    ): Outcome<Map<RecipeVersionId, RecipeVersion>> {
         val versions = mutableMapOf<RecipeVersionId, RecipeVersion>()
-        val queue = ArrayDeque(roots)
+        val queue = ArrayDeque(referencedRoots(draft, currentVersions))
         while (queue.isNotEmpty()) {
             val id = queue.removeFirst()
             if (versions.containsKey(id)) continue
@@ -67,12 +81,25 @@ internal class RecipeDraftResolver(
             versions[id] = version
             version.childRecipeVersions().forEach(queue::addLast)
         }
-        val source = RecipeGraphSource { versions[it] }
-        val currentSource = CurrentVersionSource { currentVersions[it] }
-        return when (val pinned = pinRule.pin(draft, source, currentSource)) {
-            is Outcome.Failure -> pinned
-            is Outcome.Success -> Outcome.success(Pinned(components = pinned.value, versions = versions))
+        return Outcome.success(versions)
+    }
+
+    private fun referencedRoots(
+        draft: RecipeVersionDraft,
+        currentVersions: Map<RecipeId, RecipeVersionId>,
+    ): Set<RecipeVersionId> {
+        val roots = mutableSetOf<RecipeVersionId>()
+        draft.components.forEach { component ->
+            when (val target = component.target) {
+                is ComponentTargetDraft.RecipePinned -> roots += target.versionId
+                is ComponentTargetDraft.RecipeCurrent ->
+                    currentVersions[target.recipeId]?.let(roots::add)
+
+                is ComponentTargetDraft.Ingredient -> Unit
+                is ComponentTargetDraft.SaucePinned -> Unit
+            }
         }
+        return roots
     }
 
     /** 校验新版本及其子图；[versions] 必须包含所有被引用版本。 */
@@ -130,6 +157,7 @@ internal class RecipeDraftResolver(
             is RecipeLineTarget.RecipeCurrent -> ComponentTargetDraft.RecipeCurrent(target.recipeId)
             is RecipeLineTarget.RecipePinned ->
                 ComponentTargetDraft.RecipePinned(target.recipeId, target.versionId)
+
             is RecipeLineTarget.SaucePinned ->
                 ComponentTargetDraft.SaucePinned(target.sauceId, target.versionId)
         }

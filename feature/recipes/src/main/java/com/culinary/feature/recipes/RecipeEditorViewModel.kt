@@ -21,6 +21,8 @@ import com.culinary.core.domain.usecase.recipe.RecipeVersionInput
 import com.culinary.core.domain.usecase.recipe.SaveRecipeDraftUseCase
 import com.culinary.core.domain.usecase.recipe.SaveRecipeInput
 import com.culinary.core.domain.usecase.recipe.SaveRecipeUseCase
+import com.culinary.core.domain.usecase.sauce.ListSauceOptionsUseCase
+import com.culinary.core.domain.usecase.sauce.SauceOption
 import com.culinary.core.domain.usecase.unit.ListUnitsUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -49,6 +51,7 @@ class RecipeEditorViewModel
         private val listUnits: ListUnitsUseCase,
         private val listIngredients: ListIngredientsUseCase,
         private val listRecipeOptions: ListRecipeOptionsUseCase,
+        private val listSauceOptions: ListSauceOptionsUseCase,
     ) : ViewModel() {
         private val routeId: String? =
             savedStateHandle
@@ -70,11 +73,13 @@ class RecipeEditorViewModel
                 val units = runCatching { listUnits() }.getOrDefault(emptyList())
                 val ingredients = runCatching { listIngredients().first() }.getOrDefault(emptyList())
                 val options = runCatching { listRecipeOptions() }.getOrDefault(emptyList())
+                val sauceOptions = runCatching { listSauceOptions() }.getOrDefault(emptyList())
                 _uiState.update {
                     it.copy(
                         units = units,
                         ingredients = ingredients,
                         recipeOptions = options,
+                        sauceOptions = sauceOptions,
                         yieldUnit = it.yieldUnit ?: units.firstOrNull(),
                     )
                 }
@@ -192,6 +197,27 @@ class RecipeEditorViewModel
                                 unit = unit,
                                 recipeId = option.recipe.id,
                                 recipeVersionNo = current.versionNo,
+                            ),
+                )
+            }
+        }
+
+        fun addSauceOption(option: SauceOption) {
+            val current = option.currentVersion ?: return
+            _uiState.update { state ->
+                val unit = state.units.firstOrNull() ?: return@update state
+                state.copy(
+                    lines =
+                        state.lines +
+                            RecipeLineEditor(
+                                key = "line-${lineKey++}",
+                                kind = RecipeComponentKind.SAUCE,
+                                name = option.sauce.name,
+                                amount = "",
+                                unit = unit,
+                                sauceId = option.sauce.id,
+                                sauceVersionId = current.id,
+                                sauceVersionNo = current.versionNo,
                             ),
                 )
             }

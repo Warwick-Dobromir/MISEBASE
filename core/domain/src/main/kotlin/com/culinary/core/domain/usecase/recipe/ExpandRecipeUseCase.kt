@@ -29,10 +29,13 @@ class ExpandRecipeUseCase(
         targetServings: Double,
     ): Outcome<ExpandedRecipe> {
         if (!targetServings.isFinite() || targetServings <= 0.0) {
-            return Outcome.failure(CulinaryError.Validation(field = "servings", rule = "must be a finite positive number"))
+            return Outcome.failure(
+                CulinaryError.Validation(field = "servings", rule = "must be a finite positive number"),
+            )
         }
-        val root = recipeRepository.getVersion(versionId)
-            ?: return Outcome.failure(CulinaryError.NotFound(entity = "recipe_version", id = versionId.value))
+        val root =
+            recipeRepository.getVersion(versionId)
+                ?: return Outcome.failure(CulinaryError.NotFound(entity = "recipe_version", id = versionId.value))
         val versions = prefetch(versionId) ?: return missingGraph()
         val source = RecipeGraphSource { versions[it] }
         val exploded =

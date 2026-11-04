@@ -21,6 +21,8 @@ import com.culinary.core.domain.model.RecipeComponent
 import com.culinary.core.domain.model.RecipeId
 import com.culinary.core.domain.model.RecipeVersion
 import com.culinary.core.domain.model.RecipeVersionId
+import com.culinary.core.domain.model.SauceId
+import com.culinary.core.domain.model.SauceVersionId
 import com.culinary.core.domain.model.Unit
 import com.culinary.core.domain.model.VersionStatus
 
@@ -173,7 +175,15 @@ object RecipeMapper {
                 }
             }
 
-            ComponentTypeDb.SAUCE -> sauceComponentUnsupported(component)
+            ComponentTypeDb.SAUCE -> {
+                val sauceId = component.referencedSauceId
+                val versionId = component.referencedSauceVersionId
+                if (sauceId == null || versionId == null) {
+                    invalidComponent(component)
+                } else {
+                    Outcome.success(ComponentTarget.Sauce(SauceId(sauceId), SauceVersionId(versionId)))
+                }
+            }
         }
 
     private fun invalidComponent(component: RecipeComponentEntity): Outcome<Nothing> =
@@ -184,19 +194,6 @@ object RecipeMapper {
                         entity = "recipe_component",
                         expected = "target id present",
                         actual = "component ${component.id}",
-                    ),
-                code = ErrorCode.REP_004,
-            ),
-        )
-
-    private fun sauceComponentUnsupported(component: RecipeComponentEntity): Outcome<Nothing> =
-        Outcome.failure(
-            CulinaryError.Domain(
-                detail =
-                    DomainDetail.InvalidState(
-                        entity = "recipe_component",
-                        expected = "INGREDIENT or RECIPE target",
-                        actual = "SAUCE (component ${component.id})",
                     ),
                 code = ErrorCode.REP_004,
             ),

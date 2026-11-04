@@ -50,6 +50,7 @@
     <string name="recipes_servings_label">基准份数</string>
     <string name="recipes_add_ingredient">添加食材</string>
     <string name="recipes_add_recipe">添加子菜谱</string>
+    <string name="recipes_add_sauce">添加酱汁</string>
     <string name="recipes_amount">数量</string>
     <string name="recipes_remove_line">移除</string>
     <string name="recipes_save_draft">保存草稿</string>
@@ -59,6 +60,7 @@
     <string name="recipes_unit_picker_title">选择单位</string>
     <string name="recipes_ingredient_picker_title">选择食材</string>
     <string name="recipes_recipe_picker_title">选择子菜谱</string>
+    <string name="recipes_sauce_picker_title">选择酱汁</string>
     <string name="recipes_category_picker_title">选择分类</string>
     <string name="recipes_picker_empty">没有可选项</string>
     <string name="recipes_recipe_no_version">（无可引用版本）</string>

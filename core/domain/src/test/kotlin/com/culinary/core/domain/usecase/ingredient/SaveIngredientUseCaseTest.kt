@@ -74,7 +74,9 @@ class SaveIngredientUseCaseTest {
             useCase(
                 SaveIngredientInput(
                     name = "低筋面粉",
-                    defaultUnitId = com.culinary.core.domain.model.UnitId("g"),
+                    defaultUnitId =
+                        com.culinary.core.domain.model
+                            .UnitId("g"),
                     category = " 粉类 ",
                     description = "蛋白质 8.5%",
                 ),

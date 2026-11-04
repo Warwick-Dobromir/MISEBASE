@@ -1,6 +1,5 @@
 package com.culinary.navigation
 
-import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -18,6 +17,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.navigation.NavGraph.Companion.findStartDestination
+import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -131,67 +131,83 @@ private fun AppNavGraph(
         startDestination = CulinaryDestination.START.route,
         modifier = modifier,
     ) {
-        composable(CulinaryDestination.SAUCES.route) {
-            SaucesRoute(
-                onOpenSauce = { sauceId -> navController.navigate(SaucesRoutes.detail(sauceId)) },
-                onAddSauce = { navController.navigate(SaucesRoutes.edit(null)) },
-            )
-        }
-        composable(SaucesRoutes.DETAIL) {
-            SauceDetailRoute(
-                onEdit = { sauceId -> navController.navigate(SaucesRoutes.edit(sauceId)) },
-            )
-        }
-        composable(SaucesRoutes.EDIT) {
-            SauceEditorRoute(onSaved = { navController.popBackStack() })
-        }
-        composable(CulinaryDestination.INGREDIENTS.route) {
-            IngredientsRoute(
-                onOpenIngredient = { id -> navController.navigate(IngredientsRoutes.detail(id)) },
-                onAddIngredient = { navController.navigate(IngredientsRoutes.edit(null)) },
-            )
-        }
-        composable(IngredientsRoutes.DETAIL) {
-            IngredientDetailRoute(
-                onEdit = { id -> navController.navigate(IngredientsRoutes.edit(id)) },
-                onArchived = { navController.popBackStack() },
-            )
-        }
-        composable(IngredientsRoutes.EDIT) {
-            IngredientEditorRoute(onSaved = { navController.popBackStack() })
-        }
-        composable(CulinaryDestination.RECIPES.route) {
-            RecipesRoute(
-                onOpenRecipe = { id -> navController.navigate(RecipesRoutes.detail(id)) },
-                onAddRecipe = { navController.navigate(RecipesRoutes.edit(null)) },
-            )
-        }
-        composable(RecipesRoutes.DETAIL) {
-            RecipeDetailRoute(
-                onEdit = { id -> navController.navigate(RecipesRoutes.edit(id)) },
-            )
-        }
-        composable(RecipesRoutes.EDIT) {
-            RecipeEditorRoute(onSaved = { navController.popBackStack() })
-        }
-        composable(CulinaryDestination.INVENTORY.route) {
-            PlaceholderScreen(
-                title = stringResource(R.string.destination_inventory),
-                description = stringResource(R.string.placeholder_inventory_body),
-            )
-        }
-        composable(CulinaryDestination.SCAN.route) {
-            PlaceholderScreen(
-                title = stringResource(R.string.destination_scan),
-                description = stringResource(R.string.placeholder_scan_body),
-            )
-        }
-        composable(SETTINGS_ROUTE) {
-            PlaceholderScreen(
-                title = stringResource(R.string.destination_settings),
-                description = stringResource(R.string.placeholder_settings_body),
-            )
-        }
+        sauceGraph(navController)
+        ingredientGraph(navController)
+        recipeGraph(navController)
+        placeholderGraph()
+    }
+}
+
+private fun NavGraphBuilder.sauceGraph(navController: NavHostController) {
+    composable(CulinaryDestination.SAUCES.route) {
+        SaucesRoute(
+            onOpenSauce = { sauceId -> navController.navigate(SaucesRoutes.detail(sauceId)) },
+            onAddSauce = { navController.navigate(SaucesRoutes.edit(null)) },
+        )
+    }
+    composable(SaucesRoutes.DETAIL) {
+        SauceDetailRoute(
+            onEdit = { sauceId -> navController.navigate(SaucesRoutes.edit(sauceId)) },
+        )
+    }
+    composable(SaucesRoutes.EDIT) {
+        SauceEditorRoute(onSaved = { navController.popBackStack() })
+    }
+}
+
+private fun NavGraphBuilder.ingredientGraph(navController: NavHostController) {
+    composable(CulinaryDestination.INGREDIENTS.route) {
+        IngredientsRoute(
+            onOpenIngredient = { id -> navController.navigate(IngredientsRoutes.detail(id)) },
+            onAddIngredient = { navController.navigate(IngredientsRoutes.edit(null)) },
+        )
+    }
+    composable(IngredientsRoutes.DETAIL) {
+        IngredientDetailRoute(
+            onEdit = { id -> navController.navigate(IngredientsRoutes.edit(id)) },
+            onArchived = { navController.popBackStack() },
+        )
+    }
+    composable(IngredientsRoutes.EDIT) {
+        IngredientEditorRoute(onSaved = { navController.popBackStack() })
+    }
+}
+
+private fun NavGraphBuilder.recipeGraph(navController: NavHostController) {
+    composable(CulinaryDestination.RECIPES.route) {
+        RecipesRoute(
+            onOpenRecipe = { id -> navController.navigate(RecipesRoutes.detail(id)) },
+            onAddRecipe = { navController.navigate(RecipesRoutes.edit(null)) },
+        )
+    }
+    composable(RecipesRoutes.DETAIL) {
+        RecipeDetailRoute(
+            onEdit = { id -> navController.navigate(RecipesRoutes.edit(id)) },
+        )
+    }
+    composable(RecipesRoutes.EDIT) {
+        RecipeEditorRoute(onSaved = { navController.popBackStack() })
+    }
+}
+
+private fun NavGraphBuilder.placeholderGraph() {
+    composable(CulinaryDestination.INVENTORY.route) {
+        PlaceholderScreen(
+            title = stringResource(R.string.destination_inventory),
+            description = stringResource(R.string.placeholder_inventory_body),
+        )
+    }
+    composable(CulinaryDestination.SCAN.route) {
+        PlaceholderScreen(
+            title = stringResource(R.string.destination_scan),
+            description = stringResource(R.string.placeholder_scan_body),
+        )
+    }
+    composable(SETTINGS_ROUTE) {
+        PlaceholderScreen(
+            title = stringResource(R.string.destination_settings),
+            description = stringResource(R.string.placeholder_settings_body),
+        )
     }
 }
 
@@ -226,14 +242,3 @@ private fun titleFor(
         currentRoute == SETTINGS_ROUTE -> stringResource(R.string.destination_settings)
         else -> stringResource(R.string.app_name)
     }
-
-/** 功能入口占位：各 feature 接入真实页面时替换。 */
-@Composable
-private fun FeaturePlaceholder(
-    @StringRes titleRes: Int,
-) {
-    PlaceholderScreen(
-        title = stringResource(titleRes),
-        description = stringResource(R.string.placeholder_feature_body),
-    )
-}

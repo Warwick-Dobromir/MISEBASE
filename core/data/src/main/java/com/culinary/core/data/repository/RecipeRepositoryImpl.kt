@@ -50,8 +50,9 @@ class RecipeRepositoryImpl
             recipeDao.observeActive().map { entities -> entities.map(RecipeMapper::toDomain) }
 
         override suspend fun get(id: RecipeId): Outcome<Recipe> {
-            val entity = recipeDao.findById(id.value)
-                ?: return Outcome.failure(CulinaryError.NotFound(entity = "recipe", id = id.value))
+            val entity =
+                recipeDao.findById(id.value)
+                    ?: return Outcome.failure(CulinaryError.NotFound(entity = "recipe", id = id.value))
             return Outcome.success(RecipeMapper.toDomain(entity))
         }
 
@@ -70,8 +71,7 @@ class RecipeRepositoryImpl
                 (loadVersion(version) as? Outcome.Success)?.value
             }
 
-        override suspend fun nextVersionNo(recipeId: RecipeId): Int =
-            versionDao.maxVersionNo(recipeId.value) + 1
+        override suspend fun nextVersionNo(recipeId: RecipeId): Int = versionDao.maxVersionNo(recipeId.value) + 1
 
         override suspend fun save(recipe: Recipe): Outcome<RecipeId> =
             try {
