@@ -42,7 +42,7 @@ data class ScanIngredientTarget(ingredient, product?, unit, created: Boolean)
 interface ScanStockGateway {                           // 由 feature:inventory 实现
     suspend fun receive(request: ScanStockRequest): Outcome<ScanStockReceipt>
 }
-data class ScanStockRequest(capture, target, amount, note?)
+data class ScanStockRequest(capture, target, amount, operationId, note?)
 data class ScanStockReceipt(entry, item, idempotentReplay: Boolean)
 
 // 写前查重（只读）
@@ -52,14 +52,17 @@ class LookupScanImportUseCase(inventoryRepository) {
 data class ScanPreviousImport(entry, item?)
 ```
 
-幂等键规则（`ScanImportKey`）：
+幂等键规则（`ScanImportKey`，**事件级**，见 [MB-S5-08](MB-S5-08-IDEMPOTENCY-FIX.md)）：
 
 ```text
-key = "scan-import:" + capture.normalizedValue      // 只由条码值决定，不含时间/随机数
+key = "scan-import:" + escape(barcode) + ":" + operation_id
+escape: '%' -> '%25'，':' -> '%3A'（避免不同条码的键前缀互相包含）
 ```
 
-> 只由条码决定是刻意设计：包含时间或随机数会让"同一条码重复确认"绕过幂等。
-> 代价是同一码永久视为"已导入"；若将来需要"同码多次入库"，需要新的显式决策（见 §7）。
+> **一次确认 = 一个 operation id**：`operation_id` 在点击「确认导入 / 再次入库」进入提交态时生成，
+> 失败重试复用、成功/取消后清空。因此同一商品可以在不同时间多次入库，而同一次确认（含重试、
+> 连点、事务重放）只写一次；幂等最终由 `inventory_ledger.idempotency_key` 唯一约束保证。
+> MB-S5-002 之前键只由条码决定，第二次购买同款会被永久拦截，已修正。
 
 ---
 
@@ -69,25 +72,29 @@ key = "scan-import:" + capture.normalizedValue      // 只由条码值决定，�
 
 ```text
 ScanConfirmViewModel.init
-  └── LookupScanImportUseCase(capture)                 // read-only
-        ├── InventoryRepository.findByIdempotencyKey("scan-import:<code>")
+  └── LookupScanImportUseCase(capture)                 // read-only，按条码前缀取最近一次
+        ├── InventoryRepository.ledger()               // 过滤 scan-import:<barcode>:*
         └── InventoryRepository.findItem(batchId)
-  └── 命中 → previous != null → 展示「该条码已导入过」+ 禁用「确认导入」
+  └── 命中 → isDuplicate = true → 展示「该商品此前已导入」+ 按钮「再次入库」（**不再禁用**）
 ```
 
-### 3.2 确认导入（用户点「确认导入」）
+### 3.2 确认导入（用户点「确认导入 / 再次入库」）
 
 ```text
 ScanConfirmViewModel.confirm()
-  ├── evaluate(): 已导入/保存中/数量非法/缺目标 → 拒绝（不调用任何写接口）
-  └── importCapture()
+  ├── evaluate(): 提交中/已有结果 → 忽略；数量非法/缺目标 → 拒绝（不调用任何写接口）
+  └── startSubmit()
+        ├── operationId = 缓存的 id ?: idGenerator.newId()   // 首次点击生成
+        ├── 先写状态（operationId + isSubmitting = true），再启动协程
         ├── ScanIngredientGateway.resolve()            // feature:products
         │     ├── 已有食材：IngredientRepository.get + InventoryRepository.findProductForIngredient
         │     └── 新建食材：SaveIngredientUseCase（含名称校验；默认单位按质量基准→计数→首行）
         └── ScanStockGateway.receive()                 // feature:inventory
               └── RecordStockReceiptUseCase(...)       // 一个事务：批次 + 流水
-                    └── 幂等键 = ScanImportKey.of(capture)
+                    └── 幂等键 = ScanImportKey.of(capture, operationId)
 ```
+
+成功 → 清空 `operationId`；失败 → 保留 `operationId` 并展示「重试」（重试复用同一键）。
 
 事务边界：
 
@@ -108,22 +115,28 @@ ScanConfirmViewModel.confirm()
 
 ---
 
-## 4. 幂等与重复确认
+## 4. 幂等与重复确认（MB-S5-002 修正后）
 
 | 场景 | 行为 | 证据 |
 |---|---|---|
-| 同一条码第二次进入确认页 | `previous != null`，确认按钮禁用，提示上次导入时间与数量 | 真机 [09](evidence/09-scan-duplicate-guard.png) |
-| 绕过 UI 直接调用入库接口（同码） | `RecordStockReceiptUseCase` 命中幂等键 → 返回 `idempotentReplay = true`，不新增批次/流水 | `InventoryScanStockGatewayTest` |
+| 同一条码再次进入确认页 | `isDuplicate = true`，提示上次导入时间与数量，按钮变「再次入库」，**允许继续** | 真机 [12](evidence/12-fix-duplicate-entry.png) |
+| 同一次确认重试（失败后点「重试」） | 复用同一 `operationId` → 命中唯一键 → `idempotentReplay = true`，不新增批次/流水 | `ScanConfirmViewModelTest`、`InventoryScanStockGatewayTest` |
+| 快速连续点击 | `isSubmitting` 同步置位 + `result != null` 双闸门 + 幂等键兜底，只调用一次 | `ScanConfirmViewModelTest`、真机 [14](evidence/14-fix-rapid-double-tap.png) |
+| 取消 / 返回扫码 | 清空未完成的 `operationId`，不写库 | `ScanConfirmViewModelTest`、真机核对（流水不变） |
+| 同一条码第二次入库（新确认） | 新的 `operationId` → 新流水、新批次，复用同一食材/商品 | 真机 [13](evidence/13-fix-second-import.png)、DB 核对 |
 | 不同条码 | 独立入库，可复用同一食材/商品 | 真机 [10](evidence/10-scan-second-import.png)、DB 核对 |
-| 并发/重复点击 | `saving` 与 `result != null` 双闸门 + 幂等键兜底 | `ScanConfirmViewModelTest` |
 
-真机数据库核对（`pm clear` 后两次导入）：
+真机数据库核对（MB-S5-002 验证：同一码三次确认，其中一次取消、一次连点）：
 
 ```text
-ingredient = 1   product = 1   inventory_batch = 2   inventory_ledger = 2
-ledger keys: scan-import:6901234567892, scan-import:MISEBASEQRSCAN001
+ingredient = 1   product = 1   batch = 3   ledger = 3
+scan-import:6901234567892:8d753fa7-…   1.0 g
+scan-import:6901234567892:43468b26-…   1.0 g
+scan-import:6901234567892:f648f871-…   1.0 g
 barcode = 0（扫码模块不写商品主数据表）
 ```
+
+> 取消步骤未产生第 4 条；快速连点只 +1 → 单次确认幂等；三个不同 `operation_id` → 允许重复入库。
 
 ---
 
@@ -136,8 +149,9 @@ barcode = 0（扫码模块不写商品主数据表）
 | `Validation(quantity)` | 数量必须是大于 0 的数字。 |
 | `Validation(ingredient)` | 请选择已有食材，或填写新食材名称。 |
 | `Validation(ingredient.name)` | 食材名称不合法，请检查长度后重试。 |
+| `Validation(operationId)` | 缺少本次导入的操作标识，请返回扫码页重试。 |
 | `NotFound` | 记录不存在或已被删除，请刷新后重试。 |
-| `Conflict` | 该条码已有导入记录，请勿重复提交。 |
+| `Conflict` | 本次导入已被处理，请刷新后确认结果。 |
 | `Domain` | 业务规则拒绝了本次导入。 |
 | `Platform` | 相机或系统能力不可用，请改用手工输入。 |
 | 其他 | 导入失败，请重试。 |
@@ -149,7 +163,7 @@ barcode = 0（扫码模块不写商品主数据表）
 - 任务书的允许范围是 `core:domain` 的接口/契约、`core:platform` 的封装、feature 的接口实现；
   **未**包含 `core:data`（Repository 实现层）与 `core:database`；
 - 因此本阶段不做"条码 → 商品"的持久映射，匹配口径为：
-  **该条码是否已导入过（幂等键命中）** + **用户选择/新建食材**；
+  **该条码此前的导入记录（流水前缀匹配）** + **用户选择/新建食材**；
 - `barcode` 表保持 0 行，符合"扫码模块不承担商品主数据管理"；
 - 若后续需要"扫一次自动带出商品名"，应在授权范围内新增 `ProductRepository` 端口
   + `core:data` 实现 + 导入确认页展示，属于**新的决策点**，不在本阶段自行扩大。
@@ -160,7 +174,8 @@ barcode = 0（扫码模块不写商品主数据表）
 
 | 项 | 说明 | 建议 |
 |---|---|---|
-| 同码只允许导入一次 | 由幂等键决定；第二次扫同一商品无法再入库 | 如需"按次入库"，需负责人决策（例如键加入确认序号，就失去跨会话幂等） |
+| `operationId` 仅内存缓存 | 进程被杀后重试会生成新键（已写入的那次不会重复，但用户再确认会新增一条） | 如需强保证，存 `SavedStateHandle`；需负责人决定 |
+| 写前查重为全表扫描 | 按条码前缀过滤 `ledger()`，与库存流水页同量级 | 数据量增长后改为前缀索引查询（需 `core:data`/Schema 变更） |
 | 跨模块未用单事务 | 采用"食材创建 + 入库 + 失败归档"的明确补偿 | 归档失败时残留一条 ACTIVE 食材；已用文案提示，可手动删除/归档 |
 | 条码映射未持久化 | 见 §6 | 需新授权 |
 | 新建食材默认单位 | 质量基准单位优先（`g`），计数型商品需用户改档案 | Stage 3 食材编辑器可改 |

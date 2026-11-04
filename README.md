@@ -1,4 +1,4 @@
-# MISEBASE
+﻿# MISEBASE
 
 **个人烹饪档案与库存管理系统 — Android 原生应用**
 
@@ -7,7 +7,7 @@
 | 品牌/项目名 | MISEBASE（包名暂留 `com.culinary`，发布前按 D-017/MB-D-001 决定） |
 | 架构基线 | `0.4.1`（G1 已签收）；G2 已收档于 `framework-0.1.0` / `2b523de` |
 | 当前阶段 | **Stage 5 Review（2026-11-05，待负责人审查）**；Stage 4 CLOSED（2026-11-05，有条件通过）；MB-D-007 备份一致性 CLOSED（2026-11-04） |
-| 工程状态 | **14 模块（Stage 5 起，MB-D-004）**；Room schema **v2 / 33 表**（11 表 `DORMANT`）；三大档案库 + Inventory + 扫码可用；**801 次执行 / 503 唯一 JVM 用例 / 0 失败** |
+| 工程状态 | **14 模块（Stage 5 起，MB-D-004）**；Room schema **v2 / 33 表**（11 表 `DORMANT`）；三大档案库 + Inventory + 扫码可用；**817 次执行 / 514 唯一 JVM 用例 / 0 失败** |
 | 数据库 | **已创建**：schema v2（33 表），导出 `1.json`、`2.json`；`1→2` 迁移已落地；本次备份一致性修复未改 Schema/Entity/DAO |
 | 构建基线 | AGP 8.13.0 / Kotlin 2.2.20 / Gradle 8.14.3 / JDK 21 / minSdk 26 / compile & target 36 |
 | 依赖注入 | Hilt 2.57.2 + KSP（D-012 `ACCEPTED`，禁止 2.59+） |
@@ -138,8 +138,11 @@ feature/
 - **Stage 5 状态为 Review（2026-11-05，待负责人审查）**：新建第 14 个模块 `feature:scan`，
   扫码页面（CameraX 预览、扫描框、手电筒、返回、权限说明与手工输入兜底）、ML Kit Bundled 条码/二维码识别、
   相同码去抖与一次性消费、识别结果接口（`feature:products` / `feature:inventory`）、导入确认与幂等已落地；
-  扫码入口已从占位切换为真实页面。真机验证记录见
-  [MB-S5-02](docs/12-stage5/MB-S5-02-DEVICE-VERIFICATION.md)；**未关闭 Stage 5、未进入 Stage 6**。
+  扫码入口已从占位切换为真实页面。**MB-S5-002 已修正"同一商品只能导入一次"**：幂等键改为事件级
+  `scan-import:<条码>:<operation_id>`，同一次确认重试复用同一 id、不同次确认生成新 id。
+  真机验证记录见 [MB-S5-02](docs/12-stage5/MB-S5-02-DEVICE-VERIFICATION.md)，
+  修正记录见 [MB-S5-08](docs/12-stage5/MB-S5-08-IDEMPOTENCY-FIX.md)；
+  **未关闭 Stage 5、未进入 Stage 6**。
 - **MB-D-007 已 CLOSED（2026-11-04，审查通过）**：六项技术事项、Schema 版本阻断修复、
   `612 / 376 / 0` 基线测试与 v2 检查点均已落库；详见
   [MB-D-007 关闭记录](docs/10-backup/MB-D-007-CLOSE-RECORD.md)。
@@ -177,6 +180,7 @@ feature/
 - [Stage 5 测试矩阵](docs/12-stage5/MB-S5-05-TEST-MATRIX.md)
 - [Stage 5 决策映射（MB-D-004 / MB-D-011）](docs/12-stage5/MB-S5-06-DECISION-MAPPING.md)
 - [Stage 5 真机验证记录](docs/12-stage5/MB-S5-02-DEVICE-VERIFICATION.md)
+- [Stage 5 重复入库修正（MB-S5-002）](docs/12-stage5/MB-S5-08-IDEMPOTENCY-FIX.md)
 - [Stage 4 库存页面说明](docs/11-stage4/MB-S4-02-INVENTORY-PAGES.md)
 - [Stage 4 需求汇总与缺口](docs/11-stage4/MB-S4-03-REQUIREMENT-GAP.md)
 - [Stage 4 采购清单](docs/11-stage4/MB-S4-04-PURCHASE-LIST.md)
@@ -200,3 +204,4 @@ feature/
 | `Superseded` | 被新决策取代，保留原文追溯 | 否 |
 
 任何影响模块边界、数据库结构、备份格式或锁定技术栈的修改，必须先走 ADR 与负责人签收。
+

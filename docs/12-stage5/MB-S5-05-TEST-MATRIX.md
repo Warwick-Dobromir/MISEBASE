@@ -1,4 +1,4 @@
-# MB-S5-05 测试矩阵
+﻿# MB-S5-05 测试矩阵
 
 **文档编号**：MB-S5-05
 **版本**：`1.0.0`
@@ -12,12 +12,12 @@
 
 | 项 | 结果 |
 |---|---|
-| 唯一 JVM 用例 | **503** |
-| 执行次数 | **801** |
+| 唯一 JVM 用例 | **514** |
+| 执行次数 | **817** |
 | 失败 | **0** |
 | Stage 4 基线 | 416 唯一 / 660 执行 / 0 失败 |
-| 新增唯一用例 | **+87**（其中扫码相关 86 + 导航外壳 1） |
-| 新增执行次数 | **+141** |
+| 新增唯一用例 | **+98**（Stage 5 首轮 +87；MB-S5-002 幂等修正 +11） |
+| 新增执行次数 | **+157** |
 | Debug APK | `assembleDebug` 成功（39,854,267 字节） |
 | 质量门 | `ktlintCheck`、`detekt` 全绿 |
 | 真机 instrumentation | `feature:scan` 4/4 通过（vivo V2429A / API 36） |
@@ -41,18 +41,18 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\check-doc-consiste
 |---|---:|---:|
 | app | 13 | 21 |
 | core:common | 9 | 9 |
-| core:domain | 163 | 163 |
+| core:domain | 168 | 168 |
 | core:database | 81 | 162 |
 | core:data | 93 | 186 |
 | core:designsystem | 9 | 18 |
 | core:platform | 26 | 52 |
 | feature:ingredients | 11 | 19 |
-| feature:inventory | 14 | 23 |
+| feature:inventory | 16 | 27 |
 | feature:products | 8 | 16 |
 | feature:recipes | 11 | 19 |
 | feature:sauces | 11 | 18 |
-| feature:scan | **54** | **95** |
-| **合计** | **503** | **801** |
+| feature:scan | **58** | **102** |
+| **合计** | **514** | **817** |
 
 > Stage 5 新增的 `feature:scan` 为全新模块；`core:domain`、`feature:products`、`feature:inventory`、`app` 为既有模块追加用例。
 
@@ -64,17 +64,17 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\check-doc-consiste
 |---|---|---:|---|
 | `ScanFrameGateTest` | core:domain | 8 | 首帧接受、连续帧抑制、一次性消费、去抖窗口、恢复后同码抑制、异码立即接受、空白值、reset |
 | `ScanCaptureTest` | core:domain | 5 | 原文保留/规范化、格式标签、空白拒绝、长度校验 |
-| `ScanImportKeyTest` | core:domain | 3 | 同码同键（跨来源/格式）、异码异键、字符串重载去空白 |
-| `LookupScanImportUseCaseTest` | core:domain | 3 | 命中历史导入、未命中返回 null、仓储失败不被吞 |
+| `ScanImportKeyTest` | core:domain | 7 | 事件级键（同确认同键、不同确认不同键）、条码转义（`%`/`:`）与前缀无歧义、操作 id 去空白/空值拒绝、旧键兼容 |
+| `LookupScanImportUseCaseTest` | core:domain | 4 | 取最近一次、忽略其他条码、未命中返回 null、仓储失败不被吞 |
 | `ProductScanIngredientGatewayTest` | feature:products | 8 | 复用食材、经 `SaveIngredientUseCase` 新建、单位回退（质量基准→计数→首行）、缺目标/缺食材失败、商品映射、默认单位语义 |
-| `InventoryScanStockGatewayTest` | feature:inventory | 5 | 幂等键=条码、重复确认不重复入库、异码独立批次、商品补建、非法数量不写库 |
+| `InventoryScanStockGatewayTest` | feature:inventory | 7 | 事件键落库、同一 operation 重试不重复入库、**同码不同 operation 写入两条**、异码独立批次、商品补建、空 operation 拒绝、非法数量不写库 |
 | `ScanViewModelTest` | feature:scan | 16 | 权限态机、一次识别即停、连续帧不重复、手工输入校验、手电筒回滚、信号消费、错误提示 |
-| `ScanConfirmViewModelTest` | feature:scan | 11 | 参数解析、已导入拦截、复用食材、新建食材、数量/目标校验、补偿归档、重放标记、防重复提交 |
+| `ScanConfirmViewModelTest` | feature:scan | 14 | 首次导入、重复提示、取消不写库、再次入库（新 operation）、快速连点只提交一次、失败重试复用同一 operation、两次独立确认两个 operation、参数解析、校验、补偿 |
 | `ScanRoutesTest` | feature:scan | 6 | 路由编码（空格/斜杠/&）、参数还原、来源兜底、缺参/超长拒绝 |
 | `BarcodeFormatNamesTest` | feature:scan | 3 | 一维/二维格式名、未知格式 null |
 | `BarcodeValueMapperTest` | feature:scan | 5 | 原始值+格式+来源、手工来源、空值/超长丢弃、批量映射 |
 | `ScanUiTest` | feature:scan | 8 | 权限说明、拒绝页、相机态动作、无相机、手工输入编辑、手电筒提示、重新扫描 |
-| `ScanConfirmUiTest` | feature:scan | 5 | 识别结果展示、已导入禁用、新建食材、导入结果/重放、缺参空态 |
+| `ScanConfirmUiTest` | feature:scan | 6 | 识别结果展示、重复提示 + 「再次入库」、失败错误 + 「重试」、新建食材、导入结果/重放、缺参空态 |
 | `NavigationShellTest`（+1） | app | +1 | 扫码一级入口标题 + 设置动作 |
 | `BarcodeDecodingInstrumentedTest`（instrumentation，不计入 JVM） | feature:scan | 4 | 真机 EAN-13 / Code128 / QR 文本 / QR URL 解码 |
 
@@ -86,7 +86,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\check-doc-consiste
 |---|---|---|
 | `feature:scan` 模块依赖规则（不依赖 products/inventory 实现） | `config/module-dependencies.json` + `check-module-deps.ps1` 违规注入（`feature:scan → feature:products` 必须报 `V-FEATURE-FEATURE` / `V-IMPORT-UNDECLARED`） | 本文 §5 |
 | 识别去抖与一次性消费（连续帧不重复触发） | `ScanFrameGateTest`、`ScanViewModelTest` | §3 |
-| 重复确认幂等（同码不重复入库） | `InventoryScanStockGatewayTest`、`ScanConfirmViewModelTest`、真机 D-09 + 数据库核对 | [MB-S5-02](MB-S5-02-DEVICE-VERIFICATION.md) |
+| 单次确认幂等 + 同码可多次入库（MB-S5-002） | `InventoryScanStockGatewayTest`、`ScanConfirmViewModelTest`、真机 [12](evidence/12-fix-duplicate-entry.png)/[13](evidence/13-fix-second-import.png)/[14](evidence/14-fix-rapid-double-tap.png) + 数据库核对 | [MB-S5-08](MB-S5-08-IDEMPOTENCY-FIX.md) |
 | 手工输入兜底 | `ScanViewModelTest`、`ScanUiTest`、真机 D-06 | 同上 |
 | 权限拒绝处理 | `ScanViewModelTest`、`ScanUiTest`、真机 D-03/D-04 | 同上 |
 | 导入事务（批次+流水同一事务 / 明确补偿） | `InventoryScanStockGatewayTest`（复用 `RecordStockReceiptUseCase` 单事务）、`ScanConfirmViewModelTest`（补偿归档） | [MB-S5-04](MB-S5-04-IMPORT-CONTRACT.md) |
@@ -121,3 +121,6 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\check-doc-consiste
 | 低电量、锁屏中断、快速连续 10+ 次扫码 | 不在 MB-D-011 最低要求 | 列入风险 |
 | 中文食材名输入 | `adb shell input text` 不支持中文 | Stage 3 编辑器已覆盖同类路径 |
 | 仪器化 `connectedAndroidTest` 纳入 CI | MB-D-010 仍 `PROPOSED` | 仅本地/真机手动执行 |
+
+
+
