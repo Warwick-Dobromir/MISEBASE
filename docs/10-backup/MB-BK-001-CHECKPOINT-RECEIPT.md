@@ -14,11 +14,11 @@
 |---|---|
 | 标签名 | `checkpoint/misebase-backup-consistency-20261104` |
 | 类型 | annotated tag |
-| 对象哈希 | `b757f0dfb82365bd3898b982bd6115a407a093e7` |
-| 解析提交 | `6715c032320af27cc5aaaa84426a050eea986f5e` |
-| 解析提交信息 | `docs(backup): record mb-bk-001 execution, verification and risks` |
+| 对象哈希 | `4a271e8ac0081b8ff21b1966756d0432a7767671` |
+| 解析提交 | `8787c059a4a888f16ad8837ef8722316d762c257` |
+| 解析提交信息 | `fix(backup): never overwrite a healthy database with an unverified rollback copy` |
 | 标签信息 | `MISEBASE backup consistency checkpoint: write barrier, WAL checkpoint, real worker result, atomic restore` |
-| 打标签时间 | 2026-11-04 23:33:40 +0800 |
+| 打标签时间 | 2026-11-04 23:37:23 +0800 |
 
 ## 2. 标签完整性
 
@@ -33,6 +33,7 @@
 ## 3. 检查点内容
 
 - 报告提交 `6715c03`：执行报告、设计说明、WAL/Worker/一致性/失败回滚验证记录、风险登记册更新、文档索引。
+- 解析提交 `8787c05`：在报告提交基础上补“回滚副本校验失败不得覆盖健康原库”的修正与测试，使检查点覆盖最终代码状态。
 - 代码提交：`6b282da`（写屏障）、`db48976`（checkpoint）、`0936185`（Worker 真实返回）、`619d97b`（恢复原子性）、`49686ac`（WAL/并发/中断测试）、`9310aca`（设计文档）。
 - 本回执在标签创建后补记，作为独立文档提交（不移动标签）。
 
