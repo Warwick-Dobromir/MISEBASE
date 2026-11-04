@@ -85,19 +85,25 @@
 | 项 | 值 |
 |---|---|
 | 关闭提交 | `docs(stage1): close stage 1 after review`（完整哈希见 §6.1） |
-| `checkpoint/misebase-stage1-closed-20261104` | 待记录 |
-| `checkpoint/misebase-stage2-start-20261104` | 待记录 |
+| `checkpoint/misebase-stage1-closed-20261104` | tag object `dc5a6ba` → commit `b6a6d80` |
+| `checkpoint/misebase-stage2-start-20261104` | tag object `c6fa133` → commit `b6a6d80` |
 
 ### 6.1 关闭提交哈希
 
 ```text
-（由关闭记录簿记提交补记）
+b6a6d8038e01e888f84b193a4a0f5e34893db3a6
 ```
 
 ### 6.2 新标签解析
 
 ```text
-（由关闭记录簿记提交补记）
+checkpoint/misebase-stage1-closed-20261104
+  tag object: dc5a6ba1bb7f7924864ca0d49f434062bbee4c38
+  commit:     b6a6d8038e01e888f84b193a4a0f5e34893db3a6
+
+checkpoint/misebase-stage2-start-20261104
+  tag object: c6fa133d460de4edfe8fb4d05e57d71d989ac869
+  commit:     b6a6d8038e01e888f84b193a4a0f5e34893db3a6
 ```
 
 ## 7. 旧标签不可移动

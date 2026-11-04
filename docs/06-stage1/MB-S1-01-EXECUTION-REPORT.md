@@ -251,8 +251,8 @@ $env:ANDROID_HOME = "$env:LOCALAPPDATA\Android\Sdk"
 |---|---|
 | `checkpoint/misebase-stage1-20261104` | `93d0d92`（提交；标签对象 `4010536`） |
 | `checkpoint/misebase-stage1-reviewed-20261104` | `22851dc`（提交；标签对象 `2dff911`） |
-| `checkpoint/misebase-stage1-closed-20261104` | 关闭标签；解析见 [MB-S1-10 §6.2](MB-S1-10-STAGE1-CLOSE-RECORD.md) |
-| `checkpoint/misebase-stage2-start-20261104` | Stage 2 起点标签；解析见 [MB-S1-10 §6.2](MB-S1-10-STAGE1-CLOSE-RECORD.md) |
+| `checkpoint/misebase-stage1-closed-20261104` | `b6a6d80`（提交；标签对象 `dc5a6ba`） |
+| `checkpoint/misebase-stage2-start-20261104` | `b6a6d80`（提交；标签对象 `c6fa133`） |
 | `framework-0.1.0` | `2b523de`（未移动） |
 
 ### 12.3 变更范围
@@ -332,9 +332,9 @@ M	settings.gradle.kts
 | 项 | 值 |
 |---|---|
 | 关闭前 HEAD | `2ccc0adc4d2634e55025a51f0c722f7542cb2350` |
-| 关闭提交 | `docs(stage1): close stage 1 after review`（哈希见 [MB-S1-10 §6.1](MB-S1-10-STAGE1-CLOSE-RECORD.md)） |
-| `checkpoint/misebase-stage1-closed-20261104` | 解析见 [MB-S1-10 §6.2](MB-S1-10-STAGE1-CLOSE-RECORD.md) |
-| `checkpoint/misebase-stage2-start-20261104` | 解析见 [MB-S1-10 §6.2](MB-S1-10-STAGE1-CLOSE-RECORD.md) |
+| 关闭提交 | `b6a6d8038e01e888f84b193a4a0f5e34893db3a6`（`docs(stage1): close stage 1 after review`） |
+| `checkpoint/misebase-stage1-closed-20261104` | `b6a6d80`（提交；标签对象 `dc5a6ba`） |
+| `checkpoint/misebase-stage2-start-20261104` | `b6a6d80`（提交；标签对象 `c6fa133`） |
 
 ## 13. 未解决问题与风险
 
@@ -367,7 +367,7 @@ M	settings.gradle.kts
 **审查注意**：MB-D-007 仍是备份实现的硬阻塞；Stage 1 的备份结论仅为分析与方案，不是修复完成。
 
 **关闭**：Stage 1 状态为 `CLOSED`；关闭前 HEAD `2ccc0adc4d2634e55025a51f0c722f7542cb2350`；
-关闭提交与两个关闭标签见 §12.2 与 [MB-S1-10](MB-S1-10-STAGE1-CLOSE-RECORD.md)。
+关闭提交与两个关闭标签见 §12.4 与 [MB-S1-10](MB-S1-10-STAGE1-CLOSE-RECORD.md)。
 
 ## 15. 变更记录
 
