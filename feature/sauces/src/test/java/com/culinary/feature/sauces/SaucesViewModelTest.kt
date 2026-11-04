@@ -146,6 +146,7 @@ class SaucesViewModelTest {
             ).isWithin(1e-9).of(120.0)
         }
 
+    @Suppress("LongMethod") // 单测需要一次性铺三类目标并核对保存结果。
     @Test
     fun `editor keeps imported recipe and sauce rows read only on save`() =
         runTest {
