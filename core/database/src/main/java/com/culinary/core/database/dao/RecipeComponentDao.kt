@@ -11,6 +11,9 @@ interface RecipeComponentDao {
     @Insert
     suspend fun insert(entity: RecipeComponentEntity)
 
+    @Insert
+    suspend fun insertAll(entities: List<RecipeComponentEntity>)
+
     @Query("SELECT * FROM recipe_component WHERE recipe_version_id = :versionId ORDER BY line_no")
     suspend fun listByVersion(versionId: String): List<RecipeComponentEntity>
 

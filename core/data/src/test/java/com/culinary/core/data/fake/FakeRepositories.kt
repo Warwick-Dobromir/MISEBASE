@@ -37,7 +37,26 @@ class InMemoryRecipeRepository : RecipeRepository {
 
     override fun observeActive(): Flow<List<Recipe>> = flowOf(recipes.filter { it.status == EntityStatus.ACTIVE })
 
+    override suspend fun get(id: com.culinary.core.domain.model.RecipeId): Outcome<Recipe> =
+        recipes.firstOrNull { it.id == id }?.let { Outcome.success(it) }
+            ?: Outcome.failure(CulinaryError.NotFound(entity = "recipe", id = id.value))
+
     override suspend fun getVersion(id: RecipeVersionId): RecipeVersion? = versions[id]
+
+    override suspend fun getCurrentVersion(recipeId: com.culinary.core.domain.model.RecipeId): RecipeVersion? =
+        current[recipeId.value]?.let { versions[it] }
+
+    override suspend fun listVersions(recipeId: com.culinary.core.domain.model.RecipeId): List<RecipeVersion> =
+        versions.values.filter { it.recipeId == recipeId }.sortedByDescending { it.versionNo }
+
+    override suspend fun nextVersionNo(recipeId: com.culinary.core.domain.model.RecipeId): Int =
+        (versions.values.filter { it.recipeId == recipeId }.maxOfOrNull { it.versionNo } ?: 0) + 1
+
+    override suspend fun save(recipe: Recipe): Outcome<com.culinary.core.domain.model.RecipeId> {
+        recipes.removeAll { it.id == recipe.id }
+        recipes += recipe
+        return Outcome.success(recipe.id)
+    }
 
     override suspend fun saveDraft(version: RecipeVersion): RecipeVersionId {
         versions[version.id] = version

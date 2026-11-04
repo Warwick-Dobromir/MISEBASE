@@ -52,6 +52,57 @@ object RecipeMapper {
                 },
         )
 
+    fun toEntity(
+        recipe: Recipe,
+        createdAt: Long,
+        updatedAt: Long,
+        revision: Int,
+    ): RecipeEntity =
+        RecipeEntity(
+            id = recipe.id.value,
+            name = recipe.name,
+            normalizedName = recipe.normalizedName,
+            category =
+                when (recipe.category) {
+                    RecipeCategory.STOCK -> RecipeCategoryDb.STOCK
+                    RecipeCategory.PREP -> RecipeCategoryDb.PREP
+                    RecipeCategory.COMPONENT -> RecipeCategoryDb.COMPONENT
+                    RecipeCategory.DISH -> RecipeCategoryDb.DISH
+                    RecipeCategory.OTHER -> RecipeCategoryDb.OTHER
+                },
+            status =
+                when (recipe.status) {
+                    EntityStatus.ACTIVE -> EntityStatusDb.ACTIVE
+                    EntityStatus.ARCHIVED -> EntityStatusDb.ARCHIVED
+                },
+            createdAt = createdAt,
+            updatedAt = updatedAt,
+            revision = revision,
+        )
+
+    fun toVersionEntity(
+        version: RecipeVersion,
+        publishedAt: Long?,
+        createdAt: Long,
+    ): RecipeVersionEntity =
+        RecipeVersionEntity(
+            id = version.id.value,
+            recipeId = version.recipeId.value,
+            versionNo = version.versionNo,
+            status =
+                when (version.status) {
+                    VersionStatus.DRAFT -> VersionStatusDb.DRAFT
+                    VersionStatus.PUBLISHED -> VersionStatusDb.PUBLISHED
+                    VersionStatus.SUPERSEDED -> VersionStatusDb.SUPERSEDED
+                },
+            yieldQty = version.yield.amount,
+            yieldUnitId = version.yield.unit.id.value,
+            servings = version.servings,
+            isCurrent = version.isCurrent,
+            createdAt = createdAt,
+            publishedAt = publishedAt,
+        )
+
     fun toDomain(
         version: RecipeVersionEntity,
         components: List<RecipeComponentEntity>,
@@ -96,6 +147,7 @@ object RecipeMapper {
                 yield = Quantity(version.yieldQty, yieldUnit),
                 components = mapped,
                 servings = version.servings,
+                isCurrent = version.isCurrent,
             ),
         )
     }

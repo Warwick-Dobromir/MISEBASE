@@ -4,6 +4,7 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.Query
 import com.culinary.core.database.entity.RecipeVersionEntity
+import com.culinary.core.database.model.VersionStatusDb
 
 /** 菜谱版本读写。 */
 @Dao
@@ -17,10 +18,23 @@ interface RecipeVersionDao {
     @Query("SELECT * FROM recipe_version WHERE recipe_id = :recipeId AND is_current = 1")
     suspend fun findCurrent(recipeId: String): RecipeVersionEntity?
 
+    @Query("SELECT * FROM recipe_version WHERE recipe_id = :recipeId ORDER BY version_no DESC")
+    suspend fun listByRecipe(recipeId: String): List<RecipeVersionEntity>
+
+    @Query("SELECT COALESCE(MAX(version_no), 0) FROM recipe_version WHERE recipe_id = :recipeId")
+    suspend fun maxVersionNo(recipeId: String): Int
+
     @Query("UPDATE recipe_version SET status = 'PUBLISHED', published_at = :at WHERE id = :id")
     suspend fun publish(
         id: String,
         at: Long,
+    )
+
+    @Query("UPDATE recipe_version SET status = :status, published_at = :at WHERE id = :id")
+    suspend fun setStatus(
+        id: String,
+        status: VersionStatusDb,
+        at: Long?,
     )
 
     @Query("UPDATE recipe_version SET is_current = :current WHERE id = :id")
@@ -28,6 +42,9 @@ interface RecipeVersionDao {
         id: String,
         current: Boolean,
     )
+
+    @Query("UPDATE recipe_version SET is_current = 0 WHERE recipe_id = :recipeId AND is_current = 1")
+    suspend fun clearCurrent(recipeId: String)
 
     @Query("UPDATE recipe_version SET yield_qty = :qty WHERE id = :id")
     suspend fun updateYield(

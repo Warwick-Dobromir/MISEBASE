@@ -29,6 +29,10 @@ import com.culinary.feature.ingredients.IngredientDetailRoute
 import com.culinary.feature.ingredients.IngredientEditorRoute
 import com.culinary.feature.ingredients.IngredientsRoute
 import com.culinary.feature.ingredients.IngredientsRoutes
+import com.culinary.feature.recipes.RecipeDetailRoute
+import com.culinary.feature.recipes.RecipeEditorRoute
+import com.culinary.feature.recipes.RecipesRoute
+import com.culinary.feature.recipes.RecipesRoutes
 import com.culinary.feature.sauces.SauceDetailRoute
 import com.culinary.feature.sauces.SauceEditorRoute
 import com.culinary.feature.sauces.SaucesRoute
@@ -157,7 +161,18 @@ private fun AppNavGraph(
             IngredientEditorRoute(onSaved = { navController.popBackStack() })
         }
         composable(CulinaryDestination.RECIPES.route) {
-            FeaturePlaceholder(titleRes = R.string.destination_recipes)
+            RecipesRoute(
+                onOpenRecipe = { id -> navController.navigate(RecipesRoutes.detail(id)) },
+                onAddRecipe = { navController.navigate(RecipesRoutes.edit(null)) },
+            )
+        }
+        composable(RecipesRoutes.DETAIL) {
+            RecipeDetailRoute(
+                onEdit = { id -> navController.navigate(RecipesRoutes.edit(id)) },
+            )
+        }
+        composable(RecipesRoutes.EDIT) {
+            RecipeEditorRoute(onSaved = { navController.popBackStack() })
         }
         composable(CulinaryDestination.INVENTORY.route) {
             PlaceholderScreen(
