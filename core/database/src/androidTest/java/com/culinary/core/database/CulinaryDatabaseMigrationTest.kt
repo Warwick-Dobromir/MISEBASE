@@ -4,16 +4,18 @@ import androidx.room.testing.MigrationTestHelper
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import org.junit.After
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
 /**
- * 数据库 v1 的迁移基线测试（G2 阻塞项）。
+ * 设备上的 v1 → v2 迁移测试（MB-SC-001）。
  *
- * 当前只有 v1：建库后按导出的 `1.json` 校验 schema 与 identity hash；
- * 未来新增版本时在这里追加 `runMigrationsAndValidate(name, targetVersion, true, MIGRATION_X_Y)`。
+ * 与 JVM 的 `CulinaryMigrationV1ToV2Test` 互补：这里使用官方
+ * [MigrationTestHelper] 从 `schemas/1.json` 建 v1，执行 [CulinaryMigrations.MIGRATION_1_2]，
+ * 再用 `2.json` 校验。需要设备/模拟器；当前环境无设备时仅编译、不执行。
  */
 @RunWith(AndroidJUnit4::class)
 class CulinaryDatabaseMigrationTest {
@@ -43,26 +45,153 @@ class CulinaryDatabaseMigrationTest {
     }
 
     @Test
-    fun enablesForeignKeysForTheValidatedDatabase() {
+    fun migratesEmptyV1ToV2AndValidatesSchema() {
         helper.createDatabase(DATABASE_NAME, 1).close()
 
-        val validated = helper.runMigrationsAndValidate(DATABASE_NAME, 1, true)
-        val cursor = validated.query("PRAGMA foreign_keys")
+        val migrated =
+            helper.runMigrationsAndValidate(
+                DATABASE_NAME,
+                2,
+                true,
+                CulinaryMigrations.MIGRATION_1_2,
+            )
+        migrated.use { db ->
+            val version =
+                db.query("PRAGMA user_version").use { cursor ->
+                    cursor.moveToFirst()
+                    cursor.getInt(0)
+                }
+            assertEquals(2, version)
 
-        cursor.use {
-            assertTrue(it.moveToFirst())
-            // MigrationTestHelper 打开的是普通 SQLite 连接；显式开启后再验证一次。
-            validated.execSQL("PRAGMA foreign_keys = ON")
-            val enabled = validated.query("PRAGMA foreign_keys")
-            enabled.use { check ->
-                assertTrue(check.moveToFirst())
-                assertTrue("foreign_keys must be reported as ON", check.getInt(0) == 1)
-            }
+            val servings = columnInfo(db, "recipe_version", "servings")
+            assertEquals("INTEGER", servings.type)
+            assertTrue(servings.notNull)
+            assertEquals("1", servings.defaultValue)
+
+            db
+                .query("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'calculation_record'")
+                .use { cursor -> assertTrue(cursor.moveToFirst()) }
+            assertIntegrity(db)
         }
-        validated.close()
     }
+
+    @Test
+    fun migratesRealV1DataAndKeepsDormantTablesUntouched() {
+        val v1 = helper.createDatabase(DATABASE_NAME, 1)
+        seedV1(v1)
+        val dormantBefore = dormantTableSql(v1)
+        v1.close()
+
+        val migrated =
+            helper.runMigrationsAndValidate(
+                DATABASE_NAME,
+                2,
+                true,
+                CulinaryMigrations.MIGRATION_1_2,
+            )
+        migrated.use { db ->
+            db.query("SELECT servings FROM recipe_version WHERE id = '$VERSION_ID'").use { cursor ->
+                assertTrue(cursor.moveToFirst())
+                assertEquals(1, cursor.getInt(0))
+            }
+            assertEquals(dormantBefore, dormantTableSql(db))
+            assertIntegrity(db)
+            assertTrue(
+                db
+                    .query("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'calculation_record_line'")
+                    .use { cursor -> cursor.moveToFirst() },
+            )
+        }
+    }
+
+    private fun seedV1(db: androidx.sqlite.db.SupportSQLiteDatabase) {
+        db.execSQL(
+            "INSERT INTO unit (id, code, name, symbol, dimension, base_factor, is_base, " +
+                "is_approximate, display_precision, is_active, sort_order, created_at) " +
+                "VALUES ('$UNIT_ID', 'tg', '测试克', 'tg', 'MASS', 1.0, 0, 0, 1, 1, 0, $NOW)",
+        )
+        db.execSQL(
+            "INSERT INTO recipe (id, name, normalized_name, category, status, " +
+                "created_at, updated_at, revision) VALUES " +
+                "('$RECIPE_ID', '迁移菜谱', '迁移菜谱', 'DISH', 'ACTIVE', $NOW, $NOW, 1)",
+        )
+        db.execSQL(
+            "INSERT INTO recipe_version (id, recipe_id, version_no, status, yield_qty, " +
+                "yield_unit_id, is_current, created_at) VALUES " +
+                "('$VERSION_ID', '$RECIPE_ID', 1, 'PUBLISHED', 1000.0, '$UNIT_ID', 1, $NOW)",
+        )
+        // 模拟 v1 onOpen 创建的部分索引；迁移必须先移除，onOpen 再重建。
+        db.execSQL(
+            "CREATE UNIQUE INDEX ux_recipe_current ON recipe_version(recipe_id) WHERE is_current = 1",
+        )
+    }
+
+    private fun dormantTableSql(db: androidx.sqlite.db.SupportSQLiteDatabase): Map<String, String> {
+        val placeholders = DORMANT_TABLES.joinToString(separator = ",") { "'$it'" }
+        val result = linkedMapOf<String, String>()
+        db
+            .query(
+                "SELECT name, sql FROM sqlite_master WHERE type = 'table' AND name IN ($placeholders)",
+            ).use { cursor ->
+                while (cursor.moveToNext()) {
+                    result[cursor.getString(0)] = cursor.getString(1)
+                }
+            }
+        return result
+    }
+
+    private fun assertIntegrity(db: androidx.sqlite.db.SupportSQLiteDatabase) {
+        db.query("PRAGMA foreign_key_check").use { cursor -> assertEquals(0, cursor.count) }
+        db.query("PRAGMA quick_check").use { cursor ->
+            assertTrue(cursor.moveToFirst())
+            assertEquals("ok", cursor.getString(0))
+        }
+    }
+
+    private fun columnInfo(
+        db: androidx.sqlite.db.SupportSQLiteDatabase,
+        table: String,
+        column: String,
+    ): ColumnInfo =
+        db.query("PRAGMA table_info($table)").use { cursor ->
+            while (cursor.moveToNext()) {
+                if (cursor.getString(1) == column) {
+                    return@use ColumnInfo(
+                        type = cursor.getString(2),
+                        notNull = cursor.getInt(3) == 1,
+                        defaultValue = cursor.getString(4),
+                    )
+                }
+            }
+            error("column $table.$column not found")
+        }
+
+    private data class ColumnInfo(
+        val type: String,
+        val notNull: Boolean,
+        val defaultValue: String?,
+    )
 
     private companion object {
         const val DATABASE_NAME = "migration-test.db"
+        const val NOW = 1_760_000_000_000L
+        const val UNIT_ID = "unit-test-g"
+        const val RECIPE_ID = "recipe-migration"
+        const val VERSION_ID = "recipe-migration-v1"
+
+        val DORMANT_TABLES =
+            listOf(
+                "supplier",
+                "production_plan",
+                "production_plan_item",
+                "production_plan_snapshot",
+                "material_requirement",
+                "material_requirement_source",
+                "procurement_requirement",
+                "purchase_order",
+                "purchase_order_item",
+                "goods_receipt",
+                "goods_receipt_item",
+            )
     }
 }

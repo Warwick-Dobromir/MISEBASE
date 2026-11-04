@@ -3,39 +3,56 @@ package com.culinary.core.database
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 import java.io.File
+import java.security.MessageDigest
 
 /**
- * 校验 Room 导出的 schema JSON 与 A06 的 31 表一致。
+ * 校验 Room 导出的 schema JSON。
  *
- * 这是"迁移框架可用"的前置条件：没有 v1 的导出 schema，就无法写
- * `MigrationTestHelper` 的 v1→v2 迁移测试。真正的迁移测试在阶段 9 的
- * instrumented 测试中运行（需要 androidTest assets 与设备）。
+ * v1（31 表）是历史基线，文件字节不得变化；v2（33 表）在 MB-SC-001 中新增。
+ * 迁移测试依赖 `2.json`，因此这里同时锁定版本号与表数。
  */
 class SchemaExportTest {
-    private val schemaFile =
+    private val schemaDirectory =
         File(
-            "schemas/com.culinary.core.database.CulinaryDatabase/1.json",
+            "schemas/com.culinary.core.database.CulinaryDatabase",
         )
 
     @Test
-    fun `exports schema version 1 with thirty one tables`() {
-        assertThat(schemaFile.exists()).isTrue()
+    fun `keeps the v1 schema byte for byte`() {
+        val v1 = File(schemaDirectory, "1.json")
 
-        val text = schemaFile.readText()
-        val tableCount = Regex("\"tableName\"").findAll(text).count()
-
-        assertThat(tableCount).isEqualTo(31)
+        assertThat(v1.exists()).isTrue()
+        assertThat(sha256(v1)).isEqualTo(V1_SHA256)
+        assertThat(v1.readText()).contains("\"version\": 1")
+        assertThat(tableCount(v1)).isEqualTo(31)
     }
 
     @Test
-    fun `records the database version`() {
-        val text = schemaFile.readText()
+    fun `exports schema version 2 with thirty three tables`() {
+        val v2 = File(schemaDirectory, "2.json")
 
-        assertThat(text).contains("\"version\": 1")
+        assertThat(v2.exists()).isTrue()
+        assertThat(v2.readText()).contains("\"version\": 2")
+        assertThat(tableCount(v2)).isEqualTo(33)
     }
 
     @Test
-    fun `migration registry starts empty and non destructive`() {
-        assertThat(CulinaryMigrations.ALL).isEmpty()
+    fun `registers exactly one forward migration from v1 to v2`() {
+        assertThat(CulinaryMigrations.ALL).hasLength(1)
+        assertThat(CulinaryMigrations.MIGRATION_1_2.startVersion).isEqualTo(1)
+        assertThat(CulinaryMigrations.MIGRATION_1_2.endVersion).isEqualTo(2)
+    }
+
+    private fun tableCount(file: File): Int = Regex("\"tableName\"").findAll(file.readText()).count()
+
+    private fun sha256(file: File): String =
+        MessageDigest
+            .getInstance("SHA-256")
+            .digest(file.readBytes())
+            .joinToString(separator = "") { byte -> "%02x".format(byte) }
+
+    private companion object {
+        const val V1_SHA256: String =
+            "a305afd334c8069c8342ed0664944d8817f24bc1c06f251e1df4da4bfd070b7b"
     }
 }
