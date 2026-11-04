@@ -1,0 +1,65 @@
+# MB-S3-06 导航结构说明（N1）
+
+**文档编号**：MB-S3-06
+**版本**：`1.0.0`
+**状态**：`Review`
+**日期**：2026-11-04
+**依据**：MB-D-009 N1
+
+---
+
+## 1. 信息架构
+
+```text
+顶栏：[返回] 页面标题                         [设置]
+内容：NavHost
+底栏：[酱汁] [食材] [菜谱] [库存] [扫码]
+```
+
+- 五个底部入口顺序固定，不允许增删/重排；
+- 设置不占底部栏；
+- 三大知识库保持独立一级入口，不合并为统一档案页；
+- 扫码保留底部一级入口。
+
+## 2. 路由
+
+| 层级 | 路由 | 说明 |
+|---|---|---|
+| 一级 | `sauces` | 启动页 |
+| 一级 | `ingredients` | |
+| 一级 | `recipes` | |
+| 一级 | `inventory` | 占位 |
+| 一级 | `scan` | 占位 |
+| 顶栏 | `settings` | 占位 |
+| 详情 | `sauces/{sauceId}` | |
+| 编辑 | `sauces/{sauceId}/edit` | `new` 为新建 |
+| 详情 | `ingredients/{ingredientId}` | |
+| 编辑 | `ingredients/{ingredientId}/edit` | |
+| 详情 | `recipes/{recipeId}` | |
+| 编辑 | `recipes/{recipeId}/edit` | |
+
+路由字符串是稳定契约；本阶段未新增 deep link。
+
+## 3. 行为
+
+- 切换底部入口：`popUpTo(start)` + `saveState` + `launchSingleTop` + `restoreState`，保留栈状态；
+- 详情/编辑：底部栏隐藏，顶栏显示返回；
+- 返回键：先关闭弹层（Compose Dialog 自身处理）→ 再返回上一页 → 最后退出；
+- 库存、扫码、设置页只显示占位说明，不提供业务操作。
+
+## 4. 启动页与首页
+
+- 启动页为 N1 第一个入口「酱汁」；
+- UI-07（是否保留独立首页）仍待确认，本阶段未新增独立首页；
+- 如后续确认首页，只能在不改变 N1 五入口 IA 的前提下增加，不在本阶段范围内。
+
+## 5. 测试
+
+`NavigationShellTest`（4 例）：
+
+1. 底部栏显示五个一级入口；
+2. 顶栏设置按钮（contentDescription「设置」）；
+3. 非一级页面显示返回；
+4. 库存占位说明 Stage 4 边界。
+
+`CulinaryDestinationTest`（5 例）：路由唯一、顺序固定、启动页、设置不在底部、标签/图标存在。

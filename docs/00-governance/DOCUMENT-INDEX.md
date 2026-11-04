@@ -1,7 +1,7 @@
 # CULINARY 文档索引
 
 **文档编号**：GOV-INDEX
-**版本**：`0.21.1`
+**版本**：`0.22.0`
 **状态**：`Review`
 **日期**：2026-11-04
 **维护人**：首席架构师 / 技术负责人
@@ -111,6 +111,20 @@
 | [MB-SC-07 休眠表证明](../08-schema-change/MB-SC-07-DORMANT-TABLES-PROOF.md) | 11 张表结构前后一致、索引重建、0 处新业务引用与旧脚本误报 |
 | [MB-SC-CLOSE-001 关闭记录](../08-schema-change/MB-SC-CLOSE-001-SCHEMA-CHANGE-CLOSURE.md) | Schema 变更有条件通过、关闭 HEAD/标签、保留项与不进入 Stage 3 声明 |
 
+### 2.4 MISEBASE Stage 3 文档（2026-11-04，状态 Review）
+
+| 文档 | 用途 |
+|---|---|
+| [MB-S3-01 执行报告](../09-stage3/MB-S3-01-EXECUTION-REPORT.md) | 前置检查、设计系统、导航、三库、SAUCE 映射、事务、测试、Git、风险；状态 `Review` |
+| [MB-S3-02 档案库页面说明](../09-stage3/MB-S3-02-ARCHIVE-PAGES.md) | 酱汁/食材/菜谱页面、路由、状态、版本与已知限制 |
+| [MB-S3-03 测试矩阵](../09-stage3/MB-S3-03-TEST-MATRIX.md) | 344 例 / 0 失败；新增套件与需求覆盖映射 |
+| [MB-S3-04 决策映射](../09-stage3/MB-S3-04-DECISION-MAPPING.md) | MB-D-008/009/013/015 落地；6 项 PROPOSED 边界 |
+| [MB-S3-05 设计系统](../09-stage3/MB-S3-05-DESIGN-SYSTEM.md) | 色彩、字阶、间距、圆角、组件、图标与测试 |
+| [MB-S3-06 导航结构](../09-stage3/MB-S3-06-NAVIGATION.md) | N1 五入口、顶栏设置、路由、占位与测试 |
+| [MB-S3-07 事务边界](../09-stage3/MB-S3-07-REPOSITORY-TRANSACTION-BOUNDARY.md) | 写用例清单、Repository 片段、失败语义与测试 |
+| [MB-S3-08 SAUCE 映射](../09-stage3/MB-S3-08-SAUCE-MAPPING.md) | 从 `CUL-REP-004` 到固定酱汁版本；未改表结构 |
+| [MB-S3-09 检查点回执](../09-stage3/MB-S3-09-CHECKPOINT-RECEIPT.md) | Stage 3 检查点标签对象哈希与解析提交 |
+
 ## 3. 图表
 
 | 文件 | 内容 |
@@ -157,6 +171,7 @@
 | 0.13.0 | 2026-11-04 | 补 R17（G2 阶段 7 食材纵向切片） | 工程组 |
 | 0.14.0 | 2026-11-04 | 补 R18（G2 阶段 8 算法验证） | 工程组 |
 | 0.15.0 | 2026-11-04 | 补 R19（G2 阶段 9 质量门禁） | 工程组 |
+| 0.22.0 | 2026-11-04 | 补 MB-S3-01～09（Stage 3 三大档案库，状态 Review） | 接管工程组 |
 | 0.16.0 | 2026-11-04 | 新增 A-G2-001 G2 收档文件 | 工程组 |
 | 0.17.0 | 2026-11-04 | Stage 1：新增 8 份 Stage 1 文档；记录 P01 Superseded、A03A 13 模块目标、A-G2-001 Errata | 接管工程组 |
 | 0.17.1 | 2026-11-04 | Stage 1 审查回执：新增 MB-S1-09；补证据边界 | 接管工程组 |
