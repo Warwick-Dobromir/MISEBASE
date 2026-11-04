@@ -4,10 +4,10 @@
 
 | 项目 | 内容 |
 |---|---|
-| 品牌/项目名 | MISEBASE（包名暂留 `com.culinary`，发布前按 D-017/MB-D-001 决定） |
+| 品牌/项目名 | MISEBASE（包名锁定 `com.culinary`；v1.0.0 已签名发布） |
 | 架构基线 | `0.4.1`（G1 已签收）；G2 已收档于 `framework-0.1.0` / `2b523de` |
-| 当前阶段 | **Stage 5 Review（2026-11-05，待负责人审查）**；Stage 4 CLOSED（2026-11-05，有条件通过）；MB-D-007 备份一致性 CLOSED（2026-11-04）；**MB-HOME-002 导航重构已完成（2026-11-05，Review）** |
-| 工程状态 | **14 模块（Stage 5 起，MB-D-004）**；Room schema **v2 / 33 表**（11 表 `DORMANT`）；三大档案库 + Inventory + 扫码可用；N3 底部五项（首页/知识库/扫码凸起/库存/设置）与知识库聚合页已接入；**857 次执行 / 540 唯一 JVM 用例 / 0 失败**（MB-HOME-002 后；Stage 5 基线 817 / 514 唯一 JVM 用例） |
+| 当前阶段 | **Stage 6 Review（2026-11-05）：v1.0.0 Release APK 已签名产出、真机升级与冒烟验证通过**；Stage 0–5 与首页 N3 导航已关闭；MB-HOME-002 导航重构已完成 |
+| 工程状态 | **14 模块（Stage 5 起，MB-D-004）**；Room schema **v2 / 33 表**（11 表 `DORMANT`）；三大档案库 + Inventory + 扫码可用；N3 底部五项（首页/知识库/扫码凸起/库存/设置）与知识库聚合页已接入；**857 次执行 / 540 唯一 JVM 用例 / 0 失败**（Stage 6 发布门禁复跑；Stage 5 基线 817 / 514 唯一 JVM 用例） |
 | 数据库 | **已创建**：schema v2（33 表），导出 `1.json`、`2.json`；`1→2` 迁移已落地；本次备份一致性修复未改 Schema/Entity/DAO |
 | 构建基线 | AGP 8.13.0 / Kotlin 2.2.20 / Gradle 8.14.3 / JDK 21 / minSdk 26 / compile & target 36 |
 | 依赖注入 | Hilt 2.57.2 + KSP（D-012 `ACCEPTED`，禁止 2.59+） |
@@ -117,7 +117,8 @@ feature/
 - MB-D-017 计算记录快照（确认后不可变）；
 - MB-D-018 纯文档修正授权。
 
-仍为 `PROPOSED`（不得当作已批准，3 项）：MB-D-006 测试口径、MB-D-010 CI、MB-D-012 签名。
+已全部 `ACCEPTED`（2026-11-05，Stage 6 签收）：MB-D-006 测试口径（JVM + 真机、结果清单）、
+MB-D-010 CI（不采用远端 CI，本地构建与验收）、MB-D-012 发布签名（独立 keystore + 仓库外双备份）。
 
 > 2026-11-05 补记：MB-D-004（新建 `feature:scan`，Stage 5 起 14 模块）与 MB-D-011（真机验证要求）
 > 已由负责人签收为 `ACCEPTED`。本次签收**不创建 `feature:scan`、不改模块集、不构成 Stage 5
@@ -131,6 +132,17 @@ feature/
 
 ## 当前状态与未决
 
+- **Stage 6 发布已完成（2026-11-05，Review）**：`v1.0.0`（`versionCode=1`）Release APK 已用独立
+  `release.keystore` 签名并通过 `apksigner` 校验（v2，证书 `5C:A4:19:59:…:AF:61`）；
+  新增自适应桌面图标（`mipmap-anydpi-v26` + 5 密度 PNG 兜底）并真机验证；
+  真机 `adb install -r` 覆盖升级后 2 食材 / 2 商品 / 3 批次 / 3 流水完整保留（批次 UUID 逐条一致）；
+  全量门禁 `test assembleRelease ktlintCheck detekt` 通过（857 执行 / 540 唯一 / 0 失败）。
+  详见 [执行报告](docs/14-stage6/MB-S6-01-EXECUTION-REPORT.md)、
+  [图标说明](docs/14-stage6/MB-S6-02-APP-ICON.md)、
+  [签名与 Keystore](docs/14-stage6/MB-S6-03-RELEASE-SIGNING.md)、
+  [升级数据安全](docs/14-stage6/MB-S6-04-UPGRADE-DATA-SAFETY.md) 与
+  [发布构建指南](docs/14-stage6/RELEASE-BUILD-GUIDE.md)。
+  **未新增业务功能、未改 Schema/Entity/DAO。**
 - **MB-HOME-002 导航重构已完成（2026-11-05，Review）**：N3 底部五项为首页/知识库/扫码（中央凸起）/库存/设置；设置从顶栏移到底栏；知识库聚合酱汁/食材/菜谱三个 Tab，底层三个 feature 模块与详情/编辑路由均未合并；香槟金已正式批准（MB-D-008 Rev.1）。冷启动仍进入首页，真实数据与隐藏模块策略不变。详见
   [MB-HOME-002 执行报告](docs/13-home/MB-HOME-002-EXECUTION-REPORT.md)、[决策记录](docs/13-home/MB-HOME-002-DECISIONS.md) 与 [真机截图](docs/13-home/MB-HOME-002-device-home.png)。
   **未新增模块、未改 Schema；测试通过。**
@@ -140,22 +152,22 @@ feature/
 - **Stage 0/1/2/3/4 均已关闭**；Schema 变更任务已关闭（v2 / 33 表）；三大档案库与 Inventory 可用。
 - **Stage 4 状态为 CLOSED（2026-11-05，有条件通过）**：库存总览/详情/入库/出库/调整/流水、需求汇总与缺口、采购清单 CSV、计算记录回放、酱汁图展开、编辑器组成行只读保护已完成；详见
   [Stage 4 关闭记录](docs/11-stage4/MB-S4-CLOSE-RECORD.md)。
-- **Stage 5 状态为 Review（2026-11-05，待负责人审查）**：新建第 14 个模块 `feature:scan`，
+- **Stage 5 状态为 CLOSED（2026-11-05）**：新建第 14 个模块 `feature:scan`，
   扫码页面（CameraX 预览、扫描框、手电筒、返回、权限说明与手工输入兜底）、ML Kit Bundled 条码/二维码识别、
   相同码去抖与一次性消费、识别结果接口（`feature:products` / `feature:inventory`）、导入确认与幂等已落地；
   扫码入口已从占位切换为真实页面。**MB-S5-002 已修正"同一商品只能导入一次"**：幂等键改为事件级
   `scan-import:<条码>:<operation_id>`，同一次确认重试复用同一 id、不同次确认生成新 id。
   真机验证记录见 [MB-S5-02](docs/12-stage5/MB-S5-02-DEVICE-VERIFICATION.md)，
-  修正记录见 [MB-S5-08](docs/12-stage5/MB-S5-08-IDEMPOTENCY-FIX.md)；
-  **未关闭 Stage 5、未进入 Stage 6**。
+  修正记录见 [MB-S5-08](docs/12-stage5/MB-S5-08-IDEMPOTENCY-FIX.md)，
+  关闭记录见 [MB-S5-CLOSE](docs/12-stage5/MB-S5-CLOSE-RECORD.md)。
 - **MB-D-007 已 CLOSED（2026-11-04，审查通过）**：六项技术事项、Schema 版本阻断修复、
   `612 / 376 / 0` 基线测试与 v2 检查点均已落库；详见
   [MB-D-007 关闭记录](docs/10-backup/MB-D-007-CLOSE-RECORD.md)。
 - **模块集为 14**：`feature:scan` 已创建并接入 N1 第五入口；依赖检查实测 14 节点 / 39 条声明边，无环。
-- **仍为 PROPOSED 的阻塞项**：MB-D-006 测试口径、MB-D-010 CI、MB-D-012 签名。
+- **发布决策已全部签收（2026-11-05）**：MB-D-006 测试口径、MB-D-010 本地构建、MB-D-012 发布签名；MISEBASE 决策 18/18 `ACCEPTED`。
 - 保留项：附件恢复、SAF 目标、生产自动备份触发点未接线；真机 kill/断电未验证；
   目录 fsync 为 best-effort；v1 测试夹具为反向构造；二维码"相机取景"未人工复测（解码能力已在真机验证）。
-- **G5 发布门禁**：Release keystore 未创建，不影响当前阶段。
+- **G5 发布门禁**：已满足——Release keystore 位于仓库外 `D:\MISEBASE_RELEASE\`，Release APK 已签名（见 [MB-S6-03](docs/14-stage6/MB-S6-03-RELEASE-SIGNING.md)）。
 
 ## 文档
 
@@ -196,6 +208,12 @@ feature/
 - [MB-HOME-002 导航重构执行报告](docs/13-home/MB-HOME-002-EXECUTION-REPORT.md)
 - [MB-HOME-002 决策记录（香槟金 / N3）](docs/13-home/MB-HOME-002-DECISIONS.md)
 - [MB-HOME-002 首页真机截图](docs/13-home/MB-HOME-002-device-home.png)
+- [Stage 6 发布与交付执行报告](docs/14-stage6/MB-S6-01-EXECUTION-REPORT.md)
+- [Stage 6 桌面图标设计](docs/14-stage6/MB-S6-02-APP-ICON.md)
+- [Stage 6 发布签名与 Keystore](docs/14-stage6/MB-S6-03-RELEASE-SIGNING.md)
+- [Stage 6 升级与数据安全验证](docs/14-stage6/MB-S6-04-UPGRADE-DATA-SAFETY.md)
+- [Stage 6 全量测试结果清单](docs/14-stage6/MB-S6-06-TEST-RESULTS.md)
+- [发布构建指南（换机可复现）](docs/14-stage6/RELEASE-BUILD-GUIDE.md)
 - [G2 收档文件](docs/00-governance/A-G2-001-G2-ARCHIVE.md)
 - [决策登记册](docs/00-governance/DECISION-REGISTER.md)
 - [MISEBASE 决策登记册](docs/05-handover/MB-S0-07-DECISION-REGISTER.md)

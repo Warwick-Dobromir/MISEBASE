@@ -1,0 +1,104 @@
+{
+  "user_version": 2,
+  "ingredient": [
+    {
+      "id": "5d12a93a-c631-45ef-9de0-429ec0c5add4",
+      "name": "stage6pepper",
+      "default_unit_id": "00000000-0000-4000-8000-000000000002",
+      "status": "ACTIVE"
+    },
+    {
+      "id": "05bf0cee-1961-4ffb-82bc-726b54a938d0",
+      "name": "stage6salt",
+      "default_unit_id": "00000000-0000-4000-8000-000000000002",
+      "status": "ACTIVE"
+    }
+  ],
+  "product": [
+    {
+      "id": "4d082993-b549-4cbe-a3ee-9b12118bf7f2",
+      "name": "stage6pepper",
+      "ingredient_id": "5d12a93a-c631-45ef-9de0-429ec0c5add4",
+      "stock_unit_id": "00000000-0000-4000-8000-000000000002",
+      "default_location_id": null,
+      "status": "ACTIVE"
+    },
+    {
+      "id": "293886a2-0324-44e0-9902-7cad23354d23",
+      "name": "stage6salt",
+      "ingredient_id": "05bf0cee-1961-4ffb-82bc-726b54a938d0",
+      "stock_unit_id": "00000000-0000-4000-8000-000000000002",
+      "default_location_id": null,
+      "status": "ACTIVE"
+    }
+  ],
+  "inventory_batch": [
+    {
+      "id": "8a57bebf-8153-4986-89b2-ab9da972fd70",
+      "product_id": "293886a2-0324-44e0-9902-7cad23354d23",
+      "quantity_on_hand": 250.0,
+      "quantity_reserved": 0.0,
+      "stock_unit_id": "00000000-0000-4000-8000-000000000002",
+      "source_type": null,
+      "status": "ACTIVE"
+    },
+    {
+      "id": "26a967ab-f71a-4f9a-ad8d-eb810969dcf1",
+      "product_id": "293886a2-0324-44e0-9902-7cad23354d23",
+      "quantity_on_hand": 80.0,
+      "quantity_reserved": 0.0,
+      "stock_unit_id": "00000000-0000-4000-8000-000000000002",
+      "source_type": null,
+      "status": "ACTIVE"
+    },
+    {
+      "id": "77e7f582-12af-4b4a-909c-c652257132ce",
+      "product_id": "4d082993-b549-4cbe-a3ee-9b12118bf7f2",
+      "quantity_on_hand": 5.0,
+      "quantity_reserved": 0.0,
+      "stock_unit_id": "00000000-0000-4000-8000-000000000002",
+      "source_type": null,
+      "status": "ACTIVE"
+    }
+  ],
+  "inventory_ledger": [
+    {
+      "id": "5e853720-83f9-4d6e-ad17-9b4a0b8875d5",
+      "batch_id": "8a57bebf-8153-4986-89b2-ab9da972fd70",
+      "product_id": "293886a2-0324-44e0-9902-7cad23354d23",
+      "type": "PURCHASE_RECEIPT",
+      "on_hand_delta": 250.0,
+      "on_hand_after": 250.0,
+      "reference_type": "stock_receipt",
+      "idempotency_key": "scan-import:6901234567892:074acd87-1523-4a79-a1e4-e74aa34cfac3"
+    },
+    {
+      "id": "1d413c5b-8e9a-47e2-9a84-e68104d4a97c",
+      "batch_id": "26a967ab-f71a-4f9a-ad8d-eb810969dcf1",
+      "product_id": "293886a2-0324-44e0-9902-7cad23354d23",
+      "type": "PURCHASE_RECEIPT",
+      "on_hand_delta": 80.0,
+      "on_hand_after": 80.0,
+      "reference_type": "stock_receipt",
+      "idempotency_key": "scan-import:6909876543210:e77f8a75-8084-41aa-82d9-1345c20ed1b9"
+    },
+    {
+      "id": "7a4d6dc9-da03-45ea-bc72-f866fc4b9fa5",
+      "batch_id": "77e7f582-12af-4b4a-909c-c652257132ce",
+      "product_id": "4d082993-b549-4cbe-a3ee-9b12118bf7f2",
+      "type": "PURCHASE_RECEIPT",
+      "on_hand_delta": 5.0,
+      "on_hand_after": 5.0,
+      "reference_type": "stock_receipt",
+      "idempotency_key": "scan-import:8809184833631:d45997e1-032a-4ac2-83e7-78e3b9a8ea8e"
+    }
+  ],
+  "counts": {
+    "ingredient": 2,
+    "product": 2,
+    "inventory_batch": 3,
+    "inventory_ledger": 3,
+    "barcode": 0
+  },
+  "data_fingerprint_sha256": "f79e95d4d238f69d264a9fcd9996083aabc157a5a85753ccdd66c8e5a3b6d289"
+}
