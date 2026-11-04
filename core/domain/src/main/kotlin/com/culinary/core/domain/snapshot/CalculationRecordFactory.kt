@@ -10,7 +10,7 @@ import java.time.Instant
 
 /** 计算引擎版本常量；变更算法时必须递增，旧记录继续以旧版本回放。 */
 object CalculationEngine {
-    const val VERSION: String = "stage2-1"
+    const val VERSION: String = "stage4-1"
 }
 
 /**

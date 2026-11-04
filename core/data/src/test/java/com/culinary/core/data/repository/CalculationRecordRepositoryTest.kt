@@ -82,7 +82,7 @@ class CalculationRecordRepositoryTest {
             assertThat(record.id).isEqualTo(CalculationRecordId(CALC_ID))
             assertThat(record.recipeVersionId).isEqualTo(RecipeVersionId(VERSION_ID))
             assertThat(record.servings).isEqualTo(Servings(2.5))
-            assertThat(record.engineVersion).isEqualTo("stage2-1")
+            assertThat(record.engineVersion).isEqualTo("stage4-1")
             assertThat(record.payloadHash).isEqualTo(confirmed.payloadHash)
             assertThat(record.status).isEqualTo(CalculationRecordStatus.CONFIRMED)
             assertThat(record.lines).hasSize(2)
