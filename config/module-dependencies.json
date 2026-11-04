@@ -1,0 +1,79 @@
+{
+  "schemaVersion": 1,
+  "stage": "MB-S1-001",
+  "decision": "MB-D-003",
+  "expectedModuleCount": 13,
+  "forbiddenModuleIds": [
+    "core:model",
+    "feature:planning",
+    "feature:procurement",
+    "feature:scan"
+  ],
+  "modules": [
+    { "id": "app", "dir": "app", "package": "com.culinary", "type": "app" },
+    { "id": "core:common", "dir": "core/common", "package": "com.culinary.core.common", "type": "core" },
+    { "id": "core:domain", "dir": "core/domain", "package": "com.culinary.core.domain", "type": "core" },
+    { "id": "core:database", "dir": "core/database", "package": "com.culinary.core.database", "type": "core" },
+    { "id": "core:data", "dir": "core/data", "package": "com.culinary.core.data", "type": "core" },
+    { "id": "core:designsystem", "dir": "core/designsystem", "package": "com.culinary.core.designsystem", "type": "core" },
+    { "id": "core:platform", "dir": "core/platform", "package": "com.culinary.core.platform", "type": "core" },
+    { "id": "feature:ingredients", "dir": "feature/ingredients", "package": "com.culinary.feature.ingredients", "type": "feature" },
+    { "id": "feature:sauces", "dir": "feature/sauces", "package": "com.culinary.feature.sauces", "type": "feature" },
+    { "id": "feature:recipes", "dir": "feature/recipes", "package": "com.culinary.feature.recipes", "type": "feature" },
+    { "id": "feature:products", "dir": "feature/products", "package": "com.culinary.feature.products", "type": "feature" },
+    { "id": "feature:inventory", "dir": "feature/inventory", "package": "com.culinary.feature.inventory", "type": "feature" },
+    { "id": "feature:settings", "dir": "feature/settings", "package": "com.culinary.feature.settings", "type": "feature" }
+  ],
+  "allowedDependencies": {
+    "app": [
+      "core:data",
+      "core:platform",
+      "core:designsystem",
+      "core:common",
+      "feature:ingredients",
+      "feature:sauces",
+      "feature:recipes",
+      "feature:products",
+      "feature:inventory",
+      "feature:settings"
+    ],
+    "core:common": [],
+    "core:domain": ["core:common"],
+    "core:database": ["core:common"],
+    "core:data": ["core:domain", "core:database", "core:common"],
+    "core:designsystem": ["core:common"],
+    "core:platform": ["core:domain", "core:common"],
+    "feature:ingredients": ["core:domain", "core:designsystem", "core:common"],
+    "feature:sauces": ["core:domain", "core:designsystem", "core:common"],
+    "feature:recipes": ["core:domain", "core:designsystem", "core:common"],
+    "feature:products": ["core:domain", "core:designsystem", "core:common"],
+    "feature:inventory": ["core:domain", "core:designsystem", "core:common"],
+    "feature:settings": ["core:domain", "core:designsystem", "core:common"]
+  },
+  "rules": {
+    "featureToFeature": true,
+    "featureToCoreImpl": ["core:data", "core:database"],
+    "coreDatabaseTo": ["core:domain", "core:data"],
+    "coreDomainImportPrefixes": [
+      "android.",
+      "androidx.",
+      "dagger.",
+      "com.culinary.core.data",
+      "com.culinary.core.database",
+      "com.culinary.core.platform"
+    ],
+    "coreDataImportPrefixes": [
+      "android.net.Uri",
+      "android.content.Intent",
+      "androidx.activity.result"
+    ],
+    "featureComposeImportPrefixes": ["androidx.compose."],
+    "featureUiForbiddenImportPrefixes": [
+      "androidx.room.",
+      "android.database.sqlite.",
+      "com.culinary.core.database",
+      "com.culinary.core.data"
+    ],
+    "anyImportModule": "app"
+  }
+}

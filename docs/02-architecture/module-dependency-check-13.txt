@@ -1,0 +1,24 @@
+﻿# MISEBASE 13 模块依赖检查结果（生成物）
+
+生成时间：2026-11-04 19:23:37 +08:00
+
+MISEBASE 13-MODULE DEPENDENCY CHECK
+Decision: MB-D-003; stage: MB-S1-001
+Modules: 13 (expected 13)
+Declared dependency edges: 35
+Source import edges: 155
+Topological order (dependencies first):
+   1. core:common
+   2. core:database
+   3. core:designsystem
+   4. core:domain
+   5. core:data
+   6. core:platform
+   7. feature:ingredients
+   8. feature:inventory
+   9. feature:products
+  10. feature:recipes
+  11. feature:sauces
+  12. feature:settings
+  13. app
+Result: PASS (DAG, no violations)
