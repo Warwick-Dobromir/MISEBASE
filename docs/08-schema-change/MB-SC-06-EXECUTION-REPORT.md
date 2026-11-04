@@ -8,6 +8,7 @@
 **分支 / 基线**：`misebase/main`，起点 `a698c863d5fe81cf8dca1cfdeef4bedff16ffa08`
 **报告正文提交**：`6d0dbac759a62bc8bfef6a78aebf9f18feb00950`
 **关闭记录**：[MB-SC-CLOSE-001](MB-SC-CLOSE-001-SCHEMA-CHANGE-CLOSURE.md)
+**关闭提交**：`6a71f685b4d1d0b89964319751c6837e16a7adb8`
 **关闭标签**：`checkpoint/misebase-schema-change-closed-20261104`
 
 ---

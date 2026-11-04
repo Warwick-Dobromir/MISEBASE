@@ -49,6 +49,15 @@ Schema 变更任务 **有条件通过**：
 
 标签用于标记“Schema 变更审查关闭”这一文档提交坐标，不是发布标签，也不构成 Stage 3 启动授权。
 
+### 3.1 关闭提交
+
+| 项 | 值 |
+|---|---|
+| 关闭记录提交 | `6a71f685b4d1d0b89964319751c6837e16a7adb8` |
+| 提交信息 | `docs(schema): close schema change after review` |
+| 关闭审查基线 HEAD | `ddece88aa9b58003f57853bf3995f1209fb5dba8` |
+| 提交内容 | 关闭记录、MB-SC-06 状态与索引；无代码/Schema 变更 |
+
 ---
 
 ## 4. 标签完整性
