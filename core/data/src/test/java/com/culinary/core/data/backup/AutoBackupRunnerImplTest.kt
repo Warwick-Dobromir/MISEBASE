@@ -190,6 +190,28 @@ class AutoBackupRunnerImplTest {
         }
 
     @Test
+    fun `removes the renamed archive when cancelled before the record write`() =
+        runBlocking {
+            openWalDatabase(ingredients = 1)
+            val runner =
+                runner().apply {
+                    stageHook = { stage, _ ->
+                        if (stage == BackupStage.BEFORE_RECORD_WRITE) throw CancellationException("cancelled")
+                    }
+                }
+
+            val thrown =
+                runCatching {
+                    runner.run(AutoBackupRequest(backupId = "backup-cancel-after-rename"))
+                }
+
+            assertThat(thrown.exceptionOrNull()).isInstanceOf(CancellationException::class.java)
+            assertThat(database.backupRecordDao().count()).isEqualTo(0)
+            assertThat(backupFiles()).isEmpty()
+            assertThat(countIngredientsFromLiveDatabase()).isEqualTo(1)
+        }
+
+    @Test
     fun `deletes the archive when the backup record cannot be written`() =
         runBlocking {
             openWalDatabase(ingredients = 1)
