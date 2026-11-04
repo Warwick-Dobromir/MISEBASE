@@ -61,16 +61,19 @@ class SaveSauceDraftUseCase(
                     isOptional = line.isOptional,
                 )
             }
-        val version =
-            SauceVersion(
-                id = SauceVersionId(idGenerator.newId()),
-                sauceId = input.sauceId,
-                versionNo = repository.nextVersionNo(input.sauceId),
-                status = VersionStatus.DRAFT,
-                yield = Quantity(input.yieldAmount, input.yieldUnit),
-                components = components,
-            )
-        return transactionRunner.write { repository.saveDraft(version) }.flatMap { it }
+        return transactionRunner
+            .write {
+                val version =
+                    SauceVersion(
+                        id = SauceVersionId(idGenerator.newId()),
+                        sauceId = input.sauceId,
+                        versionNo = repository.nextVersionNo(input.sauceId),
+                        status = VersionStatus.DRAFT,
+                        yield = Quantity(input.yieldAmount, input.yieldUnit),
+                        components = components,
+                    )
+                repository.saveDraft(version)
+            }.flatMap { it }
     }
 
     private fun invalid(
