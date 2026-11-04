@@ -14,5 +14,8 @@ interface BackupScheduler {
     fun cancelPeriodicBackup()
 
     /** 入队一次立即备份，返回 WorkManager 的请求 ID。 */
-    fun enqueueImmediateBackup(): Outcome<String>
+    fun enqueueImmediateBackup(
+        backupId: String? = null,
+        targetDirectory: String? = null,
+    ): Outcome<String>
 }

@@ -2,6 +2,7 @@ package com.culinary.core.platform.work
 
 import android.content.Context
 import androidx.work.Constraints
+import androidx.work.Data
 import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.PeriodicWorkRequestBuilder
@@ -42,9 +43,18 @@ class WorkManagerBackupScheduler
             WorkManager.getInstance(context).cancelUniqueWork(PERIODIC_WORK_NAME)
         }
 
-        override fun enqueueImmediateBackup(): Outcome<String> =
+        override fun enqueueImmediateBackup(
+            backupId: String?,
+            targetDirectory: String?,
+        ): Outcome<String> =
             try {
-                val request = OneTimeWorkRequestBuilder<AutoBackupWorker>().build()
+                val input = Data.Builder()
+                if (backupId != null) input.putString(AutoBackupWorker.KEY_BACKUP_ID, backupId)
+                if (targetDirectory != null) input.putString(AutoBackupWorker.KEY_TARGET_DIRECTORY, targetDirectory)
+                val request =
+                    OneTimeWorkRequestBuilder<AutoBackupWorker>()
+                        .setInputData(input.build())
+                        .build()
                 WorkManager.getInstance(context).enqueue(request)
                 Outcome.success(request.id.toString())
             } catch (e: IllegalStateException) {

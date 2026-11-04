@@ -76,7 +76,7 @@ internal object AtomicFiles {
     private fun temporaryFor(target: File): File = File(target.parentFile, ".${target.name}.tmp")
 
     @Suppress("SwallowedException") // ATOMIC_MOVE 不被支持时改用普通移动，属于预期降级
-    private fun moveIntoPlace(
+    fun moveIntoPlace(
         temporary: File,
         target: File,
     ) {
