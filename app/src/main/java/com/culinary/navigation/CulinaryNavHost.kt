@@ -19,10 +19,12 @@ import androidx.compose.ui.res.stringResource
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.culinary.R
 import com.culinary.core.designsystem.icon.CulinaryIcons
 import com.culinary.feature.ingredients.IngredientDetailRoute
@@ -43,13 +45,17 @@ import com.culinary.feature.sauces.SauceDetailRoute
 import com.culinary.feature.sauces.SauceEditorRoute
 import com.culinary.feature.sauces.SaucesRoute
 import com.culinary.feature.sauces.SaucesRoutes
+import com.culinary.feature.scan.ScanConfirmRoute
+import com.culinary.feature.scan.ScanRoute
+import com.culinary.feature.scan.ScanRoutes
 import com.culinary.ui.PlaceholderScreen
 
 /**
  * 应用导航外壳（MB-D-009 方案 N1）。
  *
  * 结构：顶栏（页面标题 + 设置）+ 内容 + 底部五个一级入口。
- * 一级入口顺序固定；库存为 Stage 4 真实页面，扫码仍为占位（MB-D-004 PROPOSED）。
+ * 一级入口顺序固定；库存为 Stage 4 真实页面，扫码为 Stage 5 真实页面
+ * （MB-D-004 ACCEPTED：扫码 UI 归 `feature:scan`，识别结果经 core:domain 端口交给业务模块）。
  */
 @Composable
 fun CulinaryNavHost(
@@ -141,7 +147,8 @@ private fun AppNavGraph(
         ingredientGraph(navController)
         recipeGraph(navController)
         inventoryGraph(navController)
-        placeholderGraph()
+        scanGraph(navController)
+        settingsGraph()
     }
 }
 
@@ -223,18 +230,45 @@ private fun NavGraphBuilder.inventoryGraph(navController: NavHostController) {
     }
 }
 
-private fun NavGraphBuilder.placeholderGraph() {
+/**
+ * 扫码入口（N1 第五入口，MB-D-004）。
+ *
+ * 识别结果通过路由参数交给确认页；确认页再调用 `feature:scan` 的 ViewModel，
+ * 由 ViewModel 调用 `feature:products` / `feature:inventory` 的接口，app 不参与业务规则。
+ */
+private fun NavGraphBuilder.scanGraph(navController: NavHostController) {
     composable(CulinaryDestination.SCAN.route) {
-        PlaceholderScreen(
-            title = stringResource(R.string.destination_scan),
-            description = stringResource(R.string.placeholder_scan_body),
+        ScanRoute(
+            onCapture = { capture -> navController.navigate(ScanRoutes.confirm(capture)) },
+            onBack = { navController.backOrStart(CulinaryDestination.START.route) },
         )
     }
+    composable(
+        route = ScanRoutes.CONFIRM,
+        arguments =
+            listOf(
+                navArgument(ScanRoutes.ARG_CODE) { type = NavType.StringType },
+                navArgument(ScanRoutes.ARG_FORMAT) { type = NavType.StringType },
+                navArgument(ScanRoutes.ARG_SOURCE) { type = NavType.StringType },
+            ),
+    ) {
+        ScanConfirmRoute(onBackToScan = { navController.popBackStack() })
+    }
+}
+
+private fun NavGraphBuilder.settingsGraph() {
     composable(SETTINGS_ROUTE) {
         PlaceholderScreen(
             title = stringResource(R.string.destination_settings),
             description = stringResource(R.string.placeholder_settings_body),
         )
+    }
+}
+
+/** 一级入口没有可返回的页面时回到启动入口，避免"返回"变成无响应。 */
+private fun NavHostController.backOrStart(startRoute: String) {
+    if (!popBackStack()) {
+        navigate(startRoute) { launchSingleTop = true }
     }
 }
 
@@ -267,6 +301,8 @@ private fun titleFor(
         currentRoute.startsWith("ingredients") -> stringResource(R.string.destination_ingredients)
         currentRoute.startsWith("recipes") -> stringResource(R.string.destination_recipes)
         currentRoute.startsWith("inventory") -> stringResource(R.string.destination_inventory)
+        currentRoute == ScanRoutes.CONFIRM -> stringResource(R.string.scan_confirm_title)
+        currentRoute.startsWith(CulinaryDestination.SCAN.route) -> stringResource(R.string.destination_scan)
         currentRoute == SETTINGS_ROUTE -> stringResource(R.string.destination_settings)
         else -> stringResource(R.string.app_name)
     }

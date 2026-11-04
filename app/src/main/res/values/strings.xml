@@ -7,7 +7,6 @@
     <string name="placeholder_stage_note">本阶段不实现该业务</string>
     <string name="placeholder_feature_body">档案库正在接入中</string>
     <string name="placeholder_inventory_body">库存总览、流水与采购清单在 Stage 4 实现；当前只保留一级入口。</string>
-    <string name="placeholder_scan_body">扫码识别、商品匹配与入库在后续阶段实现；当前只保留一级入口。</string>
     <string name="placeholder_settings_body">备份、恢复、诊断与关于在后续阶段实现；当前只保留设置入口。</string>
     <string name="action_back">返回</string>
     <string name="action_retry">重试</string>
@@ -26,4 +25,5 @@
     <string name="destination_inventory">库存</string>
     <string name="destination_scan">扫码</string>
     <string name="destination_settings">设置</string>
+    <string name="scan_confirm_title">导入确认</string>
 </resources>

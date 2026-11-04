@@ -14,7 +14,7 @@ import com.culinary.R
 import com.culinary.core.designsystem.theme.CulinarySpacing
 
 /**
- * 占位页内容（库存 / 扫码 / 设置）。
+ * 占位页内容（设置；库存与扫码已分别在 Stage 4 / Stage 5 换成真实页面）。
  *
  * 明确说明该能力未在本阶段实现，不展示假数据、不伪造业务操作；
  * 顶栏与底部导航由 app 外壳统一提供。

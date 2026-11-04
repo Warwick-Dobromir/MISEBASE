@@ -85,4 +85,22 @@ class NavigationShellTest {
         compose.onNodeWithText("库存").assertIsDisplayed()
         compose.onNodeWithContentDescription("设置").assertIsDisplayed()
     }
+
+    @Test
+    fun `scan top level renders the real scan title`() {
+        compose.setContent {
+            CulinaryTheme {
+                AppTopBar(
+                    currentRoute = "scan",
+                    topLevel = CulinaryDestination.SCAN,
+                    showBack = false,
+                    onOpenSettings = {},
+                    onBack = {},
+                )
+            }
+        }
+
+        compose.onNodeWithText("扫码").assertIsDisplayed()
+        compose.onNodeWithContentDescription("设置").assertIsDisplayed()
+    }
 }
