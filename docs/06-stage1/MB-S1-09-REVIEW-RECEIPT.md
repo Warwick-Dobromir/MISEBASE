@@ -78,7 +78,45 @@ f8de1bc docs(stage0): record stage 0 closure commit and tags
 ### 4.1 `git diff --name-status f8de1bc..HEAD`
 
 ```text
-{{DIFF_F8}}
+M	README.md
+M	app/build.gradle.kts
+M	app/src/main/java/com/culinary/navigation/CulinaryDestination.kt
+M	app/src/main/java/com/culinary/ui/HomeScreen.kt
+M	app/src/main/res/values/strings.xml
+M	app/src/test/java/com/culinary/navigation/CulinaryDestinationTest.kt
+A	config/dormant-tables.json
+A	config/module-dependencies.json
+M	docs/00-governance/A-G2-001-G2-ARCHIVE.md
+M	docs/00-governance/DOCUMENT-INDEX.md
+M	docs/01-product/P01-PRODUCT-BASELINE.md
+M	docs/02-architecture/A03A-MODULE-DECOMPOSITION-REVIEW.md
+M	docs/02-architecture/A05-DATA-MODEL-ER.md
+M	docs/02-architecture/A06-DATA-DICTIONARY.md
+A	docs/02-architecture/module-dependency-check-13.txt
+M	docs/05-handover/MB-S0-07-DECISION-REGISTER.md
+A	docs/06-stage1/MB-S1-01-EXECUTION-REPORT.md
+A	docs/06-stage1/MB-S1-02-MODULE-ADJUSTMENT.md
+A	docs/06-stage1/MB-S1-03-DEPENDENCY-CHECK.md
+A	docs/06-stage1/MB-S1-04-DORMANT-TABLES.md
+A	docs/06-stage1/MB-S1-05-MIGRATION-READINESS.md
+A	docs/06-stage1/MB-S1-06-BACKUP-GAP-ANALYSIS.md
+A	docs/06-stage1/MB-S1-07-UI-ISOLATION.md
+A	docs/06-stage1/MB-S1-08-DOC-CORRECTIONS.md
+A	docs/06-stage1/MB-S1-09-REVIEW-RECEIPT.md
+A	docs/06-stage1/templates/MIGRATION-BACKUP-ROLLBACK-CHECKLIST.md
+A	docs/06-stage1/templates/MIGRATION-SPEC-TEMPLATE.md
+A	docs/06-stage1/templates/MigrationTestTemplate.kt.txt
+D	feature/planning/build.gradle.kts
+D	feature/planning/src/main/java/com/culinary/feature/planning/FeaturePlanningModule.kt
+D	feature/procurement/build.gradle.kts
+D	feature/procurement/src/main/java/com/culinary/feature/procurement/FeatureProcurementModule.kt
+M	feature/products/src/main/java/com/culinary/feature/products/FeatureProductsModule.kt
+A	scripts/check-doc-consistency.ps1
+A	scripts/check-dormant-tables.ps1
+M	scripts/check-module-deps.ps1
+A	scripts/check-stage1-scope.ps1
+A	scripts/test-module-deps.ps1
+M	settings.gradle.kts
 ```
 
 > 该输出在审查回执提交处实测。随后记录回执哈希的簿记提交只修改本文件与 MB-S1-01，
@@ -87,7 +125,7 @@ f8de1bc docs(stage0): record stage 0 closure commit and tags
 ### 4.2 `git status --porcelain`
 
 ```text
-{{STATUS_PORCELAIN}}
+（空输出）
 ```
 
 期望：**空输出**（工作树 clean）。若不为空，Stage 1 审查结论不成立。
@@ -106,11 +144,11 @@ git diff --name-status f8de1bc..HEAD -- docs/04-readiness -> 无
 
 | 项 | 值 |
 |---|---|
-| 审查回执提交 | `{{REVIEW_COMMIT}}` |
+| 审查回执提交 | `22851dc6a6d1d991fab46c9e69d4bfeb489f9867` |
 | 回执提交主题 | `docs(stage1): add review receipt and evidence addendum` |
 | 检查点标签 | `checkpoint/misebase-stage1-reviewed-20261104` |
-| 标签对象 | `{{REVIEW_TAG_OBJECT}}` |
-| 标签指向提交 | `{{REVIEW_TAG_COMMIT}}` |
+| 标签对象 | `2dff911d9bf7d4302beacf1107c74e35629d6955` |
+| 标签指向提交 | `22851dc6a6d1d991fab46c9e69d4bfeb489f9867` |
 | 工作树 | clean |
 
 > 检查点指向审查回执提交；随后仅有一个记录回执哈希的文档簿记提交。

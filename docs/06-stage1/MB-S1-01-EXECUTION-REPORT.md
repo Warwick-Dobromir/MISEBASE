@@ -247,7 +247,7 @@ $env:ANDROID_HOME = "$env:LOCALAPPDATA\Android\Sdk"
 | 标签 | 解析 |
 |---|---|
 | `checkpoint/misebase-stage1-20261104` | `93d0d92`（提交；标签对象 `4010536`） |
-| `checkpoint/misebase-stage1-reviewed-20261104` | `{{REVIEWED_TAG}}` |
+| `checkpoint/misebase-stage1-reviewed-20261104` | `22851dc`（提交；标签对象 `2dff911`） |
 | `framework-0.1.0` | `2b523de`（未移动） |
 
 ### 12.3 变更范围
