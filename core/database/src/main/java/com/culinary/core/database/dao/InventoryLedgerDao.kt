@@ -19,6 +19,12 @@ interface InventoryLedgerDao {
     @Query("SELECT * FROM inventory_ledger WHERE batch_id = :batchId ORDER BY occurred_at")
     suspend fun listByBatch(batchId: String): List<InventoryLedgerEntity>
 
+    @Query("SELECT * FROM inventory_ledger WHERE idempotency_key = :key")
+    suspend fun findByIdempotencyKey(key: String): InventoryLedgerEntity?
+
+    @Query("SELECT * FROM inventory_ledger ORDER BY occurred_at, id")
+    suspend fun listAll(): List<InventoryLedgerEntity>
+
     @Query("SELECT COUNT(*) FROM inventory_ledger")
     suspend fun count(): Int
 }

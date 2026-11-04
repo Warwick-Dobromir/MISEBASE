@@ -14,6 +14,9 @@ interface RecipeDao {
     @Query("SELECT * FROM recipe WHERE id = :id")
     suspend fun findById(id: String): RecipeEntity?
 
+    @Query("SELECT * FROM recipe WHERE status = 'ACTIVE' ORDER BY normalized_name, id")
+    suspend fun listActive(): List<RecipeEntity>
+
     @Query("SELECT COUNT(*) FROM recipe")
     suspend fun count(): Int
 
