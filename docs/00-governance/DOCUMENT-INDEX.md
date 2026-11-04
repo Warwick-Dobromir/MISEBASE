@@ -1,7 +1,7 @@
-# CULINARY 文档索引
+﻿# CULINARY 文档索引
 
 **文档编号**：GOV-INDEX
-**版本**：`0.30.0`
+**版本**：`0.31.0`
 **状态**：`Review`
 **日期**：2026-11-05
 **维护人**：首席架构师 / 技术负责人
@@ -148,18 +148,19 @@
 |---|---|
 | [MB-DECISION-SIGN-003 授权记录](../12-stage5/MB-D-004-011-AUTHORIZATION.md) | MB-D-004（新建 `feature:scan`，Stage 5 起 14 模块）与 MB-D-011（真机最低标准/记录要求）签收；与 MB-D-003/009/007 一致性；不构成 Stage 5 开发或真机测试授权 |
 
-### 2.4C MISEBASE Stage 5 文档（2026-11-05，状态 Review）
+### 2.4C MISEBASE Stage 5 文档（2026-11-05，状态 CLOSED）
 
 | 文档 | 用途 |
 |---|---|
-| [MB-S5-01 执行报告](../12-stage5/MB-S5-01-EXECUTION-REPORT.md) | 前置检查、模块 13→14、识别核心/去抖、扫码页面、导入确认与幂等、入口切换、测试（801/503/0）、Git、风险；状态 `Review` |
+| [MB-S5-01 执行报告](../12-stage5/MB-S5-01-EXECUTION-REPORT.md) | 前置检查、模块 13→14、识别核心/去抖、扫码页面、导入确认与事件级幂等、入口切换、审查结论、测试（817/514/0）、Git、风险；状态 `CLOSED` |
 | [MB-S5-02 真机验证记录](../12-stage5/MB-S5-02-DEVICE-VERIFICATION.md) | vivo V2429A / Android 16 / API 36；设备、权限三态、条码与二维码解码、连续/重复识别、异常与结论；10 张截图 |
 | [MB-S5-03 扫码页面说明](../12-stage5/MB-S5-03-SCAN-PAGES.md) | 页面结构、权限状态机、扫描框/手电筒/返回、去抖与一次性消费、手工输入兜底 |
 | [MB-S5-04 识别接口与导入确认](../12-stage5/MB-S5-04-IMPORT-CONTRACT.md) | `core:domain` 端口、products/inventory 实现、事务边界与明确补偿、幂等键、错误文案、未决 |
-| [MB-S5-05 测试矩阵](../12-stage5/MB-S5-05-TEST-MATRIX.md) | 503 唯一 / 801 执行 / 0 失败；新增 87 用例分布；需求覆盖与未覆盖项 |
+| [MB-S5-05 测试矩阵](../12-stage5/MB-S5-05-TEST-MATRIX.md) | 514 唯一 / 817 执行 / 0 失败；Stage 5 首轮 +87、MB-S5-002 再 +11；需求覆盖与未覆盖项 |
 | [MB-S5-06 决策映射](../12-stage5/MB-S5-06-DECISION-MAPPING.md) | MB-D-004 / MB-D-011 落地证据；MB-D-006/010/012 仍 PROPOSED 的边界；禁止项自查 |
 | [MB-S5-07 检查点回执](../12-stage5/MB-S5-07-CHECKPOINT-RECEIPT.md) | `checkpoint/misebase-stage5-20261105` 对象哈希 `42e417f`、解析提交 `0184a14` 与变更范围 |
 | [MB-S5-08 重复入库修正](../12-stage5/MB-S5-08-IDEMPOTENCY-FIX.md) | MB-S5-002：事件级幂等键 `scan-import:<条码>:<operation_id>`、修改文件、7 场景测试、真机重复入库与连点证据、回归与风险 |
+| [MB-S5-CLOSE-001 关闭记录](../12-stage5/MB-S5-CLOSE-RECORD.md) | 审查结论（通过）、关闭前 HEAD、关闭提交与两个标签、保留项（R1 已修复 / F1–F4）、Stage 6 前置（MB-D-006/010/012）；状态 `CLOSED` |
 | [真机截图证据](../12-stage5/evidence/) | 相机预览、手电筒、权限说明/拒绝、相机识别、手工输入、确认页、导入结果、重复拦截、第二码、再次入库与连点 |
 
 ### 2.5 备份一致性授权（2026-11-04）
@@ -261,3 +262,4 @@
 | 0.28.0 | 2026-11-05 | Stage 4：新增 MB-S4-01～10（执行报告/页面/需求/采购/计算记录/酱汁展开/编辑器保护/测试矩阵/决策映射/检查点）；状态 `Review`，不关闭 Stage 4 | 接管工程组 |
 | 0.29.0 | 2026-11-05 | MB-S4-CLOSE-001：新增关闭记录；MB-S4-01/MB-S4-08 状态改为 `CLOSED`；Stage 4 文档组标记 CLOSED；记录关闭/Stage 5 起点标签；不进入 Stage 5 | 接管工程组 |
 | 0.30.0 | 2026-11-05 | MB-DECISION-SIGN-003：新增 MB-D-004/MB-D-011 授权记录；决策计数 15/18，其余 3 项 PROPOSED；明确 Stage 5 起 14 模块、当前仍 13；不创建模块、不进入 Stage 5 | 接管工程组 |
+
