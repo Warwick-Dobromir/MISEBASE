@@ -10,7 +10,6 @@
     <string name="placeholder_settings_body">备份、恢复、诊断与关于在后续阶段实现；当前只保留设置入口。</string>
     <string name="action_back">返回</string>
     <string name="action_retry">重试</string>
-    <string name="action_settings">设置</string>
     <string name="home_debug">调试信息</string>
     <string name="debug_title">调试信息</string>
     <string name="startup_loading">正在检查数据库…</string>
@@ -19,6 +18,8 @@
     <string name="startup_recovery_title">需要恢复</string>
     <string name="startup_recovery_body">数据库无法正常打开（%1$s）。现有文件已保留，可重试；如持续失败，请从备份恢复。</string>
 
+    <string name="destination_home">首页</string>
+    <string name="destination_library">知识库</string>
     <string name="destination_sauces">酱汁</string>
     <string name="destination_ingredients">食材</string>
     <string name="destination_recipes">菜谱</string>
@@ -26,4 +27,32 @@
     <string name="destination_scan">扫码</string>
     <string name="destination_settings">设置</string>
     <string name="scan_confirm_title">导入确认</string>
+
+    <!-- MB-HOME-001 独立首页（Kitchen Dashboard） -->
+    <string name="home_brand">MISEBASE</string>
+    <string name="home_greeting">你好，</string>
+    <string name="home_headline">开始今天的厨房工作吧</string>
+    <string name="home_footer">数据保存在本机 · 离线可用</string>
+    <string name="home_inventory_title">库存概览</string>
+    <string name="home_inventory_products">库存项目</string>
+    <string name="home_inventory_batches">批次总数</string>
+    <string name="home_inventory_attention">需关注</string>
+    <string name="home_inventory_empty_title">还没有库存批次</string>
+    <string name="home_inventory_empty_body">入库后，这里会显示真实的库存项目、批次与需关注数量。</string>
+    <string name="home_inventory_empty_action">去入库</string>
+    <string name="home_inventory_error">库存数据暂时无法读取</string>
+    <string name="home_action_details">查看详情</string>
+    <string name="home_quick_title">快捷操作</string>
+    <string name="home_quick_scan">扫码</string>
+    <string name="home_quick_ingredient">新建食材</string>
+    <string name="home_quick_recipe">新建菜谱</string>
+    <string name="home_quick_sauce">新建酱汁</string>
+    <string name="home_knowledge_title">知识库概览</string>
+    <string name="home_knowledge_sauces">酱汁</string>
+    <string name="home_knowledge_ingredients">食材</string>
+    <string name="home_knowledge_recipes">菜谱</string>
+    <string name="home_knowledge_empty_title">档案库还是空的</string>
+    <string name="home_knowledge_empty_body">从上方快捷操作开始，建立第一份酱汁、食材或菜谱。</string>
+    <string name="home_knowledge_error">知识库数据暂时无法读取</string>
+    <string name="home_brand_home">返回首页</string>
 </resources>

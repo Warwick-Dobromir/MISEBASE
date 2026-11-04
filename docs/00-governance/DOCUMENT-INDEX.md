@@ -1,7 +1,7 @@
-﻿# CULINARY 文档索引
+# CULINARY 文档索引
 
 **文档编号**：GOV-INDEX
-**版本**：`0.31.0`
+**版本**：`0.34.0`
 **状态**：`Review`
 **日期**：2026-11-05
 **维护人**：首席架构师 / 技术负责人
@@ -100,7 +100,7 @@
 
 | 文档 | 用途 |
 |---|---|
-| [UI 设计书 1.1.0](../design/MISEBASE-UI-DESIGN-SPEC.md) | 方向 A 已签收；导航 N1；UI-07 首页决策已确认（后续新增、当前不实现、不改变 IA）；视觉 token 与页面规范基线 |
+| [UI 设计书 1.4.0](../design/MISEBASE-UI-DESIGN-SPEC.md) | 方向 A + Champagne Gold（已批准）；N3 导航（首页/知识库/扫码凸起/库存/设置）；首页与视觉 token 基线 |
 | [MB-SC-00 Schema 变更授权](../08-schema-change/MB-SC-00-AUTHORIZATION.md) | 授权独立 Schema 变更任务；两项变更合并、执行顺序与工程边界；已由 MB-SC-01～07 实施，报告 `Review` |
 | [MB-SC-01 迁移方案](../08-schema-change/MB-SC-01-MIGRATION-PLAN.md) | v1→v2 表、列、约束、索引、外键、影响范围、迁移算法与回滚边界 |
 | [MB-SC-02 迁移测试记录](../08-schema-change/MB-SC-02-MIGRATION-TEST-RECORD.md) | JVM 空库/真实数据迁移、完整性、休眠表、androidTest 编译状态 |
@@ -197,6 +197,33 @@
 | [S0-05 负责人签收清单](../05-handover/S0-05-OWNER-SIGNOFF.md) | MB-D-007 更新为 `CLOSED`；Stage 4 强制前置已满足 |
 | [MB-S0-07 决策登记册](../05-handover/MB-S0-07-DECISION-REGISTER.md) | MB-D-007 状态 `CLOSED`；签收记录补记关闭结论 |
 
+### 2.9 独立首页 MB-HOME-001（2026-11-05）
+
+| 文档 | 用途 |
+|---|---|
+| [MB-HOME-001 执行与验收报告](../13-home/MB-HOME-001-EXECUTION-REPORT.md) | 独立首页实现、数据来源映射、Token 迁移、测试与真机截图；导航部分为 N1 历史状态（已由 MB-HOME-002 取代） |
+| [首页真机截图（历史 N1）](../13-home/MB-HOME-001-device-home.png) | MB-HOME-001 的 N1 底栏截图，保留为历史证据 |
+| [暗色冒烟截图（历史 N1）](../13-home/MB-HOME-001-device-home-dark.png) | 同一真实数据的暗色主题冒烟截图（历史） |
+| [首页 UI 层级导出（历史 N1）](../13-home/MB-HOME-001-uiautomator.xml) | MB-HOME-001 的 uiautomator 文本树，历史证据 |
+
+### 2.10 导航重构 MB-HOME-002（2026-11-05）
+
+| 文档 | 用途 |
+|---|---|
+| [MB-HOME-002 决策记录](../13-home/MB-HOME-002-DECISIONS.md) | 香槟金正式批准（MB-D-008 Rev.1）与 N3 导航（MB-D-009 Rev.2）；设置入底栏、知识库聚合、扫码凸起 |
+| [MB-HOME-002 执行报告](../13-home/MB-HOME-002-EXECUTION-REPORT.md) | N3 实现、知识库 Tab、底栏自定义、文件清单、测试与真机截图；状态 `Review` |
+| [MB-HOME-002 首页截图](../13-home/MB-HOME-002-device-home.png) | N3 首页，展示中央凸起扫码按钮与五项底栏 |
+| [MB-HOME-002 知识库截图](../13-home/MB-HOME-002-device-library.png) | 知识库聚合页，展示酱汁/食材/菜谱 Tab 与真实食材列表 |
+| [MB-HOME-002 知识库食材 Tab](../13-home/MB-HOME-002-device-library-ingredients.png) | 切换到食材 Tab 的真实数据截图 |
+| [MB-HOME-002 暗色冒烟](../13-home/MB-HOME-002-device-home-dark.png) | N3 底栏与首页的暗色主题冒烟截图 |
+| [MB-HOME-002 N3 UI 层级](../13-home/MB-HOME-002-uiautomator.xml) | N3 底栏与知识库页的 uiautomator 文本树 |
+
+### 2.11 首页与导航最终关闭（MB-HOME-CLOSE-001，2026-11-05）
+
+| 文档 | 用途 |
+|---|---|
+| [MB-HOME-CLOSE-001 关闭记录](../13-home/MB-HOME-CLOSE-RECORD.md) | 审查通过、关闭前 HEAD/status、关闭提交、关闭标签、Stage 6 起点标签冲突与旧标签未移动证据；状态 `CLOSED` |
+
 ## 3. 图表
 
 | 文件 | 内容 |
@@ -262,4 +289,7 @@
 | 0.28.0 | 2026-11-05 | Stage 4：新增 MB-S4-01～10（执行报告/页面/需求/采购/计算记录/酱汁展开/编辑器保护/测试矩阵/决策映射/检查点）；状态 `Review`，不关闭 Stage 4 | 接管工程组 |
 | 0.29.0 | 2026-11-05 | MB-S4-CLOSE-001：新增关闭记录；MB-S4-01/MB-S4-08 状态改为 `CLOSED`；Stage 4 文档组标记 CLOSED；记录关闭/Stage 5 起点标签；不进入 Stage 5 | 接管工程组 |
 | 0.30.0 | 2026-11-05 | MB-DECISION-SIGN-003：新增 MB-D-004/MB-D-011 授权记录；决策计数 15/18，其余 3 项 PROPOSED；明确 Stage 5 起 14 模块、当前仍 13；不创建模块、不进入 Stage 5 | 接管工程组 |
+| 0.32.0 | 2026-11-05 | MB-HOME-001：新增首页执行/验收报告与真机截图；UI 设计书升 1.3.0（香槟金 Token 修订待验收）；记录 14 模块与 Schema v2 不变 | 接管工程组 |
+| 0.33.0 | 2026-11-05 | MB-HOME-002：新增决策记录、N3 执行报告与首页/知识库截图；UI 设计书升 1.4.0（香槟金批准、N1→N3）；历史 N1 证据标注 | 开发 AI |
+| 0.34.0 | 2026-11-05 | MB-HOME-CLOSE-001：新增首页/N3 导航关闭记录；MB-HOME-002 状态改为 `CLOSED`；记录 Stage 6 起点标签已存在且未移动的冲突 | 开发 AI |
 

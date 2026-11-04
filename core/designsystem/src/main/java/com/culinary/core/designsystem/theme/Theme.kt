@@ -12,11 +12,11 @@ import androidx.compose.ui.graphics.Color
 
 private val LightColorScheme =
     lightColorScheme(
-        primary = CulinaryPalette.Orange40,
+        primary = CulinaryPalette.Champagne40,
         onPrimary = CulinaryPalette.ColorWhite,
-        primaryContainer = CulinaryPalette.Orange90,
-        onPrimaryContainer = CulinaryPalette.Orange10,
-        inversePrimary = CulinaryPalette.Orange80,
+        primaryContainer = CulinaryPalette.Champagne90,
+        onPrimaryContainer = CulinaryPalette.Champagne10,
+        inversePrimary = CulinaryPalette.Champagne80,
         secondary = CulinaryPalette.WarmNeutral40,
         onSecondary = CulinaryPalette.ColorWhite,
         secondaryContainer = CulinaryPalette.WarmNeutral90,
@@ -31,7 +31,7 @@ private val LightColorScheme =
         onSurface = CulinaryPalette.WarmNeutral10,
         surfaceVariant = CulinaryPalette.WarmNeutral90,
         onSurfaceVariant = CulinaryPalette.WarmNeutral40,
-        surfaceTint = CulinaryPalette.Orange40,
+        surfaceTint = CulinaryPalette.Champagne40,
         inverseSurface = CulinaryPalette.WarmNeutral10,
         inverseOnSurface = CulinaryPalette.WarmNeutral95,
         error = CulinaryPalette.DangerLight,
@@ -52,26 +52,26 @@ private val LightColorScheme =
 
 private val DarkColorScheme =
     darkColorScheme(
-        primary = CulinaryPalette.Orange80,
-        onPrimary = CulinaryPalette.Orange10,
-        primaryContainer = CulinaryPalette.Orange30,
-        onPrimaryContainer = CulinaryPalette.Orange90,
-        inversePrimary = CulinaryPalette.Orange40,
+        primary = CulinaryPalette.Champagne80,
+        onPrimary = CulinaryPalette.Champagne10,
+        primaryContainer = CulinaryPalette.Champagne30,
+        onPrimaryContainer = CulinaryPalette.Champagne90,
+        inversePrimary = CulinaryPalette.Champagne40,
         secondary = CulinaryPalette.WarmNeutral70,
         onSecondary = CulinaryPalette.WarmNeutral10,
         secondaryContainer = CulinaryPalette.WarmNeutral40,
-        onSecondaryContainer = CulinaryPalette.WarmNeutral90,
+        onSecondaryContainer = CulinaryPalette.Champagne90,
         tertiary = CulinaryPalette.WarmNeutral70,
         onTertiary = CulinaryPalette.WarmNeutral10,
         tertiaryContainer = CulinaryPalette.SurfaceDarkVariant,
-        onTertiaryContainer = CulinaryPalette.WarmNeutral90,
+        onTertiaryContainer = CulinaryPalette.Champagne90,
         background = CulinaryPalette.SurfaceDark,
         onBackground = CulinaryPalette.WarmNeutral95,
         surface = CulinaryPalette.SurfaceDarkRaised,
         onSurface = CulinaryPalette.WarmNeutral95,
         surfaceVariant = CulinaryPalette.SurfaceDarkVariant,
         onSurfaceVariant = CulinaryPalette.WarmNeutral70,
-        surfaceTint = CulinaryPalette.Orange80,
+        surfaceTint = CulinaryPalette.Champagne80,
         inverseSurface = CulinaryPalette.WarmNeutral95,
         inverseOnSurface = CulinaryPalette.WarmNeutral10,
         error = CulinaryPalette.DangerDark,
@@ -79,15 +79,15 @@ private val DarkColorScheme =
         errorContainer = Color(0xFF93000A),
         onErrorContainer = Color(0xFFFFDAD6),
         outline = CulinaryPalette.WarmNeutral70,
-        outlineVariant = Color(0xFF55433A),
+        outlineVariant = Color(0xFF4A3E32),
         scrim = CulinaryPalette.ColorBlack,
-        surfaceBright = Color(0xFF3A2A22),
+        surfaceBright = Color(0xFF3A2F24),
         surfaceDim = CulinaryPalette.SurfaceDark,
-        surfaceContainer = Color(0xFF201713),
-        surfaceContainerHigh = Color(0xFF2B201B),
-        surfaceContainerHighest = Color(0xFF362923),
+        surfaceContainer = Color(0xFF1B1713),
+        surfaceContainerHigh = Color(0xFF251F19),
+        surfaceContainerHighest = Color(0xFF302820),
         surfaceContainerLow = CulinaryPalette.SurfaceDarkRaised,
-        surfaceContainerLowest = Color(0xFF140E0B),
+        surfaceContainerLowest = Color(0xFF120E0B),
     )
 
 /** 语义色通过 CompositionLocal 提供；默认值为亮色，主题外不崩溃。 */
@@ -110,7 +110,7 @@ internal object CulinaryColorSchemes {
 }
 
 /**
- * CULINARY 主题入口（MB-D-008 方向 A）。
+ * CULINARY 主题入口（MB-HOME-001 香槟金版）。
  *
  * 只做 token 装配；页面视觉不在这里实现。
  */
@@ -121,12 +121,13 @@ fun CulinaryTheme(
 ) {
     CompositionLocalProvider(
         LocalCulinarySemanticColors provides if (darkTheme) DarkSemanticColors else LightSemanticColors,
-    ) {
-        MaterialTheme(
-            colorScheme = if (darkTheme) DarkColorScheme else LightColorScheme,
-            typography = CulinaryTypography,
-            shapes = CulinaryShapes,
-            content = content,
-        )
-    }
+        content = {
+            MaterialTheme(
+                colorScheme = if (darkTheme) DarkColorScheme else LightColorScheme,
+                typography = CulinaryTypography,
+                shapes = CulinaryShapes,
+                content = content,
+            )
+        },
+    )
 }

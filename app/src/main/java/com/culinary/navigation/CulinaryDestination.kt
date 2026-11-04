@@ -6,28 +6,55 @@ import com.culinary.R
 import com.culinary.core.designsystem.icon.CulinaryIcons
 
 /**
- * 五个底部一级入口（MB-D-009 方案 N1，顺序固定）。
+ * 应用根级路由（N3，2026-11-05 负责人正式修订）。
  *
- * 设置不占底部栏，放在顶栏；路由字符串是稳定契约，不为了好看改名。
- * 顺序：酱汁 → 食材 → 菜谱 → 库存 → 扫码。
+ * 顺序固定：首页 → 知识库 → 扫码（中央凸起）→ 库存 → 设置。
+ * 知识库聚合页通过 [LIBRARY_TAB_ROUTE] 承载酱汁/食材/菜谱三个 Tab；
+ * 三个 feature 模块的内部路由不变。
  */
 enum class CulinaryDestination(
     val route: String,
     @StringRes val labelRes: Int,
     val icon: ImageVector,
 ) {
-    SAUCES("sauces", R.string.destination_sauces, CulinaryIcons.Sauce),
-    INGREDIENTS("ingredients", R.string.destination_ingredients, CulinaryIcons.Ingredient),
-    RECIPES("recipes", R.string.destination_recipes, CulinaryIcons.Recipe),
-    INVENTORY("inventory", R.string.destination_inventory, CulinaryIcons.Inventory),
-    SCAN("scan", R.string.destination_scan, CulinaryIcons.Scan),
+    HOME(HOME_ROUTE, R.string.destination_home, CulinaryIcons.Home),
+    LIBRARY(LIBRARY_ROUTE, R.string.destination_library, CulinaryIcons.Library),
+    SCAN(SCAN_ROUTE, R.string.destination_scan, CulinaryIcons.Scan),
+    INVENTORY(INVENTORY_ROUTE, R.string.destination_inventory, CulinaryIcons.Inventory),
+    SETTINGS(SETTINGS_ROUTE, R.string.destination_settings, CulinaryIcons.Settings),
     ;
 
+    /** 知识库的第二个目的地（带 Tab 参数）也属于本一级入口。 */
+    fun matches(currentRoute: String?): Boolean =
+        currentRoute == route ||
+            (this == LIBRARY && currentRoute == LIBRARY_TAB_ROUTE)
+
     companion object {
-        /** 启动页：N1 的第一个一级入口。 */
-        val START: CulinaryDestination = SAUCES
+        /** 应用启动页：N3 的第一项首页。 */
+        val START: CulinaryDestination = HOME
+
+        fun forRoute(currentRoute: String?): CulinaryDestination? = entries.firstOrNull { it.matches(currentRoute) }
     }
 }
 
-/** 顶栏设置入口；不属于底部一级导航。 */
+/** 首页：全局工作台，也是冷启动目的地。 */
+const val HOME_ROUTE: String = "home"
+
+/** 知识库聚合页（默认 Tab 为酱汁）。 */
+const val LIBRARY_ROUTE: String = "library"
+
+/** 知识库带 Tab 参数的路由；[LIBRARY_TAB_ARG] 取 sauces / ingredients / recipes。 */
+const val LIBRARY_TAB_ARG: String = "tab"
+const val LIBRARY_TAB_ROUTE: String = "library/{$LIBRARY_TAB_ARG}"
+
+/** 扫码：底部导航中央凸起主按钮。 */
+const val SCAN_ROUTE: String = "scan"
+
+/** 库存：N3 第四项。 */
+const val INVENTORY_ROUTE: String = "inventory"
+
+/** 设置：N3 第五项，已从顶栏移到底部导航。 */
 const val SETTINGS_ROUTE: String = "settings"
+
+/** 应用冷启动目的地：首页。 */
+const val APP_START_ROUTE: String = HOME_ROUTE

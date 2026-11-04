@@ -3,35 +3,38 @@ package com.culinary.core.designsystem.theme
 import androidx.compose.ui.graphics.Color
 
 /**
- * 色彩 token（MB-D-008 方向 A「专业厨房档案」）。
+ * 色彩 token（MB-HOME-001「香槟金版」）。
  *
- * 暖中性底色 + Orange 强调 + 暖灰辅助。所有页面只允许通过
- * [MaterialTheme.colorScheme] 或 [CulinaryColorScheme] 取色，禁止写字面色值。
- * 具体色值与 UI 设计书 1.0.0 §3.1 一致；改色必须同时更新设计书与本文件。
+ * 暖白 / 浅米灰底色 + 深香槟金强调 + 暖炭灰正文 + 暖灰辅助。
+ * 所有页面只允许通过 [MaterialTheme.colorScheme] 或 [CulinaryColorScheme] 取色，
+ * 禁止写字面色值。深香槟金 [CulinaryPalette.Champagne40] 在暖白底上的对比度
+ * ≥ 5.0:1，可直接用于正文与图标；浅香槟金只用于容器/装饰，不得承载正文。
+ *
+ * 改色必须同时更新 `docs/design/MISEBASE-UI-DESIGN-SPEC.md` 与本文件。
  */
 internal object CulinaryPalette {
-    // Orange：主操作 / 选中 / 关键数字
-    val Orange40 = Color(0xFFB4551F)
-    val Orange80 = Color(0xFFFFB68C)
-    val Orange90 = Color(0xFFFFDBC8)
-    val Orange10 = Color(0xFF3A1100)
-    val Orange30 = Color(0xFF7A3200)
+    // Champagne Gold：主操作 / 选中 / 关键强调（深色可读，浅色只做容器）
+    val Champagne40 = Color(0xFF8A6A2B)
+    val Champagne80 = Color(0xFFE8CD97)
+    val Champagne90 = Color(0xFFF5E7CC)
+    val Champagne10 = Color(0xFF2A2117)
+    val Champagne30 = Color(0xFF5C4517)
 
-    // 暖灰：次级操作 / 标签 / 辅助文字
-    val WarmNeutral10 = Color(0xFF28180E)
-    val WarmNeutral30 = Color(0xFF8A7263)
-    val WarmNeutral40 = Color(0xFF6F5B4E)
-    val WarmNeutral70 = Color(0xFFD8C2B4)
-    val WarmNeutral80 = Color(0xFFE4D3C7)
-    val WarmNeutral90 = Color(0xFFF3E1D6)
-    val WarmNeutral95 = Color(0xFFFAF1EB)
+    // 暖灰 / 暖炭：正文、次级文字、标签、辅助文字
+    val WarmNeutral10 = Color(0xFF241F19)
+    val WarmNeutral30 = Color(0xFF8C7E6D)
+    val WarmNeutral40 = Color(0xFF6E6257)
+    val WarmNeutral70 = Color(0xFFD6C7B4)
+    val WarmNeutral80 = Color(0xFFE6DAC9)
+    val WarmNeutral90 = Color(0xFFF1E7D9)
+    val WarmNeutral95 = Color(0xFFF8F2E8)
 
-    // 表面：亮色纸张感 / 暗色暖黑
-    val SurfaceLight = Color(0xFFFFFBF8)
-    val SurfaceLightRaised = Color(0xFFFFFFFF)
-    val SurfaceDark = Color(0xFF1A1210)
-    val SurfaceDarkRaised = Color(0xFF241A16)
-    val SurfaceDarkVariant = Color(0xFF3A2A22)
+    // 表面：暖白纸张感 / 暗色暖炭
+    val SurfaceLight = Color(0xFFFBF7F0)
+    val SurfaceLightRaised = Color(0xFFFFFDF9)
+    val SurfaceDark = Color(0xFF171310)
+    val SurfaceDarkRaised = Color(0xFF201B16)
+    val SurfaceDarkVariant = Color(0xFF3A2F24)
 
     // 语义色（不用于装饰）
     val SuccessLight = Color(0xFF2E6B4F)

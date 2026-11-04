@@ -1,4 +1,4 @@
-﻿# MISEBASE
+# MISEBASE
 
 **个人烹饪档案与库存管理系统 — Android 原生应用**
 
@@ -6,8 +6,8 @@
 |---|---|
 | 品牌/项目名 | MISEBASE（包名暂留 `com.culinary`，发布前按 D-017/MB-D-001 决定） |
 | 架构基线 | `0.4.1`（G1 已签收）；G2 已收档于 `framework-0.1.0` / `2b523de` |
-| 当前阶段 | **Stage 5 Review（2026-11-05，待负责人审查）**；Stage 4 CLOSED（2026-11-05，有条件通过）；MB-D-007 备份一致性 CLOSED（2026-11-04） |
-| 工程状态 | **14 模块（Stage 5 起，MB-D-004）**；Room schema **v2 / 33 表**（11 表 `DORMANT`）；三大档案库 + Inventory + 扫码可用；**817 次执行 / 514 唯一 JVM 用例 / 0 失败** |
+| 当前阶段 | **Stage 5 Review（2026-11-05，待负责人审查）**；Stage 4 CLOSED（2026-11-05，有条件通过）；MB-D-007 备份一致性 CLOSED（2026-11-04）；**MB-HOME-002 导航重构已完成（2026-11-05，Review）** |
+| 工程状态 | **14 模块（Stage 5 起，MB-D-004）**；Room schema **v2 / 33 表**（11 表 `DORMANT`）；三大档案库 + Inventory + 扫码可用；N3 底部五项（首页/知识库/扫码凸起/库存/设置）与知识库聚合页已接入；**857 次执行 / 540 唯一 JVM 用例 / 0 失败**（MB-HOME-002 后；Stage 5 基线 817 / 514 唯一 JVM 用例） |
 | 数据库 | **已创建**：schema v2（33 表），导出 `1.json`、`2.json`；`1→2` 迁移已落地；本次备份一致性修复未改 Schema/Entity/DAO |
 | 构建基线 | AGP 8.13.0 / Kotlin 2.2.20 / Gradle 8.14.3 / JDK 21 / minSdk 26 / compile & target 36 |
 | 依赖注入 | Hilt 2.57.2 + KSP（D-012 `ACCEPTED`，禁止 2.59+） |
@@ -107,8 +107,8 @@ feature/
 - MB-D-004 扫码 UI 归属：新建独立 `feature:scan`；Stage 5 起模块集为 14；
 - MB-D-005 11 张休眠表保留并标 `DORMANT`；
 - MB-D-007 备份一致性（**已 CLOSED，2026-11-04 审查通过**；Stage 4 前置已满足）；
-- MB-D-008 UI 视觉方向 A（专业厨房档案：暖中性 + Orange 强调）；
-- MB-D-009 导航 N1（酱汁/食材/菜谱/库存/扫码五个底部入口 + 顶栏设置）；
+- MB-D-008 UI 视觉方向 A（**Rev.1：Champagne Gold 正式替换 Orange，2026-11-05**）；
+- MB-D-009 导航 **N3**（首页/知识库/扫码凸起/库存/设置；设置入底栏；知识库聚合；2026-11-05 Rev.2）；
 - MB-D-011 真机验证设备：至少一台真机，API 26+（推荐 33+）；模拟器不可替代；保留测试记录；
 - MB-D-013 子配方版本固定（发布时写入明确版本 ID）；
 - MB-D-014 库存扣减模式（先预览、确认后写流水）；
@@ -131,6 +131,11 @@ feature/
 
 ## 当前状态与未决
 
+- **MB-HOME-002 导航重构已完成（2026-11-05，Review）**：N3 底部五项为首页/知识库/扫码（中央凸起）/库存/设置；设置从顶栏移到底栏；知识库聚合酱汁/食材/菜谱三个 Tab，底层三个 feature 模块与详情/编辑路由均未合并；香槟金已正式批准（MB-D-008 Rev.1）。冷启动仍进入首页，真实数据与隐藏模块策略不变。详见
+  [MB-HOME-002 执行报告](docs/13-home/MB-HOME-002-EXECUTION-REPORT.md)、[决策记录](docs/13-home/MB-HOME-002-DECISIONS.md) 与 [真机截图](docs/13-home/MB-HOME-002-device-home.png)。
+  **未新增模块、未改 Schema；测试通过。**
+- **MB-HOME-001 独立首页已完成（2026-11-05，已由 MB-HOME-002 验收）**：数据源、隐藏模块与香槟金 token 见
+  [MB-HOME-001 报告](docs/13-home/MB-HOME-001-EXECUTION-REPORT.md)；其 N1 导航截图仅作历史证据。
 - **G2 阶段 1–9** 已完成并归档；`framework-0.1.0` 固定在 `2b523de`，未移动。
 - **Stage 0/1/2/3/4 均已关闭**；Schema 变更任务已关闭（v2 / 33 表）；三大档案库与 Inventory 可用。
 - **Stage 4 状态为 CLOSED（2026-11-05，有条件通过）**：库存总览/详情/入库/出库/调整/流水、需求汇总与缺口、采购清单 CSV、计算记录回放、酱汁图展开、编辑器组成行只读保护已完成；详见
@@ -186,7 +191,11 @@ feature/
 - [Stage 4 采购清单](docs/11-stage4/MB-S4-04-PURCHASE-LIST.md)
 - [Stage 4 计算记录](docs/11-stage4/MB-S4-05-CALCULATION-RECORD.md)
 - [Stage 4 测试矩阵](docs/11-stage4/MB-S4-08-TEST-MATRIX.md)
-- [UI 设计书 1.0.0](docs/design/MISEBASE-UI-DESIGN-SPEC.md)
+- [UI 设计书 1.4.0](docs/design/MISEBASE-UI-DESIGN-SPEC.md)
+- [MB-HOME-001 首页执行与验收报告](docs/13-home/MB-HOME-001-EXECUTION-REPORT.md)
+- [MB-HOME-002 导航重构执行报告](docs/13-home/MB-HOME-002-EXECUTION-REPORT.md)
+- [MB-HOME-002 决策记录（香槟金 / N3）](docs/13-home/MB-HOME-002-DECISIONS.md)
+- [MB-HOME-002 首页真机截图](docs/13-home/MB-HOME-002-device-home.png)
 - [G2 收档文件](docs/00-governance/A-G2-001-G2-ARCHIVE.md)
 - [决策登记册](docs/00-governance/DECISION-REGISTER.md)
 - [MISEBASE 决策登记册](docs/05-handover/MB-S0-07-DECISION-REGISTER.md)

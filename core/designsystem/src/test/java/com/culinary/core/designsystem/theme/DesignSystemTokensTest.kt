@@ -8,33 +8,38 @@ import org.junit.Test
 import kotlin.math.pow
 
 /**
- * 设计 token 契约（MB-D-008 方向 A）。
+ * 设计 token 契约（MB-HOME-001 香槟金版）。
  *
  * 只验证可程序化的约束：色值、对比度、字阶、间距、圆角。
- * 页面截图与真机视觉验收仍属 Stage 6，不用本测试替代。
+ * 页面截图与真机视觉验收仍属验收任务，不用本测试替代。
  */
 class DesignSystemTokensTest {
     @Test
-    fun `light scheme uses the accepted warm neutral and orange baseline`() {
+    fun `light scheme uses the champagne gold and warm neutral baseline`() {
         val scheme = CulinaryColorSchemes.light
 
-        assertThat(scheme.primary).isEqualTo(Color(0xFFB4551F))
+        assertThat(scheme.primary).isEqualTo(Color(0xFF8A6A2B))
         assertThat(scheme.onPrimary).isEqualTo(Color(0xFFFFFFFF))
-        assertThat(scheme.background).isEqualTo(Color(0xFFFFFBF8))
-        assertThat(scheme.onBackground).isEqualTo(Color(0xFF28180E))
-        assertThat(scheme.secondary).isEqualTo(Color(0xFF6F5B4E))
-        assertThat(scheme.surfaceVariant).isEqualTo(Color(0xFFF3E1D6))
-        assertThat(scheme.outlineVariant).isEqualTo(Color(0xFFE4D3C7))
+        assertThat(scheme.primaryContainer).isEqualTo(Color(0xFFF5E7CC))
+        assertThat(scheme.onPrimaryContainer).isEqualTo(Color(0xFF2A2117))
+        assertThat(scheme.background).isEqualTo(Color(0xFFFBF7F0))
+        assertThat(scheme.surface).isEqualTo(Color(0xFFFFFDF9))
+        assertThat(scheme.onBackground).isEqualTo(Color(0xFF241F19))
+        assertThat(scheme.onSurface).isEqualTo(Color(0xFF241F19))
+        assertThat(scheme.secondary).isEqualTo(Color(0xFF6E6257))
+        assertThat(scheme.surfaceVariant).isEqualTo(Color(0xFFF1E7D9))
+        assertThat(scheme.outlineVariant).isEqualTo(Color(0xFFE6DAC9))
     }
 
     @Test
-    fun `dark scheme keeps a warm black background instead of pure black`() {
+    fun `dark scheme keeps a warm black background and champagne accents`() {
         val scheme = CulinaryColorSchemes.dark
 
-        assertThat(scheme.background).isEqualTo(Color(0xFF1A1210))
+        assertThat(scheme.background).isEqualTo(Color(0xFF171310))
         assertThat(scheme.background).isNotEqualTo(Color(0xFF000000))
-        assertThat(scheme.surface).isEqualTo(Color(0xFF241A16))
-        assertThat(scheme.primary).isEqualTo(Color(0xFFFFB68C))
+        assertThat(scheme.surface).isEqualTo(Color(0xFF201B16))
+        assertThat(scheme.primary).isEqualTo(Color(0xFFE8CD97))
+        assertThat(scheme.onPrimary).isEqualTo(Color(0xFF2A2117))
     }
 
     @Test
@@ -43,9 +48,23 @@ class DesignSystemTokensTest {
         val dark = CulinaryColorSchemes.dark
 
         assertThat(contrast(light.onSurface, light.surface)).isAtLeast(4.5)
+        assertThat(contrast(light.onSurface, light.background)).isAtLeast(4.5)
         assertThat(contrast(light.onSurfaceVariant, light.surface)).isAtLeast(4.5)
+        assertThat(contrast(light.onSurfaceVariant, light.background)).isAtLeast(4.5)
         assertThat(contrast(dark.onSurface, dark.surface)).isAtLeast(4.5)
+        assertThat(contrast(dark.onSurface, dark.background)).isAtLeast(4.5)
         assertThat(contrast(dark.onSurfaceVariant, dark.surface)).isAtLeast(4.5)
+        assertThat(contrast(dark.onSurfaceVariant, dark.background)).isAtLeast(4.5)
+    }
+
+    @Test
+    fun `champagne gold is dark enough to carry text on light surfaces`() {
+        val light = CulinaryColorSchemes.light
+
+        // 浅香槟金只用于容器；正文只能使用深香槟金或暖炭灰。
+        assertThat(contrast(light.primary, light.surface)).isAtLeast(4.5)
+        assertThat(contrast(light.primary, light.background)).isAtLeast(4.5)
+        assertThat(luminance(light.primary)).isLessThan(0.2)
     }
 
     @Test
@@ -56,13 +75,22 @@ class DesignSystemTokensTest {
         val darkSemantic = CulinaryColorSchemes.darkSemantic
 
         assertThat(contrast(light.onPrimary, light.primary)).isAtLeast(4.5)
+        assertThat(contrast(light.onPrimaryContainer, light.primaryContainer)).isAtLeast(4.5)
+        assertThat(contrast(light.onSecondary, light.secondary)).isAtLeast(4.5)
+        assertThat(contrast(light.onSecondaryContainer, light.secondaryContainer)).isAtLeast(4.5)
         assertThat(contrast(lightSemantic.onSuccess, lightSemantic.success)).isAtLeast(4.5)
         assertThat(contrast(lightSemantic.onWarning, lightSemantic.warning)).isAtLeast(4.5)
         assertThat(contrast(lightSemantic.onDanger, lightSemantic.danger)).isAtLeast(4.5)
         assertThat(contrast(lightSemantic.onInfo, lightSemantic.info)).isAtLeast(4.5)
+
         assertThat(contrast(dark.onPrimary, dark.primary)).isAtLeast(4.5)
+        assertThat(contrast(dark.onPrimaryContainer, dark.primaryContainer)).isAtLeast(4.5)
+        assertThat(contrast(dark.onSecondary, dark.secondary)).isAtLeast(4.5)
+        assertThat(contrast(dark.onSecondaryContainer, dark.secondaryContainer)).isAtLeast(4.5)
         assertThat(contrast(darkSemantic.onSuccess, darkSemantic.success)).isAtLeast(4.5)
+        assertThat(contrast(darkSemantic.onWarning, darkSemantic.warning)).isAtLeast(4.5)
         assertThat(contrast(darkSemantic.onDanger, darkSemantic.danger)).isAtLeast(4.5)
+        assertThat(contrast(darkSemantic.onInfo, darkSemantic.info)).isAtLeast(4.5)
     }
 
     @Test
@@ -125,6 +153,7 @@ class DesignSystemTokensTest {
         assertThat(shapes.small).isEqualTo(RoundedCornerShape(8.dp))
         assertThat(shapes.medium).isEqualTo(RoundedCornerShape(12.dp))
         assertThat(shapes.large).isEqualTo(RoundedCornerShape(16.dp))
+        assertThat(shapes.extraLarge).isEqualTo(RoundedCornerShape(24.dp))
     }
 
     private fun contrast(

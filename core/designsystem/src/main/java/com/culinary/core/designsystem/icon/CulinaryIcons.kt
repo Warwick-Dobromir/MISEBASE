@@ -12,10 +12,12 @@ import androidx.compose.ui.unit.dp
 /**
  * 线性图标集（UI 设计书 §7：Material Symbols Outlined 风格，线宽统一）。
  *
- * 不引入第三方图标依赖：五个一级入口 + 顶栏设置 + 通用操作共 11 个图标，
+ * 不引入第三方图标依赖：N3 五入口（首页/知识库/扫码/库存/设置）+ 品牌 + 通用操作，
  * 用 24dp 视口手绘，保证线宽与视觉重量一致。
  */
 object CulinaryIcons {
+    val Home: ImageVector by lazy { lineIcon("Culinary.Home") { home() } }
+    val Library: ImageVector by lazy { lineIcon("Culinary.Library") { library() } }
     val Sauce: ImageVector by lazy { lineIcon("Culinary.Sauce") { sauceBottle() } }
     val Ingredient: ImageVector by lazy { lineIcon("Culinary.Ingredient") { leaf() } }
     val Recipe: ImageVector by lazy { lineIcon("Culinary.Recipe") { book() } }
@@ -27,6 +29,8 @@ object CulinaryIcons {
     val Edit: ImageVector by lazy { lineIcon("Culinary.Edit") { pencil() } }
     val Check: ImageVector by lazy { lineIcon("Culinary.Check") { check() } }
     val ChevronRight: ImageVector by lazy { lineIcon("Culinary.ChevronRight") { chevron() } }
+    val ChefHat: ImageVector by lazy { lineIcon("Culinary.ChefHat") { chefHat() } }
+    val Bolt: ImageVector by lazy { lineIcon("Culinary.Bolt") { bolt() } }
 }
 
 private fun lineIcon(
@@ -50,6 +54,41 @@ private fun lineIcon(
                 pathBuilder = block,
             )
         }.build()
+
+private fun PathBuilder.home() {
+    moveTo(4f, 11f)
+    lineTo(12f, 4f)
+    lineTo(20f, 11f)
+    lineTo(20f, 20f)
+    lineTo(14f, 20f)
+    lineTo(14f, 14f)
+    lineTo(10f, 14f)
+    lineTo(10f, 20f)
+    lineTo(4f, 20f)
+    close()
+}
+
+private fun PathBuilder.library() {
+    moveTo(4.5f, 5f)
+    lineTo(8.5f, 5f)
+    lineTo(8.5f, 20f)
+    lineTo(4.5f, 20f)
+    close()
+    moveTo(10f, 5f)
+    lineTo(14f, 5f)
+    lineTo(14f, 20f)
+    lineTo(10f, 20f)
+    close()
+    moveTo(15.5f, 5.5f)
+    lineTo(19.5f, 6.5f)
+    lineTo(17.8f, 20f)
+    lineTo(15.8f, 19.5f)
+    close()
+    moveTo(4.5f, 17f)
+    lineTo(8.5f, 17f)
+    moveTo(10f, 17f)
+    lineTo(14f, 17f)
+}
 
 private fun PathBuilder.sauceBottle() {
     moveTo(9f, 3f)
@@ -177,4 +216,35 @@ private fun PathBuilder.chevron() {
     moveTo(9f, 6f)
     lineTo(15f, 12f)
     lineTo(9f, 18f)
+}
+
+/** 品牌标记：厨师帽轮廓，用于首页与顶栏返回首页。 */
+private fun PathBuilder.chefHat() {
+    moveTo(6.5f, 9.5f)
+    curveTo(4.8f, 9.1f, 3.5f, 7.7f, 3.5f, 6f)
+    curveTo(3.5f, 4f, 5.1f, 2.5f, 7f, 2.5f)
+    curveTo(7.9f, 2.5f, 8.7f, 2.9f, 9.3f, 3.5f)
+    curveTo(9.9f, 2.8f, 10.9f, 2.2f, 12f, 2.2f)
+    curveTo(13.1f, 2.2f, 14.1f, 2.8f, 14.7f, 3.5f)
+    curveTo(15.3f, 2.9f, 16.1f, 2.5f, 17f, 2.5f)
+    curveTo(18.9f, 2.5f, 20.5f, 4f, 20.5f, 6f)
+    curveTo(20.5f, 7.7f, 19.2f, 9.1f, 17.5f, 9.5f)
+    lineTo(17.5f, 18.5f)
+    curveTo(17.5f, 19.6f, 16.6f, 20.5f, 15.5f, 20.5f)
+    lineTo(8.5f, 20.5f)
+    curveTo(7.4f, 20.5f, 6.5f, 19.6f, 6.5f, 18.5f)
+    close()
+    moveTo(6.5f, 15.5f)
+    lineTo(17.5f, 15.5f)
+}
+
+/** 快捷操作标题标记。 */
+private fun PathBuilder.bolt() {
+    moveTo(13f, 2.5f)
+    lineTo(5f, 13.5f)
+    lineTo(11f, 13.5f)
+    lineTo(9.5f, 21.5f)
+    lineTo(19f, 10.5f)
+    lineTo(13f, 10.5f)
+    close()
 }
