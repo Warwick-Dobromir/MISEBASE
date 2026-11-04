@@ -158,6 +158,7 @@
 | [MB-S5-04 识别接口与导入确认](../12-stage5/MB-S5-04-IMPORT-CONTRACT.md) | `core:domain` 端口、products/inventory 实现、事务边界与明确补偿、幂等键、错误文案、未决 |
 | [MB-S5-05 测试矩阵](../12-stage5/MB-S5-05-TEST-MATRIX.md) | 503 唯一 / 801 执行 / 0 失败；新增 87 用例分布；需求覆盖与未覆盖项 |
 | [MB-S5-06 决策映射](../12-stage5/MB-S5-06-DECISION-MAPPING.md) | MB-D-004 / MB-D-011 落地证据；MB-D-006/010/012 仍 PROPOSED 的边界；禁止项自查 |
+| [MB-S5-07 检查点回执](../12-stage5/MB-S5-07-CHECKPOINT-RECEIPT.md) | `checkpoint/misebase-stage5-20261105` 对象哈希 `42e417f`、解析提交 `0184a14` 与变更范围 |
 | [真机截图证据](../12-stage5/evidence/) | 相机预览、手电筒、权限说明/拒绝、相机识别、手工输入、确认页、导入结果、重复拦截、第二码 |
 
 ### 2.5 备份一致性授权（2026-11-04）
