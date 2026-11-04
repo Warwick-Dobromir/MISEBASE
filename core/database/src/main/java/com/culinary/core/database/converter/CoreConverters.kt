@@ -1,6 +1,7 @@
 package com.culinary.core.database.converter
 
 import androidx.room.TypeConverter
+import com.culinary.core.database.model.CalculationRecordStatusDb
 import com.culinary.core.database.model.ComponentTypeDb
 import com.culinary.core.database.model.EntityStatusDb
 import com.culinary.core.database.model.RecipeCategoryDb
@@ -49,4 +50,10 @@ class CoreConverters {
 
     @TypeConverter
     fun toStorageLocationKind(value: String): StorageLocationKindDb = StorageLocationKindDb.valueOf(value)
+
+    @TypeConverter
+    fun fromCalculationRecordStatus(value: CalculationRecordStatusDb): String = value.name
+
+    @TypeConverter
+    fun toCalculationRecordStatus(value: String): CalculationRecordStatusDb = CalculationRecordStatusDb.valueOf(value)
 }
