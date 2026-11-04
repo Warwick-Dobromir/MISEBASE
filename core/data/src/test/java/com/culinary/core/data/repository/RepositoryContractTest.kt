@@ -15,10 +15,12 @@ import com.culinary.core.database.entity.IngredientEntity
 import com.culinary.core.database.entity.InventoryBatchEntity
 import com.culinary.core.database.entity.ProductEntity
 import com.culinary.core.database.entity.RecipeEntity
+import com.culinary.core.database.entity.RecipeVersionEntity
 import com.culinary.core.database.entity.StorageLocationEntity
 import com.culinary.core.database.entity.UnitEntity
 import com.culinary.core.database.model.RecipeCategoryDb
 import com.culinary.core.database.model.UnitDimensionDb
+import com.culinary.core.database.model.VersionStatusDb
 import com.culinary.core.domain.model.BatchId
 import com.culinary.core.domain.model.CalculationRecordId
 import com.culinary.core.domain.model.CalculationRecordStatus
@@ -127,6 +129,36 @@ class RepositoryContractTest {
             assertThat(database.recipeVersionDao().findById(VERSION_ID)?.isCurrent).isFalse()
             // 旧版本内容仍在，旧展开结果可回放。
             assertThat(database.recipeVersionDao().findById(VERSION_ID)?.yieldQty).isWithin(1e-9).of(1000.0)
+        }
+
+    @Test
+    fun `recipe repository reads servings and keeps legacy rows at one`() =
+        runBlocking {
+            seedUnit()
+            database.recipeDao().insert(recipeEntity(RECIPE_ID))
+            database.ingredientDao().insert(ingredientEntity(INGREDIENT_ID))
+            val repository = recipeRepository()
+            database.recipeVersionDao().insert(
+                RecipeVersionEntity(
+                    id = LEGACY_VERSION_ID,
+                    recipeId = RECIPE_ID,
+                    versionNo = 1,
+                    status = VersionStatusDb.DRAFT,
+                    yieldQty = 1000.0,
+                    yieldUnitId = UNIT_ID,
+                    isCurrent = false,
+                    // 不传 servings，验证数据库 DEFAULT 1 与读取路径。
+                    createdAt = NOW,
+                ),
+            )
+
+            val legacy = repository.getVersion(RecipeVersionId(LEGACY_VERSION_ID))
+            repository.saveDraft(baseVersion(VERSION_ID, versionNo = 2, VersionStatus.DRAFT).copy(servings = 4))
+            val saved = repository.getVersion(RecipeVersionId(VERSION_ID))
+
+            assertThat(legacy?.servings).isEqualTo(1)
+            assertThat(saved?.servings).isEqualTo(4)
+            assertThat(database.recipeVersionDao().findById(VERSION_ID)?.servings).isEqualTo(4)
         }
 
     @Test
@@ -407,6 +439,7 @@ class RepositoryContractTest {
         const val RECIPE_ID = "recipe-1"
         const val VERSION_ID = "recipe-v1"
         const val VERSION_ID_2 = "recipe-v2"
+        const val LEGACY_VERSION_ID = "recipe-legacy-v1"
         const val PRODUCT_ID = "product-1"
         const val LOCATION_ID = "location-1"
         const val BATCH_ID = "batch-1"
