@@ -99,7 +99,7 @@
 | `check-module-deps.ps1` | PASS（13 模块 / DAG） |
 | `test-module-deps.ps1` | PASS（违规注入全部检出） |
 | `check-doc-consistency.ps1` | PASS |
-| `check-dormant-tables.ps1` | 3 处基线既有误报；新增引用 0 |
+| `check-dormant-tables.ps1` | PASS（11 张表 0 处允许范围外引用） |
 
 ---
 
