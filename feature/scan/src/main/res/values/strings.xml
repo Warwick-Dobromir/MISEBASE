@@ -30,4 +30,30 @@
 
     <string name="scan_retry">重试</string>
     <string name="scan_camera_error">相机暂不可用，可以改用手工输入。</string>
+    <string name="scan_loading">加载中…</string>
+
+    <string name="scan_confirm_title">导入确认</string>
+    <string name="scan_confirm_body">识别结果交给食材库与库存：确认后创建/映射食材，并由库存写入批次与流水。</string>
+    <string name="scan_confirm_scan_result">识别结果</string>
+    <string name="scan_confirm_code">条码值</string>
+    <string name="scan_confirm_format">格式</string>
+    <string name="scan_confirm_source">来源</string>
+    <string name="scan_source_camera">相机识别</string>
+    <string name="scan_source_manual">手工输入</string>
+    <string name="scan_confirm_already">该条码已导入过</string>
+    <string name="scan_confirm_already_body">上次导入 %1$s · %2$s %3$s；重复确认不会重复入库。</string>
+    <string name="scan_confirm_target">导入目标</string>
+    <string name="scan_confirm_new_ingredient">新建食材</string>
+    <string name="scan_confirm_new_name">新食材名称</string>
+    <string name="scan_confirm_no_ingredients">食材库还没有食材，请直接新建。</string>
+    <string name="scan_confirm_quantity">数量</string>
+    <string name="scan_confirm_action">确认导入</string>
+    <string name="scan_confirm_saving">正在导入…</string>
+    <string name="scan_confirm_saved_badge">已入库</string>
+    <string name="scan_confirm_saved">已入库 %1$s %2$s %3$s</string>
+    <string name="scan_confirm_replayed">同一条码已导入过，本次未重复入库。</string>
+    <string name="scan_confirm_batch">批次</string>
+    <string name="scan_confirm_back_to_scan">返回扫码</string>
+    <string name="scan_confirm_missing">无法读取扫码结果</string>
+    <string name="scan_confirm_missing_body">请返回扫码页重新识别，或改用手工输入。</string>
 </resources>
