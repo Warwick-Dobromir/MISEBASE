@@ -3,9 +3,12 @@ package com.culinary.core.domain.usecase.sauce
 import com.culinary.core.common.CulinaryError
 import com.culinary.core.common.IdGenerator
 import com.culinary.core.common.Outcome
+import com.culinary.core.domain.model.ComponentTarget
 import com.culinary.core.domain.model.EntityStatus
 import com.culinary.core.domain.model.Ingredient
 import com.culinary.core.domain.model.IngredientId
+import com.culinary.core.domain.model.RecipeId
+import com.culinary.core.domain.model.RecipeVersionId
 import com.culinary.core.domain.model.Sauce
 import com.culinary.core.domain.model.SauceId
 import com.culinary.core.domain.model.SauceVersion
@@ -82,6 +85,42 @@ class SauceUseCasesTest {
             assertThat(version.versionNo).isEqualTo(1)
             assertThat(version.status).isEqualTo(VersionStatus.DRAFT)
             assertThat(version.components.map { it.lineNo }).containsExactly(1, 2).inOrder()
+            assertThat(version.components[1].isOptional).isTrue()
+        }
+
+    @Test
+    fun `draft preserves imported recipe and sauce targets`() =
+        runBlocking<Unit> {
+            saveSauce(SaveSauceInput(name = "复合酱"))
+            val sauceId = sauces.saved.single().id
+            val recipeTarget =
+                ComponentTarget.Recipe(
+                    RecipeId("recipe-base"),
+                    RecipeVersionId("recipe-v3"),
+                )
+            val sauceTarget =
+                ComponentTarget.Sauce(
+                    SauceId("sauce-base"),
+                    SauceVersionId("sauce-v2"),
+                )
+
+            val result =
+                saveDraft(
+                    SaveSauceDraftInput(
+                        sauceId = sauceId,
+                        yieldAmount = 500.0,
+                        yieldUnit = gram(),
+                        components =
+                            listOf(
+                                SauceDraftLineInput(recipeTarget, 120.0, gram()),
+                                SauceDraftLineInput(sauceTarget, 80.0, gram(), isOptional = true),
+                            ),
+                    ),
+                )
+
+            assertThat(result).isInstanceOf(Outcome.Success::class.java)
+            val version = sauces.versions.values.single()
+            assertThat(version.components.map { it.target }).containsExactly(recipeTarget, sauceTarget).inOrder()
             assertThat(version.components[1].isOptional).isTrue()
         }
 

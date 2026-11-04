@@ -1,8 +1,8 @@
-﻿package com.culinary.feature.sauces
+package com.culinary.feature.sauces
 
 import com.culinary.core.common.CulinaryError
+import com.culinary.core.domain.model.ComponentTarget
 import com.culinary.core.domain.model.Ingredient
-import com.culinary.core.domain.model.IngredientId
 import com.culinary.core.domain.model.Sauce
 import com.culinary.core.domain.model.SauceDetail
 import com.culinary.core.domain.model.Unit as UnitModel
@@ -25,12 +25,23 @@ data class SauceDetailUiState(
 /** 编辑器中的组成行；数量保留用户输入的字符串，提交时才解析。 */
 data class SauceLineEditor(
     val key: String,
-    val ingredientId: IngredientId,
+    val target: ComponentTarget,
     val name: String,
     val amount: String,
     val unit: UnitModel,
     val isOptional: Boolean = false,
-)
+) {
+    /** Stage 3 编辑入口只支持食材行；其他目标只读保留，保存时原样回写。 */
+    val isReadOnly: Boolean get() = target !is ComponentTarget.Ingredient
+
+    val kindLabel: String
+        get() =
+            when (target) {
+                is ComponentTarget.Ingredient -> "食材"
+                is ComponentTarget.Recipe -> "子菜谱"
+                is ComponentTarget.Sauce -> "子酱汁"
+            }
+}
 
 /** 酱汁编辑器状态。 */
 data class SauceEditorUiState(

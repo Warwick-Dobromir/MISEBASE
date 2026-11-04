@@ -4,8 +4,12 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import com.culinary.core.designsystem.theme.CulinaryTheme
+import com.culinary.core.domain.model.ComponentTarget
 import com.culinary.core.domain.model.EntityStatus
+import com.culinary.core.domain.model.IngredientId
 import com.culinary.core.domain.model.Quantity
+import com.culinary.core.domain.model.RecipeId
+import com.culinary.core.domain.model.RecipeVersionId
 import com.culinary.core.domain.model.Sauce
 import com.culinary.core.domain.model.SauceDetail
 import com.culinary.core.domain.model.SauceId
@@ -102,6 +106,60 @@ class SaucesUiTest {
         compose.onNodeWithText("黄油").assertIsDisplayed()
         compose.onNodeWithText("可选").assertIsDisplayed()
         compose.onNodeWithText("发布 v2").assertIsDisplayed()
+    }
+
+    @Test
+    fun `editor marks imported recipe and sauce rows as read only`() {
+        compose.setContent {
+            CulinaryTheme {
+                SauceEditorScreen(
+                    state =
+                        SauceEditorUiState(
+                            name = "复合酱",
+                            yieldAmount = "500",
+                            yieldUnit = gram(),
+                            isLoading = false,
+                            lines =
+                                listOf(
+                                    SauceLineEditor(
+                                        key = "line-1",
+                                        target = ComponentTarget.Ingredient(IngredientId("flour")),
+                                        name = "低筋面粉",
+                                        amount = "100",
+                                        unit = gram(),
+                                    ),
+                                    SauceLineEditor(
+                                        key = "line-2",
+                                        target =
+                                            ComponentTarget.Recipe(
+                                                RecipeId("recipe-base"),
+                                                RecipeVersionId("recipe-v1"),
+                                            ),
+                                        name = "基础面糊（子菜谱 v1）",
+                                        amount = "50",
+                                        unit = gram(),
+                                    ),
+                                ),
+                        ),
+                    onNameChange = {},
+                    onFamilyChange = {},
+                    onYieldAmountChange = {},
+                    onOpenUnitPicker = {},
+                    onAddIngredient = {},
+                    onLineAmountChange = { _, _ -> },
+                    onToggleOptional = {},
+                    onRemoveLine = {},
+                    onSaveDraft = {},
+                    onSaveAndPublish = {},
+                    onDismissError = {},
+                )
+            }
+        }
+
+        compose
+            .onNodeWithText("子菜谱 / 子酱汁组成行来自导入数据，本阶段只读保留；保存草稿会原样写回，不会丢失。")
+            .assertIsDisplayed()
+        compose.onNodeWithText("只读保留").assertExists()
     }
 
     private fun sauce(

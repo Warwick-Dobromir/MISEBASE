@@ -16,13 +16,25 @@ import com.culinary.core.domain.model.VersionStatus
 import com.culinary.core.domain.repository.SauceRepository
 import com.culinary.core.domain.transaction.TransactionRunner
 
-/** 草稿组成行输入：数量 + 单位 + 可选标记。 */
+/**
+ * 草稿组成行输入：目标 + 数量 + 单位 + 可选标记。
+ *
+ * Stage 3 只允许食材目标；Stage 4 起保留已导入的子菜谱/子酱汁目标，
+ * 编辑时以只读方式回写，避免保存时静默丢弃。兼容旧调用方的食材构造器。
+ */
 data class SauceDraftLineInput(
-    val ingredientId: IngredientId,
+    val target: ComponentTarget,
     val amount: Double,
     val unit: Unit,
     val isOptional: Boolean = false,
-)
+) {
+    constructor(
+        ingredientId: IngredientId,
+        amount: Double,
+        unit: Unit,
+        isOptional: Boolean = false,
+    ) : this(ComponentTarget.Ingredient(ingredientId), amount, unit, isOptional)
+}
 
 /** 保存酱汁草稿版本的输入。 */
 data class SaveSauceDraftInput(
@@ -56,7 +68,7 @@ class SaveSauceDraftUseCase(
             input.components.mapIndexed { index, line ->
                 SauceComponent(
                     lineNo = index + 1,
-                    target = ComponentTarget.Ingredient(line.ingredientId),
+                    target = line.target,
                     quantity = Quantity(line.amount, line.unit),
                     isOptional = line.isOptional,
                 )

@@ -4,10 +4,13 @@ import androidx.lifecycle.SavedStateHandle
 import com.culinary.core.common.CulinaryError
 import com.culinary.core.common.IdGenerator
 import com.culinary.core.common.Outcome
+import com.culinary.core.domain.model.ComponentTarget
 import com.culinary.core.domain.model.EntityStatus
 import com.culinary.core.domain.model.Ingredient
 import com.culinary.core.domain.model.IngredientId
 import com.culinary.core.domain.model.Quantity
+import com.culinary.core.domain.model.RecipeId
+import com.culinary.core.domain.model.RecipeVersionId
 import com.culinary.core.domain.model.Sauce
 import com.culinary.core.domain.model.SauceComponent
 import com.culinary.core.domain.model.SauceId
@@ -141,6 +144,74 @@ class SaucesViewModelTest {
                     .single()
                     .quantity.amount,
             ).isWithin(1e-9).of(120.0)
+        }
+
+    @Test
+    fun `editor keeps imported recipe and sauce rows read only on save`() =
+        runTest {
+            ingredients.items += ingredient()
+            sauces.saved += sauce()
+            val recipeTarget =
+                ComponentTarget.Recipe(RecipeId("recipe-base"), RecipeVersionId("recipe-v3"))
+            val sauceTarget =
+                ComponentTarget.Sauce(SauceId("sauce-base"), SauceVersionId("sauce-v2"))
+            val version =
+                SauceVersion(
+                    id = SauceVersionId(VERSION_ID),
+                    sauceId = SauceId(SAUCE_ID),
+                    versionNo = 1,
+                    status = VersionStatus.PUBLISHED,
+                    yield = Quantity(500.0, gram()),
+                    components =
+                        listOf(
+                            SauceComponent(
+                                lineNo = 1,
+                                target = ComponentTarget.Ingredient(IngredientId(INGREDIENT_ID)),
+                                quantity = Quantity(100.0, gram()),
+                            ),
+                            SauceComponent(
+                                lineNo = 2,
+                                target = recipeTarget,
+                                quantity = Quantity(50.0, gram()),
+                            ),
+                            SauceComponent(
+                                lineNo = 3,
+                                target = sauceTarget,
+                                quantity = Quantity(20.0, gram()),
+                            ),
+                        ),
+                    isCurrent = true,
+                )
+            sauces.versions[version.id] = version
+            sauces.current[SAUCE_ID] = version.id
+            val viewModel = editorViewModel(SAUCE_ID)
+
+            advanceUntilIdle()
+
+            val state = viewModel.uiState.value
+            assertThat(state.lines).hasSize(3)
+            assertThat(state.lines.map { it.isReadOnly }).containsExactly(false, true, true).inOrder()
+            val loadedTargets = state.lines.map { it.target }
+            assertThat(loadedTargets)
+                .containsExactly(
+                    ComponentTarget.Ingredient(IngredientId(INGREDIENT_ID)),
+                    recipeTarget,
+                    sauceTarget,
+                ).inOrder()
+
+            viewModel.save(publish = false)
+            advanceUntilIdle()
+
+            val latest = sauces.versions.values.maxByOrNull { it.versionNo }
+            assertThat(latest).isNotNull()
+            val savedTargets = requireNotNull(latest).components.map { it.target }
+            assertThat(savedTargets)
+                .containsExactly(
+                    ComponentTarget.Ingredient(IngredientId(INGREDIENT_ID)),
+                    recipeTarget,
+                    sauceTarget,
+                ).inOrder()
+            assertThat(viewModel.uiState.value.error).isNull()
         }
 
     @Test

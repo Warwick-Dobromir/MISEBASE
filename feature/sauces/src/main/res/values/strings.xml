@@ -48,4 +48,6 @@
     <string name="sauces_optional_on">可选：是</string>
     <string name="sauces_optional_off">可选：否</string>
     <string name="sauces_saved_hint">已保存，返回列表查看。</string>
+    <string name="sauces_locked_component">只读保留</string>
+    <string name="sauces_locked_components_hint">子菜谱 / 子酱汁组成行来自导入数据，本阶段只读保留；保存草稿会原样写回，不会丢失。</string>
 </resources>

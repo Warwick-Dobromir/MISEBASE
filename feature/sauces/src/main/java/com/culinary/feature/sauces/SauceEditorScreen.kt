@@ -1,4 +1,4 @@
-﻿package com.culinary.feature.sauces
+package com.culinary.feature.sauces
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -37,6 +37,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.culinary.core.designsystem.component.ErrorBanner
 import com.culinary.core.designsystem.component.LoadingRows
+import com.culinary.core.designsystem.component.QuantityText
 import com.culinary.core.designsystem.component.SectionHeader
 import com.culinary.core.designsystem.component.StatusBadge
 import com.culinary.core.designsystem.component.StatusTone
@@ -263,6 +264,14 @@ private fun EditorComponents(
     onRemoveLine: (String) -> Unit,
 ) {
     SectionHeader(title = stringResource(R.string.sauces_components, state.lines.size))
+    if (state.lines.any { it.isReadOnly }) {
+        Text(
+            text = stringResource(R.string.sauces_locked_components_hint),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(bottom = CulinarySpacing.xs),
+        )
+    }
     state.lines.forEach { line ->
         SauceLineRowEditor(
             line = line,
@@ -322,35 +331,55 @@ private fun SauceLineRowEditor(
 ) {
     Column(modifier = Modifier.fillMaxWidth().padding(vertical = CulinarySpacing.xxs)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(
-                text = line.name,
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.weight(1f),
-            )
-            OutlinedTextField(
-                value = line.amount,
-                onValueChange = onAmountChange,
-                label = { Text(text = stringResource(R.string.sauces_amount)) },
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                trailingIcon = { Text(text = line.unit.symbol) },
-                modifier = Modifier.width(132.dp),
-            )
-            TextButton(onClick = onRemove) {
-                Text(text = stringResource(R.string.sauces_remove_line))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = line.name,
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+                Text(
+                    text = line.kindLabel,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            if (line.isReadOnly) {
+                QuantityText(
+                    amount = line.amount,
+                    unit = line.unit.symbol,
+                    modifier = Modifier.padding(end = CulinarySpacing.xs),
+                )
+                StatusBadge(
+                    text = stringResource(R.string.sauces_locked_component),
+                    tone = StatusTone.Neutral,
+                )
+            } else {
+                OutlinedTextField(
+                    value = line.amount,
+                    onValueChange = onAmountChange,
+                    label = { Text(text = stringResource(R.string.sauces_amount)) },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    trailingIcon = { Text(text = line.unit.symbol) },
+                    modifier = Modifier.width(132.dp),
+                )
+                TextButton(onClick = onRemove) {
+                    Text(text = stringResource(R.string.sauces_remove_line))
+                }
             }
         }
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            StatusBadge(
-                text =
-                    stringResource(
-                        if (line.isOptional) R.string.sauces_optional_on else R.string.sauces_optional_off,
-                    ),
-                tone = if (line.isOptional) StatusTone.Warning else StatusTone.Neutral,
-            )
-            TextButton(onClick = onToggleOptional) {
-                Text(text = stringResource(R.string.sauces_optional))
+        if (!line.isReadOnly) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                StatusBadge(
+                    text =
+                        stringResource(
+                            if (line.isOptional) R.string.sauces_optional_on else R.string.sauces_optional_off,
+                        ),
+                    tone = if (line.isOptional) StatusTone.Warning else StatusTone.Neutral,
+                )
+                TextButton(onClick = onToggleOptional) {
+                    Text(text = stringResource(R.string.sauces_optional))
+                }
             }
         }
     }

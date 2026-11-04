@@ -7,16 +7,19 @@ import com.culinary.core.domain.model.SauceId
 import com.culinary.core.domain.model.SauceLineView
 import com.culinary.core.domain.model.VersionStatus
 import com.culinary.core.domain.repository.IngredientRepository
+import com.culinary.core.domain.repository.RecipeRepository
 import com.culinary.core.domain.repository.SauceRepository
 
 /**
  * 读取酱汁详情：档案 + 当前版本 + 版本历史 + 组成行标签。
  *
- * 标签解析（食材名称）在用例内完成，UI 不直接访问 Repository。
+ * 标签解析在用例内完成，UI 不直接访问 Repository；子菜谱 / 子酱汁目标
+ * 同样解析为可读名称，供只读保护提示使用。
  */
 class GetSauceDetailUseCase(
     private val sauceRepository: SauceRepository,
     private val ingredientRepository: IngredientRepository,
+    private val recipeRepository: RecipeRepository? = null,
 ) {
     suspend operator fun invoke(sauceId: SauceId): Outcome<SauceDetail> {
         val sauce =
@@ -63,7 +66,21 @@ class GetSauceDetailUseCase(
                 }
             }
 
-            is ComponentTarget.Recipe -> "子菜谱"
-            is ComponentTarget.Sauce -> "子酱汁"
+            is ComponentTarget.Recipe -> {
+                val name =
+                    (recipeRepository?.get(target.recipeId) as? Outcome.Success)?.value?.name
+                        ?: "子菜谱"
+                val versionNo = recipeRepository?.getVersion(target.versionId)?.versionNo
+                if (versionNo == null) name else "$name（子菜谱 v$versionNo）"
+            }
+
+            is ComponentTarget.Sauce -> {
+                val name =
+                    (sauceRepository.get(target.sauceId) as? Outcome.Success)?.value?.name
+                        ?: "子酱汁"
+                val versionNo =
+                    (sauceRepository.getVersion(target.versionId) as? Outcome.Success)?.value?.versionNo
+                if (versionNo == null) name else "$name（子酱汁 v$versionNo）"
+            }
         }
 }

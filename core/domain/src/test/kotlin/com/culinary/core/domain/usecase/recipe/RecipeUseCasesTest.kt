@@ -188,7 +188,7 @@ class RecipeUseCasesTest {
         }
 
     @Test
-    fun `expansion rejects a sauce target with an explicit domain error`() =
+    fun `expansion reports a missing sauce graph when no sauce repository is wired`() =
         runBlocking<Unit> {
             val versionId = RecipeVersionId("sauce-parent-v1")
             recipes.versions[versionId] =
@@ -217,7 +217,7 @@ class RecipeUseCasesTest {
 
             val result = expand(versionId, targetServings = 1.0)
 
-            assertThat((result as Outcome.Failure).error.code.value).isEqualTo("CUL-REP-004")
+            assertThat((result as Outcome.Failure).error.code.value).isEqualTo("CUL-NF-001")
         }
 
     @Test

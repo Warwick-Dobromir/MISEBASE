@@ -85,14 +85,11 @@ class SauceEditorViewModel
             val version = detail.currentVersion ?: detail.versions.firstOrNull()
             val labels = detail.lines.associateBy { it.lineNo }
             val lines =
-                version?.components.orEmpty().mapNotNull { component ->
-                    val ingredientId =
-                        (component.target as? ComponentTarget.Ingredient)?.id
-                            ?: return@mapNotNull null
+                version?.components.orEmpty().map { component ->
                     SauceLineEditor(
                         key = "line-${lineKey++}",
-                        ingredientId = ingredientId,
-                        name = labels[component.lineNo]?.label ?: "食材",
+                        target = component.target,
+                        name = labels[component.lineNo]?.label ?: fallbackLabel(component.target),
                         amount = formatAmount(component.quantity.amount),
                         unit = component.quantity.unit,
                         isOptional = component.isOptional,
@@ -116,6 +113,13 @@ class SauceEditorViewModel
                 )
             }
         }
+
+        private fun fallbackLabel(target: ComponentTarget): String =
+            when (target) {
+                is ComponentTarget.Ingredient -> "食材"
+                is ComponentTarget.Recipe -> "子菜谱（只读保留）"
+                is ComponentTarget.Sauce -> "子酱汁（只读保留）"
+            }
 
         fun onNameChange(value: String) {
             _uiState.update { it.copy(name = value, error = null) }
@@ -144,7 +148,7 @@ class SauceEditorViewModel
                         state.lines +
                             SauceLineEditor(
                                 key = "line-${lineKey++}",
-                                ingredientId = ingredient.id,
+                                target = ComponentTarget.Ingredient(ingredient.id),
                                 name = ingredient.name,
                                 amount = "",
                                 unit = unit,
@@ -281,7 +285,7 @@ class SauceEditorViewModel
                 }
                 components +=
                     SauceDraftLineInput(
-                        ingredientId = line.ingredientId,
+                        target = line.target,
                         amount = amount,
                         unit = line.unit,
                         isOptional = line.isOptional,

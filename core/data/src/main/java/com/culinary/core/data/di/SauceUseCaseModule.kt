@@ -2,6 +2,7 @@ package com.culinary.core.data.di
 
 import com.culinary.core.common.IdGenerator
 import com.culinary.core.domain.repository.IngredientRepository
+import com.culinary.core.domain.repository.RecipeRepository
 import com.culinary.core.domain.repository.SauceRepository
 import com.culinary.core.domain.repository.UnitRepository
 import com.culinary.core.domain.transaction.TransactionRunner
@@ -34,7 +35,9 @@ object SauceUseCaseModule {
     fun provideGetSauceDetailUseCase(
         sauceRepository: SauceRepository,
         ingredientRepository: IngredientRepository,
-    ): GetSauceDetailUseCase = GetSauceDetailUseCase(sauceRepository, ingredientRepository)
+        recipeRepository: RecipeRepository,
+    ): GetSauceDetailUseCase =
+        GetSauceDetailUseCase(sauceRepository, ingredientRepository, recipeRepository)
 
     @Provides
     @Singleton
