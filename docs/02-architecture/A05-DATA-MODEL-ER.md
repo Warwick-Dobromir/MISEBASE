@@ -1,7 +1,7 @@
 # CULINARY 数据库 ER 图与数据模型说明
 
 **文档编号**：A05
-**版本**：`0.1.0`
+**版本**：`0.1.1`
 **状态**：`Review`
 **日期**：2026-11-04
 **负责人**：首席架构师 / 技术负责人
@@ -404,6 +404,10 @@ erDiagram
 
 ### 4.3 计划与需求
 
+> **DORMANT（MB-D-005 ACCEPTED）**：`production_plan`、`production_plan_item`、
+> `production_plan_snapshot`、`material_requirement`、`material_requirement_source`
+> 保留 schema v1 结构，不删除/不迁移/不改造；禁止新代码引用。MISEBASE 不建独立计划模块。
+
 - `production_plan_item.recipe_version_id` 固定版本；`quantity/unit` 是目标产量。
 - `production_plan_snapshot` 保存完整展开 JSON + 引擎版本 + hash；每次刷新生成新 revision。
 - `material_requirement` 是按食材 + 单位 + 可选标记汇总后的需求；`shortage_qty` 是确认时快照。
@@ -411,6 +415,10 @@ erDiagram
 - `procurement_requirement` 把缺口转成可采购项，可关联商品与采购单。
 
 ### 4.4 采购与收货
+
+> **DORMANT（MB-D-005 ACCEPTED）**：`procurement_requirement`、`purchase_order`、
+> `purchase_order_item`、`goods_receipt`、`goods_receipt_item` 保留结构、禁止新代码引用。
+> MISEBASE 不做采购单/到货/供应商；缺料清单归 Inventory。
 
 - 采购单可有多次收货；`purchase_order_item.received_qty` 由过账累加。
 - 收货明细过账后创建批次，形成 `PURCHASE_RECEIPT` 流水。
@@ -552,3 +560,4 @@ erDiagram
 | 版本 | 日期 | 变更 | 作者 |
 |---|---|---|---|
 | 0.1.0 | 2026-11-04 | 初稿；建立 31 个实体、关系、约束与删除策略；统一 `referenced_*` 外键命名 | 架构组 |
+| 0.1.1 | 2026-11-04 | MB-D-005：§4.3/§4.4 标注 11 张 DORMANT 表；未改 schema/ER 结构 | 接管工程组 |

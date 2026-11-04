@@ -1,7 +1,7 @@
 # CULINARY 数据字典
 
 **文档编号**：A06
-**版本**：`0.1.0`
+**版本**：`0.1.1`
 **状态**：`Review`
 **日期**：2026-11-04
 **负责人**：首席架构师 / 技术负责人
@@ -385,6 +385,10 @@ CHECK (
 
 ### 5.1 `supplier`
 
+> **DORMANT（MB-D-005 ACCEPTED）**：表结构保留在 schema v1，禁止新代码引用；不删除、不迁移、
+> 不改造。MISEBASE 不做供应商管理；`product.supplier_id` 保留可空。见
+> [MB-S1-04](../06-stage1/MB-S1-04-DORMANT-TABLES.md)。
+
 | 列 | 类型 | 空 | 默认 | 约束/说明 |
 |---|---|---|---|---|
 | `id` | TEXT | N | — | PK |
@@ -573,6 +577,9 @@ UNIQUE(idempotency_key)
 
 ## 7. 制作计划
 
+> **DORMANT（MB-D-005 ACCEPTED）**：本节 `production_plan*`、`material_requirement*`
+> 共 5 张表保留 schema v1 结构，禁止新代码引用；不删除/不迁移/不改造。MISEBASE 不建独立计划模块。
+
 ### 7.1 `production_plan`
 
 | 列 | 类型 | 空 | 默认 | 约束/说明 |
@@ -673,6 +680,10 @@ UNIQUE(idempotency_key)
 - 用于回答“这个需求从哪来”。
 
 ## 8. 采购与收货
+
+> **DORMANT（MB-D-005 ACCEPTED）**：本节 `procurement_requirement`、`purchase_order*`、
+> `goods_receipt*` 共 5 张表保留结构，禁止新代码引用；MISEBASE 不做采购单/到货；
+> 缺料清单归 Inventory。
 
 ### 8.1 `procurement_requirement`
 
@@ -1030,3 +1041,4 @@ GROUP BY product_id, stock_unit_id;
 | 版本 | 日期 | 变更 | 作者 |
 |---|---|---|---|
 | 0.1.0 | 2026-11-04 | 初稿；31 张表、枚举、约束、索引、DDL 与 Room 映射 | 架构组 |
+| 0.1.1 | 2026-11-04 | MB-D-005：§5.1/§7/§8 标注 11 张 DORMANT 表；未改字段/表结构 | 接管工程组 |

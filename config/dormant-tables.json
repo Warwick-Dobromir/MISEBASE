@@ -1,0 +1,87 @@
+{
+  "schemaVersion": 1,
+  "decision": "MB-D-005",
+  "status": "DORMANT",
+  "schemaVersionFrozen": 1,
+  "policy": {
+    "delete": false,
+    "migrate": false,
+    "structuralChange": false,
+    "createSchemaV2": false,
+    "newCodeReferences": false
+  },
+  "allowedReferenceRoots": [
+    "core/database/src/main/",
+    "core/database/src/test/",
+    "core/database/src/androidTest/",
+    "core/database/schemas/"
+  ],
+  "tables": [
+    {
+      "name": "supplier",
+      "area": "供应商",
+      "reason": "MISEBASE 不做供应商管理；product.supplier_id 保留可空",
+      "replacement": "无（商品/食材映射不依赖供应商）"
+    },
+    {
+      "name": "production_plan",
+      "area": "计划",
+      "reason": "不建独立制作计划模块",
+      "replacement": "Inventory 内需求计算；快照语义见 MB-D-017（PROPOSED）"
+    },
+    {
+      "name": "production_plan_item",
+      "area": "计划",
+      "reason": "同上",
+      "replacement": "Inventory 内需求计算"
+    },
+    {
+      "name": "production_plan_snapshot",
+      "area": "计划",
+      "reason": "同上；表结构保留但不再写入",
+      "replacement": "计算记录（MB-D-017，PROPOSED）"
+    },
+    {
+      "name": "material_requirement",
+      "area": "计划/需求",
+      "reason": "需求结果不再落该表",
+      "replacement": "Domain 计算 + Inventory 缺料清单"
+    },
+    {
+      "name": "material_requirement_source",
+      "area": "计划/需求",
+      "reason": "来源路径不再落该表",
+      "replacement": "Domain 计算结果（内存/计算记录）"
+    },
+    {
+      "name": "procurement_requirement",
+      "area": "采购",
+      "reason": "采购需求不作为独立实体",
+      "replacement": "Inventory 缺料清单（按需计算，不落采购单表）"
+    },
+    {
+      "name": "purchase_order",
+      "area": "采购",
+      "reason": "不做采购单/到货/供应商",
+      "replacement": "Inventory 缺料清单"
+    },
+    {
+      "name": "purchase_order_item",
+      "area": "采购",
+      "reason": "同上",
+      "replacement": "Inventory 缺料清单"
+    },
+    {
+      "name": "goods_receipt",
+      "area": "采购/收货",
+      "reason": "不做采购收货",
+      "replacement": "Inventory 入库（批次 + 流水）"
+    },
+    {
+      "name": "goods_receipt_item",
+      "area": "采购/收货",
+      "reason": "同上",
+      "replacement": "Inventory 入库（批次 + 流水）"
+    }
+  ]
+}
