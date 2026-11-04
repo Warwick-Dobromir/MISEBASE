@@ -202,10 +202,21 @@ Stage 4 在 Schema v2（33 表）、13 模块、三大档案库与 MB-D-007 备�
 | 8 | `62a1b4f` | `feat(app): switch the inventory bottom entry to the real inventory flow` |
 | 9 | `09c58ed` | `fix(inventory): show on-hand and reserved balances on overview rows` |
 | 10 | `786250e` | `test(data): cover calculation snapshot writes inside an outer transaction` |
+| 11 | `dbe212d` | `test(sauces): keep the imported-row regression fixture within detekt limits` |
+| 12 | `f743c66` | `docs(stage4): record the Stage 4 review report, page guides, test matrix and decisions` |
 
 文档提交与本报告在同一检查点前提交；检查点回执见 [MB-S4-10](MB-S4-10-CHECKPOINT-RECEIPT.md)。
 
-### 13.2 范围边界
+### 13.2 检查点
+
+| 项 | 值 |
+|---|---|
+| 标签 | `checkpoint/misebase-stage4-20261105` |
+| 类型 | annotated tag |
+| 对象哈希 | `c8c95e13cec8b003e3d68de79a0fd70b43defbdb` |
+| 解析提交 | `f743c665a3a20b47ffabc3a6170eb904c405bae1` |
+
+### 13.3 范围边界
 
 - Schema/Entity/表结构/迁移/数据库文件：**无变更**；
 - 备份/恢复实现：**无变更**；
