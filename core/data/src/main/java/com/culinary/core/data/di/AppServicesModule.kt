@@ -3,6 +3,7 @@ package com.culinary.core.data.di
 import android.content.Context
 import com.culinary.core.common.DispatcherProvider
 import com.culinary.core.common.IdGenerator
+import com.culinary.core.data.backup.WriteBarrier
 import com.culinary.core.data.debug.DebugInfoProvider
 import com.culinary.core.data.startup.StartupCoordinator
 import com.culinary.core.data.transaction.RoomTransactionRunner
@@ -19,7 +20,6 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
-import kotlinx.coroutines.sync.Mutex
 import java.io.File
 import javax.inject.Provider
 import javax.inject.Singleton
@@ -83,6 +83,6 @@ object AppServicesModule {
     fun provideTransactionRunner(
         database: CulinaryDatabase,
         dispatchers: DispatcherProvider,
-        writeMutex: Mutex,
-    ): TransactionRunner = RoomTransactionRunner(database, dispatchers, writeMutex)
+        writeBarrier: WriteBarrier,
+    ): TransactionRunner = RoomTransactionRunner(database, dispatchers, writeBarrier)
 }

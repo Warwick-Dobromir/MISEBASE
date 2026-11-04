@@ -8,6 +8,7 @@ import com.culinary.core.common.DispatcherProvider
 import com.culinary.core.common.IdGenerator
 import com.culinary.core.common.SystemClock
 import com.culinary.core.common.UuidV4Generator
+import com.culinary.core.data.backup.WriteBarrier
 import com.culinary.core.data.logging.TimberAppLogger
 import com.culinary.core.database.CulinaryDatabase
 import com.culinary.core.database.DatabaseFactory
@@ -19,7 +20,6 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
-import kotlinx.coroutines.sync.Mutex
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import javax.inject.Singleton
@@ -68,7 +68,7 @@ object DataModule {
 
     @Provides
     @Singleton
-    fun provideWriteMutex(): Mutex = Mutex()
+    fun provideWriteBarrier(logger: AppLogger): WriteBarrier = WriteBarrier(logger = logger)
 
     @Provides
     @Singleton
