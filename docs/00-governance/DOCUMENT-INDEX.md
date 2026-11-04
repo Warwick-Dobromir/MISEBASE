@@ -1,7 +1,7 @@
 # CULINARY 文档索引
 
 **文档编号**：GOV-INDEX
-**版本**：`0.35.0`
+**版本**：`0.36.0`
 **状态**：`Review`
 **日期**：2026-11-05
 **维护人**：首席架构师 / 技术负责人
@@ -237,6 +237,18 @@
 | [图标真机桌面](../14-stage6/evidence/icon-01-launcher-home.png) | 桌面圆形遮罩下的 MISEBASE 图标 |
 | [升级前后截图](../14-stage6/evidence/upgrade-01-before-home.png) | 升级前首页（另见 03/04/05/06/07 同目录） |
 
+### 2.13 设置页补全（MB-S6-002，2026-11-05，状态 `Review`）
+
+| 文档 | 用途 |
+|---|---|
+| [MB-S6-002 执行报告](../15-settings/MB-S6-002-EXECUTION-REPORT.md) | 备份/恢复/诊断/关于四区块、SAF 接线、恢复重启、模拟器用例、测试与 APK 交付 |
+| [设置主页面](../15-settings/settings-01-main.png) | 四个区块全貌 |
+| [备份成功](../15-settings/settings-02-backup-done.png) | 真实 ZIP 落盘与结果回显 |
+| [恢复确认](../15-settings/settings-03-restore-confirm.png) | 高危确认弹窗（覆盖范围 / 重启 / 不可撤销） |
+| [恢复完成](../15-settings/settings-04-restore-restart.png) | 恢复成功与重启提示 |
+| [诊断与关于](../15-settings/settings-05-diag-about.png) | 版本、schema v2、数据库大小、设备、开源许可入口 |
+| [开源许可](../15-settings/settings-06-licenses.png) | 离线内置许可清单 |
+
 ## 3. 图表
 
 | 文件 | 内容 |
@@ -306,4 +318,5 @@
 | 0.33.0 | 2026-11-05 | MB-HOME-002：新增决策记录、N3 执行报告与首页/知识库截图；UI 设计书升 1.4.0（香槟金批准、N1→N3）；历史 N1 证据标注 | 开发 AI |
 | 0.34.0 | 2026-11-05 | MB-HOME-CLOSE-001：新增首页/N3 导航关闭记录；MB-HOME-002 状态改为 `CLOSED`；记录 Stage 6 起点标签已存在且未移动的冲突 | 开发 AI |
 | 0.35.0 | 2026-11-05 | MB-S6-001：新增 Stage 6 发布文档 5 份（执行报告/图标/签名/升级数据安全/测试清单）与发布构建指南；记录 v1.0.0 签名 APK、真机升级与图标证据 | 开发 AI |
+| 0.36.0 | 2026-11-05 | MB-S6-002：设置页补全（备份/恢复/诊断/关于）；新增执行报告与 6 张模拟器截图；Release APK 交付 D:\A-1\MISEBASE-Final.apk | 开发 AI |
 

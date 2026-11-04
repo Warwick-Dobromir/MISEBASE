@@ -143,6 +143,13 @@ MB-D-010 CI（不采用远端 CI，本地构建与验收）、MB-D-012 发布签
   [升级数据安全](docs/14-stage6/MB-S6-04-UPGRADE-DATA-SAFETY.md) 与
   [发布构建指南](docs/14-stage6/RELEASE-BUILD-GUIDE.md)。
   **未新增业务功能、未改 Schema/Entity/DAO。**
+- **MB-S6-002 设置页已完成（2026-11-05，Review）**：N3 第 5 项“设置”从占位页升级为
+  **数据备份（SAF CreateDocument + 既有备份编排）**、**数据恢复（SAF OpenDocument + 高危确认 + `RestoreExecutor`）**、
+  **诊断信息（版本 / schema v2 / 数据库大小 / 设备，可导出文本）** 与 **关于（版本 + 开源许可）**；
+  在 Android 模拟器（Medium_Phone_API_36.1 / API 36）完成备份落盘、恢复覆盖与重启、诊断导出验证；
+  全量 `test assembleDebug` 通过（857 执行 / 540 唯一 / 0 失败）；Release APK 交付到
+  `D:\A-1\MISEBASE-Final.apk`。详见 [MB-S6-002 执行报告](docs/15-settings/MB-S6-002-EXECUTION-REPORT.md)。
+  **未改 Schema/Entity、备份算法与各 feature 业务逻辑。**
 - **MB-HOME-002 导航重构已完成（2026-11-05，Review）**：N3 底部五项为首页/知识库/扫码（中央凸起）/库存/设置；设置从顶栏移到底栏；知识库聚合酱汁/食材/菜谱三个 Tab，底层三个 feature 模块与详情/编辑路由均未合并；香槟金已正式批准（MB-D-008 Rev.1）。冷启动仍进入首页，真实数据与隐藏模块策略不变。详见
   [MB-HOME-002 执行报告](docs/13-home/MB-HOME-002-EXECUTION-REPORT.md)、[决策记录](docs/13-home/MB-HOME-002-DECISIONS.md) 与 [真机截图](docs/13-home/MB-HOME-002-device-home.png)。
   **未新增模块、未改 Schema；测试通过。**

@@ -55,6 +55,11 @@ android {
         unitTests.isIncludeAndroidResources = true
     }
 
+    buildFeatures {
+        // 设置页“关于/诊断”需要读取 VERSION_NAME / VERSION_CODE（MB-S6-002 §2.1）。
+        buildConfig = true
+    }
+
     signingConfigs {
         if (hasReleaseSigning) {
             create("release") {

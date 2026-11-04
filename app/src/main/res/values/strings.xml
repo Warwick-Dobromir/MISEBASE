@@ -55,4 +55,59 @@
     <string name="home_knowledge_empty_body">从上方快捷操作开始，建立第一份酱汁、食材或菜谱。</string>
     <string name="home_knowledge_error">知识库数据暂时无法读取</string>
     <string name="home_brand_home">返回首页</string>
+
+    <!-- MB-S6-002 设置页 -->
+    <string name="settings_intro">备份、恢复与诊断都在本机完成。应用没有网络权限，数据不会离开这台设备。</string>
+    <string name="settings_footer">数据保存在本机 · 离线可用</string>
+
+    <string name="settings_section_backup">数据备份</string>
+    <string name="settings_backup_body">生成完整归档：SQLite 数据库 + 附件索引，保存为 ZIP。可用于换机或灾难恢复。</string>
+    <string name="settings_backup_action">立即备份</string>
+    <string name="settings_backup_running">正在生成备份…</string>
+    <string name="settings_backup_success">备份已保存：%1$s（%2$s）</string>
+    <string name="settings_backup_hint">保存位置由系统文件选择器决定；应用不保留你的选择。</string>
+
+    <string name="settings_section_restore">数据恢复</string>
+    <string name="settings_restore_body">从 MISEBASE 备份 ZIP 恢复。恢复会覆盖当前所有数据，完成后应用会重启。</string>
+    <string name="settings_restore_action">从备份恢复</string>
+    <string name="settings_restore_running">正在校验并恢复…</string>
+    <string name="settings_restore_success_inline">已恢复备份 %1$s（schema v%2$d）。</string>
+    <string name="settings_restore_clear">清除提示</string>
+    <string name="settings_restore_hint">若备份版本与当前应用不兼容，恢复会被拒绝，现有数据不受影响。</string>
+    <string name="settings_restore_confirm_title">确认覆盖恢复？</string>
+    <string name="settings_restore_confirm_body">将用所选备份恢复数据：\n%1$s\n\n当前所有食材、酱汁、菜谱、库存与附件都会被覆盖，恢复完成后应用会重启。此操作不可撤销。</string>
+    <string name="settings_restore_confirm_action">覆盖并恢复</string>
+    <string name="settings_restore_unknown_file">已选择的备份文件</string>
+    <string name="settings_cancel">取消</string>
+
+    <string name="settings_section_diagnostics">诊断信息</string>
+    <string name="settings_diag_app_version">应用版本</string>
+    <string name="settings_diag_db_version">数据库版本</string>
+    <string name="settings_diag_db_version_value">schema v%1$d（Room）</string>
+    <string name="settings_diag_db_size">数据库大小</string>
+    <string name="settings_diag_device">设备</string>
+    <string name="settings_diag_export">导出诊断信息</string>
+    <string name="settings_diag_export_running">正在导出…</string>
+    <string name="settings_diag_export_success">诊断信息已保存：%1$s</string>
+    <string name="settings_diag_hint">诊断信息只包含版本、设备与数据规模，不包含业务内容。</string>
+
+    <string name="settings_section_about">关于</string>
+    <string name="settings_about_body">MISEBASE 是离线优先的个人烹饪档案与研发管理应用：食材、酱汁、菜谱、库存与扫码入库都保存在本机，没有账号、没有云端同步、没有网络权限。</string>
+    <string name="settings_about_version">版本 %1$s（%2$d）</string>
+    <string name="settings_about_license">开源许可</string>
+
+    <string name="settings_license_title">开源许可</string>
+    <string name="settings_license_body">本应用基于以下开源项目构建：\n\n• Kotlin / kotlinx.coroutines — Apache License 2.0\n• AndroidX（Jetpack）— Apache License 2.0\n• Jetpack Compose — Apache License 2.0\n• Room — Apache License 2.0\n• Hilt / Dagger — Apache License 2.0\n• WorkManager — Apache License 2.0\n• CameraX — Apache License 2.0\n• ML Kit（条码 / 二维码识别）— Google APIs Terms of Service\n• Timber — Apache License 2.0\n• Robolectric / ktlint / detekt — 仅开发期使用\n\n完整许可证文本随源码仓库分发。应用不访问网络，也不包含广告或统计 SDK。</string>
+    <string name="settings_close">关闭</string>
+
+    <string name="settings_restart_title">恢复完成，需要重启</string>
+    <string name="settings_restart_body">数据库已替换。重启应用后加载新的数据；在此之前不要继续录入，以免写入旧连接。</string>
+    <string name="settings_restart_action">重启应用</string>
+
+    <string name="settings_error_incompatible">备份版本与应用不兼容，未修改任何数据。</string>
+    <string name="settings_error_verify">备份校验未通过，未修改任何数据。</string>
+    <string name="settings_error_io">文件读写失败，请检查存储空间或重新选择位置。</string>
+    <string name="settings_error_journal">恢复日志写入失败，未修改任何数据。</string>
+    <string name="settings_error_file">无法访问所选文件，请重新选择。</string>
+    <string name="settings_error_unknown">操作失败（%1$s）。</string>
 </resources>

@@ -50,7 +50,7 @@ import com.culinary.feature.scan.ScanRoutes
 import com.culinary.home.HomeRoute
 import com.culinary.library.LibraryRoute
 import com.culinary.library.LibraryTab
-import com.culinary.ui.PlaceholderScreen
+import com.culinary.settings.SettingsRoute
 
 /**
  * 应用导航外壳（N3，MB-HOME-002）。
@@ -329,10 +329,7 @@ private fun NavGraphBuilder.scanGraph(navController: NavHostController) {
 
 private fun NavGraphBuilder.settingsGraph() {
     composable(SETTINGS_ROUTE) {
-        PlaceholderScreen(
-            title = stringResource(R.string.destination_settings),
-            description = stringResource(R.string.placeholder_settings_body),
-        )
+        SettingsRoute()
     }
 }
 
