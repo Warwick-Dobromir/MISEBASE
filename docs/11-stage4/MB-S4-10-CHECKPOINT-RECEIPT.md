@@ -50,7 +50,7 @@ git switch misebase/main
 | 新增（A） | 44 |
 | 修改（M） | 33 |
 | 删除（D） | 0 |
-| 行数 | +8554 / −189 |
+| 行数 | 以 `git diff --shortstat` 为准 |
 
 按目录：
 
