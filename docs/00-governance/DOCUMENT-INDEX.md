@@ -1,7 +1,7 @@
 # CULINARY 文档索引
 
 **文档编号**：GOV-INDEX
-**版本**：`0.17.2`
+**版本**：`0.18.0`
 **状态**：`Review`
 **日期**：2026-11-04
 **维护人**：首席架构师 / 技术负责人
@@ -85,6 +85,16 @@
 | [MB-S1-09 审查回执](../06-stage1/MB-S1-09-REVIEW-RECEIPT.md) | 导航边界、实际起点、diff/status、仪器化测试与备份状态补记 |
 | [MB-S1-10 Stage 1 关闭记录](../06-stage1/MB-S1-10-STAGE1-CLOSE-RECORD.md) | 审查通过、关闭前 HEAD、决策状态、关闭标签与未决事项 |
 
+### 2.2 MISEBASE Stage 2 文档（2026-11-04，状态 Review）
+
+| 文档 | 用途 |
+|---|---|
+| [MB-S2-01 执行报告](../07-stage2/MB-S2-01-EXECUTION-REPORT.md) | 前置检查、领域模型、规则、Repository、测试、Git、风险；状态 `Review` |
+| [MB-S2-02 领域模型说明](../07-stage2/MB-S2-02-DOMAIN-MODEL.md) | 值对象、档案/版本、草稿、库存、需求/缺口、计算记录与 Schema 差距 |
+| [MB-S2-03 规则与测试矩阵](../07-stage2/MB-S2-03-RULES-TEST-MATRIX.md) | 每条规则到测试类/用例的映射；264 例 / 0 失败 |
+| [MB-S2-04 Repository 契约](../07-stage2/MB-S2-04-REPOSITORY-CONTRACTS.md) | 端口、实现、DAO 增量、fake、契约测试、事务边界 |
+| [MB-S2-05 决策映射](../07-stage2/MB-S2-05-DECISION-MAPPING.md) | MB-D-013/014/015/016/017 的落地与 Schema 变更请求 |
+
 ## 3. 图表
 
 | 文件 | 内容 |
@@ -135,3 +145,4 @@
 | 0.17.0 | 2026-11-04 | Stage 1：新增 8 份 Stage 1 文档；记录 P01 Superseded、A03A 13 模块目标、A-G2-001 Errata | 接管工程组 |
 | 0.17.1 | 2026-11-04 | Stage 1 审查回执：新增 MB-S1-09；补证据边界 | 接管工程组 |
 | 0.17.2 | 2026-11-04 | Stage 1 关闭：新增 MB-S1-10；记录关闭标签 | 接管工程组 |
+| 0.18.0 | 2026-11-04 | Stage 2：新增 MB-S2-01～05；执行报告状态 Review；记录 264 例测试与 Schema 变更请求 | 接管工程组 |
