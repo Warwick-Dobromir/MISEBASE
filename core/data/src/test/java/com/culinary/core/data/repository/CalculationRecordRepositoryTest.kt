@@ -2,8 +2,11 @@ package com.culinary.core.data.repository
 
 import android.database.sqlite.SQLiteException
 import androidx.room.Room
+import com.culinary.core.common.DefaultDispatcherProvider
 import com.culinary.core.common.IdGenerator
 import com.culinary.core.common.Outcome
+import com.culinary.core.data.backup.WriteBarrier
+import com.culinary.core.data.transaction.RoomTransactionRunner
 import com.culinary.core.database.CulinaryDatabase
 import com.culinary.core.database.CulinaryDatabaseCallback
 import com.culinary.core.database.entity.IngredientEntity
@@ -122,6 +125,25 @@ class CalculationRecordRepositoryTest {
             assertThat((duplicateId as Outcome.Failure).error.code).isEqualTo(
                 com.culinary.core.common.ErrorCode.CON_001,
             )
+            assertThat(database.calculationRecordDao().count()).isEqualTo(1)
+            assertThat(database.calculationRecordDao().countLines()).isEqualTo(2)
+        }
+
+    @Test
+    fun `confirmed snapshot can be written inside an outer transaction runner`() =
+        runBlocking {
+            val runner =
+                RoomTransactionRunner(
+                    database = database,
+                    dispatchers = DefaultDispatcherProvider(),
+                    writeBarrier = WriteBarrier(),
+                )
+
+            val result = runner.write { repository.saveConfirmed(confirmedRecord()) }
+
+            assertThat(result).isInstanceOf(Outcome.Success::class.java)
+            val nested = (result as Outcome.Success).value
+            assertThat(nested).isInstanceOf(Outcome.Success::class.java)
             assertThat(database.calculationRecordDao().count()).isEqualTo(1)
             assertThat(database.calculationRecordDao().countLines()).isEqualTo(2)
         }
