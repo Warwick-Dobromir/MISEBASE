@@ -115,6 +115,8 @@ class RecipeExploder(
                             requirements = requirements,
                             visiting = visiting,
                         )
+
+                    is ComponentTarget.Sauce -> sauceExpansionUnsupported()
                 }
             if (error != null) {
                 visiting -= versionId
@@ -125,6 +127,21 @@ class RecipeExploder(
         visiting -= versionId
         return null
     }
+
+    /**
+     * 子酱汁展开不在 Stage 3 范围内：酱汁图展开与库存计算属于 Stage 4。
+     * 这里显式拒绝而不是静默跳过，避免少算物料。
+     */
+    private fun sauceExpansionUnsupported(): CulinaryError =
+        CulinaryError.Domain(
+            detail =
+                DomainDetail.InvalidState(
+                    entity = "recipe_component",
+                    expected = "INGREDIENT or RECIPE target for expansion",
+                    actual = "SAUCE",
+                ),
+            code = ErrorCode.REP_004,
+        )
 
     private fun expandChild(
         target: ComponentTarget.Recipe,

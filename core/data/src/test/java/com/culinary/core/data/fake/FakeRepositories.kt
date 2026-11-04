@@ -13,8 +13,10 @@ import com.culinary.core.domain.model.Recipe
 import com.culinary.core.domain.model.RecipeVersion
 import com.culinary.core.domain.model.RecipeVersionId
 import com.culinary.core.domain.model.Sauce
+import com.culinary.core.domain.model.SauceId
 import com.culinary.core.domain.model.SauceVersion
 import com.culinary.core.domain.model.SauceVersionId
+import com.culinary.core.domain.model.VersionStatus
 import com.culinary.core.domain.repository.CalculationRecordRepository
 import com.culinary.core.domain.repository.InventoryRepository
 import com.culinary.core.domain.repository.RecipeRepository
@@ -129,16 +131,46 @@ class InMemoryCalculationRecordRepository : CalculationRecordRepository {
 class InMemorySauceRepository : SauceRepository {
     private val sauces = mutableListOf<Sauce>()
     private val versions = mutableMapOf<SauceVersionId, SauceVersion>()
+    private val current = mutableMapOf<String, SauceVersionId>()
 
     override fun observeActive(): Flow<List<Sauce>> = flowOf(sauces.filter { it.isActive })
+
+    override suspend fun get(id: SauceId): Outcome<Sauce> =
+        sauces.firstOrNull { it.id == id }?.let { Outcome.success(it) }
+            ?: Outcome.failure(CulinaryError.NotFound(entity = "sauce", id = id.value))
 
     override suspend fun getVersion(id: SauceVersionId): Outcome<SauceVersion> =
         versions[id]?.let { Outcome.success(it) }
             ?: Outcome.failure(CulinaryError.NotFound(entity = "sauce_version", id = id.value))
 
+    override suspend fun listVersions(sauceId: SauceId): List<SauceVersion> =
+        versions.values.filter { it.sauceId == sauceId }.sortedByDescending { it.versionNo }
+
+    override suspend fun findCurrentVersion(sauceId: SauceId): SauceVersion? =
+        current[sauceId.value]?.let { versions[it] }
+
+    override suspend fun nextVersionNo(sauceId: SauceId): Int =
+        (versions.values.filter { it.sauceId == sauceId }.maxOfOrNull { it.versionNo } ?: 0) + 1
+
+    override suspend fun save(sauce: Sauce): Outcome<SauceId> {
+        sauces.removeAll { it.id == sauce.id }
+        sauces += sauce
+        return Outcome.success(sauce.id)
+    }
+
     override suspend fun saveDraft(version: SauceVersion): Outcome<SauceVersionId> {
         versions[version.id] = version
         return Outcome.success(version.id)
+    }
+
+    override suspend fun savePublished(version: SauceVersion): Outcome<SauceVersionId> {
+        val published = version.copy(status = VersionStatus.PUBLISHED, isCurrent = true)
+        versions.values.filter { it.sauceId == version.sauceId }.forEach { existing ->
+            versions[existing.id] = existing.copy(isCurrent = false)
+        }
+        versions[published.id] = published
+        current[version.sauceId.value] = published.id
+        return Outcome.success(published.id)
     }
 
     fun addSauce(sauce: Sauce) {

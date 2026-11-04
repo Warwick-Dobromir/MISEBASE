@@ -143,6 +143,13 @@ class RecipeRepositoryImpl
                         referencedRecipeId = target.recipeId.value,
                         referencedRecipeVersionId = target.versionId.value,
                     )
+
+                is ComponentTarget.Sauce ->
+                    base.copy(
+                        componentType = ComponentTypeDb.SAUCE,
+                        referencedSauceId = target.sauceId.value,
+                        referencedSauceVersionId = target.versionId.value,
+                    )
             }
         }
 

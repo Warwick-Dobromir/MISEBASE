@@ -11,6 +11,9 @@ interface SauceComponentDao {
     @Insert
     suspend fun insert(entity: SauceComponentEntity)
 
+    @Insert
+    suspend fun insertAll(entities: List<SauceComponentEntity>)
+
     @Query("SELECT * FROM sauce_component WHERE sauce_version_id = :versionId ORDER BY line_no")
     suspend fun listByVersion(versionId: String): List<SauceComponentEntity>
 

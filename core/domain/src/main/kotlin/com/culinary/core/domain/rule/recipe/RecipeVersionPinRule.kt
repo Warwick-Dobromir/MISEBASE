@@ -48,6 +48,9 @@ class RecipeVersionPinRule {
                         }
                         ComponentTarget.Recipe(draftTarget.recipeId, versionId)
                     }
+
+                    is ComponentTargetDraft.SaucePinned ->
+                        ComponentTarget.Sauce(draftTarget.sauceId, draftTarget.versionId)
                 }
             pinned +=
                 RecipeComponent(

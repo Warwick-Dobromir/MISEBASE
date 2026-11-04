@@ -4,11 +4,13 @@ import com.culinary.core.data.repository.CalculationRecordRepositoryImpl
 import com.culinary.core.data.repository.IngredientRepositoryImpl
 import com.culinary.core.data.repository.InventoryRepositoryImpl
 import com.culinary.core.data.repository.RecipeRepositoryImpl
+import com.culinary.core.data.repository.SauceRepositoryImpl
 import com.culinary.core.data.repository.UnitRepositoryImpl
 import com.culinary.core.domain.repository.CalculationRecordRepository
 import com.culinary.core.domain.repository.IngredientRepository
 import com.culinary.core.domain.repository.InventoryRepository
 import com.culinary.core.domain.repository.RecipeRepository
+import com.culinary.core.domain.repository.SauceRepository
 import com.culinary.core.domain.repository.UnitRepository
 import dagger.Binds
 import dagger.Module
@@ -31,6 +33,10 @@ abstract class RepositoryModule {
     @Binds
     @Singleton
     abstract fun bindRecipeRepository(impl: RecipeRepositoryImpl): RecipeRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindSauceRepository(impl: SauceRepositoryImpl): SauceRepository
 
     @Binds
     @Singleton

@@ -21,4 +21,10 @@ sealed interface ComponentTargetDraft {
         val recipeId: RecipeId,
         val versionId: RecipeVersionId,
     ) : ComponentTargetDraft
+
+    /** 子酱汁固定版本引用；酱汁选择时即锁定版本，不做"当前版本"漂移。 */
+    data class SaucePinned(
+        val sauceId: SauceId,
+        val versionId: SauceVersionId,
+    ) : ComponentTargetDraft
 }
