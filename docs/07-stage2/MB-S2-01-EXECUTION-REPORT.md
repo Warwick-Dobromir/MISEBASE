@@ -178,12 +178,12 @@ checkpoint/misebase-stage2-20261104
   commit:     83d1051184fd04a02c59e4cbe87740ebb4eee4a3
 
 checkpoint/misebase-stage2-closed-20261104
-  tag object: 待关闭簿记提交回填
-  commit:     待关闭簿记提交回填
+  tag object: 34cb267da29d3a7b30b90e647586f91699e7c5dd
+  commit:     a39b3ca7cca3bede69b841d8650bbc13eb4a7334
 
 checkpoint/misebase-stage3-start-20261104
-  tag object: 待关闭簿记提交回填
-  commit:     待关闭簿记提交回填
+  tag object: 42b06b0d4e36828f8578732cc5ae70238fdfdfa5
+  commit:     a39b3ca7cca3bede69b841d8650bbc13eb4a7334
 ```
 
 `stage2-20261104` 指向报告提交；两个关闭标签指向 `docs(stage2): close stage 2 after review`

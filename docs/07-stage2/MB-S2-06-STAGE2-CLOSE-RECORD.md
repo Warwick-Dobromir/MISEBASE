@@ -93,19 +93,19 @@ MB-D-013/014/015/016/017 的实施与测试映射见 [MB-S2-05](MB-S2-05-DECISIO
 ### 6.1 关闭提交哈希
 
 ```text
-待关闭簿记提交回填
+a39b3ca7cca3bede69b841d8650bbc13eb4a7334
 ```
 
 ### 6.2 标签解析
 
 ```text
 checkpoint/misebase-stage2-closed-20261104
-  tag object: 待关闭簿记提交回填
-  commit:     待关闭簿记提交回填
+  tag object: 34cb267da29d3a7b30b90e647586f91699e7c5dd
+  commit:     a39b3ca7cca3bede69b841d8650bbc13eb4a7334
 
 checkpoint/misebase-stage3-start-20261104
-  tag object: 待关闭簿记提交回填
-  commit:     待关闭簿记提交回填
+  tag object: 42b06b0d4e36828f8578732cc5ae70238fdfdfa5
+  commit:     a39b3ca7cca3bede69b841d8650bbc13eb4a7334
 ```
 
 两个标签均指向关闭提交；后续簿记提交只回填本文件与 MB-S2-01 的哈希，不移动标签。
