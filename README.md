@@ -6,12 +6,14 @@
 |---|---|
 | 品牌/项目名 | MISEBASE（包名暂留 `com.culinary`，发布前按 D-017/MB-D-001 决定） |
 | 架构基线 | `0.4.1`（G1 已签收）；G2 已收档于 `framework-0.1.0` / `2b523de` |
-| 当前阶段 | **Stage 3 CLOSED（2026-11-04）**；**MB-D-007 备份一致性已 CLOSED（2026-11-04，审查通过）**；**Stage 4 可启动，等待任务书与负责人启动确认** |
-| 工程状态 | **13 模块**；Room schema **v1 / 31 表**（G2 历史；当前已迁移 v2 / 33 表，11 表 `DORMANT`）；三大档案库可用；库存/扫码为占位；**197 例 JVM 测试**（G2 基线；当前 612 次执行 / 376 唯一用例 / 0 失败） |
+| 当前阶段 | **Stage 4 Review（2026-11-05）**：库存与自动采购清单已实现，等待负责人审查；**不自动关闭 Stage 4、不进入 Stage 5**。MB-D-007 备份一致性已 CLOSED（2026-11-04） |
+| 工程状态 | **13 模块**；Room schema **v2 / 33 表**（11 表 `DORMANT`）；三大档案库 + Inventory 可用；扫码仍为占位；**660 次执行 / 416 唯一 JVM 用例 / 0 失败** |
 | 数据库 | **已创建**：schema v2（33 表），导出 `1.json`、`2.json`；`1→2` 迁移已落地；本次备份一致性修复未改 Schema/Entity/DAO |
 | 构建基线 | AGP 8.13.0 / Kotlin 2.2.20 / Gradle 8.14.3 / JDK 21 / minSdk 26 / compile & target 36 |
 | 依赖注入 | Hilt 2.57.2 + KSP（D-012 `ACCEPTED`，禁止 2.59+） |
 | 离线承诺 | 无 `INTERNET` 权限（manifest 移除 + `aapt2` 已验证） |
+
+> 历史基线：G2 收档时为 **197 例 JVM 测试**、schema **v1 / 31 表**；这些数字仅用于追溯 G2 历史，当前口径以本表为准。
 
 ## 快速开始
 
@@ -121,16 +123,16 @@ MB-D-010 CI、MB-D-011 真机、MB-D-012 签名。
 ## 当前状态与未决
 
 - **G2 阶段 1–9** 已完成并归档；`framework-0.1.0` 固定在 `2b523de`，未移动。
-- **Stage 0/1/2/3 均已关闭**；Schema 变更任务已关闭（v2 / 33 表）；三大档案库可用，库存/扫码仍为占位。
+- **Stage 0/1/2/3 均已关闭**；Schema 变更任务已关闭（v2 / 33 表）；三大档案库可用。
+- **Stage 4 状态为 Review（2026-11-05）**：库存总览/详情/入库/出库/调整/流水、需求汇总与缺口、采购清单 CSV、计算记录回放、酱汁图展开、编辑器组成行只读保护已完成；库存底部入口为真实页面，扫码仍为占位。详见
+  [Stage 4 执行报告](docs/11-stage4/MB-S4-01-EXECUTION-REPORT.md)；本报告不构成 Stage 4 关闭或 Stage 5 启动授权。
 - **MB-D-007 已 CLOSED（2026-11-04，审查通过）**：六项技术事项、Schema 版本阻断修复、
-  `612 / 376 / 0` 测试与 v2 检查点均已落库；详见
+  `612 / 376 / 0` 基线测试与 v2 检查点均已落库；详见
   [MB-D-007 关闭记录](docs/10-backup/MB-D-007-CLOSE-RECORD.md)。
-- **Stage 4 可启动，当前等待单独任务书与负责人启动确认**；本 README 不构成 Stage 4 启动授权，
-  也未开始库存业务开发。
 - **仍为 PROPOSED 的阻塞项**：MB-D-004 未签收前不新建 `feature:scan`；MB-D-010 CI、
   MB-D-011 真机、MB-D-012 签名仍未签收。
 - 保留项：附件恢复、SAF 目标、生产自动备份触发点未接线；真机 kill/断电未验证；
-  目录 fsync 为 best-effort；v1 测试夹具为反向构造。Stage 4 不得把这些保留项当作已完成。
+  目录 fsync 为 best-effort；v1 测试夹具为反向构造。
 - **G5 发布门禁**：Release keystore 未创建，不影响当前阶段。
 
 ## 文档
@@ -152,6 +154,12 @@ MB-D-010 CI、MB-D-011 真机、MB-D-012 签名。
 - [Stage 2 决策映射](docs/07-stage2/MB-S2-05-DECISION-MAPPING.md)
 - [Stage 2 关闭记录](docs/07-stage2/MB-S2-06-STAGE2-CLOSE-RECORD.md)
 - [Schema 变更授权记录](docs/08-schema-change/MB-SC-00-AUTHORIZATION.md)
+- [Stage 4 执行报告（Review）](docs/11-stage4/MB-S4-01-EXECUTION-REPORT.md)
+- [Stage 4 库存页面说明](docs/11-stage4/MB-S4-02-INVENTORY-PAGES.md)
+- [Stage 4 需求汇总与缺口](docs/11-stage4/MB-S4-03-REQUIREMENT-GAP.md)
+- [Stage 4 采购清单](docs/11-stage4/MB-S4-04-PURCHASE-LIST.md)
+- [Stage 4 计算记录](docs/11-stage4/MB-S4-05-CALCULATION-RECORD.md)
+- [Stage 4 测试矩阵](docs/11-stage4/MB-S4-08-TEST-MATRIX.md)
 - [UI 设计书 1.0.0](docs/design/MISEBASE-UI-DESIGN-SPEC.md)
 - [G2 收档文件](docs/00-governance/A-G2-001-G2-ARCHIVE.md)
 - [决策登记册](docs/00-governance/DECISION-REGISTER.md)
