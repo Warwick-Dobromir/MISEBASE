@@ -198,9 +198,12 @@ Stage 3 在既有 Schema v2（33 表）、13 模块与已签收的 MB-D-008 A / 
 | 6 | `0974f75` | `feat(recipes): map SAUCE components and allow recipes to reference sauces` |
 | 7 | `d72a4ae` | `test(domain): enforce transaction boundaries for archive writes` |
 | 8 | `d6dbb06` | `test(ui): add Compose coverage for navigation and three archives` |
-| 9 | 本文档提交 | 见 §12.4 回执（Stage 3 报告与索引） |
+| 9 | `b314a9a` | `test(ui): run Compose tests only on the debug variant` |
+| 10 | `0779c04` | `docs(stage3): record stage 3 execution report and index`（检查点解析提交） |
 
 ### 12.2 范围统计（`b7f2938..HEAD`，不含文档提交）
+
+代码与测试提交统计（截至 `d6dbb06`）：
 
 | 项 | 值 |
 |---|---|
@@ -214,6 +217,9 @@ Stage 3 在既有 Schema v2（33 表）、13 模块与已签收的 MB-D-008 A / 
 | feature:ingredients | 14（3 个旧 UI 文件删除 + 1 处重命名） |
 | feature:recipes | 13 |
 | config | 1（detekt 规则补充） |
+
+另：4 个 Compose UI 测试文件从 `src/test` 迁移到 `src/testDebug`（内容不变，`b314a9a`）；
+文档提交新增 `docs/09-stage3/` 与索引更新。最终 `git diff --name-status b7f2938..HEAD` 以交付回执为准。
 
 删除的文件仅为被替换的旧食材 UI：`IngredientsScreen.kt`、`IngredientsUiState.kt`、`IngredientsViewModel.kt`；
 未删除模块、未删除表、未修改 Entity。
@@ -236,7 +242,9 @@ Stage 3 在既有 Schema v2（33 表）、13 模块与已签收的 MB-D-008 A / 
 |---|---|
 | 标签 | `checkpoint/misebase-stage3-20261104` |
 | 类型 | annotated tag |
-| 对象哈希 / 解析提交 | 见 [MB-S3-09 检查点回执](MB-S3-09-CHECKPOINT-RECEIPT.md) |
+| 对象哈希 | `531b5f1cf596e90eaaec14b175d593aa1427eaca` |
+| 解析提交 | `0779c0470349d717e9c0fd1eaf6587168aea42dd` |
+| 回执 | [MB-S3-09 检查点回执](MB-S3-09-CHECKPOINT-RECEIPT.md) |
 | 既有标签 | `framework-0.1.0` 与全部既有 `checkpoint/*` / `baseline/*` 未移动 |
 
 ---

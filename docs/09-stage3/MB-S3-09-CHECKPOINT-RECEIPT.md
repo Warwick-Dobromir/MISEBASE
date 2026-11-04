@@ -5,8 +5,6 @@
 **状态**：`Review`
 **日期**：2026-11-04
 
-> 本回执在检查点标签创建后填写。标签创建前不得把本文件当作标签已存在的证据。
-
 ---
 
 ## 1. 检查点
@@ -15,9 +13,11 @@
 |---|---|
 | 标签名 | `checkpoint/misebase-stage3-20261104` |
 | 类型 | annotated tag |
-| 对象哈希 | 待标签创建后填写 |
-| 解析提交 | 待标签创建后填写 |
-| 提交信息 | `docs(stage3): record stage 3 execution report and index` |
+| 对象哈希 | `531b5f1cf596e90eaaec14b175d593aa1427eaca` |
+| 解析提交 | `0779c0470349d717e9c0fd1eaf6587168aea42dd` |
+| 解析提交信息 | `docs(stage3): record stage 3 execution report and index` |
+| 标签信息 | `MISEBASE Stage 3 review checkpoint: three archives, N1 navigation, design system A` |
+| 打标签时间 | 2026-11-04 22:22:44 +0800 |
 
 ## 2. 标签完整性
 
@@ -30,5 +30,6 @@
 
 ## 3. 说明
 
-- 检查点用于标记 Stage 3 报告提交坐标，不是发布标签；
-- 不构成 Stage 3 关闭，也不构成 Stage 4 启动授权。
+- 检查点标记 Stage 3 报告（MB-S3-01，状态 `Review`）的提交坐标；
+- 不是发布标签，不构成 Stage 3 关闭，也不构成 Stage 4 启动授权；
+- 本回执在标签创建后补记对象哈希与解析提交，随后作为独立文档提交。
