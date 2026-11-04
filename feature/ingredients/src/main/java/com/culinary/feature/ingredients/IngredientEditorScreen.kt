@@ -1,4 +1,4 @@
-package com.culinary.feature.ingredients
+﻿package com.culinary.feature.ingredients
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -83,7 +83,7 @@ fun IngredientEditorRoute(
 }
 
 @Composable
-private fun IngredientEditorForm(
+internal fun IngredientEditorForm(
     state: IngredientEditorUiState,
     onNameChange: (String) -> Unit,
     onCategoryChange: (String) -> Unit,

@@ -1,4 +1,4 @@
-package com.culinary.feature.sauces
+﻿package com.culinary.feature.sauces
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -100,7 +100,7 @@ fun SauceEditorRoute(
 }
 
 @Composable
-private fun SauceEditorScreen(
+internal fun SauceEditorScreen(
     state: SauceEditorUiState,
     onNameChange: (String) -> Unit,
     onFamilyChange: (String) -> Unit,

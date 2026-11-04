@@ -1,4 +1,4 @@
-package com.culinary.feature.sauces
+﻿package com.culinary.feature.sauces
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -43,7 +43,7 @@ fun SaucesRoute(
 }
 
 @Composable
-private fun SaucesScreen(
+internal fun SaucesScreen(
     state: SaucesListUiState,
     onOpenSauce: (String) -> Unit,
     onAddSauce: () -> Unit,

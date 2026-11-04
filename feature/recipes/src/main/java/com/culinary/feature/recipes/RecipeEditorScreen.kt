@@ -1,4 +1,4 @@
-package com.culinary.feature.recipes
+﻿package com.culinary.feature.recipes
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -215,7 +215,7 @@ private fun RecipeEditorScreen(
 }
 
 @Composable
-private fun RecipeEditorForm(
+internal fun RecipeEditorForm(
     state: RecipeEditorUiState,
     onNameChange: (String) -> Unit,
     onOpenCategoryPicker: () -> Unit,

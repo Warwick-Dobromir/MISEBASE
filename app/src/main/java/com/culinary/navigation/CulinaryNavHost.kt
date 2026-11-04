@@ -90,7 +90,7 @@ fun CulinaryNavHost(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun AppTopBar(
+internal fun AppTopBar(
     currentRoute: String?,
     topLevel: CulinaryDestination?,
     showBack: Boolean,
@@ -212,7 +212,7 @@ private fun NavGraphBuilder.placeholderGraph() {
 }
 
 @Composable
-private fun CulinaryBottomBar(
+internal fun CulinaryBottomBar(
     currentRoute: String?,
     onSelect: (CulinaryDestination) -> Unit,
 ) {

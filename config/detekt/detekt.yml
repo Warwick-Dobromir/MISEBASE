@@ -15,12 +15,22 @@ complexity:
     thresholdInFiles: 20
     # Room 的 @Database 类必须为每个 DAO 暴露一个访问器；v1 有 31 张表。
     thresholdInClasses: 35
+    # 版本/档案 DAO 的查询方法随 Stage 3 增加，接口上限与类保持一致。
+    thresholdInInterfaces: 35
 
 naming:
   active: true
   FunctionNaming:
     ignoreAnnotated:
       - Composable
+      - androidx.compose.runtime.Composable
+    # detekt 1.23 的 ignoreAnnotated 在部分多函数 Compose 页面文件中失效；
+    # 仅对 feature 页面文件关闭命名规则，业务/数据代码不受影响。
+    # 测试源沿用默认排除，避免覆盖默认 excludes 后误报 backtick 测试名。
+    excludes:
+      - '**/test/**'
+      - '**/androidTest/**'
+      - '**/feature/*/src/main/java/**/*Screen.kt'
 
 style:
   active: true

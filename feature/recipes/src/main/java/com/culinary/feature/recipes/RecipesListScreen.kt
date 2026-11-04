@@ -1,4 +1,4 @@
-package com.culinary.feature.recipes
+﻿package com.culinary.feature.recipes
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -42,7 +42,7 @@ fun RecipesRoute(
 }
 
 @Composable
-private fun RecipesScreen(
+internal fun RecipesScreen(
     state: RecipesListUiState,
     onOpenRecipe: (String) -> Unit,
     onAddRecipe: () -> Unit,

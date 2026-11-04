@@ -1,4 +1,4 @@
-package com.culinary.feature.sauces
+﻿package com.culinary.feature.sauces
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -55,7 +55,7 @@ fun SauceDetailRoute(
 }
 
 @Composable
-private fun SauceDetailScreen(
+internal fun SauceDetailScreen(
     state: SauceDetailUiState,
     onEdit: (String) -> Unit,
     onPublish: (SauceVersionId) -> Unit,
@@ -94,7 +94,7 @@ private fun SauceDetailScreen(
 }
 
 @Composable
-private fun SauceDetailContent(
+internal fun SauceDetailContent(
     detail: SauceDetail,
     isPublishing: Boolean,
     onEdit: (String) -> Unit,

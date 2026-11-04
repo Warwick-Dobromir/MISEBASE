@@ -1,4 +1,4 @@
-package com.culinary.feature.recipes
+﻿package com.culinary.feature.recipes
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -103,7 +103,7 @@ private fun RecipeDetailScreen(
 }
 
 @Composable
-private fun RecipeDetailContent(
+internal fun RecipeDetailContent(
     detail: RecipeDetail,
     state: RecipeDetailUiState,
     onEdit: (String) -> Unit,
