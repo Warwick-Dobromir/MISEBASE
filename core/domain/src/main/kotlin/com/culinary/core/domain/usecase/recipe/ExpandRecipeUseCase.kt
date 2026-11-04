@@ -7,9 +7,12 @@ import com.culinary.core.domain.model.ExpandedRecipeLine
 import com.culinary.core.domain.model.IngredientId
 import com.culinary.core.domain.model.RecipeVersion
 import com.culinary.core.domain.model.RecipeVersionId
+import com.culinary.core.domain.model.SauceVersion
+import com.culinary.core.domain.model.SauceVersionId
 import com.culinary.core.domain.model.Servings
 import com.culinary.core.domain.repository.IngredientRepository
 import com.culinary.core.domain.repository.RecipeRepository
+import com.culinary.core.domain.repository.SauceRepository
 import com.culinary.core.domain.rule.recipe.RecipeExploder
 import com.culinary.core.domain.rule.recipe.RecipeGraphSource
 
@@ -17,10 +20,13 @@ import com.culinary.core.domain.rule.recipe.RecipeGraphSource
  * 按目标份数展开菜谱（只做展示，不做库存/采购）。
  *
  * 可选配料显式包含并标记，供详情页展示；缺口计算默认排除由 Stage 4 处理。
+ * `sauceRepository` 为空时保留 Stage 3 的边界：含酱汁目标的展开返回
+ * `CUL-NF-001`，不静默少算。
  */
 class ExpandRecipeUseCase(
     private val recipeRepository: RecipeRepository,
     private val ingredientRepository: IngredientRepository,
+    private val sauceRepository: SauceRepository? = null,
 ) {
     private val exploder = RecipeExploder()
 
@@ -36,8 +42,13 @@ class ExpandRecipeUseCase(
         val root =
             recipeRepository.getVersion(versionId)
                 ?: return Outcome.failure(CulinaryError.NotFound(entity = "recipe_version", id = versionId.value))
-        val versions = prefetch(versionId) ?: return missingGraph()
-        val source = RecipeGraphSource { versions[it] }
+        val graph = prefetch(versionId) ?: return missingGraph()
+        val source =
+            object : RecipeGraphSource {
+                override fun findVersion(id: RecipeVersionId): RecipeVersion? = graph.recipes[id]
+
+                override fun findSauceVersion(id: SauceVersionId): SauceVersion? = graph.sauces[id]
+            }
         val exploded =
             when (
                 val result =
@@ -76,19 +87,38 @@ class ExpandRecipeUseCase(
         )
     }
 
-    private suspend fun prefetch(root: RecipeVersionId): Map<RecipeVersionId, RecipeVersion>? {
-        val versions = mutableMapOf<RecipeVersionId, RecipeVersion>()
-        val queue = ArrayDeque(listOf(root))
-        while (queue.isNotEmpty()) {
-            val id = queue.removeFirst()
-            if (versions.containsKey(id)) continue
-            val version = recipeRepository.getVersion(id) ?: return null
-            versions[id] = version
-            version.childRecipeVersions().forEach(queue::addLast)
+    private suspend fun prefetch(root: RecipeVersionId): RecipeGraph? {
+        val recipes = mutableMapOf<RecipeVersionId, RecipeVersion>()
+        val sauces = mutableMapOf<SauceVersionId, SauceVersion>()
+        val recipeQueue = ArrayDeque(listOf(root))
+        val sauceQueue = ArrayDeque<SauceVersionId>()
+        while (recipeQueue.isNotEmpty() || sauceQueue.isNotEmpty()) {
+            if (recipeQueue.isNotEmpty()) {
+                val id = recipeQueue.removeFirst()
+                if (recipes.containsKey(id)) continue
+                val version = recipeRepository.getVersion(id) ?: return null
+                recipes[id] = version
+                version.childRecipeVersions().forEach(recipeQueue::addLast)
+                version.childSauceVersions().forEach(sauceQueue::addLast)
+            } else {
+                val id = sauceQueue.removeFirst()
+                if (sauces.containsKey(id)) continue
+                val version =
+                    (sauceRepository?.getVersion(id) as? Outcome.Success)?.value
+                        ?: return null
+                sauces[id] = version
+                version.childRecipeVersions().forEach(recipeQueue::addLast)
+                version.childSauceVersions().forEach(sauceQueue::addLast)
+            }
         }
-        return versions
+        return RecipeGraph(recipes, sauces)
     }
 
     private fun missingGraph(): Outcome<Nothing> =
         Outcome.failure(CulinaryError.NotFound(entity = "recipe_version", id = "component"))
+
+    private data class RecipeGraph(
+        val recipes: Map<RecipeVersionId, RecipeVersion>,
+        val sauces: Map<SauceVersionId, SauceVersion>,
+    )
 }

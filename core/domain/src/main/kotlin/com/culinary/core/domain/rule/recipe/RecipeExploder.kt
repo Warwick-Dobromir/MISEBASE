@@ -8,6 +8,7 @@ import com.culinary.core.domain.model.ComponentTarget
 import com.culinary.core.domain.model.IngredientId
 import com.culinary.core.domain.model.Quantity
 import com.culinary.core.domain.model.RecipeVersionId
+import com.culinary.core.domain.model.SauceVersionId
 import com.culinary.core.domain.model.Servings
 import com.culinary.core.domain.rule.unit.UnitConverter
 
@@ -19,12 +20,15 @@ data class ExplodedRequirement(
 )
 
 /**
- * 配方展开（A06 §4.7 / R01 阶段 8）。
+ * 配方展开（A06 §4.7 / R01 阶段 8；Stage 4 补酱汁图）。
  *
  * - 以根版本产量为基准，按 [multiplier] 缩放；
  * - 子配方按"父级引用量 ÷ 子版本产量"换算后再递归；
+ * - 子酱汁同样按"引用量 ÷ 酱汁产量"换算，并递归展开其食材、子菜谱与子酱汁；
+ * - 可选标记沿引用路径传播：任一祖先为可选，则叶节点需求为可选；
  * - 默认排除可选行，[includeOptional] 可显式包含；
- * - 缺失版本返回 `CUL-NF-001`，成环返回 `CUL-REP-001`，单位不可换算返回 `CUL-UNIT-001`；
+ * - 缺失版本返回 `CUL-NF-001`，配方/酱汁成环返回 `CUL-REP-001`，
+ *   单位不可换算返回 `CUL-UNIT-001`；
  * - 不在本类做单位归一或合并，交由需求汇总处理。
  */
 class RecipeExploder(
@@ -47,11 +51,12 @@ class RecipeExploder(
 
         val requirements = mutableListOf<ExplodedRequirement>()
         val error =
-            expand(
+            expandRecipe(
                 versionId = rootVersionId,
                 factor = multiplier,
                 source = source,
                 includeOptional = includeOptional,
+                optionalPath = false,
                 requirements = requirements,
                 visiting = LinkedHashSet(),
             )
@@ -82,16 +87,18 @@ class RecipeExploder(
         )
     }
 
-    private fun expand(
+    private fun expandRecipe(
         versionId: RecipeVersionId,
         factor: Double,
         source: RecipeGraphSource,
         includeOptional: Boolean,
+        optionalPath: Boolean,
         requirements: MutableList<ExplodedRequirement>,
-        visiting: LinkedHashSet<RecipeVersionId>,
+        visiting: LinkedHashSet<GraphNode>,
     ): CulinaryError? {
-        if (!visiting.add(versionId)) {
-            return cycleError(visiting + versionId)
+        val node = GraphNode.Recipe(versionId)
+        if (!visiting.add(node)) {
+            return cycleError(visiting + node)
         }
         val version =
             source.findVersion(versionId)
@@ -99,81 +106,207 @@ class RecipeExploder(
 
         for (component in version.components) {
             if (component.isOptional && !includeOptional) continue
+            val componentOptional = optionalPath || component.isOptional
             val scaled = Quantity(component.quantity.amount * factor, component.quantity.unit)
             val error =
                 when (val target = component.target) {
                     is ComponentTarget.Ingredient -> {
-                        requirements += ExplodedRequirement(target.id, scaled, component.isOptional)
+                        requirements +=
+                            ExplodedRequirement(target.id, scaled, componentOptional)
                         null
                     }
+
                     is ComponentTarget.Recipe ->
-                        expandChild(
+                        expandChildRecipe(
                             target = target,
                             scaled = scaled,
                             source = source,
                             includeOptional = includeOptional,
+                            optionalPath = componentOptional,
                             requirements = requirements,
                             visiting = visiting,
                         )
 
-                    is ComponentTarget.Sauce -> sauceExpansionUnsupported()
+                    is ComponentTarget.Sauce ->
+                        expandChildSauce(
+                            target = target,
+                            scaled = scaled,
+                            source = source,
+                            includeOptional = includeOptional,
+                            optionalPath = componentOptional,
+                            requirements = requirements,
+                            visiting = visiting,
+                        )
                 }
             if (error != null) {
-                visiting -= versionId
+                visiting -= node
                 return error
             }
         }
 
-        visiting -= versionId
+        visiting -= node
         return null
     }
 
-    /**
-     * 子酱汁展开不在 Stage 3 范围内：酱汁图展开与库存计算属于 Stage 4。
-     * 这里显式拒绝而不是静默跳过，避免少算物料。
-     */
-    private fun sauceExpansionUnsupported(): CulinaryError =
-        CulinaryError.Domain(
-            detail =
-                DomainDetail.InvalidState(
-                    entity = "recipe_component",
-                    expected = "INGREDIENT or RECIPE target for expansion",
-                    actual = "SAUCE",
-                ),
-            code = ErrorCode.REP_004,
-        )
+    private fun expandSauce(
+        versionId: SauceVersionId,
+        factor: Double,
+        source: RecipeGraphSource,
+        includeOptional: Boolean,
+        optionalPath: Boolean,
+        requirements: MutableList<ExplodedRequirement>,
+        visiting: LinkedHashSet<GraphNode>,
+    ): CulinaryError? {
+        val node = GraphNode.Sauce(versionId)
+        if (!visiting.add(node)) {
+            return cycleError(visiting + node)
+        }
+        val version =
+            source.findSauceVersion(versionId)
+                ?: return CulinaryError.NotFound(entity = "sauce_version", id = versionId.value)
 
-    private fun expandChild(
+        for (component in version.components) {
+            if (component.isOptional && !includeOptional) continue
+            val componentOptional = optionalPath || component.isOptional
+            val scaled = Quantity(component.quantity.amount * factor, component.quantity.unit)
+            val error =
+                when (val target = component.target) {
+                    is ComponentTarget.Ingredient -> {
+                        requirements +=
+                            ExplodedRequirement(target.id, scaled, componentOptional)
+                        null
+                    }
+
+                    is ComponentTarget.Recipe ->
+                        expandChildRecipe(
+                            target = target,
+                            scaled = scaled,
+                            source = source,
+                            includeOptional = includeOptional,
+                            optionalPath = componentOptional,
+                            requirements = requirements,
+                            visiting = visiting,
+                        )
+
+                    is ComponentTarget.Sauce ->
+                        expandChildSauce(
+                            target = target,
+                            scaled = scaled,
+                            source = source,
+                            includeOptional = includeOptional,
+                            optionalPath = componentOptional,
+                            requirements = requirements,
+                            visiting = visiting,
+                        )
+                }
+            if (error != null) {
+                visiting -= node
+                return error
+            }
+        }
+
+        visiting -= node
+        return null
+    }
+
+    private fun expandChildRecipe(
         target: ComponentTarget.Recipe,
         scaled: Quantity,
         source: RecipeGraphSource,
         includeOptional: Boolean,
+        optionalPath: Boolean,
         requirements: MutableList<ExplodedRequirement>,
-        visiting: LinkedHashSet<RecipeVersionId>,
+        visiting: LinkedHashSet<GraphNode>,
     ): CulinaryError? {
         val child =
             source.findVersion(target.versionId)
                 ?: return CulinaryError.NotFound(entity = "recipe_version", id = target.versionId.value)
-
-        val converted =
-            when (val result = unitConverter.convert(scaled, child.yield.unit)) {
-                is Outcome.Failure -> return result.error
-                is Outcome.Success -> result.value
-            }
-        val childFactor = converted.amount / child.yield.amount
-        return expand(
-            versionId = target.versionId,
-            factor = childFactor,
-            source = source,
-            includeOptional = includeOptional,
-            requirements = requirements,
-            visiting = visiting,
+        return recurseWithYield(
+            scaled = scaled,
+            yield = child.yield,
+            expand = { factor ->
+                expandRecipe(
+                    versionId = target.versionId,
+                    factor = factor,
+                    source = source,
+                    includeOptional = includeOptional,
+                    optionalPath = optionalPath,
+                    requirements = requirements,
+                    visiting = visiting,
+                )
+            },
         )
     }
 
-    private fun cycleError(visiting: Set<RecipeVersionId>): CulinaryError =
+    private fun expandChildSauce(
+        target: ComponentTarget.Sauce,
+        scaled: Quantity,
+        source: RecipeGraphSource,
+        includeOptional: Boolean,
+        optionalPath: Boolean,
+        requirements: MutableList<ExplodedRequirement>,
+        visiting: LinkedHashSet<GraphNode>,
+    ): CulinaryError? {
+        val child =
+            source.findSauceVersion(target.versionId)
+                ?: return CulinaryError.NotFound(entity = "sauce_version", id = target.versionId.value)
+        return recurseWithYield(
+            scaled = scaled,
+            yield = child.yield,
+            expand = { factor ->
+                expandSauce(
+                    versionId = target.versionId,
+                    factor = factor,
+                    source = source,
+                    includeOptional = includeOptional,
+                    optionalPath = optionalPath,
+                    requirements = requirements,
+                    visiting = visiting,
+                )
+            },
+        )
+    }
+
+    /**
+     * 把父级引用量换算为子版本产量单位，再按 `引用量 ÷ 产量` 递归。
+     * 单位不可换算时返回 `CUL-UNIT-001`，不猜密度。
+     */
+    private fun recurseWithYield(
+        scaled: Quantity,
+        yield: Quantity,
+        expand: (Double) -> CulinaryError?,
+    ): CulinaryError? {
+        val converted =
+            when (val result = unitConverter.convert(scaled, yield.unit)) {
+                is Outcome.Failure -> return result.error
+                is Outcome.Success -> result.value
+            }
+        if (yield.amount <= 0.0) {
+            return CulinaryError.Validation(field = "yield", rule = "must be a finite positive number")
+        }
+        return expand(converted.amount / yield.amount)
+    }
+
+    private fun cycleError(visiting: Set<GraphNode>): CulinaryError =
         CulinaryError.Domain(
-            detail = DomainDetail.RecipeCycle(visiting.map { it.value }),
+            detail = DomainDetail.RecipeCycle(visiting.map { it.displayId }),
             code = ErrorCode.REP_001,
         )
+
+    /** 统一图节点：配方与酱汁使用独立命名空间，避免同 ID 误判为环。 */
+    private sealed interface GraphNode {
+        val displayId: String
+
+        data class Recipe(
+            val id: RecipeVersionId,
+        ) : GraphNode {
+            override val displayId: String get() = id.value
+        }
+
+        data class Sauce(
+            val id: SauceVersionId,
+        ) : GraphNode {
+            override val displayId: String get() = "sauce:${id.value}"
+        }
+    }
 }

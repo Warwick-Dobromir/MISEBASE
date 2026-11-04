@@ -82,5 +82,6 @@ object RecipeUseCaseModule {
     fun provideExpandRecipeUseCase(
         recipeRepository: RecipeRepository,
         ingredientRepository: IngredientRepository,
-    ): ExpandRecipeUseCase = ExpandRecipeUseCase(recipeRepository, ingredientRepository)
+        sauceRepository: SauceRepository,
+    ): ExpandRecipeUseCase = ExpandRecipeUseCase(recipeRepository, ingredientRepository, sauceRepository)
 }

@@ -32,4 +32,10 @@ data class RecipeVersion(
         components.mapNotNull { component ->
             (component.target as? ComponentTarget.Recipe)?.versionId
         }
+
+    /** 本版本中引用到的子酱汁版本（Stage 4 起参与展开）。 */
+    fun childSauceVersions(): List<SauceVersionId> =
+        components.mapNotNull { component ->
+            (component.target as? ComponentTarget.Sauce)?.versionId
+        }
 }
