@@ -104,7 +104,54 @@ class RestoreExecutorTest {
             assertThat(reopenAndReadNames()).containsExactly("中断前")
         }
 
-    private fun executor(failingAfterInstall: Boolean = false): RestoreExecutor =
+    @Test
+    fun `enters RECOVERY_REQUIRED when the rollback copy cannot be restored`() =
+        runBlocking<Unit> {
+            val originalFile = createDatabase(withIngredient = "原始")
+            val archiveBytes = archiveOf(originalFile)
+            openLiveDatabase(withIngredient = "当前")
+            val executor =
+                executor(
+                    afterInstall = {
+                        File(temporaryFolder.root, "rollback/restore-recovery.db").delete()
+                        error("rollback copy destroyed")
+                    },
+                )
+
+            val result = executor.restoreDatabase(extractDatabase(archiveBytes), "restore-recovery")
+
+            assertThat(result).isInstanceOf(Outcome.Failure::class.java)
+            assertThat(journalPhase()).isEqualTo(RestorePhase.RECOVERY_REQUIRED)
+            assertThat(File(temporaryFolder.root, "rollback/restore-recovery.db").exists()).isFalse()
+            assertThat(context.getDatabasePath(DB_NAME).exists()).isTrue()
+        }
+
+    @Test
+    fun `refuses to restore while another writer holds the write barrier`() =
+        runBlocking<Unit> {
+            val originalFile = createDatabase(withIngredient = "原始")
+            val archiveBytes = archiveOf(originalFile)
+            openLiveDatabase(withIngredient = "当前")
+            val barrier = WriteBarrier()
+            assertThat(barrier.acquireForBackup(50)).isEqualTo(BarrierAcquireResult.ACQUIRED)
+            try {
+                val result =
+                    executor(writeBarrier = barrier)
+                        .restoreDatabase(extractDatabase(archiveBytes), "restore-barrier")
+
+                assertThat(result).isInstanceOf(Outcome.Failure::class.java)
+                assertThat(journalPhase()).isNull()
+                assertThat(reopenAndReadNames()).containsExactly("原始", "当前")
+            } finally {
+                barrier.releaseForBackup()
+            }
+        }
+
+    private fun executor(
+        failingAfterInstall: Boolean = false,
+        writeBarrier: WriteBarrier = WriteBarrier(),
+        afterInstall: (() -> Unit)? = null,
+    ): RestoreExecutor =
         RestoreExecutor(
             databaseProvider = Provider { requireNotNull(live) },
             databaseFile = context.getDatabasePath(DB_NAME),
@@ -112,9 +159,11 @@ class RestoreExecutorTest {
             rollbackDirectory = File(temporaryFolder.root, "rollback"),
             clock = SystemClock,
             ioDispatcher = Dispatchers.Unconfined,
+            writeBarrier = writeBarrier,
+            barrierTimeoutMillis = 100,
             afterInstallHook =
-                if (failingAfterInstall) {
-                    { throw IllegalStateException("injected failure") }
+                afterInstall ?: if (failingAfterInstall) {
+                    { error("injected failure") }
                 } else {
                     null
                 },

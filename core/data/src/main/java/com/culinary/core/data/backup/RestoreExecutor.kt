@@ -10,7 +10,6 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
-import java.io.FileOutputStream
 import java.io.IOException
 import javax.inject.Provider
 
@@ -30,13 +29,15 @@ sealed interface RecoveryOutcome {
 }
 
 /**
- * 完整恢复流程（E05 §13）：关闭连接 → 备份 → 装库 → 校验 → journal。
+ * 完整恢复流程（E05 §13）：写屏障 → checkpoint → 关连接 → 回滚副本 → 原子装库 → 校验 → journal。
  *
  * **不包含** UI 与归档选择；归档校验/预检由调用方先完成，本类接收已解出的 DB 字节。
- * 失败会回滚到恢复前的库；回滚也失败则 journal 标记 `RECOVERY_REQUIRED`。
+ * 装库使用“同目录临时文件 + fsync + 原子 rename + fsync 目录”；失败回滚同理。
+ * 回滚也失败时 journal 标记 `RECOVERY_REQUIRED`，保留现场，不自动清库。
  *
  * 恢复成功后连接保持关闭：调用方必须重建 [CulinaryDatabase]（当前 App 走重启）。
  */
+@Suppress("TooGenericExceptionCaught") // E05 §13：恢复边界必须捕获任何失败并回滚
 class RestoreExecutor(
     private val databaseProvider: Provider<CulinaryDatabase>,
     private val databaseFile: File,
@@ -44,10 +45,11 @@ class RestoreExecutor(
     private val rollbackDirectory: File,
     private val clock: Clock,
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
+    private val writeBarrier: WriteBarrier = WriteBarrier(),
+    private val barrierTimeoutMillis: Long = WriteBarrier.DEFAULT_TIMEOUT_MILLIS,
     /** 仅测试注入：在装库成功后执行，用于验证失败回滚；生产为 null。 */
     private val afterInstallHook: (() -> Unit)? = null,
 ) {
-    @Suppress("TooGenericExceptionCaught") // E05 §13：恢复边界必须捕获任何失败并回滚
     suspend fun restoreDatabase(
         databaseBytes: ByteArray,
         restoreId: String,
@@ -59,47 +61,62 @@ class RestoreExecutor(
             if (hasUnfinishedJournal()) {
                 return@withContext failure("an unfinished restore exists; recover it first")
             }
-
-            val rollbackFile = File(rollbackDirectory, "$restoreId.db")
-            writeJournal(restoreId, RestorePhase.PREPARED)
+            when (writeBarrier.acquireForBackup(barrierTimeoutMillis)) {
+                BarrierAcquireResult.TIMEOUT ->
+                    return@withContext failure("write barrier timeout; restore aborted")
+                BarrierAcquireResult.ALREADY_HELD ->
+                    return@withContext failure("write barrier is already held; restore aborted")
+                BarrierAcquireResult.ACQUIRED -> Unit
+            }
 
             try {
-                closeDatabaseQuietly()
-                writeJournal(restoreId, RestorePhase.DB_CLOSING)
-
-                if (!rollbackDirectory.isDirectory && !rollbackDirectory.mkdirs()) {
-                    throw IOException("cannot create rollback directory")
+                try {
+                    checkpointLiveDatabase()
+                } catch (e: IOException) {
+                    return@withContext failure("cannot checkpoint before restore: ${e.message}", e)
                 }
-                if (databaseFile.exists()) {
-                    databaseFile.copyTo(rollbackFile, overwrite = true)
+
+                val rollbackFile = File(rollbackDirectory, "$restoreId.db")
+                writeJournal(restoreId, RestorePhase.PREPARED)
+                try {
+                    closeDatabaseQuietly()
+                    writeJournal(restoreId, RestorePhase.DB_CLOSING)
+
+                    ensureRollbackDirectory()
+                    if (databaseFile.exists() && databaseFile.length() > 0L) {
+                        AtomicFiles.copyAtomically(databaseFile, rollbackFile)
+                        verifyDatabaseFile(rollbackFile, "rollback copy")
+                    }
+                    deleteSidecars()
+                    writeJournal(restoreId, RestorePhase.DB_MOVED_ASIDE)
+
+                    AtomicFiles.writeBytesAtomically(databaseFile, databaseBytes)
+                    writeJournal(restoreId, RestorePhase.DB_INSTALLED)
+
+                    afterInstallHook?.invoke()
+                    verifyDatabaseFile(databaseFile, "restored database")
+                    writeJournal(restoreId, RestorePhase.VERIFIED)
+                    writeJournal(restoreId, RestorePhase.DONE)
+
+                    Outcome.success(RestoreOutcome(restoreId, rollbackFile))
+                } catch (e: Exception) {
+                    val rolledBack = rollback(rollbackFile)
+                    writeJournal(
+                        restoreId,
+                        if (rolledBack) RestorePhase.ROLLED_BACK else RestorePhase.RECOVERY_REQUIRED,
+                    )
+                    failure(
+                        message =
+                            if (rolledBack) {
+                                "restore failed and was rolled back: ${e.message}"
+                            } else {
+                                "restore failed and rollback also failed: ${e.message}"
+                            },
+                        cause = e,
+                    )
                 }
-                deleteSidecars()
-                writeJournal(restoreId, RestorePhase.DB_MOVED_ASIDE)
-
-                writeAtomically(databaseBytes)
-                writeJournal(restoreId, RestorePhase.DB_INSTALLED)
-
-                afterInstallHook?.invoke()
-                verifyIntegrity()
-                writeJournal(restoreId, RestorePhase.VERIFIED)
-                writeJournal(restoreId, RestorePhase.DONE)
-
-                Outcome.success(RestoreOutcome(restoreId, rollbackFile))
-            } catch (e: Exception) {
-                val rolledBack = rollback(rollbackFile)
-                writeJournal(
-                    restoreId,
-                    if (rolledBack) RestorePhase.ROLLED_BACK else RestorePhase.RECOVERY_REQUIRED,
-                )
-                failure(
-                    message =
-                        if (rolledBack) {
-                            "restore failed and was rolled back: ${e.message}"
-                        } else {
-                            "restore failed and rollback also failed: ${e.message}"
-                        },
-                    cause = e,
-                )
+            } finally {
+                writeBarrier.releaseForBackup()
             }
         }
 
@@ -108,7 +125,6 @@ class RestoreExecutor(
      *
      * 覆盖"恢复过程中进程被杀"的情况；已完成/已回滚的 journal 直接清理。
      */
-    @Suppress("TooGenericExceptionCaught") // 启动恢复边界：任何失败都保持 RECOVERY_REQUIRED
     suspend fun recoverIfInterrupted(): Outcome<RecoveryOutcome> =
         withContext(ioDispatcher) {
             val journal =
@@ -128,26 +144,32 @@ class RestoreExecutor(
 
             val rollbackFile = File(rollbackDirectory, "${journal.restoreId}.db")
             if (!rollbackFile.exists()) {
-                journalStore.clear()
-                return@withContext Outcome.success(RecoveryOutcome.NothingToRecover)
+                // 没有可用回滚副本：保留现场，不猜、不自动清库。
+                writeJournal(journal.restoreId, RestorePhase.RECOVERY_REQUIRED)
+                return@withContext failure("restore rollback copy is missing; recovery required")
             }
 
-            return@withContext try {
+            when (writeBarrier.acquireForBackup(barrierTimeoutMillis)) {
+                BarrierAcquireResult.TIMEOUT ->
+                    return@withContext failure("write barrier timeout; recovery aborted")
+                BarrierAcquireResult.ALREADY_HELD ->
+                    return@withContext failure("write barrier is already held; recovery aborted")
+                BarrierAcquireResult.ACQUIRED -> Unit
+            }
+
+            try {
                 closeDatabaseQuietly()
-                rollbackFile.copyTo(databaseFile, overwrite = true)
+                AtomicFiles.copyAtomically(rollbackFile, databaseFile)
                 deleteSidecars()
+                verifyDatabaseFile(databaseFile, "recovered database")
                 writeJournal(journal.restoreId, RestorePhase.ROLLED_BACK)
                 journalStore.clear()
                 Outcome.success(RecoveryOutcome.RolledBack(journal.restoreId))
             } catch (e: Exception) {
                 writeJournal(journal.restoreId, RestorePhase.RECOVERY_REQUIRED)
-                Outcome.failure(
-                    CulinaryError.Transfer(
-                        message = "cannot recover the interrupted restore: ${e.message}",
-                        code = ErrorCode.BACKUP_004,
-                        cause = e,
-                    ),
-                )
+                failure("cannot recover the interrupted restore: ${e.message}", e)
+            } finally {
+                writeBarrier.releaseForBackup()
             }
         }
 
@@ -160,6 +182,63 @@ class RestoreExecutor(
             // 没有实例或已关闭：继续恢复流程
         }
     }
+
+    /** 关闭前把 WAL 中已提交事务落主库；busy/未截断必须失败，避免回滚副本缺数据。 */
+    @Suppress("ThrowsCount") // 每个失败点都需要明确的诊断信息
+    private fun checkpointLiveDatabase() {
+        val database =
+            try {
+                databaseProvider.get()
+            } catch (e: Exception) {
+                throw IOException("cannot open database for checkpoint", e)
+            }
+        val supportDatabase =
+            try {
+                database.openHelper.writableDatabase
+            } catch (e: Exception) {
+                throw IOException("cannot open database for checkpoint", e)
+            }
+        supportDatabase.query("PRAGMA wal_checkpoint(TRUNCATE)").use { cursor ->
+            if (!cursor.moveToFirst()) throw IOException("wal checkpoint returned no result")
+            val busy = cursor.getInt(0)
+            val log = cursor.getInt(1)
+            val checkpointed = cursor.getInt(2)
+            if (busy != 0 || log != checkpointed) {
+                throw IOException("wal checkpoint did not complete: busy=$busy log=$log checkpointed=$checkpointed")
+            }
+        }
+    }
+
+    private fun ensureRollbackDirectory() {
+        if (!rollbackDirectory.isDirectory && !rollbackDirectory.mkdirs()) {
+            throw IOException("cannot create rollback directory")
+        }
+    }
+
+    @Suppress("ThrowsCount") // 每个校验失败点都需要明确标签
+    private fun verifyDatabaseFile(
+        file: File,
+        label: String,
+    ) {
+        if (!file.isFile) throw IOException("$label is missing")
+        if (!hasSqliteHeader(file)) throw IOException("$label is not a SQLite file")
+        SQLiteDatabase.openDatabase(file.path, null, SQLiteDatabase.OPEN_READONLY).use { database ->
+            if (readPragma(database, "quick_check") != QUICK_CHECK_OK) {
+                throw IOException("$label failed quick_check")
+            }
+            val foreignKeyViolation =
+                database.rawQuery("PRAGMA foreign_key_check", null).use { cursor -> cursor.moveToFirst() }
+            if (foreignKeyViolation) throw IOException("$label failed foreign_key_check")
+        }
+    }
+
+    private fun readPragma(
+        database: SQLiteDatabase,
+        pragma: String,
+    ): String? =
+        database.rawQuery("PRAGMA $pragma", null).use { cursor ->
+            if (cursor.moveToFirst()) cursor.getString(0) else null
+        }
 
     private fun hasUnfinishedJournal(): Boolean =
         when (val read = journalStore.read()) {
@@ -185,47 +264,31 @@ class RestoreExecutor(
         )
     }
 
-    private fun writeAtomically(databaseBytes: ByteArray) {
-        val temporary = File(databaseFile.parentFile, "${databaseFile.name}.restore.tmp")
-        try {
-            FileOutputStream(temporary).use { output ->
-                output.write(databaseBytes)
-                output.flush()
-                output.fd.sync()
-            }
-            temporary.copyTo(databaseFile, overwrite = true)
-        } finally {
-            temporary.delete()
-        }
-    }
-
-    private fun verifyIntegrity() {
-        SQLiteDatabase.openDatabase(databaseFile.path, null, SQLiteDatabase.OPEN_READONLY).use { database ->
-            database.rawQuery("PRAGMA integrity_check", null).use { cursor ->
-                if (!cursor.moveToFirst() || cursor.getString(0) != "ok") {
-                    throw IOException("restored database failed integrity_check")
-                }
-            }
-        }
-    }
-
     @Suppress("SwallowedException") // 回滚失败由调用方转为 RECOVERY_REQUIRED，不在此处再抛
     private fun rollback(rollbackFile: File): Boolean =
         try {
             if (!rollbackFile.exists()) {
                 false
             } else {
-                rollbackFile.copyTo(databaseFile, overwrite = true)
+                AtomicFiles.copyAtomically(rollbackFile, databaseFile)
                 deleteSidecars()
+                verifyDatabaseFile(databaseFile, "rolled-back database")
                 true
             }
-        } catch (e: IOException) {
+        } catch (e: Exception) {
             false
         }
 
     private fun deleteSidecars() {
         File("${databaseFile.path}-wal").delete()
         File("${databaseFile.path}-shm").delete()
+    }
+
+    private fun hasSqliteHeader(file: File): Boolean {
+        if (!file.isFile || file.length() < SQLITE_HEADER.size) return false
+        val header = ByteArray(SQLITE_HEADER.size)
+        val read = file.inputStream().use { stream -> stream.read(header) }
+        return read == header.size && header.contentEquals(SQLITE_HEADER)
     }
 
     private fun hasSqliteHeader(bytes: ByteArray): Boolean {
@@ -246,6 +309,8 @@ class RestoreExecutor(
         )
 
     private companion object {
+        const val QUICK_CHECK_OK = "ok"
+
         val SQLITE_HEADER: ByteArray = "SQLite format 3\u0000".toByteArray(Charsets.ISO_8859_1)
     }
 }
