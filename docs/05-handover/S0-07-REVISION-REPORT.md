@@ -2,7 +2,7 @@
 
 **任务编号**：MB-S0-002；关闭记录 MB-S0-003
 **文档编号**：S0-07
-**版本**：`1.0.1`
+**版本**：`1.0.2`
 **状态**：`Review`（修正与关闭记录；Stage 0 已关闭，本文件不代替 Stage 1 任务书）
 **日期**：2026-11-04
 **依据**：MB-S0-002；S0-01 v1.0.0；S0-04 v1.0.0；S0-05 v1.0.0；S0-06 v1.0.0；MB-DECISIONS 0.1.0；MB-UI-001 0.1.0
@@ -267,7 +267,7 @@ S0-04 v1.0.0 同时出现：
 | 项 | 值 |
 |---|---|
 | 关闭前 HEAD | **`61c7d8e`** |
-| 关闭提交 | 本次 `docs(stage0): close stage 0 and authorize stage 1`（哈希回执见 §12.3） |
+| 关闭提交 | **`1ede79319dd9fdeb0ae95c7546075e7bdc876407`**（`docs(stage0): close stage 0 and authorize stage 1`） |
 | 关闭标签 | `checkpoint/misebase-stage0-closed-20261104` |
 | Stage 1 起点标签 | `checkpoint/misebase-stage1-start-20261104` |
 | G2 基线 | `framework-0.1.0` = `2b523de`，未移动 |
@@ -275,14 +275,16 @@ S0-04 v1.0.0 同时出现：
 
 ### 12.3 回执
 
-> 本节在关闭提交与标签创建后回填；不得使用“见 git log -1”替代实际哈希。
+> 本节记录关闭提交与标签的实际解析结果；不使用占位符替代哈希。
 
 | 项 | 值 |
 |---|---|
-| 关闭提交完整哈希 | （回填） |
-| `stage0-closed` 解析 | （回填） |
-| `stage1-start` 解析 | （回填） |
-| 回填时 HEAD | （回填） |
+| 关闭提交完整哈希 | **`1ede79319dd9fdeb0ae95c7546075e7bdc876407`** |
+| `stage0-closed` 标签对象 | `23c5dd4ac05d3ec31035077eb0b3b3e4beb7f191` |
+| `stage0-closed` 解析 | **`1ede79319dd9fdeb0ae95c7546075e7bdc876407`** |
+| `stage1-start` 标签对象 | `0ea67d323c335f8b84ab9d8d2b1bd3d1349c08b2` |
+| `stage1-start` 解析 | **`1ede79319dd9fdeb0ae95c7546075e7bdc876407`** |
+| 回填时 HEAD | `1ede79319dd9fdeb0ae95c7546075e7bdc876407`（回执提交前） |
 
 ---
 
@@ -291,4 +293,5 @@ S0-04 v1.0.0 同时出现：
 | 版本 | 日期 | 变更 | 作者 |
 |---|---|---|---|
 | 1.0.0 | 2026-11-04 | 完成 MB-S0-002 四项修正与一致性核对 | 接管工程组 |
-| 1.0.1 | 2026-11-04 | MB-S0-003：记录 5 项 ACCEPTED、Stage 0 CLOSED、Stage 1 AUTHORIZED 与关闭标签；§12.3 待回填实际哈希 | 接管工程组 |
+| 1.0.1 | 2026-11-04 | MB-S0-003：记录 5 项 ACCEPTED、Stage 0 CLOSED、Stage 1 AUTHORIZED 与关闭标签；§12.3 回填见 1.0.2 | 接管工程组 |
+| 1.0.2 | 2026-11-04 | 回填关闭提交 `1ede793` 与两个标签的实际解析结果 | 接管工程组 |

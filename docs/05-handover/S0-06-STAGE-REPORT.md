@@ -2,7 +2,7 @@
 
 **任务编号**：MB-S0-001；第二轮修正 MB-S0-002；关闭记录 MB-S0-003
 **文档编号**：S0-06
-**版本**：`1.0.2`
+**版本**：`1.0.3`
 **状态**：`CLOSED`（Stage 0 已关闭；Stage 1 已授权，等待新对话执行）
 **日期**：2026-11-04
 **阶段**：Stage 0 — Project Takeover & Baseline Establishment
@@ -178,7 +178,7 @@ BUILD SUCCESSFUL in 1m 1s
 | 第一轮回档标签 | `checkpoint/misebase-s0-submission-20261104` |
 | 第二轮修改前检查点 | `checkpoint/misebase-s0-r2-pre-20261104` |
 | 第二轮提交/标签 | `61c7d8e`；`checkpoint/misebase-s0-r2-20261104` |
-| 关闭提交/标签 | 本次关闭提交；`checkpoint/misebase-stage0-closed-20261104`、`checkpoint/misebase-stage1-start-20261104`（哈希与解析见 S0-07 §12.3） |
+| 关闭提交/标签 | **`1ede79319dd9fdeb0ae95c7546075e7bdc876407`**；`checkpoint/misebase-stage0-closed-20261104` 与 `checkpoint/misebase-stage1-start-20261104` 均解析到 `1ede793` |
 | 未移动 | `framework-0.1.0`、`baseline/g2-*`、`checkpoint/g1-*`、`checkpoint/g2-*` |
 
 ---
@@ -231,3 +231,4 @@ BUILD SUCCESSFUL in 1m 1s
 | 1.0.0 | 2026-11-04 | 提交 Stage 0 六份交付报告；完成核验与签收清单 | 接管工程组 |
 | 1.0.1 | 2026-11-04 | MB-S0-002：更新风险统计、备份权限、数据库阶段边界与第二轮 Git 记录 | 接管工程组 |
 | 1.0.2 | 2026-11-04 | MB-S0-003：记录 Stage 0 CLOSED、Stage 1 AUTHORIZED、5 项签收与关闭标签 | 接管工程组 |
+| 1.0.3 | 2026-11-04 | 回填关闭提交 `1ede793` 与两个关闭/起点标签解析 | 接管工程组 |
