@@ -6,7 +6,7 @@
 |---|---|
 | 品牌/项目名 | MISEBASE（包名暂留 `com.culinary`，发布前按 D-017/MB-D-001 决定） |
 | 架构基线 | `0.4.1`（G1 已签收）；G2 已收档于 `framework-0.1.0` / `2b523de` |
-| 当前阶段 | **Stage 2 执行完成（报告 `Review`，2026-11-04）**：核心领域模型、单位/展开规则、版本固定、库存扣减、缺料与采购清单、计算记录快照、Repository 契约；Stage 2 未关闭，未进入 Stage 3 |
+| 当前阶段 | **Stage 2 CLOSED（2026-11-04，审查结论：有条件通过）**：核心领域模型、单位/展开规则、版本固定、库存扣减、缺料与采购清单、计算记录快照、Repository 契约；Stage 3 未启动 |
 | 工程状态 | **13 模块**；Room schema **v1 / 31 表**（11 表 `DORMANT`）；食材 CRUD；配方展开/需求/缺口算法；Debug APK 可构建；**197 例 JVM 测试**（G2 基线），Stage 2 后合计 **264 例** |
 | 数据库 | **已创建**：schema v1（31 表），导出 `1.json`；本阶段未创建 v2、未改 Schema/Entity/DAO |
 | 构建基线 | AGP 8.13.0 / Kotlin 2.2.20 / Gradle 8.14.3 / JDK 21 / minSdk 26 / compile & target 36 |
@@ -114,10 +114,12 @@ MB-D-007 备份一致性、MB-D-008/009 UI 视觉与导航、MB-D-010 CI、MB-D-
 ## 当前状态与未决
 
 - **G2 阶段 1–9** 已完成并归档；`framework-0.1.0` 固定在 `2b523de`，未移动。
-- **Stage 0** 已关闭；**Stage 1 审查通过并关闭（CLOSED）**；**Stage 2 执行完成，报告 `Review`**
-  （2026-11-04），未自动关闭，未进入 Stage 3。
-- Stage 2 由 MB-S2-001 任务书授权启动；决策签收本身**不构成**开发授权，也不关闭 Stage 2。
-- **Stage 1 未做**：扫码 UI、视觉定稿、导航重排、备份/恢复实现修改、Schema v2、休眠表删除/迁移。
+- **Stage 0** 已关闭；**Stage 1 审查通过并关闭（CLOSED）**；**Stage 2 审查通过并关闭（CLOSED）**
+  （2026-11-04，有条件通过），未进入 Stage 3。
+- Stage 2 由 MB-S2-001 任务书授权启动；关闭记录见
+  [MB-S2-06](docs/07-stage2/MB-S2-06-STAGE2-CLOSE-RECORD.md)。
+- **两项 Schema 变更请求待负责人决策**：计算记录持久化、`recipe_version.servings`；未实施。
+- **Stage 1/2 未做**：扫码 UI、视觉定稿、导航重排、备份/恢复实现修改、Schema v2、休眠表删除/迁移。
 - **仍为 PROPOSED 的阻塞项**：MB-D-007 未签收前备份一致性不得实现；MB-D-008/009 未签收前
   不做视觉定稿与导航重排；MB-D-004 未签收前不新建 `feature:scan`。
 - **G5 发布门禁**：Release keystore 未创建，不影响当前阶段。
@@ -134,11 +136,12 @@ MB-D-007 备份一致性、MB-D-008/009 UI 视觉与导航、MB-D-010 CI、MB-D-
 - [文档修正记录](docs/06-stage1/MB-S1-08-DOC-CORRECTIONS.md)
 - [Stage 1 审查回执](docs/06-stage1/MB-S1-09-REVIEW-RECEIPT.md)
 - [Stage 1 关闭记录](docs/06-stage1/MB-S1-10-STAGE1-CLOSE-RECORD.md)
-- [Stage 2 执行报告（Review）](docs/07-stage2/MB-S2-01-EXECUTION-REPORT.md)
+- [Stage 2 执行报告（CLOSED）](docs/07-stage2/MB-S2-01-EXECUTION-REPORT.md)
 - [Stage 2 领域模型说明](docs/07-stage2/MB-S2-02-DOMAIN-MODEL.md)
 - [Stage 2 规则与测试矩阵](docs/07-stage2/MB-S2-03-RULES-TEST-MATRIX.md)
 - [Stage 2 Repository 契约](docs/07-stage2/MB-S2-04-REPOSITORY-CONTRACTS.md)
 - [Stage 2 决策映射](docs/07-stage2/MB-S2-05-DECISION-MAPPING.md)
+- [Stage 2 关闭记录](docs/07-stage2/MB-S2-06-STAGE2-CLOSE-RECORD.md)
 - [G2 收档文件](docs/00-governance/A-G2-001-G2-ARCHIVE.md)
 - [决策登记册](docs/00-governance/DECISION-REGISTER.md)
 - [MISEBASE 决策登记册](docs/05-handover/MB-S0-07-DECISION-REGISTER.md)

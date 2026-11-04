@@ -1,13 +1,14 @@
 # MB-S2-01 Stage 2 执行报告
 
 **文档编号**：MB-S2-01
-**版本**：`1.0.0`
-**状态**：`Review`
+**版本**：`1.1.0`
+**状态**：`CLOSED`
 **日期**：2026-11-04
 **阶段**：Stage 2（核心数据模型与业务规则）
 **依据**：MB-S2-001；决策映射见 [MB-S2-05](MB-S2-05-DECISION-MAPPING.md)
 **执行前 HEAD**：`99223000d34b15abe3fa8020d5cb7f06ecaab8cf`
 **检查点**：`checkpoint/misebase-stage2-20261104`（对象哈希与解析见 §8.2）
+**审查结论**：有条件通过（主体合规，无重大范围偏离）；关闭记录见 [MB-S2-06](MB-S2-06-STAGE2-CLOSE-RECORD.md)
 
 ---
 
@@ -169,15 +170,24 @@ DAO 仅新增查询/受约束更新方法（`RecipeDao.listActive`、`InventoryB
 本报告提交为 `83d1051184fd04a02c59e4cbe87740ebb4eee4a3`；检查点标签指向该提交，
 对象哈希见 §8.2。§8.2 由后续簿记提交回填，标签不随簿记提交移动。
 
-### 8.2 检查点
+### 8.2 检查点与关闭标签
 
 ```text
 checkpoint/misebase-stage2-20261104
   tag object: c39f87488c00b0e3b570f49ba9252a3b85aadf51
   commit:     83d1051184fd04a02c59e4cbe87740ebb4eee4a3
+
+checkpoint/misebase-stage2-closed-20261104
+  tag object: 待关闭簿记提交回填
+  commit:     待关闭簿记提交回填
+
+checkpoint/misebase-stage3-start-20261104
+  tag object: 待关闭簿记提交回填
+  commit:     待关闭簿记提交回填
 ```
 
-标签指向**报告提交**（不是后续簿记提交）；§9 的风险与 §10 的审查条件不因簿记提交改变。
+`stage2-20261104` 指向报告提交；两个关闭标签指向 `docs(stage2): close stage 2 after review`
+提交，由关闭簿记提交回填。§9 的风险与 §10 的审查条件不因簿记提交改变。
 
 ### 8.3 变更范围（`stage2-start..HEAD`）
 
@@ -222,7 +232,9 @@ M  core/database/dao/*.kt（仅新增查询/受约束更新）
 2. Repository 事务边界约定是否被后续 Stage 3/4 用例遵守；
 3. `SAUCE` 组成行映射边界的处理方式是否可接受到 Stage 3。
 
-**Stage 2 不自动关闭**，状态保持 `Review`，等待负责人审查回执。
+**Stage 2 已关闭（CLOSED）**：审查结论为“有条件通过；主体合规，无重大范围偏离”，
+关闭提交与两个关闭标签见 §8.2 与 [MB-S2-06](MB-S2-06-STAGE2-CLOSE-RECORD.md)。
+条件项（两项 Schema 变更请求）状态为“待负责人决策”，未实施。
 
 ## 11. 停止声明
 

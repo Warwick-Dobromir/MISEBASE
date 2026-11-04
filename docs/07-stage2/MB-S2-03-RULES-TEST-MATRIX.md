@@ -134,7 +134,7 @@
 .\gradlew.bat test assembleDebug --console=plain --no-daemon
 BUILD SUCCESSFUL
 264 tests, 0 failures, 0 errors
-app-debug.apk 36,856,444 bytes
+app-debug.apk 36,856,488 bytes
 ```
 
 ## 4. 未覆盖与说明
