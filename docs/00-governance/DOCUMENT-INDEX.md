@@ -1,7 +1,7 @@
 # CULINARY 文档索引
 
 **文档编号**：GOV-INDEX
-**版本**：`0.21.0`
+**版本**：`0.21.1`
 **状态**：`Review`
 **日期**：2026-11-04
 **维护人**：首席架构师 / 技术负责人
@@ -107,8 +107,9 @@
 | [MB-SC-03 备份恢复验证](../08-schema-change/MB-SC-03-BACKUP-RESTORE-VERIFICATION.md) | 既有备份接口生成 v2 归档 → 校验 → 恢复 → 数据读取；无实现变更 |
 | [MB-SC-04 回滚验证](../08-schema-change/MB-SC-04-ROLLBACK-VERIFICATION.md) | 仅支持备份恢复、不支持原地降级；v1 备份恢复与重新迁移验证 |
 | [MB-SC-05 DTO/Mapper/Repository](../08-schema-change/MB-SC-05-DTO-MAPPER-REPOSITORY.md) | `servings` 映射、计算记录 Room 实现、契约语义与未做事项 |
-| [MB-SC-06 执行报告](../08-schema-change/MB-SC-06-EXECUTION-REPORT.md) | Schema v2 执行摘要、测试/构建、Git、风险与审查条件；状态 `Review` |
+| [MB-SC-06 执行报告](../08-schema-change/MB-SC-06-EXECUTION-REPORT.md) | Schema v2 执行摘要、测试/构建、Git、风险与审查条件；状态 `CLOSED`（有条件通过） |
 | [MB-SC-07 休眠表证明](../08-schema-change/MB-SC-07-DORMANT-TABLES-PROOF.md) | 11 张表结构前后一致、索引重建、0 处新业务引用与旧脚本误报 |
+| [MB-SC-CLOSE-001 关闭记录](../08-schema-change/MB-SC-CLOSE-001-SCHEMA-CHANGE-CLOSURE.md) | Schema 变更有条件通过、关闭 HEAD/标签、保留项与不进入 Stage 3 声明 |
 
 ## 3. 图表
 
@@ -164,3 +165,4 @@
 | 0.19.0 | 2026-11-04 | Stage 2 关闭：新增 MB-S2-06；报告状态 CLOSED；统一 APK 字节数；记录关闭与 Stage 3 起点标签 | 接管工程组 |
 | 0.20.0 | 2026-11-04 | MB-DECISION-SIGN-002：UI 设计书 1.0.0（方向 A/N1）；新增 MB-SC-00 Schema 变更授权 | 接管工程组 |
 | 0.21.0 | 2026-11-04 | 新增 MB-SC-01～07 Schema v1→v2 执行/验证文档；报告状态 `Review`；MB-SC-00 标记已实施 | 接管工程组 |
+| 0.21.1 | 2026-11-04 | 新增 MB-SC-CLOSE-001；MB-SC-06 改为 `CLOSED`（有条件通过）；补记关闭标签 | 接管工程组 |

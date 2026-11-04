@@ -1,12 +1,14 @@
 # MB-SC-06 Schema 变更执行报告
 
 **文档编号**：MB-SC-06
-**版本**：`1.0.0`
-**状态**：`Review`
+**版本**：`2.0.0`
+**状态**：`CLOSED`
 **日期**：2026-11-04
 **授权**：[MB-SC-00](MB-SC-00-AUTHORIZATION.md)
 **分支 / 基线**：`misebase/main`，起点 `a698c863d5fe81cf8dca1cfdeef4bedff16ffa08`
 **报告正文提交**：`6d0dbac759a62bc8bfef6a78aebf9f18feb00950`
+**关闭记录**：[MB-SC-CLOSE-001](MB-SC-CLOSE-001-SCHEMA-CHANGE-CLOSURE.md)
+**关闭标签**：`checkpoint/misebase-schema-change-closed-20261104`
 
 ---
 
@@ -22,7 +24,9 @@
 6. 未开发计算记录 UI/Use Case 页面，未进入 Stage 3，未修改备份/恢复实现，未新建模块。
 
 结果：`test` **274 例 / 0 失败**；`assembleDebug` 成功；`ktlintCheck`、`detekt` 通过。
-报告状态为 `Review`，等待项目负责人审查；**不是 Approved，不自动进入 Stage 3**。
+审查结论：**有条件通过**；本报告状态 **CLOSED**。保留项见
+[MB-SC-CLOSE-001 §5](MB-SC-CLOSE-001-SCHEMA-CHANGE-CLOSURE.md)。关闭不等于 Stage 3 授权，
+**不自动进入 Stage 3**。
 
 ---
 
@@ -293,21 +297,21 @@ A  docs/08-schema-change/MB-SC-01..07
 
 | # | 事项 | 状态 / 影响 |
 |---:|---|---|
-| R-01 | 无 Android 设备/模拟器，官方 `MigrationTestHelper` 未执行 | 已编译；JVM 迁移测试为主要证据；审查保留项 |
+| R-01 | 无 Android 设备/模拟器，官方 `MigrationTestHelper` 未执行 | 已编译；JVM 迁移测试为主要证据；Stage 6 真机验收必须补跑 |
 | R-02 | MB-D-007 仍 `PROPOSED` | 迁移前自动备份/写屏障/WAL checkpoint 未实现；本任务未改备份实现，v2 备份验证只是文件级 |
 | R-03 | 不支持原地降级 | 只能恢复迁移前 v1 备份；回退会丢失迁移后新增数据 |
-| R-04 | 旧休眠表扫描脚本 3 处文本误报 | 均为 Stage 2 既有注释/测试；本任务新增业务引用 0；未篡改历史业务文件 |
-| R-05 | 迁移临时移除 9 个运行时部分索引 | Room 校验要求；`onOpen` 原样重建；11 张表 SQL 不变；需审查确认该技术操作可接受 |
+| R-04 | 旧休眠表扫描脚本 3 处文本误报 | 均为 Stage 2 既有注释/测试；本任务新增业务引用 0；Stage 3 期间可清理 |
+| R-05 | 迁移临时移除 9 个运行时部分索引 | Room 校验要求；`onOpen` 原样重建；11 张表 SQL 不变；**关闭审查已接受** |
 | R-06 | 无真机 SAF/进程重启恢复 | 未验证 App 内完整恢复 UI 与真实存储权限 |
 | R-07 | 计算记录无业务 UI | 符合本任务边界；实际页面/Use Case 接线留待后续授权 |
 
 ---
 
-## 13. 是否具备审查条件
+## 13. 审查结论与保留项
 
-**具备审查条件，附保留项。**
+**审查结论：有条件通过（CLOSED）。**
 
-可审查依据：
+可通过依据：
 
 - Schema v2 与 `2.json` 已生成；`1.json` 字节未变；
 - JVM 迁移、完整性、Repository、备份恢复、回滚测试均通过；
@@ -316,15 +320,14 @@ A  docs/08-schema-change/MB-SC-01..07
 - 备份/恢复实现、休眠表、模块集、技术栈、标签均未越界；
 - 报告与验证记录可复现。
 
-保留项：
+关闭保留项（详见 [MB-SC-CLOSE-001 §5](MB-SC-CLOSE-001-SCHEMA-CHANGE-CLOSURE.md)）：
 
-1. androidTest 未在设备上执行；
-2. MB-D-007 未签收，生产一致性备份不在本任务范围；
-3. 不支持原地降级；
-4. 休眠表扫描脚本的 3 处既有文本误报未清理（避免改 Stage 2 业务文件）；
-5. 迁移对 v1 运行时部分索引的临时移除/重建需审查确认。
+1. 部分索引临时移除/重建 **已接受**；
+2. androidTest 未执行，Stage 6 真机验收必须补跑；
+3. MB-D-007 未签收，备份为文件级验证；
+4. 旧扫描脚本 3 处误报，Stage 3 期间可清理。
 
-结论：**可以提交审查，但不能标注 Approved，不能据此启动 Stage 3。**
+结论：**Schema 变更任务关闭；不构成 Stage 3 开发授权，不得据此启动 Stage 3。**
 
 ---
 
@@ -343,3 +346,4 @@ A  docs/08-schema-change/MB-SC-01..07
 | 版本 | 日期 | 变更 | 作者 |
 |---|---|---|---|
 | 1.0.0 | 2026-11-04 | Schema v1→v2 执行报告；状态 Review；含测试、备份、回滚、Git 与风险 | 接管工程组 |
+| 2.0.0 | 2026-11-04 | 审查结论有条件通过；状态改为 CLOSED；补记关闭记录与关闭标签；保留项按 CLOSE-001 §5 执行 | 接管工程组 |
