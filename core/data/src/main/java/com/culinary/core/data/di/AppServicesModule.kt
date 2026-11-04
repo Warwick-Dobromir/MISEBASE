@@ -8,8 +8,10 @@ import com.culinary.core.data.startup.StartupCoordinator
 import com.culinary.core.data.transaction.RoomTransactionRunner
 import com.culinary.core.database.CulinaryDatabase
 import com.culinary.core.domain.repository.IngredientRepository
+import com.culinary.core.domain.repository.UnitRepository
 import com.culinary.core.domain.transaction.TransactionRunner
 import com.culinary.core.domain.usecase.ingredient.ArchiveIngredientUseCase
+import com.culinary.core.domain.usecase.ingredient.GetIngredientDetailUseCase
 import com.culinary.core.domain.usecase.ingredient.ListIngredientsUseCase
 import com.culinary.core.domain.usecase.ingredient.SaveIngredientUseCase
 import dagger.Module
@@ -68,6 +70,13 @@ object AppServicesModule {
         repository: IngredientRepository,
         transactionRunner: TransactionRunner,
     ): ArchiveIngredientUseCase = ArchiveIngredientUseCase(repository, transactionRunner)
+
+    @Provides
+    @Singleton
+    fun provideGetIngredientDetailUseCase(
+        ingredientRepository: IngredientRepository,
+        unitRepository: UnitRepository,
+    ): GetIngredientDetailUseCase = GetIngredientDetailUseCase(ingredientRepository, unitRepository)
 
     @Provides
     @Singleton

@@ -24,6 +24,8 @@ object IngredientMapper {
                     EntityStatusDb.ACTIVE -> EntityStatus.ACTIVE
                     EntityStatusDb.ARCHIVED -> EntityStatus.ARCHIVED
                 },
+            category = entity.category,
+            description = entity.description,
         )
 
     fun toEntity(
@@ -37,6 +39,8 @@ object IngredientMapper {
             name = ingredient.name,
             normalizedName = ingredient.normalizedName,
             defaultUnitId = ingredient.defaultUnitId?.value,
+            category = ingredient.category,
+            description = ingredient.description,
             status =
                 when (ingredient.status) {
                     EntityStatus.ACTIVE -> EntityStatusDb.ACTIVE

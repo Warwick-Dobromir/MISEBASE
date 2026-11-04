@@ -69,6 +69,47 @@ class SaveIngredientUseCaseTest {
         }
 
     @Test
+    fun `saves category description and default unit`() =
+        runBlocking<Unit> {
+            useCase(
+                SaveIngredientInput(
+                    name = "低筋面粉",
+                    defaultUnitId = com.culinary.core.domain.model.UnitId("g"),
+                    category = " 粉类 ",
+                    description = "蛋白质 8.5%",
+                ),
+            )
+
+            val saved = repository.saved.single()
+            assertThat(saved.category).isEqualTo("粉类")
+            assertThat(saved.description).isEqualTo("蛋白质 8.5%")
+            assertThat(saved.defaultUnitId?.value).isEqualTo("g")
+        }
+
+    @Test
+    fun `rejects over long category and description`() =
+        runBlocking<Unit> {
+            val category =
+                useCase(
+                    SaveIngredientInput(
+                        name = "低筋面粉",
+                        category = "c".repeat(61),
+                    ),
+                )
+            val description =
+                useCase(
+                    SaveIngredientInput(
+                        name = "低筋面粉",
+                        description = "d".repeat(501),
+                    ),
+                )
+
+            assertThat((category as Outcome.Failure).error.code.value).isEqualTo("CUL-VAL-001")
+            assertThat((description as Outcome.Failure).error.code.value).isEqualTo("CUL-VAL-001")
+            assertThat(repository.saved).isEmpty()
+        }
+
+    @Test
     fun `archives through the repository inside a transaction`() =
         runBlocking<Unit> {
             val archive = ArchiveIngredientUseCase(repository, ImmediateTransactionRunner)

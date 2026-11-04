@@ -1,13 +1,37 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="ingredients_title">食材</string>
+    <string name="ingredients_title">食材档案</string>
+    <string name="ingredients_count">共 %1$d 个食材</string>
+    <string name="ingredients_new">新建食材</string>
     <string name="ingredients_add">新建</string>
-    <string name="ingredients_empty">还没有食材，点右下角新建。</string>
+    <string name="ingredients_empty_title">还没有食材</string>
+    <string name="ingredients_empty_body">先建立食材档案，记录分类、默认单位与换算。</string>
+    <string name="ingredients_empty_action">新建第一个食材</string>
+    <string name="ingredients_load_failed">加载失败</string>
+    <string name="ingredients_retry">重试</string>
     <string name="ingredients_name_label">名称</string>
-    <string name="ingredients_save">保存</string>
-    <string name="ingredients_cancel">取消</string>
+    <string name="ingredients_category_label">分类（可选）</string>
+    <string name="ingredients_description_label">描述（可选）</string>
+    <string name="ingredients_default_unit">默认单位</string>
+    <string name="ingredients_no_unit">未设置</string>
+    <string name="ingredients_uncategorized">未分类</string>
+    <string name="ingredients_active">在用</string>
+    <string name="ingredients_archived">已归档</string>
     <string name="ingredients_edit">编辑</string>
     <string name="ingredients_archive">归档</string>
-    <string name="ingredients_back">返回</string>
+    <string name="ingredients_save">保存</string>
+    <string name="ingredients_cancel">取消</string>
+    <string name="ingredients_saving">正在保存…</string>
+    <string name="ingredients_conversions">换算依据（%1$d 条）</string>
+    <string name="ingredients_no_conversions">还没有食材级换算；跨维度换算不会被猜测。</string>
+    <string name="ingredients_conversion_row">%1$s → %2$s × %3$s</string>
+    <string name="ingredients_archive_title">归档食材</string>
+    <string name="ingredients_archive_message">归档后不再出现在新建引用中；历史配方与已有版本不受影响。</string>
+    <string name="ingredients_archived_done">已归档</string>
+    <string name="ingredients_unit_picker_title">选择默认单位</string>
+    <string name="ingredients_picker_empty">没有可选项</string>
+    <string name="ingredients_editor_new_title">新建食材</string>
+    <string name="ingredients_editor_edit_title">编辑食材</string>
+    <string name="ingredients_saved">已保存</string>
     <string name="ingredients_error_dismiss">知道了</string>
 </resources>

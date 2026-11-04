@@ -25,6 +25,10 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.culinary.R
 import com.culinary.core.designsystem.icon.CulinaryIcons
+import com.culinary.feature.ingredients.IngredientDetailRoute
+import com.culinary.feature.ingredients.IngredientEditorRoute
+import com.culinary.feature.ingredients.IngredientsRoute
+import com.culinary.feature.ingredients.IngredientsRoutes
 import com.culinary.feature.sauces.SauceDetailRoute
 import com.culinary.feature.sauces.SauceEditorRoute
 import com.culinary.feature.sauces.SaucesRoute
@@ -138,7 +142,19 @@ private fun AppNavGraph(
             SauceEditorRoute(onSaved = { navController.popBackStack() })
         }
         composable(CulinaryDestination.INGREDIENTS.route) {
-            FeaturePlaceholder(titleRes = R.string.destination_ingredients)
+            IngredientsRoute(
+                onOpenIngredient = { id -> navController.navigate(IngredientsRoutes.detail(id)) },
+                onAddIngredient = { navController.navigate(IngredientsRoutes.edit(null)) },
+            )
+        }
+        composable(IngredientsRoutes.DETAIL) {
+            IngredientDetailRoute(
+                onEdit = { id -> navController.navigate(IngredientsRoutes.edit(id)) },
+                onArchived = { navController.popBackStack() },
+            )
+        }
+        composable(IngredientsRoutes.EDIT) {
+            IngredientEditorRoute(onSaved = { navController.popBackStack() })
         }
         composable(CulinaryDestination.RECIPES.route) {
             FeaturePlaceholder(titleRes = R.string.destination_recipes)
