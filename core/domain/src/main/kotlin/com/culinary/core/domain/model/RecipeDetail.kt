@@ -52,4 +52,5 @@ data class ExpandedRecipeLine(
     val label: String,
     val quantity: Quantity,
     val isOptional: Boolean,
+    val ingredientId: IngredientId? = null,
 )

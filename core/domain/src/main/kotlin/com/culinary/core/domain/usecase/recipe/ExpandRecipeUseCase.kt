@@ -76,6 +76,7 @@ class ExpandRecipeUseCase(
                     label = label,
                     quantity = requirement.quantity,
                     isOptional = requirement.isOptional,
+                    ingredientId = requirement.ingredientId,
                 )
             }
         return Outcome.success(
