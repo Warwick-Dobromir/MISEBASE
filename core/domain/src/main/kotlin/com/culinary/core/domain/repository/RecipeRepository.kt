@@ -21,4 +21,3 @@ interface RecipeRepository {
      */
     suspend fun savePublished(version: RecipeVersion): Outcome<RecipeVersionId>
 }
-

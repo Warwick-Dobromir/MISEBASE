@@ -70,21 +70,9 @@ object RecipeMapper {
                         CulinaryError.NotFound(entity = "unit", id = component.unitId),
                     )
             val target =
-                when (component.componentType) {
-                    ComponentTypeDb.INGREDIENT ->
-                        component.ingredientId?.let { ComponentTarget.Ingredient(IngredientId(it)) }
-                            ?: return invalidComponent(component)
-
-                    ComponentTypeDb.RECIPE -> {
-                        val recipeId = component.referencedRecipeId
-                        val versionId = component.referencedRecipeVersionId
-                        if (recipeId == null || versionId == null) {
-                            return invalidComponent(component)
-                        }
-                        ComponentTarget.Recipe(RecipeId(recipeId), RecipeVersionId(versionId))
-                    }
-
-                    ComponentTypeDb.SAUCE -> return sauceComponentUnsupported(component)
+                when (val resolved = toTarget(component)) {
+                    is Outcome.Failure -> return resolved
+                    is Outcome.Success -> resolved.value
                 }
             mapped +=
                 RecipeComponent(
@@ -110,6 +98,30 @@ object RecipeMapper {
             ),
         )
     }
+
+    private fun toTarget(component: RecipeComponentEntity): Outcome<ComponentTarget> =
+        when (component.componentType) {
+            ComponentTypeDb.INGREDIENT -> {
+                val ingredientId = component.ingredientId
+                if (ingredientId == null) {
+                    invalidComponent(component)
+                } else {
+                    Outcome.success(ComponentTarget.Ingredient(IngredientId(ingredientId)))
+                }
+            }
+
+            ComponentTypeDb.RECIPE -> {
+                val recipeId = component.referencedRecipeId
+                val versionId = component.referencedRecipeVersionId
+                if (recipeId == null || versionId == null) {
+                    invalidComponent(component)
+                } else {
+                    Outcome.success(ComponentTarget.Recipe(RecipeId(recipeId), RecipeVersionId(versionId)))
+                }
+            }
+
+            ComponentTypeDb.SAUCE -> sauceComponentUnsupported(component)
+        }
 
     private fun invalidComponent(component: RecipeComponentEntity): Outcome<Nothing> =
         Outcome.failure(

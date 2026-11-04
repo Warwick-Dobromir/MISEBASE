@@ -51,7 +51,12 @@ class RecipeExploderServingsTest {
                 source = { id -> if (id.value == "root") version else null },
             )
 
-        assertThat((result as Outcome.Success).value.single().quantity.amount).isWithin(1e-9).of(150.0)
+        assertThat(
+            (result as Outcome.Success)
+                .value
+                .single()
+                .quantity.amount,
+        ).isWithin(1e-9).of(150.0)
     }
 
     @Test
@@ -89,7 +94,12 @@ class RecipeExploderServingsTest {
                 },
             )
 
-        assertThat((result as Outcome.Success).value.single().quantity.amount).isWithin(1e-9).of(20.0)
+        assertThat(
+            (result as Outcome.Success)
+                .value
+                .single()
+                .quantity.amount,
+        ).isWithin(1e-9).of(20.0)
     }
 
     @Test

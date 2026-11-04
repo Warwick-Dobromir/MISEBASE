@@ -36,10 +36,11 @@ class InventoryRepositoryImpl
     ) : InventoryRepository {
         override suspend fun listItems(): Outcome<List<InventoryItem>> {
             return try {
-                val items = batchDao.listActive().map { batch ->
-                    val unit = loadUnit(batch.stockUnitId) ?: return notFoundUnit(batch.stockUnitId)
-                    InventoryMapper.toDomain(batch, unit)
-                }
+                val items =
+                    batchDao.listActive().map { batch ->
+                        val unit = loadUnit(batch.stockUnitId) ?: return notFoundUnit(batch.stockUnitId)
+                        InventoryMapper.toDomain(batch, unit)
+                    }
                 Outcome.success(items)
             } catch (e: CancellationException) {
                 throw e
@@ -72,44 +73,49 @@ class InventoryRepositoryImpl
             }
         }
 
-        override suspend fun appendIfAbsent(entry: InventoryLedgerEntry): Outcome<Boolean> {
-            return try {
+        override suspend fun appendIfAbsent(entry: InventoryLedgerEntry): Outcome<Boolean> =
+            try {
                 if (ledgerDao.findByIdempotencyKey(entry.idempotencyKey) != null) {
-                    return Outcome.success(false)
+                    Outcome.success(false)
+                } else {
+                    applyNewEntry(entry)
                 }
-                val batch =
-                    batchDao.findById(entry.batchId.value)
-                        ?: return Outcome.failure(
-                            CulinaryError.NotFound(entity = "inventory_batch", id = entry.batchId.value),
-                        )
-                if (batch.quantityOnHand + entry.onHandDelta < -EPSILON) {
-                    return insufficient(entry, requested = -entry.onHandDelta, available = batch.quantityOnHand)
-                }
-                val rows =
-                    batchDao.applyDeltas(
-                        id = entry.batchId.value,
-                        onHandDelta = entry.onHandDelta,
-                        reservedDelta = entry.reservedDelta,
-                        updatedAt = clock.now().toEpochMilli(),
-                    )
-                if (rows != 1) {
-                    return Outcome.failure(CulinaryError.Conflict(entity = "inventory_batch"))
-                }
-                ledgerDao.insert(InventoryMapper.toEntity(entry))
-                Outcome.success(true)
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Throwable) {
                 Outcome.failure(DbErrorMapper.map(e))
             }
+
+        private suspend fun applyNewEntry(entry: InventoryLedgerEntry): Outcome<Boolean> {
+            val batch =
+                batchDao.findById(entry.batchId.value)
+                    ?: return Outcome.failure(
+                        CulinaryError.NotFound(entity = "inventory_batch", id = entry.batchId.value),
+                    )
+            if (batch.quantityOnHand + entry.onHandDelta < -EPSILON) {
+                return insufficient(entry, requested = -entry.onHandDelta, available = batch.quantityOnHand)
+            }
+            val rows =
+                batchDao.applyDeltas(
+                    id = entry.batchId.value,
+                    onHandDelta = entry.onHandDelta,
+                    reservedDelta = entry.reservedDelta,
+                    updatedAt = clock.now().toEpochMilli(),
+                )
+            if (rows != 1) {
+                return Outcome.failure(CulinaryError.Conflict(entity = "inventory_batch"))
+            }
+            ledgerDao.insert(InventoryMapper.toEntity(entry))
+            return Outcome.success(true)
         }
 
         override suspend fun ledger(): Outcome<List<InventoryLedgerEntry>> {
             return try {
-                val entries = ledgerDao.listAll().map { ledger ->
-                    val unit = loadUnit(ledger.stockUnitId) ?: return notFoundUnit(ledger.stockUnitId)
-                    InventoryMapper.toDomain(ledger, unit)
-                }
+                val entries =
+                    ledgerDao.listAll().map { ledger ->
+                        val unit = loadUnit(ledger.stockUnitId) ?: return notFoundUnit(ledger.stockUnitId)
+                        InventoryMapper.toDomain(ledger, unit)
+                    }
                 Outcome.success(entries)
             } catch (e: CancellationException) {
                 throw e

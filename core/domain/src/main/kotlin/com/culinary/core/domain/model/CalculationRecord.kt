@@ -41,13 +41,15 @@ data class CalculationRecord(
             "calculation record lines must be unique per ingredient and unit"
         }
         when (status) {
-            CalculationRecordStatus.PREVIEW -> require(confirmedAt == null) {
-                "preview record must not carry confirmedAt"
-            }
+            CalculationRecordStatus.PREVIEW ->
+                require(confirmedAt == null) {
+                    "preview record must not carry confirmedAt"
+                }
 
-            CalculationRecordStatus.CONFIRMED -> require(confirmedAt != null) {
-                "confirmed record must carry confirmedAt"
-            }
+            CalculationRecordStatus.CONFIRMED ->
+                require(confirmedAt != null) {
+                    "confirmed record must carry confirmedAt"
+                }
         }
     }
 

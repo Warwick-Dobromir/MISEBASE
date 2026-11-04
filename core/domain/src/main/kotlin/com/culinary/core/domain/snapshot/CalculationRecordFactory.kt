@@ -3,8 +3,8 @@ package com.culinary.core.domain.snapshot
 import com.culinary.core.domain.model.CalculationRecord
 import com.culinary.core.domain.model.CalculationRecordId
 import com.culinary.core.domain.model.CalculationRecordStatus
-import com.culinary.core.domain.model.RequirementLine
 import com.culinary.core.domain.model.RecipeVersionId
+import com.culinary.core.domain.model.RequirementLine
 import com.culinary.core.domain.model.Servings
 import java.time.Instant
 

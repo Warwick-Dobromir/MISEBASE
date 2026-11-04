@@ -31,7 +31,11 @@ class PurchaseListTest {
             )
 
         assertThat(list.lines.map { it.ingredientId }).containsExactly(Flour)
-        assertThat(list.lines.single().toPurchase.amount).isWithin(1e-9).of(300.0)
+        assertThat(
+            list.lines
+                .single()
+                .toPurchase.amount,
+        ).isWithin(1e-9).of(300.0)
     }
 
     @Test

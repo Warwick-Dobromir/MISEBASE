@@ -40,7 +40,11 @@ class ShortfallCalculator(
                     ingredientId = requirement.ingredientId,
                     required = requirement.quantity,
                     available = Quantity(available, requirement.quantity.unit),
-                    shortfall = Quantity(maxOf(0.0, requirement.quantity.amount - available), requirement.quantity.unit),
+                    shortfall =
+                        Quantity(
+                            maxOf(0.0, requirement.quantity.amount - available),
+                            requirement.quantity.unit,
+                        ),
                     isOptional = requirement.isOptional,
                 )
             }

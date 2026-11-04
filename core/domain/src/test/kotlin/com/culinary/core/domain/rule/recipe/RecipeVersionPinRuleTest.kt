@@ -97,7 +97,10 @@ class RecipeVersionPinRuleTest {
             )
 
         val before =
-            (explode(published, mapOf("child-v1" to v1)) as Outcome.Success).value.single().quantity.amount
+            (explode(published, mapOf("child-v1" to v1)) as Outcome.Success)
+                .value
+                .single()
+                .quantity.amount
 
         // 子菜谱发布新版本并把当前指针移到 v2；已发布父版本不得跟随。
         val after =

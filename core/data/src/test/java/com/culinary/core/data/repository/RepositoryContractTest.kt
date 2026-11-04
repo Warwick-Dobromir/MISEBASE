@@ -343,8 +343,7 @@ class RepositoryContractTest {
     private fun publishedVersion(
         id: String,
         versionNo: Int,
-    ): RecipeVersion =
-        baseVersion(id = id, versionNo = versionNo, status = VersionStatus.PUBLISHED)
+    ): RecipeVersion = baseVersion(id = id, versionNo = versionNo, status = VersionStatus.PUBLISHED)
 
     private fun baseVersion(
         id: String,

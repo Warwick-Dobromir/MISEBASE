@@ -6,6 +6,7 @@ import com.culinary.core.common.ErrorCode
 import com.culinary.core.common.Outcome
 import com.culinary.core.domain.model.CalculationRecord
 import com.culinary.core.domain.model.CalculationRecordId
+import com.culinary.core.domain.model.EntityStatus
 import com.culinary.core.domain.model.InventoryItem
 import com.culinary.core.domain.model.InventoryLedgerEntry
 import com.culinary.core.domain.model.Recipe
@@ -32,7 +33,7 @@ class InMemoryRecipeRepository : RecipeRepository {
     private val versions = mutableMapOf<RecipeVersionId, RecipeVersion>()
     private val current = mutableMapOf<String, RecipeVersionId>()
 
-    override fun observeActive(): Flow<List<Recipe>> = flowOf(recipes.filter { it.status == com.culinary.core.domain.model.EntityStatus.ACTIVE })
+    override fun observeActive(): Flow<List<Recipe>> = flowOf(recipes.filter { it.status == EntityStatus.ACTIVE })
 
     override suspend fun getVersion(id: RecipeVersionId): RecipeVersion? = versions[id]
 

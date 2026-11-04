@@ -11,7 +11,6 @@ import com.culinary.core.domain.model.InventoryLedgerEntry
 import com.culinary.core.domain.model.LedgerEntryId
 import com.culinary.core.domain.model.LedgerEntryType
 import com.culinary.core.domain.model.ProductRequirement
-import com.culinary.core.domain.model.Quantity
 import com.culinary.core.domain.rule.unit.UnitConverter
 import java.time.Instant
 

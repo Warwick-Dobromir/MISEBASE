@@ -1,7 +1,7 @@
 package com.culinary.core.domain.snapshot
 
-import com.culinary.core.domain.model.RequirementLine
 import com.culinary.core.domain.model.RecipeVersionId
+import com.culinary.core.domain.model.RequirementLine
 import com.culinary.core.domain.model.Servings
 import java.math.BigDecimal
 import java.security.MessageDigest
@@ -38,8 +38,7 @@ class CalculationPayloadHasher {
         return sha256(canonical)
     }
 
-    private fun decimal(value: Double): String =
-        BigDecimal.valueOf(value).stripTrailingZeros().toPlainString()
+    private fun decimal(value: Double): String = BigDecimal.valueOf(value).stripTrailingZeros().toPlainString()
 
     private fun sha256(text: String): String =
         MessageDigest

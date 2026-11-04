@@ -68,8 +68,7 @@ class CsvPurchaseListExporter : PurchaseListExporter {
             }
         }
 
-    private fun decimal(value: Double): String =
-        BigDecimal.valueOf(value).stripTrailingZeros().toPlainString()
+    private fun decimal(value: Double): String = BigDecimal.valueOf(value).stripTrailingZeros().toPlainString()
 
     private companion object {
         const val HEADER = "ingredient_id,product_id,required,available,to_purchase,unit"

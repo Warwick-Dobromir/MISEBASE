@@ -43,8 +43,16 @@ class InventoryDeductionTest {
         assertThat(line.available.amount).isWithin(1e-9).of(8.0)
         assertThat(line.shortfall.amount).isWithin(1e-9).of(0.0)
         assertThat(line.allocations.map { it.batchId.value }).containsExactly("b-jan", "b-feb").inOrder()
-        assertThat(line.allocations.first().quantity.amount).isWithin(1e-9).of(5.0)
-        assertThat(line.allocations.last().quantity.amount).isWithin(1e-9).of(3.0)
+        assertThat(
+            line.allocations
+                .first()
+                .quantity.amount,
+        ).isWithin(1e-9).of(5.0)
+        assertThat(
+            line.allocations
+                .last()
+                .quantity.amount,
+        ).isWithin(1e-9).of(3.0)
     }
 
     @Test
@@ -53,7 +61,11 @@ class InventoryDeductionTest {
 
         val preview = preview(requirement(12.0), items)
 
-        assertThat(preview.lines.single().shortfall.amount).isWithin(1e-9).of(2.0)
+        assertThat(
+            preview.lines
+                .single()
+                .shortfall.amount,
+        ).isWithin(1e-9).of(2.0)
         assertThat(preview.hasShortfall).isTrue()
     }
 
@@ -63,8 +75,16 @@ class InventoryDeductionTest {
 
         val preview = preview(requirement(1500.0), items)
 
-        assertThat(preview.lines.single().available.amount).isWithin(1e-9).of(1500.0)
-        assertThat(preview.lines.single().shortfall.amount).isWithin(1e-9).of(0.0)
+        assertThat(
+            preview.lines
+                .single()
+                .available.amount,
+        ).isWithin(1e-9).of(1500.0)
+        assertThat(
+            preview.lines
+                .single()
+                .shortfall.amount,
+        ).isWithin(1e-9).of(0.0)
     }
 
     @Test
@@ -73,8 +93,16 @@ class InventoryDeductionTest {
 
         val preview = preview(requirement(100.0), items)
 
-        assertThat(preview.lines.single().available.amount).isWithin(1e-9).of(0.0)
-        assertThat(preview.lines.single().shortfall.amount).isWithin(1e-9).of(100.0)
+        assertThat(
+            preview.lines
+                .single()
+                .available.amount,
+        ).isWithin(1e-9).of(0.0)
+        assertThat(
+            preview.lines
+                .single()
+                .shortfall.amount,
+        ).isWithin(1e-9).of(100.0)
     }
 
     @Test

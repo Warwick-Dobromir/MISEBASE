@@ -29,7 +29,11 @@ class ShortfallCalculatorTest {
 
         assertThat(report.required.map { it.ingredientId }).containsExactly(Flour)
         assertThat(report.optional.map { it.ingredientId }).containsExactly(Cheese)
-        assertThat(report.optional.single().shortfall.amount).isWithin(1e-9).of(50.0)
+        assertThat(
+            report.optional
+                .single()
+                .shortfall.amount,
+        ).isWithin(1e-9).of(50.0)
         assertThat(report.hasRequiredShortfall).isFalse()
         assertThat(report.hasOptionalShortfall).isTrue()
     }
@@ -68,7 +72,11 @@ class ShortfallCalculatorTest {
                 stock = listOf(InventoryAvailability(Flour, Quantity(2.0, Cup))),
             )
 
-        assertThat(report.required.single().shortfall.amount).isWithin(1e-9).of(500.0)
+        assertThat(
+            report.required
+                .single()
+                .shortfall.amount,
+        ).isWithin(1e-9).of(500.0)
     }
 
     @Test
@@ -80,7 +88,11 @@ class ShortfallCalculatorTest {
                 conversions = listOf(IngredientUnitConversion(Cup.id, Gram.id, factor = 120.0)),
             )
 
-        assertThat(report.required.single().shortfall.amount).isWithin(1e-9).of(0.0)
+        assertThat(
+            report.required
+                .single()
+                .shortfall.amount,
+        ).isWithin(1e-9).of(0.0)
     }
 
     @Test

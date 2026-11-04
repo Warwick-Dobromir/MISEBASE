@@ -9,8 +9,8 @@ import com.culinary.core.domain.model.CalculationRecordId
 import com.culinary.core.domain.model.CalculationRecordStatus
 import com.culinary.core.domain.model.IngredientId
 import com.culinary.core.domain.model.Quantity
-import com.culinary.core.domain.model.RequirementLine
 import com.culinary.core.domain.model.RecipeVersionId
+import com.culinary.core.domain.model.RequirementLine
 import com.culinary.core.domain.model.Servings
 import com.culinary.core.domain.model.Unit
 import com.culinary.core.domain.model.UnitDimension
@@ -129,8 +129,13 @@ class CalculationRecordTest {
         createdAt: Instant,
     ): CalculationRecord =
         factory
-            .preview(ID_1, VERSION_ID, Servings(1.0), listOf(RequirementLine(Flour, Quantity(1.0, Gram))), createdAt = createdAt)
-            .copy(payloadHash = hashSeed.repeat(64))
+            .preview(
+                id = ID_1,
+                recipeVersionId = VERSION_ID,
+                servings = Servings(1.0),
+                lines = listOf(RequirementLine(Flour, Quantity(1.0, Gram))),
+                createdAt = createdAt,
+            ).copy(payloadHash = hashSeed.repeat(64))
             .confirm(createdAt)
             .let { (it as Outcome.Success).value }
 
