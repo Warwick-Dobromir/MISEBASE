@@ -1,7 +1,7 @@
 # CULINARY 文档索引
 
 **文档编号**：GOV-INDEX
-**版本**：`0.24.0`
+**版本**：`0.25.0`
 **状态**：`Review`
 **日期**：2026-11-04
 **维护人**：首席架构师 / 技术负责人
@@ -68,7 +68,7 @@
 | [ADR-009 扫码方案](../adr/ADR-009-BARCODE-SCANNING.md) | CameraX + ML Kit，本地优先 |
 | [ADR-010 暂不做同步](../adr/ADR-010-NO-SYNC-YET.md) | 离线单用户，保留同步缝 |
 | [A-G2-001 G2 收档文件](A-G2-001-G2-ARCHIVE.md) | G2 基线、验收证据与遗留；§14 Errata 更正测试数 188→197 |
-| [MB-DECISIONS 决策登记册](../05-handover/MB-S0-07-DECISION-REGISTER.md) | MISEBASE 18 项决策；10 项 ACCEPTED、8 项 PROPOSED；G2-S1 测试口径 |
+| [MB-DECISIONS 决策登记册](../05-handover/MB-S0-07-DECISION-REGISTER.md) | MISEBASE 18 项决策；13 项 ACCEPTED、5 项 PROPOSED；G2-S1 测试口径 |
 
 ### 2.1 MISEBASE Stage 1 文档（2026-11-04）
 
@@ -132,6 +132,18 @@
 |---|---|
 | [MB-D-007 授权与 Stage 4 前置条件](../10-backup/MB-D-007-AUTHORIZATION.md) | MB-D-007 签收（ACCEPTED）、六项技术事项、验收要求、Stage 4 启动条件、工程原则与边界；修复尚未实施 |
 
+### 2.6 备份一致性修复（MB-BK-001，2026-11-04）
+
+| 文档 | 用途 |
+|---|---|
+| [MB-BK-001 执行报告](../10-backup/MB-BK-001-EXECUTION-REPORT.md) | 六项技术事项、前置检查、测试/构建、Git、风险、未决与停止声明；状态 `Review` |
+| [MB-BK-001 设计说明](../10-backup/MB-BK-001-BACKUP-CONSISTENCY-DESIGN.md) | 写屏障、WAL checkpoint、Worker 返回语义、恢复原子性、测试矩阵 |
+| [MB-BK-001 WAL 验证](../10-backup/MB-BK-001-WAL-VERIFICATION.md) | checkpoint 时机/结果、WAL 未 checkpoint 事务、恢复完整性证据 |
+| [MB-BK-001 Worker 记录](../10-backup/MB-BK-001-WORKER-TEST-RECORD.md) | 返回语义、单测、取消清理、Scheduler→Worker 集成 |
+| [MB-BK-001 一致性验证](../10-backup/MB-BK-001-CONSISTENCY-VERIFICATION.md) | 备份→校验→恢复→读取、并发写单一逻辑时点 |
+| [MB-BK-001 失败与回滚](../10-backup/MB-BK-001-FAILURE-ROLLBACK.md) | 备份失败、取消、恢复回滚、`RECOVERY_REQUIRED` |
+| [MB-BK-001 检查点回执](../10-backup/MB-BK-001-CHECKPOINT-RECEIPT.md) | 检查点标签对象哈希与解析提交 |
+
 ## 3. 图表
 
 | 文件 | 内容 |
@@ -182,6 +194,7 @@
 | 0.23.0 | 2026-11-04 | MB-S3-CLOSE-001：Stage 3 有条件通过并关闭；补关闭/Stage 4 起点标签与保留项 | 接管工程组 |
 | 0.23.1 | 2026-11-04 | UI-07 签收落库：后续新增独立首页、当前不实现、不改变 N1 IA、不构成开发授权；UI 设计书升 1.1.0 | 接管工程组 |
 | 0.24.0 | 2026-11-04 | MB-D-007 签收（Stage 4 强制前置）；新增备份一致性授权文档；决策计数 13/18、5 项 PROPOSED | 接管工程组 |
+| 0.25.0 | 2026-11-04 | MB-BK-001：新增备份一致性设计、执行报告、WAL/Worker/一致性/失败回滚验证与检查点回执；索引决策计数修正为 13/5 | 接管工程组 |
 | 0.16.0 | 2026-11-04 | 新增 A-G2-001 G2 收档文件 | 工程组 |
 | 0.17.0 | 2026-11-04 | Stage 1：新增 8 份 Stage 1 文档；记录 P01 Superseded、A03A 13 模块目标、A-G2-001 Errata | 接管工程组 |
 | 0.17.1 | 2026-11-04 | Stage 1 审查回执：新增 MB-S1-09；补证据边界 | 接管工程组 |
