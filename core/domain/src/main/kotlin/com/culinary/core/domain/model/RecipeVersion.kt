@@ -13,9 +13,11 @@ data class RecipeVersion(
     val status: VersionStatus,
     val yield: Quantity,
     val components: List<RecipeComponent>,
+    val servings: Int = 1,
 ) {
     init {
         require(versionNo > 0) { "versionNo must be > 0, was $versionNo" }
+        require(servings > 0) { "recipe servings must be > 0, was $servings" }
         require(yield.amount > 0.0) { "recipe yield must be > 0, was ${yield.amount}" }
         require(components.map { it.lineNo }.toSet().size == components.size) {
             "recipe version ${id.value} contains duplicate component lineNo"
