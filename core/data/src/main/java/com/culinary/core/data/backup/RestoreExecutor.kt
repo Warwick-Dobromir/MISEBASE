@@ -49,7 +49,10 @@ class RestoreExecutor(
     private val barrierTimeoutMillis: Long = WriteBarrier.DEFAULT_TIMEOUT_MILLIS,
     /** 仅测试注入：在装库成功后执行，用于验证失败回滚；生产为 null。 */
     private val afterInstallHook: (() -> Unit)? = null,
+    /** 仅测试注入：在回滚副本复制后、校验前执行；生产为 null。 */
+    private val afterRollbackCopyHook: (() -> Unit)? = null,
 ) {
+    @Suppress("LongMethod") // 恢复提交序列按 E05 顺序排列，拆开反而隐藏顺序约束
     suspend fun restoreDatabase(
         databaseBytes: ByteArray,
         restoreId: String,
@@ -78,6 +81,7 @@ class RestoreExecutor(
 
                 val rollbackFile = File(rollbackDirectory, "$restoreId.db")
                 writeJournal(restoreId, RestorePhase.PREPARED)
+                var installAttempted = false
                 try {
                     closeDatabaseQuietly()
                     writeJournal(restoreId, RestorePhase.DB_CLOSING)
@@ -85,11 +89,13 @@ class RestoreExecutor(
                     ensureRollbackDirectory()
                     if (databaseFile.exists() && databaseFile.length() > 0L) {
                         AtomicFiles.copyAtomically(databaseFile, rollbackFile)
+                        afterRollbackCopyHook?.invoke()
                         verifyDatabaseFile(rollbackFile, "rollback copy")
                     }
                     deleteSidecars()
                     writeJournal(restoreId, RestorePhase.DB_MOVED_ASIDE)
 
+                    installAttempted = true
                     AtomicFiles.writeBytesAtomically(databaseFile, databaseBytes)
                     writeJournal(restoreId, RestorePhase.DB_INSTALLED)
 
@@ -100,7 +106,8 @@ class RestoreExecutor(
 
                     Outcome.success(RestoreOutcome(restoreId, rollbackFile))
                 } catch (e: Exception) {
-                    val rolledBack = rollback(rollbackFile)
+                    // 未尝试装库时原库仍完好：绝不能用未通过校验的回滚副本覆盖它。
+                    val rolledBack = if (installAttempted) rollback(rollbackFile) else true
                     writeJournal(
                         restoreId,
                         if (rolledBack) RestorePhase.ROLLED_BACK else RestorePhase.RECOVERY_REQUIRED,

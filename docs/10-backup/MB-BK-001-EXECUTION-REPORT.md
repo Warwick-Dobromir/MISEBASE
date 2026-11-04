@@ -21,11 +21,11 @@
 | 写屏障 | `WriteBarrier` + `RoomTransactionRunner` 共享同一把 `Mutex` | `WriteBarrierTest` 5 例 | 完成 |
 | WAL checkpoint | `QuiescedDatabaseSnapshotter`：屏障内 checkpoint → quick_check → 复制 → 校验 | `QuiescedDatabaseSnapshotterTest` 4 例 | 完成 |
 | Worker 真实返回 | `AutoBackupWorker` + `AutoBackupRunnerImpl`；success/retry/failure/取消 | 6 + 8 例 | 完成 |
-| 恢复原子性 | checkpoint → 回滚副本校验 → 临时文件 + fsync + rename + 目录 fsync | `RestoreExecutorTest` 5 例 | 完成 |
+| 恢复原子性 | checkpoint → 回滚副本校验 → 临时文件 + fsync + rename + 目录 fsync | `RestoreExecutorTest` 6 例 | 完成 |
 | Worker 单测 | 成功/校验失败/空间不足/权限/屏障超时/取消 + Scheduler 集成 | 15 例 | 完成 |
 | WAL 恢复测试 | 未 checkpoint 事务、并发写、中断注入 | `WalBackupRestoreTest` 2 例、`BackupConcurrencyTest` 1 例 | 完成 |
 
-测试与构建：`test assembleDebug ktlintCheck detekt` **BUILD SUCCESSFUL**；**606 次测试执行 / 0 失败**；Debug APK 构建成功。
+测试与构建：`test assembleDebug ktlintCheck detekt` **BUILD SUCCESSFUL**；**608 次测试执行 / 0 失败**；Debug APK 构建成功。
 
 ---
 
@@ -187,6 +187,7 @@
 | 恢复中断 | `RestoreExecutorTest.recovers an interrupted restore from the journal and rollback copy` | 从 journal + rollback 恢复；数据为中断前 | PASS |
 | 恢复失败回滚 | `RestoreExecutorTest.rolls back to the previous database when the restore fails` | `ROLLED_BACK`；数据为恢复前 | PASS |
 | 回滚失败 | `RestoreExecutorTest.enters RECOVERY_REQUIRED when the rollback copy cannot be restored` | `RECOVERY_REQUIRED`；现场保留 | PASS |
+| 回滚副本损坏 | `RestoreExecutorTest.keeps the original database when the rollback copy is corrupt` | 装库前失败；原库不被覆盖；`ROLLED_BACK` | PASS |
 
 限制：中断用异常/journal 模拟，不是真实 kill/断电。
 
@@ -238,9 +239,9 @@
 | 项 | 结果 |
 |---|---|
 | 构建 | `BUILD SUCCESSFUL in 1m 42s`（927 tasks；133 executed） |
-| JVM 测试 | **606 次执行 / 0 失败 / 0 跳过**（debug+release；约 303 个唯一用例） |
+| JVM 测试 | **608 次执行 / 0 失败 / 0 跳过**（debug+release；约 304 个唯一用例） |
 | 基线 | 修改前 548 次执行 / 0 失败 |
-| 新增 | **29 个唯一用例（58 次执行）**，分布见 §8–§10 与 [Worker 记录](MB-BK-001-WORKER-TEST-RECORD.md) |
+| 新增 | **30 个唯一用例（60 次执行）**，分布见 §8–§10 与 [Worker 记录](MB-BK-001-WORKER-TEST-RECORD.md) |
 | Debug APK | `app/build/outputs/apk/debug/app-debug.apk`，37,678,729 字节 |
 | ktlint | PASS |
 | detekt | PASS |
@@ -248,7 +249,7 @@
 | 休眠表 | 11 张、0 处新业务引用、PASS |
 | 文档一致性 | PASS |
 
-测试数未下降（548 → 606）。
+测试数未下降（548 → 608）。
 
 ---
 
@@ -263,6 +264,7 @@
 | `db48976` | checkpoint 快照器 + 原子文件工具 + 测试 |
 | `0936185` | Worker 真实返回 + 编排 + 域端口 + Worker/集成测试 |
 | `619d97b` | 恢复原子性 + 回滚校验 + 测试 |
+| 报告提交前修正 | 回滚副本校验失败时不得覆盖原库（`installAttempted` 门控）+ 对应测试 |
 | `49686ac` | WAL 恢复、并发写、中断注入测试 |
 | 本报告提交 | 执行报告、验证记录、风险登记册、索引 |
 

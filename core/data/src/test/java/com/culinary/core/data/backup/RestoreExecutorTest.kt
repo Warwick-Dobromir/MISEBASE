@@ -127,6 +127,27 @@ class RestoreExecutorTest {
         }
 
     @Test
+    fun `keeps the original database when the rollback copy is corrupt`() =
+        runBlocking<Unit> {
+            val originalFile = createDatabase(withIngredient = "原始")
+            val archiveBytes = archiveOf(originalFile)
+            openLiveDatabase(withIngredient = "当前")
+            val executor =
+                executor(
+                    afterRollbackCopy = {
+                        File(temporaryFolder.root, "rollback/restore-corrupt.db").writeBytes(byteArrayOf(1, 2, 3))
+                    },
+                )
+
+            val result = executor.restoreDatabase(extractDatabase(archiveBytes), "restore-corrupt")
+
+            assertThat(result).isInstanceOf(Outcome.Failure::class.java)
+            assertThat(journalPhase()).isEqualTo(RestorePhase.ROLLED_BACK)
+            // 未装库前失败：原库绝不能被未通过校验的回滚副本覆盖。
+            assertThat(reopenAndReadNames()).containsExactly("原始", "当前")
+        }
+
+    @Test
     fun `refuses to restore while another writer holds the write barrier`() =
         runBlocking<Unit> {
             val originalFile = createDatabase(withIngredient = "原始")
@@ -151,6 +172,7 @@ class RestoreExecutorTest {
         failingAfterInstall: Boolean = false,
         writeBarrier: WriteBarrier = WriteBarrier(),
         afterInstall: (() -> Unit)? = null,
+        afterRollbackCopy: (() -> Unit)? = null,
     ): RestoreExecutor =
         RestoreExecutor(
             databaseProvider = Provider { requireNotNull(live) },
@@ -167,6 +189,7 @@ class RestoreExecutorTest {
                 } else {
                     null
                 },
+            afterRollbackCopyHook = afterRollbackCopy,
         )
 
     private fun journalFile(): File = File(temporaryFolder.root, "restore.journal")

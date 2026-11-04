@@ -32,16 +32,18 @@ class DatabaseRestorer(
         }
 
         val rollback = File(rollbackDirectory, "culinary-${clock.now().toEpochMilli()}.db")
+        var installAttempted = false
         return try {
             if (databaseFile.exists() && databaseFile.length() > 0L) {
                 AtomicFiles.copyAtomically(databaseFile, rollback)
                 verifyDatabaseFile(rollback, "rollback copy")
             }
             deleteSidecars()
+            installAttempted = true
             AtomicFiles.writeBytesAtomically(databaseFile, databaseBytes)
             Outcome.success(rollback)
         } catch (e: IOException) {
-            rollbackBack(rollback)
+            if (installAttempted) rollbackBack(rollback)
             failure("cannot restore database: ${e.message}", e)
         }
     }
@@ -70,7 +72,10 @@ class DatabaseRestorer(
     @Suppress("SwallowedException") // 回滚是最后一步：失败也不能覆盖原始恢复错误
     private fun rollbackBack(rollback: File) {
         if (!rollback.exists()) return
-        runCatching { AtomicFiles.copyAtomically(rollback, databaseFile) }
+        runCatching {
+            AtomicFiles.copyAtomically(rollback, databaseFile)
+            deleteSidecars()
+        }
     }
 
     private fun hasSqliteHeader(bytes: ByteArray): Boolean {

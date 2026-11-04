@@ -41,6 +41,7 @@
 |---|---|---|---|
 | 装库后校验失败 | 回滚到恢复前库；journal `ROLLED_BACK` | `RestoreExecutorTest.rolls back to the previous database when the restore fails` | PASS |
 | 回滚副本被破坏、回滚失败 | journal `RECOVERY_REQUIRED`；原库文件仍在；不自动清库 | `...enters RECOVERY_REQUIRED when the rollback copy cannot be restored` | PASS |
+| 回滚副本校验失败（装库前） | 不得用未通过校验的副本覆盖原库；journal `ROLLED_BACK` | `...keeps the original database when the rollback copy is corrupt` | PASS |
 | 写屏障被占用 | 恢复开始前失败；不写 journal；数据不变 | `...refuses to restore while another writer holds the write barrier` | PASS |
 | 恢复中断（journal + rollback） | 启动恢复回滚副本；journal 清理；数据为恢复前 | `...recovers an interrupted restore from the journal and rollback copy` | PASS |
 | 非 SQLite 载荷 | 拒绝；原库不变 | `DatabaseRestoreDrillTest.keeps the existing database when the payload is not SQLite` | PASS |
