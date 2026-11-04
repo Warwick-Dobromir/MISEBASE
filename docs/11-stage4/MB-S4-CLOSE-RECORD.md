@@ -1,7 +1,7 @@
 # MB-S4-CLOSE-001 Stage 4 关闭记录
 
 **文档编号**：MB-S4-CLOSE-001
-**版本**：`1.0.0`
+**版本**：`1.1.0`
 **状态**：`CLOSED`
 **日期**：2026-11-05
 **关闭对象**：Stage 4 库存与自动采购清单（MB-S4-001）
@@ -45,7 +45,7 @@ Stage 4 **有条件通过**：
 
 | 项 | 值 |
 |---|---|
-| 关闭提交完整哈希 | `PENDING-CLOSE-COMMIT` |
+| 关闭提交完整哈希 | `a59144a24f64159bda60492cb69717113170caa7` |
 | 提交信息 | `docs(stage4): close stage 4 after review` |
 | 提交内容 | 本关闭记录、MB-S4-01 状态与关闭补记、MB-S4-08 状态、S0-04 风险项、文档索引 |
 | 变更类型 | 仅文档 |
@@ -57,11 +57,11 @@ Stage 4 **有条件通过**：
 | 关闭标签 | `checkpoint/misebase-stage4-closed-20261105` |
 | Stage 5 起点标签 | `checkpoint/misebase-stage5-start-20261105` |
 | 类型 | annotated tag |
-| 对象哈希（关闭标签） | `PENDING-CLOSE-TAG-OBJECT` |
-| 解析提交（关闭标签） | `PENDING-CLOSE-TAG-COMMIT` |
-| 对象哈希（Stage 5 起点） | `PENDING-STAGE5-TAG-OBJECT` |
-| 解析提交（Stage 5 起点） | `PENDING-STAGE5-TAG-COMMIT` |
-| 打标签时间 | `PENDING-TAG-TIME` |
+| 对象哈希（关闭标签） | `00ef589cc9dcaf118a86eac16e315d3ab1f5d54f` |
+| 解析提交（关闭标签） | `a59144a24f64159bda60492cb69717113170caa7` |
+| 对象哈希（Stage 5 起点） | `b7cc7586647a846109892382d6a4d2830b642467` |
+| 解析提交（Stage 5 起点） | `a59144a24f64159bda60492cb69717113170caa7` |
+| 打标签时间 | 2026-11-05 01:05:04 +0800 |
 
 两个标签均标记「Stage 4 审查关闭」这一文档提交坐标；**Stage 5 起点标签不表示 Stage 5 已启动或已获授权**。
 
@@ -147,3 +147,4 @@ Stage 4 在关闭记录、报告/测试矩阵状态更新、S0-04 风险更新�
 | 版本 | 日期 | 变更 | 作者 |
 |---|---|---|---|
 | 1.0.0 | 2026-11-05 | 记录 Stage 4 有条件通过、关闭前 HEAD、保留项、风险更新、Stage 5 前置与边界 | 接管工程组 |
+| 1.1.0 | 2026-11-05 | 补记关闭提交 `a59144a`、两个标签对象哈希/解析提交与打标签时间 | 接管工程组 |

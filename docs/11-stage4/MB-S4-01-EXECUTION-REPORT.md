@@ -1,7 +1,7 @@
 # MB-S4-01 Stage 4 库存与自动采购清单执行报告
 
 **文档编号**：MB-S4-01
-**版本**：`1.1.0`
+**版本**：`1.1.1`
 **状态**：`CLOSED`
 **日期**：2026-11-05
 **范围**：库存总览/详情/入库/出库/调整/流水、需求汇总与缺口、采购清单、计算记录业务接线、酱汁图展开、酱汁编辑器组成行保护、N1 库存入口切换
@@ -274,13 +274,13 @@ Stage 4 在 Schema v2（33 表）、13 模块、三大档案库与 MB-D-007 备�
 | 项 | 值 |
 |---|---|
 | 关闭审查基线 HEAD | `d6bfcb7610626e416902e23c2333ed0ed2da86c0` |
-| 关闭提交 | `PENDING-CLOSE-COMMIT` |
+| 关闭提交 | `a59144a24f64159bda60492cb69717113170caa7` |
 | 关闭标签 | `checkpoint/misebase-stage4-closed-20261105` |
-| 关闭标签对象哈希 | `PENDING-CLOSE-TAG-OBJECT` |
-| 关闭标签解析提交 | `PENDING-CLOSE-TAG-COMMIT` |
+| 关闭标签对象哈希 | `00ef589cc9dcaf118a86eac16e315d3ab1f5d54f` |
+| 关闭标签解析提交 | `a59144a24f64159bda60492cb69717113170caa7` |
 | Stage 5 起点标签 | `checkpoint/misebase-stage5-start-20261105` |
-| Stage 5 起点标签对象哈希 | `PENDING-STAGE5-TAG-OBJECT` |
-| Stage 5 起点标签解析提交 | `PENDING-STAGE5-TAG-COMMIT` |
+| Stage 5 起点标签对象哈希 | `b7cc7586647a846109892382d6a4d2830b642467` |
+| Stage 5 起点标签解析提交 | `a59144a24f64159bda60492cb69717113170caa7` |
 
 关闭动作只改文档；关闭提交与标签回执见 [MB-S4-CLOSE-RECORD.md](MB-S4-CLOSE-RECORD.md) §3。
 
@@ -292,3 +292,4 @@ Stage 4 在 Schema v2（33 表）、13 模块、三大档案库与 MB-D-007 备�
 |---|---|---|---|
 | 1.0.0 | 2026-11-05 | Stage 4 执行报告，状态 `Review` | 接管工程组 |
 | 1.1.0 | 2026-11-05 | MB-S4-CLOSE-001：审查有条件通过；状态改为 `CLOSED`；补记关闭提交、关闭标签与 Stage 5 起点标签 | 接管工程组 |
+| 1.1.1 | 2026-11-05 | 补记关闭提交 `a59144a` 与两个标签对象哈希/解析提交 | 接管工程组 |
