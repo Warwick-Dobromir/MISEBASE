@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="scan_title">扫码</string>
+    <string name="scan_subtitle">对准条码或二维码，识别结果交给确认页再入库</string>
+    <string name="scan_frame_hint">将条码放入框内，保持稳定</string>
+    <string name="scan_torch_on">关闭手电筒</string>
+    <string name="scan_torch_off">打开手电筒</string>
+    <string name="scan_torch_unsupported">此设备不支持手电筒。</string>
+    <string name="scan_resume">重新扫描</string>
+    <string name="scan_back">返回</string>
+    <string name="scan_detected">已识别：%1$s</string>
+
+    <string name="scan_permission_title">需要相机权限</string>
+    <string name="scan_permission_body">扫码在设备本机用相机识别条码与二维码；图像不上传，应用没有网络权限。</string>
+    <string name="scan_permission_grant">允许使用相机</string>
+    <string name="scan_permission_denied_title">相机权限被拒绝</string>
+    <string name="scan_permission_denied_body">没有相机权限无法识别条码。可以重新授权，或直接手工输入条码内容。</string>
+    <string name="scan_permission_request_again">重新请求权限</string>
+    <string name="scan_permission_hint">如果已拒绝两次，请在系统设置的应用权限页手动开启相机权限。</string>
+
+    <string name="scan_no_camera_title">没有可用的相机</string>
+    <string name="scan_no_camera_body">当前设备未提供相机，请使用手工输入条码继续。</string>
+
+    <string name="scan_manual_open">手工输入条码</string>
+    <string name="scan_manual_title">手工输入条码</string>
+    <string name="scan_manual_body">无相机或权限被拒绝时使用；手工输入与相机识别走同一确认与幂等规则。</string>
+    <string name="scan_manual_label">条码 / 二维码内容</string>
+    <string name="scan_manual_confirm">使用该条码</string>
+    <string name="scan_manual_back_to_camera">返回相机扫码</string>
+
+    <string name="scan_retry">重试</string>
+    <string name="scan_camera_error">相机暂不可用，可以改用手工输入。</string>
+</resources>
