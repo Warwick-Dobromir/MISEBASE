@@ -36,8 +36,7 @@ object SauceUseCaseModule {
         sauceRepository: SauceRepository,
         ingredientRepository: IngredientRepository,
         recipeRepository: RecipeRepository,
-    ): GetSauceDetailUseCase =
-        GetSauceDetailUseCase(sauceRepository, ingredientRepository, recipeRepository)
+    ): GetSauceDetailUseCase = GetSauceDetailUseCase(sauceRepository, ingredientRepository, recipeRepository)
 
     @Provides
     @Singleton

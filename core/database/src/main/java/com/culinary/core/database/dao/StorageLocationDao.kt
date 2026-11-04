@@ -14,6 +14,12 @@ interface StorageLocationDao {
     @Query("SELECT * FROM storage_location WHERE id = :id")
     suspend fun findById(id: String): StorageLocationEntity?
 
+    @Query("SELECT * FROM storage_location WHERE status = 'ACTIVE' ORDER BY sort_order, normalized_name, id")
+    suspend fun listActive(): List<StorageLocationEntity>
+
+    @Query("SELECT * FROM storage_location WHERE status = 'ACTIVE' ORDER BY sort_order, normalized_name, id LIMIT 1")
+    suspend fun firstActive(): StorageLocationEntity?
+
     @Query("SELECT COUNT(*) FROM storage_location")
     suspend fun count(): Int
 

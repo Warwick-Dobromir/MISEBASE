@@ -4,11 +4,17 @@ import com.culinary.core.common.CulinaryError
 import com.culinary.core.common.DomainDetail
 import com.culinary.core.common.ErrorCode
 import com.culinary.core.common.Outcome
+import com.culinary.core.domain.model.BatchId
 import com.culinary.core.domain.model.CalculationRecord
 import com.culinary.core.domain.model.CalculationRecordId
 import com.culinary.core.domain.model.EntityStatus
+import com.culinary.core.domain.model.IngredientId
 import com.culinary.core.domain.model.InventoryItem
 import com.culinary.core.domain.model.InventoryLedgerEntry
+import com.culinary.core.domain.model.LocationId
+import com.culinary.core.domain.model.NewInventoryBatch
+import com.culinary.core.domain.model.Product
+import com.culinary.core.domain.model.ProductId
 import com.culinary.core.domain.model.Recipe
 import com.culinary.core.domain.model.RecipeVersion
 import com.culinary.core.domain.model.RecipeVersionId
@@ -16,6 +22,7 @@ import com.culinary.core.domain.model.Sauce
 import com.culinary.core.domain.model.SauceId
 import com.culinary.core.domain.model.SauceVersion
 import com.culinary.core.domain.model.SauceVersionId
+import com.culinary.core.domain.model.StorageLocation
 import com.culinary.core.domain.model.VersionStatus
 import com.culinary.core.domain.repository.CalculationRecordRepository
 import com.culinary.core.domain.repository.InventoryRepository
@@ -81,11 +88,13 @@ class InMemoryInventoryRepository(
 ) : InventoryRepository {
     val items = items.associateBy { it.batchId }.toMutableMap()
     val ledger = mutableListOf<InventoryLedgerEntry>()
+    val products = mutableListOf<Product>()
+    val locations = mutableListOf<StorageLocation>()
+    private var batchCounter = 0
 
     override suspend fun listItems(): Outcome<List<InventoryItem>> = Outcome.success(items.values.toList())
 
-    override suspend fun findItem(batchId: com.culinary.core.domain.model.BatchId): Outcome<InventoryItem?> =
-        Outcome.success(items[batchId])
+    override suspend fun findItem(batchId: BatchId): Outcome<InventoryItem?> = Outcome.success(items[batchId])
 
     override suspend fun findByIdempotencyKey(key: String): Outcome<InventoryLedgerEntry?> =
         Outcome.success(ledger.firstOrNull { it.idempotencyKey == key })
@@ -94,25 +103,79 @@ class InMemoryInventoryRepository(
         if (ledger.any { it.idempotencyKey == entry.idempotencyKey }) return Outcome.success(false)
         val item = items.getValue(entry.batchId)
         val newOnHand = item.onHand + entry.onHandDelta
-        if (newOnHand < 0.0) {
+        val newReserved = item.reserved + entry.reservedDelta
+        if (newOnHand < 0.0 || newReserved < 0.0 || newReserved > newOnHand) {
             return Outcome.failure(
                 CulinaryError.Domain(
                     detail =
                         DomainDetail.InsufficientStock(
                             productId = entry.productId.value,
                             requested = -entry.onHandDelta,
-                            available = item.onHand,
+                            available = item.available,
                         ),
                     code = ErrorCode.INV_003,
                 ),
             )
         }
-        items[entry.batchId] = item.copy(onHand = newOnHand, reserved = item.reserved + entry.reservedDelta)
-        ledger += entry
+        val applied = entry.copy(onHandAfter = newOnHand, reservedAfter = newReserved)
+        items[entry.batchId] = item.copy(onHand = newOnHand, reserved = newReserved)
+        ledger += applied
         return Outcome.success(true)
     }
 
     override suspend fun ledger(): Outcome<List<InventoryLedgerEntry>> = Outcome.success(ledger.toList())
+
+    override suspend fun listProducts(): Outcome<List<Product>> = Outcome.success(products.toList())
+
+    override suspend fun findProduct(id: ProductId): Outcome<Product?> =
+        Outcome.success(products.firstOrNull { it.id == id })
+
+    override suspend fun saveProduct(product: Product): Outcome<ProductId> {
+        products.removeAll { it.id == product.id }
+        products += product
+        return Outcome.success(product.id)
+    }
+
+    override suspend fun findProductForIngredient(ingredientId: IngredientId): Outcome<Product?> =
+        Outcome.success(products.firstOrNull { it.ingredientId == ingredientId && it.isActive })
+
+    override suspend fun listLocations(): Outcome<List<StorageLocation>> = Outcome.success(locations.toList())
+
+    override suspend fun findLocation(id: LocationId): Outcome<StorageLocation?> =
+        Outcome.success(locations.firstOrNull { it.id == id })
+
+    override suspend fun saveLocation(location: StorageLocation): Outcome<LocationId> {
+        locations.removeAll { it.id == location.id }
+        locations += location
+        return Outcome.success(location.id)
+    }
+
+    override suspend fun ensureDefaultLocation(): Outcome<StorageLocation> {
+        val existing = locations.firstOrNull { it.isActive }
+        if (existing != null) return Outcome.success(existing)
+        val created = StorageLocation(LocationId("location-default"), "默认储藏")
+        locations += created
+        return Outcome.success(created)
+    }
+
+    override suspend fun createBatch(batch: NewInventoryBatch): Outcome<BatchId> {
+        val id = BatchId("batch-${batchCounter++}")
+        items[id] =
+            InventoryItem(
+                batchId = id,
+                productId = batch.productId,
+                locationId = batch.locationId,
+                stockUnit = batch.stockUnit,
+                onHand = 0.0,
+                expiresOn = batch.expiresOn,
+                batchCode = batch.batchCode,
+                receivedAt = batch.receivedAt,
+            )
+        return Outcome.success(id)
+    }
+
+    override suspend fun ledgerForBatch(batchId: BatchId): Outcome<List<InventoryLedgerEntry>> =
+        Outcome.success(ledger.filter { it.batchId == batchId })
 }
 
 class InMemoryCalculationRecordRepository : CalculationRecordRepository {

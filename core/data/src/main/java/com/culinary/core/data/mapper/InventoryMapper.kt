@@ -28,6 +28,8 @@ object InventoryMapper {
             onHand = entity.quantityOnHand,
             reserved = entity.quantityReserved,
             expiresOn = entity.expiryDate?.let(LocalDate::parse),
+            batchCode = entity.batchCode,
+            receivedAt = Instant.ofEpochMilli(entity.receivedAt),
         )
 
     fun toDomain(

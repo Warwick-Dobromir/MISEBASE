@@ -1,5 +1,6 @@
 package com.culinary.core.domain.model
 
+import java.time.Instant
 import java.time.LocalDate
 
 /**
@@ -16,6 +17,8 @@ data class InventoryItem(
     val onHand: Double,
     val reserved: Double = 0.0,
     val expiresOn: LocalDate? = null,
+    val batchCode: String? = null,
+    val receivedAt: Instant? = null,
 ) {
     init {
         require(onHand.isFinite() && onHand >= 0.0) { "onHand must be finite and >= 0, was $onHand" }

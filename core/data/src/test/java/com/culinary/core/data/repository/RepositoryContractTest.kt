@@ -32,6 +32,7 @@ import com.culinary.core.domain.model.InventoryLedgerEntry
 import com.culinary.core.domain.model.LedgerEntryId
 import com.culinary.core.domain.model.LedgerEntryType
 import com.culinary.core.domain.model.LocationId
+import com.culinary.core.domain.model.NewInventoryBatch
 import com.culinary.core.domain.model.ProductId
 import com.culinary.core.domain.model.Quantity
 import com.culinary.core.domain.model.Recipe
@@ -193,6 +194,55 @@ class RepositoryContractTest {
         }
 
     @Test
+    fun `inventory repository creates batches and appends receipt ledgers`() =
+        runBlocking {
+            seedInventory(onHand = 0.0)
+            val repository = inventoryRepository()
+
+            val created =
+                repository.createBatch(
+                    NewInventoryBatch(
+                        productId = ProductId(PRODUCT_ID),
+                        locationId = LocationId(LOCATION_ID),
+                        stockUnit = gramUnit(),
+                        batchCode = "B-001",
+                        receivedAt = NOW_INSTANT,
+                    ),
+                )
+            val batchId = (created as Outcome.Success).value
+            val appended =
+                repository.appendIfAbsent(
+                    ledgerEntry("receipt-1", 2.0, onHandAfter = 2.0).copy(
+                        batchId = batchId,
+                        type = LedgerEntryType.PURCHASE_RECEIPT,
+                    ),
+                )
+
+            assertThat((appended as Outcome.Success).value).isTrue()
+            val item = (repository.findItem(batchId) as Outcome.Success).value
+            assertThat(item?.onHand).isWithin(1e-9).of(2.0)
+            assertThat(item?.batchCode).isEqualTo("B-001")
+            assertThat((repository.ledgerForBatch(batchId) as Outcome.Success).value).hasSize(1)
+        }
+
+    @Test
+    fun `inventory repository creates and reads products and default locations`() =
+        runBlocking {
+            seedInventory(onHand = 1.0)
+            val repository = inventoryRepository()
+
+            val found = (repository.findProduct(ProductId(PRODUCT_ID)) as Outcome.Success).value
+            val location = (repository.ensureDefaultLocation() as Outcome.Success).value
+            val again = (repository.ensureDefaultLocation() as Outcome.Success).value
+
+            assertThat(found?.name).isEqualTo("黄油")
+            assertThat(found?.stockUnit).isEqualTo(gramUnit())
+            assertThat(location.id).isEqualTo(again.id)
+            assertThat((repository.listLocations() as Outcome.Success).value).hasSize(1)
+            assertThat((repository.listProducts() as Outcome.Success).value).hasSize(1)
+        }
+
+    @Test
     fun `inventory fake mirrors idempotent append and negative rejection`() =
         runBlocking {
             val fake = InMemoryInventoryRepository(listOf(inventoryItem(onHand = 10.0)))
@@ -272,7 +322,10 @@ class RepositoryContractTest {
         InventoryRepositoryImpl(
             batchDao = database.inventoryBatchDao(),
             ledgerDao = database.inventoryLedgerDao(),
+            productDao = database.productDao(),
+            locationDao = database.storageLocationDao(),
             unitDao = database.unitDao(),
+            idGenerator = ids,
             clock = clock,
         )
 
