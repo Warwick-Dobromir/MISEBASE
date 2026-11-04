@@ -1,55 +1,169 @@
 package com.culinary.navigation
 
+import androidx.annotation.StringRes
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import com.culinary.debug.DebugScreen
-import com.culinary.feature.ingredients.IngredientsRoute
-import com.culinary.ui.HomeScreen
+import com.culinary.R
+import com.culinary.core.designsystem.icon.CulinaryIcons
 import com.culinary.ui.PlaceholderScreen
 
-private const val DEBUG_ROUTE = "debug"
-
 /**
- * 应用导航图（R01 阶段 6 的“导航占位”）。
+ * 应用导航外壳（MB-D-009 方案 N1）。
  *
- * 阶段 7+ 会把各 feature 的 Route 替换进来；当前统一使用占位页，
- * 不伪造业务功能。
+ * 结构：顶栏（页面标题 + 设置）+ 内容 + 底部五个一级入口。
+ * 一级入口顺序固定；库存与扫码在本阶段只显示占位内容，不实现业务。
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CulinaryNavHost(
     modifier: Modifier = Modifier,
     navController: NavHostController = rememberNavController(),
 ) {
-    NavHost(
-        navController = navController,
-        startDestination = CulinaryDestination.HOME.route,
-        modifier = modifier,
-    ) {
-        composable(CulinaryDestination.HOME.route) {
-            HomeScreen(
-                onOpen = { destination -> navController.navigate(destination.route) },
-                onOpenDebug = { navController.navigate(DEBUG_ROUTE) },
+    val backStackEntry by navController.currentBackStackEntryAsState()
+    val currentRoute = backStackEntry?.destination?.route
+    val topLevel = CulinaryDestination.entries.firstOrNull { it.route == currentRoute }
+    val showBottomBar = topLevel != null
+
+    Scaffold(
+        modifier = modifier.fillMaxSize(),
+        topBar = {
+            TopAppBar(
+                title = {
+                    Text(text = titleFor(currentRoute = currentRoute, topLevel = topLevel))
+                },
+                actions = {
+                    IconButton(
+                        onClick = {
+                            navController.navigate(SETTINGS_ROUTE) {
+                                launchSingleTop = true
+                            }
+                        },
+                    ) {
+                        Icon(
+                            imageVector = CulinaryIcons.Settings,
+                            contentDescription = stringResource(R.string.action_settings),
+                        )
+                    }
+                },
+                colors =
+                    TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.surface,
+                    ),
+            )
+        },
+        bottomBar = {
+            if (showBottomBar) {
+                CulinaryBottomBar(
+                    currentRoute = currentRoute,
+                    onSelect = { destination ->
+                        navController.navigate(destination.route) {
+                            popUpTo(navController.graph.findStartDestination().id) {
+                                saveState = true
+                            }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
+                    },
+                )
+            }
+        },
+    ) { padding ->
+        NavHost(
+            navController = navController,
+            startDestination = CulinaryDestination.START.route,
+            modifier = Modifier.fillMaxSize().padding(padding),
+        ) {
+            composable(CulinaryDestination.SAUCES.route) {
+                FeaturePlaceholder(titleRes = R.string.destination_sauces)
+            }
+            composable(CulinaryDestination.INGREDIENTS.route) {
+                FeaturePlaceholder(titleRes = R.string.destination_ingredients)
+            }
+            composable(CulinaryDestination.RECIPES.route) {
+                FeaturePlaceholder(titleRes = R.string.destination_recipes)
+            }
+            composable(CulinaryDestination.INVENTORY.route) {
+                PlaceholderScreen(
+                    title = stringResource(R.string.destination_inventory),
+                    description = stringResource(R.string.placeholder_inventory_body),
+                )
+            }
+            composable(CulinaryDestination.SCAN.route) {
+                PlaceholderScreen(
+                    title = stringResource(R.string.destination_scan),
+                    description = stringResource(R.string.placeholder_scan_body),
+                )
+            }
+            composable(SETTINGS_ROUTE) {
+                PlaceholderScreen(
+                    title = stringResource(R.string.destination_settings),
+                    description = stringResource(R.string.placeholder_settings_body),
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun titleFor(
+    currentRoute: String?,
+    topLevel: CulinaryDestination?,
+): String =
+    when {
+        topLevel != null -> stringResource(topLevel.labelRes)
+        currentRoute == SETTINGS_ROUTE -> stringResource(R.string.destination_settings)
+        else -> stringResource(R.string.app_name)
+    }
+
+@Composable
+private fun CulinaryBottomBar(
+    currentRoute: String?,
+    onSelect: (CulinaryDestination) -> Unit,
+) {
+    NavigationBar(containerColor = MaterialTheme.colorScheme.surface) {
+        CulinaryDestination.entries.forEach { destination ->
+            NavigationBarItem(
+                selected = currentRoute == destination.route,
+                onClick = { onSelect(destination) },
+                icon = {
+                    Icon(
+                        imageVector = destination.icon,
+                        contentDescription = null,
+                    )
+                },
+                label = { Text(text = stringResource(destination.labelRes)) },
             )
         }
-        composable(CulinaryDestination.INGREDIENTS.route) {
-            IngredientsRoute(onBack = { navController.popBackStack() })
-        }
-        composable(DEBUG_ROUTE) {
-            DebugScreen(onBack = { navController.popBackStack() })
-        }
-        CulinaryDestination.entries
-            .filter { it != CulinaryDestination.HOME && it != CulinaryDestination.INGREDIENTS }
-            .forEach { destination ->
-                composable(destination.route) {
-                    PlaceholderScreen(
-                        title = destination.titleRes,
-                        onBack = { navController.popBackStack() },
-                    )
-                }
-            }
     }
+}
+
+/** 功能入口占位：各 feature 接入真实页面时替换。 */
+@Composable
+private fun FeaturePlaceholder(
+    @StringRes titleRes: Int,
+) {
+    PlaceholderScreen(
+        title = stringResource(titleRes),
+        description = stringResource(R.string.placeholder_feature_body),
+    )
 }

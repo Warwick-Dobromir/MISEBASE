@@ -1,11 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">CULINARY</string>
-    <string name="framework_placeholder">CULINARY framework</string>
+    <string name="app_name">MISEBASE</string>
+    <string name="framework_placeholder">MISEBASE framework</string>
     <string name="home_subtitle">专业个人烹饪档案与研发管理</string>
     <string name="placeholder_body">该模块将在后续阶段实现</string>
+    <string name="placeholder_stage_note">本阶段不实现该业务</string>
+    <string name="placeholder_feature_body">档案库正在接入中</string>
+    <string name="placeholder_inventory_body">库存总览、流水与采购清单在 Stage 4 实现；当前只保留一级入口。</string>
+    <string name="placeholder_scan_body">扫码识别、商品匹配与入库在后续阶段实现；当前只保留一级入口。</string>
+    <string name="placeholder_settings_body">备份、恢复、诊断与关于在后续阶段实现；当前只保留设置入口。</string>
     <string name="action_back">返回</string>
     <string name="action_retry">重试</string>
+    <string name="action_settings">设置</string>
     <string name="home_debug">调试信息</string>
     <string name="debug_title">调试信息</string>
     <string name="startup_loading">正在检查数据库…</string>
@@ -14,11 +20,10 @@
     <string name="startup_recovery_title">需要恢复</string>
     <string name="startup_recovery_body">数据库无法正常打开（%1$s）。现有文件已保留，可重试；如持续失败，请从备份恢复。</string>
 
-    <string name="destination_home">首页</string>
-    <string name="destination_ingredients">食材</string>
     <string name="destination_sauces">酱汁</string>
+    <string name="destination_ingredients">食材</string>
     <string name="destination_recipes">菜谱</string>
-    <string name="destination_products">商品</string>
     <string name="destination_inventory">库存</string>
+    <string name="destination_scan">扫码</string>
     <string name="destination_settings">设置</string>
 </resources>
