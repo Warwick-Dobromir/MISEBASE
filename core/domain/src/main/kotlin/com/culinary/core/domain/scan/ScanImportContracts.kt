@@ -47,15 +47,22 @@ data class ScanIngredientTarget(
     val created: Boolean,
 )
 
-/** 识别结果交给 `feature:inventory` 的入库请求。 */
+/**
+ * 识别结果交给 `feature:inventory` 的入库请求。
+ *
+ * [operationId] 是**事件级**幂等标识：由确认页在用户点击「确认导入 / 再次入库」时生成，
+ * 失败重试复用同一个值（MB-S5-002）。同一件商品的不同次入库使用不同值，
+ * 因此不会互相拦截。
+ */
 data class ScanStockRequest(
     val capture: ScanCapture,
     val target: ScanIngredientTarget,
     val amount: Double,
+    val operationId: String,
     val note: String? = null,
 )
 
-/** 扫码入库结果；[idempotentReplay] 为真表示同一条码已导入过，本次未重复入库。 */
+/** 扫码入库结果；[idempotentReplay] 为真表示同一操作已写入过，本次未重复入库。 */
 data class ScanStockReceipt(
     val entry: InventoryLedgerEntry,
     val item: InventoryItem,
@@ -65,13 +72,13 @@ data class ScanStockReceipt(
 /**
  * 由 `feature:inventory` 实现的"入库"端口。
  *
- * 实现必须以幂等键（[ScanImportKey]）查重，并保证批次与流水在同一事务内写入。
+ * 实现必须以 `ScanImportKey.of(capture, operationId)` 查重，并保证批次与流水在同一事务内写入。
  */
 interface ScanStockGateway {
     suspend fun receive(request: ScanStockRequest): Outcome<ScanStockReceipt>
 }
 
-/** 该条码此前的导入记录；[item] 可能已被后续出库/盘点改动，仅用于展示。 */
+/** 该条码此前的导入记录（取最近一次）；[item] 可能已被后续出库/盘点改动，仅用于展示。 */
 data class ScanPreviousImport(
     val entry: InventoryLedgerEntry,
     val item: InventoryItem?,

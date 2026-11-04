@@ -3,7 +3,9 @@ package com.culinary.feature.scan
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.culinary.core.common.IdGenerator
 import com.culinary.core.common.Outcome
+import com.culinary.core.domain.barcode.ScanCapture
 import com.culinary.core.domain.model.IngredientId
 import com.culinary.core.domain.scan.ScanIngredientGateway
 import com.culinary.core.domain.scan.ScanIngredientRequest
@@ -23,16 +25,20 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 /**
- * 导入确认页 ViewModel（MB-D-004 接口编排）。
+ * 导入确认页 ViewModel（MB-D-004 接口编排 / MB-S5-002 事件级幂等）。
  *
- * 事务边界与补偿策略：
- * 1. **写前查重**：先按条码幂等键查历史导入，已导入则禁止再次提交；
- * 2. **食材**：交给 `feature:products` 的 [ScanIngredientGateway]（内部用 `SaveIngredientUseCase` 开事务）；
- * 3. **入库**：交给 `feature:inventory` 的 [ScanStockGateway]（批次 + 流水同一事务，幂等键由条码决定）；
- * 4. **明确补偿**：若本次新建了食材而入库失败，归档该食材（软删除），避免留下孤立食材；
- *    入库成功或命中重放则不做补偿。
+ * 幂等机制：
+ * 1. 用户点击「确认导入 / 再次入库」时，若没有缓存的 [ScanConfirmUiState.currentOperationId]，
+ *    立刻用 [IdGenerator] 生成一个，并**先写入状态**、再把 `isSubmitting` 置为真
+ *    （同一帧内的第二次点击会读到 `isSubmitting = true` 而被忽略）；
+ * 2. 幂等键 = `scan-import:<条码>:<operationId>`，由 `feature:inventory` 写进流水唯一键；
+ * 3. 失败：保留 operationId，用户点「重试」复用同一个键 —— 即使上一次其实已经写库成功，
+ *    重试也只会命中幂等重放，不会产生第二条流水；
+ * 4. 成功：清空 operationId（下一次「再次入库」会生成新键，形成一条新的独立入库）；
+ * 5. 取消/离开：清空未完成的 operationId，避免把上一页的键带进新的确认。
  *
- * `feature:scan` 自身不写食材/库存表，只调用上述接口。
+ * 事务边界与补偿：食材创建走 `ScanIngredientGateway`（products），入库走 `ScanStockGateway`
+ * （inventory，批次 + 流水同一事务）；本次新建食材后入库失败时归档该食材（明确补偿）。
  */
 @HiltViewModel
 class ScanConfirmViewModel
@@ -44,6 +50,7 @@ class ScanConfirmViewModel
         private val ingredientGateway: ScanIngredientGateway,
         private val stockGateway: ScanStockGateway,
         private val archiveIngredient: ArchiveIngredientUseCase,
+        private val idGenerator: IdGenerator,
     ) : ViewModel() {
         private val _uiState = MutableStateFlow(ScanConfirmUiState())
         val uiState: StateFlow<ScanConfirmUiState> = _uiState.asStateFlow()
@@ -97,7 +104,11 @@ class ScanConfirmViewModel
             _uiState.update { it.copy(quantity = value, error = null) }
         }
 
-        /** 重新查询该条码是否已导入（页面进入或失败后重试）。 */
+        /**
+         * 重新查询该条码此前的导入记录（进入页面时）。
+         *
+         * 命中只把 [ScanConfirmUiState.isDuplicate] 置真并展示提示，**不阻止**再次入库。
+         */
         fun refreshPrevious() {
             val capture = _uiState.value.capture ?: return
             viewModelScope.launch {
@@ -109,18 +120,25 @@ class ScanConfirmViewModel
                         }
 
                     is Outcome.Success ->
-                        _uiState.update { it.copy(loading = false, previous = result.value) }
+                        _uiState.update {
+                            it.copy(
+                                loading = false,
+                                previous = result.value,
+                                isDuplicate = result.value != null,
+                            )
+                        }
                 }
             }
         }
 
+        /**
+         * 提交（首次确认 / 再次入库 / 失败后重试共用）。
+         *
+         * 重试时状态里已有 `currentOperationId`，因此复用同一个幂等键。
+         */
         fun confirm() {
             when (val check = evaluate(_uiState.value)) {
-                is ConfirmCheck.Ready ->
-                    viewModelScope.launch {
-                        importCapture(check.capture, check.request, check.amount)
-                    }
-
+                is ConfirmCheck.Ready -> startSubmit(check)
                 is ConfirmCheck.Rejected ->
                     check.message?.let { message ->
                         _uiState.update { it.copy(error = message) }
@@ -130,13 +148,39 @@ class ScanConfirmViewModel
             }
         }
 
-        /** 提交前校验：已有结果/保存中忽略，已导入/数量非法/缺目标拒绝。 */
+        /** 「取消」：清掉未完成的幂等键，避免下一次确认沿用它。 */
+        fun onCancelImport() {
+            _uiState.update {
+                it.copy(
+                    currentOperationId = null,
+                    lastError = null,
+                    error = null,
+                )
+            }
+        }
+
+        private fun startSubmit(check: ConfirmCheck.Ready) {
+            val operationId = _uiState.value.currentOperationId ?: idGenerator.newId()
+            // 先同步写入状态：同一帧内的第二次点击会看到 isSubmitting = true 而被忽略。
+            _uiState.update {
+                it.copy(
+                    currentOperationId = operationId,
+                    isSubmitting = true,
+                    lastError = null,
+                    error = null,
+                )
+            }
+            viewModelScope.launch {
+                importCapture(check.capture, check.request, check.amount, operationId)
+            }
+        }
+
+        /** 提交前校验：已有结果/提交中忽略；数量非法或缺目标拒绝。 */
         private fun evaluate(state: ScanConfirmUiState): ConfirmCheck {
             val capture = state.capture ?: return ConfirmCheck.Ignored
             val amount = state.quantity.trim().toDoubleOrNull()
             return when {
-                state.saving || state.result != null -> ConfirmCheck.Ignored
-                state.previous != null -> ConfirmCheck.Rejected(ALREADY_IMPORTED)
+                state.isSubmitting || state.result != null -> ConfirmCheck.Ignored
                 amount == null || !amount.isFinite() || amount <= 0.0 ->
                     ConfirmCheck.Rejected(INVALID_QUANTITY)
                 else ->
@@ -165,63 +209,77 @@ class ScanConfirmViewModel
         }
 
         private suspend fun importCapture(
-            capture: com.culinary.core.domain.barcode.ScanCapture,
+            capture: ScanCapture,
             request: ScanIngredientRequest,
             amount: Double,
+            operationId: String,
         ) {
-            _uiState.update { it.copy(saving = true, error = null) }
             when (val targetResult = ingredientGateway.resolve(request)) {
-                is Outcome.Failure ->
-                    _uiState.update {
-                        it.copy(saving = false, error = ScanErrorMessages.describe(targetResult.error))
-                    }
-
-                is Outcome.Success -> receive(capture, targetResult.value, amount)
+                is Outcome.Failure -> failSubmission(ScanErrorMessages.describe(targetResult.error))
+                is Outcome.Success -> receive(capture, targetResult.value, amount, operationId)
             }
         }
 
         private suspend fun receive(
-            capture: com.culinary.core.domain.barcode.ScanCapture,
+            capture: ScanCapture,
             target: ScanIngredientTarget,
             amount: Double,
+            operationId: String,
         ) {
             val result =
                 stockGateway.receive(
-                    ScanStockRequest(capture = capture, target = target, amount = amount),
+                    ScanStockRequest(
+                        capture = capture,
+                        target = target,
+                        amount = amount,
+                        operationId = operationId,
+                    ),
                 )
             when (result) {
                 is Outcome.Failure -> {
                     val compensated = target.created && compensate(target)
-                    _uiState.update {
-                        it.copy(
-                            saving = false,
-                            error =
-                                buildString {
-                                    append(ScanErrorMessages.describe(result.error))
-                                    if (compensated) append("（已撤回本次新建的食材）")
-                                },
-                        )
-                    }
+                    failSubmission(
+                        buildString {
+                            append(ScanErrorMessages.describe(result.error))
+                            if (compensated) append("（已撤回本次新建的食材）")
+                        },
+                    )
                 }
 
-                is Outcome.Success -> {
-                    val receipt = result.value
-                    _uiState.update {
-                        it.copy(
-                            saving = false,
-                            previous =
-                                ScanPreviousImport(entry = receipt.entry, item = receipt.item),
-                            result =
-                                ScanImportOutcome(
-                                    ingredientName = target.ingredient.name,
-                                    amount = receipt.entry.onHandDelta,
-                                    unitCode = receipt.entry.stockUnit.code,
-                                    batchCode = receipt.item.batchCode,
-                                    replayed = receipt.idempotentReplay,
-                                ),
-                        )
-                    }
-                }
+                is Outcome.Success -> succeed(target, result.value)
+            }
+        }
+
+        private fun succeed(
+            target: ScanIngredientTarget,
+            receipt: com.culinary.core.domain.scan.ScanStockReceipt,
+        ) {
+            _uiState.update {
+                it.copy(
+                    isSubmitting = false,
+                    currentOperationId = null,
+                    lastError = null,
+                    previous = ScanPreviousImport(entry = receipt.entry, item = receipt.item),
+                    isDuplicate = true,
+                    result =
+                        ScanImportOutcome(
+                            ingredientName = target.ingredient.name,
+                            amount = receipt.entry.onHandDelta,
+                            unitCode = receipt.entry.stockUnit.code,
+                            batchCode = receipt.item.batchCode,
+                            replayed = receipt.idempotentReplay,
+                        ),
+                )
+            }
+        }
+
+        /** 失败：解除提交态但**保留** operationId，供「重试」复用同一个幂等键。 */
+        private fun failSubmission(message: String) {
+            _uiState.update {
+                it.copy(
+                    isSubmitting = false,
+                    lastError = message,
+                )
             }
         }
 
@@ -243,14 +301,13 @@ class ScanConfirmViewModel
         private companion object {
             const val INVALID_QUANTITY = "数量必须是大于 0 的数字。"
             const val MISSING_TARGET = "请选择已有食材，或填写新食材名称。"
-            const val ALREADY_IMPORTED = "该条码已导入过，本次不会重复入库。"
         }
     }
 
 /** 提交前的判定结果；把分支集中在一处，避免 `confirm()` 里堆 `return`。 */
 private sealed interface ConfirmCheck {
     data class Ready(
-        val capture: com.culinary.core.domain.barcode.ScanCapture,
+        val capture: ScanCapture,
         val request: ScanIngredientRequest,
         val amount: Double,
     ) : ConfirmCheck
@@ -260,6 +317,6 @@ private sealed interface ConfirmCheck {
         val message: String?,
     ) : ConfirmCheck
 
-    /** 保存中或已有结果：静默忽略重复提交。 */
+    /** 提交中或已有结果：静默忽略重复提交。 */
     data object Ignored : ConfirmCheck
 }

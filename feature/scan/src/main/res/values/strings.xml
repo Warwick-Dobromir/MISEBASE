@@ -40,8 +40,10 @@
     <string name="scan_confirm_source">来源</string>
     <string name="scan_source_camera">相机识别</string>
     <string name="scan_source_manual">手工输入</string>
-    <string name="scan_confirm_already">该条码已导入过</string>
-    <string name="scan_confirm_already_body">上次导入 %1$s · %2$s %3$s；重复确认不会重复入库。</string>
+    <string name="scan_confirm_already">该商品此前已导入</string>
+    <string name="scan_confirm_duplicate_body">上次导入 %1$s · %2$s %3$s；如需再入库一次，请点「再次入库」。</string>
+    <string name="scan_confirm_again">再次入库</string>
+    <string name="scan_confirm_retry">重试</string>
     <string name="scan_confirm_target">导入目标</string>
     <string name="scan_confirm_new_ingredient">新建食材</string>
     <string name="scan_confirm_new_name">新食材名称</string>
@@ -51,7 +53,7 @@
     <string name="scan_confirm_saving">正在导入…</string>
     <string name="scan_confirm_saved_badge">已入库</string>
     <string name="scan_confirm_saved">已入库 %1$s %2$s %3$s</string>
-    <string name="scan_confirm_replayed">同一条码已导入过，本次未重复入库。</string>
+    <string name="scan_confirm_replayed">同一次确认已写入过，本次未重复入库。</string>
     <string name="scan_confirm_batch">批次</string>
     <string name="scan_confirm_back_to_scan">返回扫码</string>
     <string name="scan_confirm_missing">无法读取扫码结果</string>

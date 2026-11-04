@@ -13,10 +13,11 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
- * 扫码导入的"入库"接口实现（MB-D-004 §2.3）。
+ * 扫码导入的"入库"接口实现（MB-D-004 §2.3 / MB-S5-002）。
  *
  * 归属明确：库存批次、流水与商品创建归 `feature:inventory`；`feature:scan` 只调用本接口。
- * - 幂等键由条码决定（[ScanImportKey]），重复确认同一条码命中既有流水即返回重放结果；
+ * - 幂等键 = `scan-import:<条码>:<operation_id>`：**一次确认一个键**，
+ *   同一商品的多次入库互不拦截，同一次确认的重试命中重放；
  * - 事务由既有 `RecordStockReceiptUseCase` 负责：批次 + 流水同一事务；
  * - 商品缺失时由该用例按食材补建，不在这里另写一套库存逻辑。
  */
@@ -32,12 +33,17 @@ class InventoryScanStockGateway
                     CulinaryError.Validation(field = "quantity", rule = "must be a finite positive number"),
                 )
             }
+            if (request.operationId.isBlank()) {
+                return Outcome.failure(
+                    CulinaryError.Validation(field = "operationId", rule = "must not be blank"),
+                )
+            }
             val input =
                 StockReceiptInput(
                     quantity = Quantity(request.amount, request.target.unit),
                     ingredientId = request.target.ingredient.id,
                     note = request.note,
-                    idempotencyKey = ScanImportKey.of(request.capture),
+                    idempotencyKey = ScanImportKey.of(request.capture, request.operationId),
                 )
             return when (val result = recordReceipt(input)) {
                 is Outcome.Failure -> result

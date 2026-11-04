@@ -72,31 +72,39 @@ class InventoryScanStockGatewayTest {
     private fun request(
         capture: ScanCapture = ScanCapture(rawValue = "6901234567892"),
         amount: Double = 2.0,
-    ): ScanStockRequest = ScanStockRequest(capture = capture, target = target(), amount = amount)
+        operationId: String = "op-1",
+    ): ScanStockRequest =
+        ScanStockRequest(
+            capture = capture,
+            target = target(),
+            amount = amount,
+            operationId = operationId,
+        )
 
     @Test
-    fun `receives stock with a code based idempotency key`() =
+    fun `receives stock with an event based idempotency key`() =
         runTest {
             val (gateway, inventory) = newGateway()
 
-            val result = gateway.receive(request())
+            val result = gateway.receive(request(operationId = "op-1"))
 
             assertThat(result).isInstanceOf(Outcome.Success::class.java)
             val receipt = (result as Outcome.Success).value
             assertThat(receipt.idempotentReplay).isFalse()
-            assertThat(receipt.entry.idempotencyKey).isEqualTo(ScanImportKey.of("6901234567892"))
+            assertThat(receipt.entry.idempotencyKey)
+                .isEqualTo(ScanImportKey.of(ScanCapture(rawValue = "6901234567892"), "op-1"))
             assertThat(receipt.item.onHand).isEqualTo(2.0)
             assertThat(inventory.batches).hasSize(1)
             assertThat(inventory.entries).hasSize(1)
         }
 
     @Test
-    fun `confirming the same code twice does not add stock again`() =
+    fun `same operation retried does not add stock again`() =
         runTest {
             val (gateway, inventory) = newGateway()
 
-            val first = gateway.receive(request())
-            val second = gateway.receive(request())
+            val first = gateway.receive(request(operationId = "op-1"))
+            val second = gateway.receive(request(operationId = "op-1"))
 
             val firstReceipt = (first as Outcome.Success).value
             val secondReceipt = (second as Outcome.Success).value
@@ -113,15 +121,46 @@ class InventoryScanStockGatewayTest {
         }
 
     @Test
+    fun `the same code with a new operation id creates a second import`() =
+        runTest {
+            val (gateway, inventory) = newGateway()
+
+            // MB-S5-002 回归：买第二件同款商品时必须能再次入库。
+            val first = gateway.receive(request(operationId = "op-1"))
+            val second = gateway.receive(request(operationId = "op-2"))
+
+            val firstReceipt = (first as Outcome.Success).value
+            val secondReceipt = (second as Outcome.Success).value
+            assertThat(firstReceipt.idempotentReplay).isFalse()
+            assertThat(secondReceipt.idempotentReplay).isFalse()
+            assertThat(secondReceipt.entry.id).isNotEqualTo(firstReceipt.entry.id)
+            assertThat(inventory.batches).hasSize(2)
+            assertThat(inventory.entries).hasSize(2)
+            assertThat(inventory.batches.values.map { it.onHand }).containsExactly(2.0, 2.0)
+        }
+
+    @Test
     fun `a different code creates its own batch and ledger entry`() =
         runTest {
             val (gateway, inventory) = newGateway()
 
-            gateway.receive(request(capture = ScanCapture(rawValue = "code-a")))
-            gateway.receive(request(capture = ScanCapture(rawValue = "code-b")))
+            gateway.receive(request(capture = ScanCapture(rawValue = "code-a"), operationId = "op-a"))
+            gateway.receive(request(capture = ScanCapture(rawValue = "code-b"), operationId = "op-b"))
 
             assertThat(inventory.batches).hasSize(2)
             assertThat(inventory.entries).hasSize(2)
+        }
+
+    @Test
+    fun `rejects a blank operation id without writing`() =
+        runTest {
+            val (gateway, inventory) = newGateway()
+
+            val result = gateway.receive(request(operationId = "   "))
+
+            assertThat(result).isInstanceOf(Outcome.Failure::class.java)
+            assertThat(inventory.batches).isEmpty()
+            assertThat(inventory.entries).isEmpty()
         }
 
     @Test
@@ -150,8 +189,8 @@ class InventoryScanStockGatewayTest {
         runTest {
             val (gateway, inventory) = newGateway()
 
-            val zero = gateway.receive(request(amount = 0.0))
-            val negative = gateway.receive(request(amount = -1.0))
+            val zero = gateway.receive(request(amount = 0.0, operationId = "op-zero"))
+            val negative = gateway.receive(request(amount = -1.0, operationId = "op-negative"))
 
             assertThat(zero).isInstanceOf(Outcome.Failure::class.java)
             assertThat(negative).isInstanceOf(Outcome.Failure::class.java)

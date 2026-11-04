@@ -21,8 +21,12 @@ fun ScanConfirmRoute(
         onNewIngredientNameChange = viewModel::onNewIngredientNameChange,
         onQuantityChange = viewModel::onQuantityChange,
         onConfirm = viewModel::confirm,
-        onRetry = viewModel::refreshPrevious,
-        onBackToScan = onBackToScan,
+        onRetry = viewModel::confirm,
+        onBackToScan = {
+            // 「返回扫码」= 取消本次确认：清掉未完成的 operation id，避免下一次确认沿用它。
+            viewModel.onCancelImport()
+            onBackToScan()
+        },
         modifier = modifier,
     )
 }

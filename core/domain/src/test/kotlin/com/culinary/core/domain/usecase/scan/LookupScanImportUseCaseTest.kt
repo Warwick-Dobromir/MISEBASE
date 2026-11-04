@@ -1,4 +1,4 @@
-﻿package com.culinary.core.domain.usecase.scan
+package com.culinary.core.domain.usecase.scan
 
 import com.culinary.core.common.Outcome
 import com.culinary.core.domain.barcode.ScanCapture
@@ -19,21 +19,25 @@ import kotlinx.coroutines.runBlocking
 import org.junit.Test
 import java.time.Instant
 
-/** 条码导入查询：命中既有流水返回导入记录，未命中返回 `null`，失败不伪装成空。 */
+/**
+ * 条码导入查询（MB-S5-002）：按条码前缀在流水中找最近一次导入；
+ * 命中只用于提示"此前已导入"，未命中返回 `null`，失败不伪装成空。
+ */
 class LookupScanImportUseCaseTest {
     private val gram = Unit(UnitId("g"), "g", "克", "g", UnitDimension.MASS, 1.0, true, false, 1)
 
     @Test
-    fun `returns the previous import for the same code`() =
+    fun `returns the latest import for the same code`() =
         runBlocking<kotlin.Unit> {
             val capture = ScanCapture(rawValue = "6901234567892")
-            val entry = ledgerEntry()
-            val item = inventoryItem()
+            val older = ledgerEntry(id = "ledger-old", batchId = "batch-old", occurredAtMillis = 1_000)
+            val latest = ledgerEntry(id = "ledger-new", batchId = "batch-new", occurredAtMillis = 2_000)
+            val item = inventoryItem(batchId = "batch-new")
             val useCase =
                 LookupScanImportUseCase(
                     FakeInventoryRepository(
-                        entries = mapOf(ScanImportKey.of(capture) to entry),
-                        items = mapOf(entry.batchId to item),
+                        ledger = listOf(older, latest),
+                        items = mapOf(latest.batchId to item),
                     ),
                 )
 
@@ -41,8 +45,23 @@ class LookupScanImportUseCaseTest {
 
             assertThat(result).isInstanceOf(Outcome.Success::class.java)
             val previous = (result as Outcome.Success).value
-            assertThat(previous?.entry).isEqualTo(entry)
+            assertThat(previous?.entry).isEqualTo(latest)
             assertThat(previous?.item).isEqualTo(item)
+        }
+
+    @Test
+    fun `ignores imports of other codes`() =
+        runBlocking<kotlin.Unit> {
+            val useCase =
+                LookupScanImportUseCase(
+                    FakeInventoryRepository(
+                        ledger = listOf(ledgerEntry(key = ScanImportKey.of(ScanCapture(rawValue = "other"), "op-1"))),
+                    ),
+                )
+
+            val result = useCase(ScanCapture(rawValue = "6901234567892"))
+
+            assertThat(result).isEqualTo(Outcome.success(null))
         }
 
     @Test
@@ -56,24 +75,29 @@ class LookupScanImportUseCaseTest {
         }
 
     @Test
-    fun `propagates repository failures`() =
+    fun `propagates ledger failures`() =
         runBlocking<kotlin.Unit> {
             val failure =
                 Outcome.failure(
                     com.culinary.core.common.CulinaryError
                         .Data(message = "db down"),
                 )
-            val useCase = LookupScanImportUseCase(FakeInventoryRepository(lookupFailure = failure))
+            val useCase = LookupScanImportUseCase(FakeInventoryRepository(ledgerFailure = failure))
 
             val result = useCase(ScanCapture(rawValue = "6901234567892"))
 
             assertThat(result).isEqualTo(failure)
         }
 
-    private fun ledgerEntry(): InventoryLedgerEntry =
+    private fun ledgerEntry(
+        id: String = "ledger-1",
+        batchId: String = "batch-1",
+        occurredAtMillis: Long = 1_760_000_000_000L,
+        key: String = ScanImportKey.of(ScanCapture(rawValue = "6901234567892"), "op-1"),
+    ): InventoryLedgerEntry =
         InventoryLedgerEntry(
-            id = LedgerEntryId("ledger-1"),
-            batchId = BatchId("batch-1"),
+            id = LedgerEntryId(id),
+            batchId = BatchId(batchId),
             productId = ProductId("product-1"),
             locationId = LocationId("loc-1"),
             type = LedgerEntryType.PURCHASE_RECEIPT,
@@ -82,13 +106,13 @@ class LookupScanImportUseCaseTest {
             reservedDelta = 0.0,
             onHandAfter = 1.0,
             reservedAfter = 0.0,
-            idempotencyKey = ScanImportKey.of("6901234567892"),
-            occurredAt = Instant.ofEpochMilli(1_760_000_000_000L),
+            idempotencyKey = key,
+            occurredAt = Instant.ofEpochMilli(occurredAtMillis),
         )
 
-    private fun inventoryItem(): InventoryItem =
+    private fun inventoryItem(batchId: String): InventoryItem =
         InventoryItem(
-            batchId = BatchId("batch-1"),
+            batchId = BatchId(batchId),
             productId = ProductId("product-1"),
             locationId = LocationId("loc-1"),
             stockUnit = gram,
@@ -96,19 +120,19 @@ class LookupScanImportUseCaseTest {
         )
 
     private class FakeInventoryRepository(
-        private val entries: Map<String, InventoryLedgerEntry> = emptyMap(),
+        private val ledger: List<InventoryLedgerEntry> = emptyList(),
         private val items: Map<BatchId, InventoryItem> = emptyMap(),
-        private val lookupFailure: Outcome<Nothing>? = null,
+        private val ledgerFailure: Outcome<Nothing>? = null,
     ) : InventoryRepository {
         override suspend fun listItems(): Outcome<List<InventoryItem>> = Outcome.success(emptyList())
 
         override suspend fun findItem(batchId: BatchId): Outcome<InventoryItem?> = Outcome.success(items[batchId])
 
         override suspend fun findByIdempotencyKey(key: String): Outcome<InventoryLedgerEntry?> =
-            lookupFailure ?: Outcome.success(entries[key])
+            Outcome.success(ledger.firstOrNull { it.idempotencyKey == key })
 
         override suspend fun appendIfAbsent(entry: InventoryLedgerEntry): Outcome<Boolean> = Outcome.success(true)
 
-        override suspend fun ledger(): Outcome<List<InventoryLedgerEntry>> = Outcome.success(emptyList())
+        override suspend fun ledger(): Outcome<List<InventoryLedgerEntry>> = ledgerFailure ?: Outcome.success(ledger)
     }
 }

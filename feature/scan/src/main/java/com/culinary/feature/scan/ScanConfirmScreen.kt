@@ -78,7 +78,14 @@ internal fun ScanConfirmScreen(
         verticalArrangement = Arrangement.Top,
     ) {
         state.error?.let { message ->
-            ErrorBanner(message = message, actionLabel = stringResource(R.string.scan_retry), onAction = onRetry)
+            ErrorBanner(message = message)
+        }
+        state.lastError?.let { message ->
+            ErrorBanner(
+                message = message,
+                actionLabel = stringResource(R.string.scan_confirm_retry),
+                onAction = onRetry,
+            )
         }
         Text(
             text = stringResource(R.string.scan_confirm_title),
@@ -138,12 +145,7 @@ internal fun ScanConfirmScreen(
         )
         Spacer(modifier = Modifier.height(CulinarySpacing.md))
         Button(onClick = onConfirm, enabled = state.canConfirm) {
-            Text(
-                text =
-                    stringResource(
-                        if (state.saving) R.string.scan_confirm_saving else R.string.scan_confirm_action,
-                    ),
-            )
+            Text(text = stringResource(primaryActionLabel(state)))
         }
 
         state.result?.let { result -> ImportResultPanel(result = result) }
@@ -154,6 +156,20 @@ internal fun ScanConfirmScreen(
         }
     }
 }
+
+/**
+ * 主按钮文案：
+ * - 失败过：重试（复用同一个 operation id）；
+ * - 命中历史导入：再次入库；
+ * - 其它：确认导入。
+ */
+private fun primaryActionLabel(state: ScanConfirmUiState): Int =
+    when {
+        state.isSubmitting -> R.string.scan_confirm_saving
+        state.lastError != null -> R.string.scan_confirm_retry
+        state.isDuplicate -> R.string.scan_confirm_again
+        else -> R.string.scan_confirm_action
+    }
 
 @Composable
 private fun InfoRow(
@@ -194,7 +210,7 @@ private fun AlreadyImportedPanel(previous: ScanPreviousImport) {
             Text(
                 text =
                     stringResource(
-                        R.string.scan_confirm_already_body,
+                        R.string.scan_confirm_duplicate_body,
                         formatImportTime(previous.entry.occurredAt),
                         formatAmount(previous.entry.onHandDelta),
                         previous.entry.stockUnit.code,

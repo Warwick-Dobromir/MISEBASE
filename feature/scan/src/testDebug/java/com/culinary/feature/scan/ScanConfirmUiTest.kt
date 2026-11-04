@@ -1,9 +1,10 @@
-﻿package com.culinary.feature.scan
+package com.culinary.feature.scan
 
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
-import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import com.culinary.core.designsystem.theme.CulinaryTheme
 import com.culinary.core.domain.barcode.ScanCapture
@@ -68,7 +69,7 @@ class ScanConfirmUiTest {
     }
 
     @Test
-    fun `blocks confirmation when the code was already imported`() {
+    fun `duplicate scan warns and offers the import again action`() {
         compose.setContent {
             CulinaryTheme {
                 ScanConfirmScreen(
@@ -81,6 +82,7 @@ class ScanConfirmUiTest {
                                     entry = previousEntry(),
                                     item = null,
                                 ),
+                            isDuplicate = true,
                             loading = false,
                         ),
                     onSelectIngredient = {},
@@ -94,8 +96,38 @@ class ScanConfirmUiTest {
             }
         }
 
-        compose.onNodeWithText("该条码已导入过").assertIsDisplayed()
-        compose.onNodeWithText("确认导入").assertIsNotEnabled()
+        compose.onNodeWithText("该商品此前已导入").assertIsDisplayed()
+        compose.onNodeWithText("再次入库").assertExists().assertIsEnabled()
+        compose.onNodeWithText("确认导入").assertDoesNotExist()
+    }
+
+    @Test
+    fun `failure shows the error and a retry action`() {
+        compose.setContent {
+            CulinaryTheme {
+                ScanConfirmScreen(
+                    state =
+                        ScanConfirmUiState(
+                            capture = capture,
+                            ingredients = listOf(ingredient()),
+                            selectedIngredientId = "ingredient-1",
+                            lastError = "导入失败，请重试。（CUL-UNKNOWN-001）",
+                            currentOperationId = "op-1",
+                            loading = false,
+                        ),
+                    onSelectIngredient = {},
+                    onCreateNewChange = {},
+                    onNewIngredientNameChange = {},
+                    onQuantityChange = {},
+                    onConfirm = {},
+                    onRetry = {},
+                    onBackToScan = {},
+                )
+            }
+        }
+
+        compose.onNodeWithText("导入失败，请重试。（CUL-UNKNOWN-001）").assertIsDisplayed()
+        compose.onAllNodesWithText("重试").assertCountEquals(2)
     }
 
     @Test
@@ -156,7 +188,7 @@ class ScanConfirmUiTest {
 
         compose.onNodeWithText("已入库").assertExists()
         compose.onNodeWithText("已入库 低筋面粉 2 g").assertExists()
-        compose.onNodeWithText("同一条码已导入过，本次未重复入库。").assertExists()
+        compose.onNodeWithText("同一次确认已写入过，本次未重复入库。").assertExists()
         compose.onNodeWithText("批次 B-001").assertExists()
     }
 
