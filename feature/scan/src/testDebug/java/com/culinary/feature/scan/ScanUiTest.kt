@@ -7,6 +7,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performTextInput
 import com.culinary.core.designsystem.theme.CulinaryTheme
@@ -101,7 +102,7 @@ class ScanUiTest {
         compose.onNodeWithText("将条码放入框内，保持稳定").assertIsDisplayed()
         compose.onNodeWithText("打开手电筒").assertIsDisplayed()
         compose.onNodeWithText("手工输入条码").assertIsDisplayed()
-        compose.onNodeWithText("返回").assertIsDisplayed()
+        compose.onNodeWithContentDescription("返回").assertIsDisplayed()
     }
 
     @Test

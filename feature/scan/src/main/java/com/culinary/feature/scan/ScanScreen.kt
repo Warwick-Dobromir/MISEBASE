@@ -1,6 +1,8 @@
 package com.culinary.feature.scan
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -10,7 +12,11 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -22,10 +28,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import com.culinary.core.designsystem.component.ErrorBanner
+import com.culinary.core.designsystem.icon.CulinaryIcons
 import com.culinary.core.designsystem.theme.CulinarySpacing
 
 /**
@@ -59,7 +68,10 @@ internal fun ScanScreen(
                     onToggleTorch = onToggleTorch,
                     onOpenManualEntry = onOpenManualEntry,
                     onResumeScanning = onResumeScanning,
+                )
+                ScanBackButton(
                     onBack = onBack,
+                    modifier = Modifier.align(Alignment.TopStart).padding(CulinarySpacing.sm),
                 )
             }
 
@@ -145,10 +157,17 @@ private fun CameraActions(
     onToggleTorch: () -> Unit,
     onOpenManualEntry: () -> Unit,
     onResumeScanning: () -> Unit,
-    onBack: () -> Unit,
 ) {
     Column(
-        modifier = Modifier.fillMaxSize().padding(CulinarySpacing.lg),
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .background(
+                    Brush.verticalGradient(
+                        0.6f to Color.Transparent,
+                        1f to Color.Black.copy(alpha = 0.65f),
+                    ),
+                ).padding(CulinarySpacing.lg),
         verticalArrangement = Arrangement.Bottom,
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
@@ -167,11 +186,12 @@ private fun CameraActions(
                         ),
                 )
             }
-            OutlinedButton(onClick = onOpenManualEntry) {
+            OutlinedButton(
+                onClick = onOpenManualEntry,
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.White),
+                border = BorderStroke(1.dp, Color.White),
+            ) {
                 Text(text = stringResource(R.string.scan_manual_open))
-            }
-            OutlinedButton(onClick = onBack) {
-                Text(text = stringResource(R.string.scan_back))
             }
         }
         if (!state.scanning) {
@@ -180,6 +200,24 @@ private fun CameraActions(
                 Text(text = stringResource(R.string.scan_resume))
             }
         }
+    }
+}
+
+/** 相机页的返回按钮：浮在预览左上角，避免底部动作区被挤成两行。 */
+@Composable
+private fun ScanBackButton(
+    onBack: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    IconButton(
+        onClick = onBack,
+        modifier = modifier.background(Color.Black.copy(alpha = 0.45f), CircleShape),
+    ) {
+        Icon(
+            imageVector = CulinaryIcons.Back,
+            contentDescription = stringResource(R.string.scan_back),
+            tint = Color.White,
+        )
     }
 }
 

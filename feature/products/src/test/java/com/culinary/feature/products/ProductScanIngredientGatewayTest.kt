@@ -111,6 +111,44 @@ class ProductScanIngredientGatewayTest {
         }
 
     @Test
+    fun `created ingredients get a sensible default unit instead of the first table row`() =
+        runTest {
+            val milligram = Unit(UnitId("mg"), "mg", "毫克", "mg", UnitDimension.MASS, 0.001, false, false, 0)
+            val repository = FakeIngredientRepository()
+            val gateway = newGateway(repository, units = listOf(milligram, gram, piece))
+
+            val result =
+                gateway.resolve(
+                    ScanIngredientRequest(
+                        capture = ScanCapture(rawValue = "6901234567892"),
+                        newIngredientName = "海盐",
+                    ),
+                )
+
+            val target = (result as Outcome.Success).value
+            assertThat(target.ingredient.defaultUnitId).isEqualTo(UnitId("g"))
+            assertThat(target.unit.code).isEqualTo("g")
+        }
+
+    @Test
+    fun `existing ingredient without default unit falls back to the mass base unit`() =
+        runTest {
+            val milligram = Unit(UnitId("mg"), "mg", "毫克", "mg", UnitDimension.MASS, 0.001, false, false, 0)
+            val repository = FakeIngredientRepository(listOf(ingredient(name = "海盐", defaultUnitId = null)))
+            val gateway = newGateway(repository, units = listOf(milligram, gram))
+
+            val result =
+                gateway.resolve(
+                    ScanIngredientRequest(
+                        capture = ScanCapture(rawValue = "code"),
+                        existingIngredientId = IngredientId("ingredient-1"),
+                    ),
+                )
+
+            assertThat((result as Outcome.Success).value.unit.code).isEqualTo("g")
+        }
+
+    @Test
     fun `fails when neither an ingredient nor a name is provided`() =
         runTest {
             val gateway = newGateway()

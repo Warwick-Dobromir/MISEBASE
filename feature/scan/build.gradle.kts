@@ -5,6 +5,11 @@ plugins {
 }
 
 android {
+    defaultConfig {
+        // 真机解码验证（MB-D-011）跑在 connectedDebugAndroidTest。
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+    }
+
     testOptions {
         unitTests.isIncludeAndroidResources = true
     }

@@ -5,6 +5,7 @@ import com.culinary.core.common.Outcome
 import com.culinary.core.domain.model.Ingredient
 import com.culinary.core.domain.model.IngredientId
 import com.culinary.core.domain.model.Unit
+import com.culinary.core.domain.model.UnitDimension
 import com.culinary.core.domain.repository.IngredientRepository
 import com.culinary.core.domain.repository.InventoryRepository
 import com.culinary.core.domain.repository.UnitRepository
@@ -50,11 +51,20 @@ class ProductScanIngredientGateway
             }
         }
 
-        private suspend fun createIngredient(name: String): Outcome<ScanIngredientTarget> =
-            when (val saved = saveIngredient(SaveIngredientInput(name = name))) {
+        private suspend fun createIngredient(name: String): Outcome<ScanIngredientTarget> {
+            // 扫码新建的食材先给一个合理默认单位（质量基准单位 → 计数单位 → 第一个单位），
+            // 否则新建食材没有默认单位，入库会退化成按单位表首项（曾出现 1 mg 的荒谬结果）。
+            val defaultUnitId = preferredUnit(unitRepository.all())?.id
+            return when (
+                val saved =
+                    saveIngredient(
+                        SaveIngredientInput(name = name, defaultUnitId = defaultUnitId),
+                    )
+            ) {
                 is Outcome.Failure -> saved
                 is Outcome.Success -> targetFor(saved.value, created = true)
             }
+        }
 
         private suspend fun targetFor(
             ingredientId: IngredientId,
@@ -87,6 +97,13 @@ class ProductScanIngredientGateway
             ingredient.defaultUnitId?.let { unitId ->
                 unitRepository.find(unitId)?.let { return it }
             }
-            return unitRepository.all().firstOrNull()
+            val units = unitRepository.all()
+            return preferredUnit(units) ?: units.firstOrNull()
         }
+
+        /** 默认单位：质量基准单位（如 g）优先，其次计数单位（如 个），再退回落第一个。 */
+        private fun preferredUnit(units: List<Unit>): Unit? =
+            units.firstOrNull { it.dimension == UnitDimension.MASS && it.isBase }
+                ?: units.firstOrNull { it.dimension == UnitDimension.COUNT }
+                ?: units.firstOrNull()
     }
