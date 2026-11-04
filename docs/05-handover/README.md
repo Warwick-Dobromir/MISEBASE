@@ -1,8 +1,8 @@
 # MISEBASE 阶段 0 接管资料包
 
 **文档编号**：MB-S0-00
-**版本**：`0.2.0`
-**状态**：`Review`（Stage 0 工程核验已完成；Stage 1 待负责人签收）
+**版本**：`0.3.0`
+**状态**：`Review`（Stage 0 工程核验完成；第二轮修正已提交；Stage 1 待负责人签收）
 **日期**：2026-11-04
 **适用基线**：G2 `framework-0.1.0` = `2b523de`；接管工作树 = `705e0ca`（G2 收档提交）
 **项目**：MISEBASE / Culinary Records and Inventory System
@@ -74,6 +74,9 @@
 | [S0-04A 文档一致性](S0-04A-DOCUMENT-CONSISTENCY.md) | README/P01/A03A/A-G2-001 修订方案 |
 | [S0-05 负责人签收](S0-05-OWNER-SIGNOFF.md) | 18 项决策签收表与 Stage 1 放行条件 |
 | [S0-06 Stage 0 报告](S0-06-STAGE-REPORT.md) | 完成结论、证据、阻塞与下一步 |
+| [S0-07 第二轮修正记录](S0-07-REVISION-REPORT.md) | MB-S0-002 四项修正与一致性核对 |
+
+> **编号规则**：`D-xxx` 是 G2 历史决策；`MB-D-xxx` 是 MISEBASE 新决策。同数字不代表同一决策（例如 `D-005` 是 UUID 主键，`MB-D-005` 是数据库残留处置）。18 项 `MB-D` 仍全部为 `PROPOSED`，0 项 `ACCEPTED`。
 
 ### 5.2 支撑材料
 
@@ -134,3 +137,4 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\check-module-deps.
 |---|---|---|---|
 | 0.1.0 | 2026-11-04 | 建立阶段 0 接管资料包；完成资料核验、事实对照、风险与待决事项 | 接管工程组 |
 | 0.2.0 | 2026-11-04 | 增加 MB-S0-001 六份正式交付与文档一致性报告；更新 Stage 0/Stage 1 状态 | 接管工程组 |
+| 0.3.0 | 2026-11-04 | MB-S0-002：增加 S0-07 索引；补充 D-xxx/MB-D-xxx 编号规则 | 接管工程组 |

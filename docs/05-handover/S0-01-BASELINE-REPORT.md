@@ -1,8 +1,8 @@
 # S0-01 工程基线核验报告
 
-**任务编号**：MB-S0-001
+**任务编号**：MB-S0-001；第二轮修正 MB-S0-002
 **文档编号**：S0-01
-**版本**：`1.0.0`
+**版本**：`1.0.1`
 **状态**：`Review`
 **日期**：2026-11-04
 **检查对象**：`D:\MISEBASE`
@@ -60,10 +60,10 @@ git rev-parse --short framework-0.1.0^{} -> 2b523de
 
 ### 2.3 标签
 
-- 共 **20** 个标签：19 个 G2 历史标签 + 1 个阶段 0 审查检查点；
+- 检查时共 **20** 个标签；第二轮修正后为 **23** 个（19 个 G2 历史标签 + 4 个 Stage 0 检查点）；
 - `framework-0.1.0` → `2b523de`；
 - 9 个 `baseline/g2-stage*` 全部存在；
-- 新增 `checkpoint/misebase-stage0-review-20261104` → `dc72025`（审查包，不是验收）。
+- Stage 0 检查点：`checkpoint/misebase-stage0-review-20261104`、`checkpoint/misebase-s0-submission-20261104`、`checkpoint/misebase-s0-r2-pre-20261104`、`checkpoint/misebase-s0-r2-20261104`。
 
 ### 2.4 代码差异
 
@@ -177,6 +177,33 @@ BUILD SUCCESSFUL in 1m 1s
 | ML Kit 17.3.0 Bundled | 17.3.0 | 一致 |
 | 不更换技术栈 | 未发现替换 | 一致 |
 
+### 5.1 决策编号与状态（D-xxx vs MB-D-xxx）
+
+**两套编号不是同一体系，不能混用：**
+
+| 前缀 | 归属 | 示例 | 当前状态来源 |
+|---|---|---|---|
+| `D-001`–`D-025` | G2 历史决策 | `D-005` = TEXT UUID 主键；`D-007` = 计划快照 | G2 DECISION-REGISTER 0.20.0 |
+| `MB-D-001`–`MB-D-018` | MISEBASE 新决策 | `MB-D-005` = 数据库残留处置；`MB-D-007` = 备份一致性 | MB-DECISIONS 0.1.1 |
+
+**关键区别：**
+
+- `D-005` 与 `MB-D-005` 只是数字相同，主题完全不同；
+- `D-007` 与 `MB-D-007` 同理；
+- G2 的 `ACCEPTED` 只对 `D-xxx` 有效，**不会自动迁移**为 MISEBASE `MB-D-xxx` 的 `ACCEPTED`；
+- 截至本报告，**MB-D-001–018 全部为 `PROPOSED`，0 项 ACCEPTED**。
+
+G2 历史状态（摘要）：
+
+| 状态 | 决策 |
+|---|---|
+| ACCEPTED | D-001–D-009、D-011–D-013、D-015 |
+| CONFIRMED | D-014 |
+| OPEN | D-010、D-016–D-019、D-023、D-024 |
+| PROPOSED | D-020、D-021、D-022、D-025 |
+
+> 上表是 G2 历史记录，不是 MISEBASE 新决策状态；新决策以 MB-DECISIONS 与 S0-05 为准。
+
 ---
 
 ## 6. 基线差异与异常
@@ -186,7 +213,7 @@ BUILD SUCCESSFUL in 1m 1s
 | B-01 | `G2-BASELINE.md` 写 HEAD = `a4b2237` | 实际 bundle HEAD = `850ea63`；该报告生成于最终交接提交之前 | 文档滞后，不影响代码 |
 | B-02 | 历史测试数 188 | 当前实测 197；差 `core:common` 9 例 | 统计口径错误 |
 | B-03 | G2 报告写 41 个测试类/XML | 实际 39 个 JVM 测试类 | 文档小错 |
-| B-04 | `README.md` 写「数据库尚未创建」「188 例」「D-005/D-007 等仍 PROPOSED」 | DB v1 已建；197 例；相关决策已 ACCEPTED | **文档失真**，需 MB-D-018 授权修正 |
+| B-04 | `README.md` 写「数据库尚未创建」「188 例」「D-005/D-007 等仍 PROPOSED」 | DB v1 已建；197 例；**G2 历史决策 D-005/D-007/D-013/D-015 已 ACCEPTED**（不是 MB-D-005/MB-D-007 等新决策） | **文档失真**，需 MB-D-018 授权修正；注意 D 与 MB-D 不可混用 |
 | B-05 | A-G2-001 写 `PRAGMA synchronous=NORMAL` | 源码未设置 synchronous，回调只设 foreign_keys/busy_timeout | 文档与实现不一致；低风险但需补验证 |
 | B-06 | G2 报告写「备份一致性已实现」的边界 | 未实现 checkpoint；`AutoBackupWorker` 直接返回 success | 见 S0-04 高风险 |
 
@@ -235,3 +262,4 @@ $env:JAVA_HOME = 'C:\Program Files\Android\Android Studio\jbr'
 | 版本 | 日期 | 变更 | 作者 |
 |---|---|---|---|
 | 1.0.0 | 2026-11-04 | 完成 Git、交接资料、构建、测试、技术栈与差异核验 | 接管工程组 |
+| 1.0.1 | 2026-11-04 | MB-S0-002：增加 D-xxx 与 MB-D-xxx 编号/状态区分；修正 B-04 表述 | 接管工程组 |
