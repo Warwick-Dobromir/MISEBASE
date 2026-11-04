@@ -4,7 +4,7 @@
 #   - 13 模块与 settings.gradle.kts 一致；
 #   - README 的数据库/测试/模块/决策事实；
 #   - P01 / A03A / A-G2-001 的修订标记；
-#   - 决策登记册的 5/18 状态；
+#   - 决策登记册的 10/18 状态；
 #   - Stage 1 八份交付文档存在；
 #   - README 与 Stage 1 文档的相对链接可解析。
 #
@@ -110,7 +110,7 @@ if ($archive -ne '') {
 # 4. 决策登记册状态
 $decisions = Read-Text 'docs/05-handover/MB-S0-07-DECISION-REGISTER.md'
 if ($decisions -ne '') {
-    Assert-Contains 'MB-DECISIONS' $decisions '5 项已 `ACCEPTED`' '5 项已接受'
+    Assert-Contains 'MB-DECISIONS' $decisions '10 项已 `ACCEPTED`' '10 项已接受'
     Assert-Contains 'MB-DECISIONS' $decisions 'MB-D-007' 'MB-D-007 条目'
     Assert-Contains 'MB-DECISIONS' $decisions 'G2-S1' 'G2-S1 测试口径'
     Assert-NotContains 'MB-DECISIONS' $decisions '全部为 `PROPOSED`，0 项 `ACCEPTED`' '旧的 0 项接受表述'

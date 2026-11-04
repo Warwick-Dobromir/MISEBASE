@@ -68,7 +68,7 @@
 | [ADR-009 扫码方案](../adr/ADR-009-BARCODE-SCANNING.md) | CameraX + ML Kit，本地优先 |
 | [ADR-010 暂不做同步](../adr/ADR-010-NO-SYNC-YET.md) | 离线单用户，保留同步缝 |
 | [A-G2-001 G2 收档文件](A-G2-001-G2-ARCHIVE.md) | G2 基线、验收证据与遗留；§14 Errata 更正测试数 188→197 |
-| [MB-DECISIONS 决策登记册](../05-handover/MB-S0-07-DECISION-REGISTER.md) | MISEBASE 18 项决策；5 项 ACCEPTED、13 项 PROPOSED；G2-S1 测试口径 |
+| [MB-DECISIONS 决策登记册](../05-handover/MB-S0-07-DECISION-REGISTER.md) | MISEBASE 18 项决策；10 项 ACCEPTED、8 项 PROPOSED；G2-S1 测试口径 |
 
 ### 2.1 MISEBASE Stage 1 文档（2026-11-04）
 
