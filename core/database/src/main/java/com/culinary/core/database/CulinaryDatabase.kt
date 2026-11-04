@@ -11,6 +11,7 @@ import com.culinary.core.database.converter.ProcurementConverters
 import com.culinary.core.database.dao.AppMetadataDao
 import com.culinary.core.database.dao.BackupRecordDao
 import com.culinary.core.database.dao.BarcodeDao
+import com.culinary.core.database.dao.CalculationRecordDao
 import com.culinary.core.database.dao.ChangeLogDao
 import com.culinary.core.database.dao.GoodsReceiptDao
 import com.culinary.core.database.dao.GoodsReceiptItemDao
@@ -42,6 +43,8 @@ import com.culinary.core.database.dao.UnitDao
 import com.culinary.core.database.entity.AppMetadataEntity
 import com.culinary.core.database.entity.BackupRecordEntity
 import com.culinary.core.database.entity.BarcodeEntity
+import com.culinary.core.database.entity.CalculationRecordEntity
+import com.culinary.core.database.entity.CalculationRecordLineEntity
 import com.culinary.core.database.entity.ChangeLogEntity
 import com.culinary.core.database.entity.GoodsReceiptEntity
 import com.culinary.core.database.entity.GoodsReceiptItemEntity
@@ -72,10 +75,11 @@ import com.culinary.core.database.entity.SupplierEntity
 import com.culinary.core.database.entity.UnitEntity
 
 /**
- * CULINARY 数据库（schema v1，A06）。
+ * CULINARY 数据库（schema v2，A06 + MB-SC-001）。
  *
  * `exportSchema = true`：每个版本必须提交 `schemas/` JSON，迁移测试依赖它。
- * 当前阶段 3 逐表落地；表集合完成前不宣称 v1 冻结。
+ * v2 新增计算记录持久化结构，并为 `recipe_version` 增加 `servings`；
+ * v1 的 31 张表（含 11 张 DORMANT）结构不改。
  */
 @Database(
     entities = [
@@ -110,8 +114,10 @@ import com.culinary.core.database.entity.UnitEntity
         ChangeLogEntity::class,
         BackupRecordEntity::class,
         AppMetadataEntity::class,
+        CalculationRecordEntity::class,
+        CalculationRecordLineEntity::class,
     ],
-    version = 1,
+    version = 2,
     exportSchema = true,
 )
 @TypeConverters(
@@ -183,6 +189,8 @@ abstract class CulinaryDatabase : RoomDatabase() {
     abstract fun backupRecordDao(): BackupRecordDao
 
     abstract fun appMetadataDao(): AppMetadataDao
+
+    abstract fun calculationRecordDao(): CalculationRecordDao
 
     companion object {
         const val DATABASE_NAME: String = "culinary.db"

@@ -62,6 +62,9 @@ data class RecipeVersionEntity(
     val basedOnVersionId: String? = null,
     @ColumnInfo(name = "is_current")
     val isCurrent: Boolean = false,
+    /** 版本基准份数（MB-SC-001）；历史数据迁移后按 1 份处理。 */
+    @ColumnInfo(name = "servings", defaultValue = "1")
+    val servings: Int = 1,
     @ColumnInfo(name = "created_at")
     val createdAt: Long,
     @ColumnInfo(name = "published_at")

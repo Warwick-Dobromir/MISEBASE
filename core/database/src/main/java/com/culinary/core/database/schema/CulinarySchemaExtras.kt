@@ -13,8 +13,22 @@ import androidx.sqlite.db.SupportSQLiteDatabase
  * 全部语句都带 `IF NOT EXISTS`，可安全地在每次打开时重放。
  */
 internal object CulinarySchemaExtras {
+    /**
+     * v1 运行时由本对象创建、但不属于 Room 导出 schema 的部分索引。
+     *
+     * Room 在迁移后会逐表比对索引集合；这些"额外索引"会让 v1→v2 校验失败。
+     * 迁移先删除它们，`onOpen` 再按原定义重建，索引定义与语义不变。
+     */
+    fun dropPartialIndexes(db: SupportSQLiteDatabase) {
+        PARTIAL_INDEX_NAMES.forEach { name -> db.execSQL("DROP INDEX IF EXISTS `$name`") }
+    }
+
     fun apply(db: SupportSQLiteDatabase) {
         PARTIAL_INDEXES.forEach(db::execSQL)
+
+        // v2 的 recipe_version 约束新增 servings；旧库可能已有 v1 触发器，
+        // 必须先删除再重建，否则 IF NOT EXISTS 会保留旧定义。
+        dropRecipeVersionTriggers(db)
 
         installChecks(db, "unit", UNIT_PREDICATE)
         installChecks(db, "ingredient", INGREDIENT_PREDICATE)
@@ -22,9 +36,11 @@ internal object CulinarySchemaExtras {
         installChecks(db, "sauce", SAUCE_PREDICATE)
         installChecks(db, "recipe", RECIPE_PREDICATE)
         installChecks(db, "sauce_version", VERSION_PREDICATE)
-        installChecks(db, "recipe_version", VERSION_PREDICATE)
+        installChecks(db, "recipe_version", RECIPE_VERSION_PREDICATE)
         installChecks(db, "sauce_component", COMPONENT_PREDICATE)
         installChecks(db, "recipe_component", COMPONENT_PREDICATE)
+        installChecks(db, "calculation_record", CALCULATION_RECORD_PREDICATE)
+        installChecks(db, "calculation_record_line", CALCULATION_RECORD_LINE_PREDICATE)
         installChecks(db, "supplier", SUPPLIER_PREDICATE)
         installChecks(db, "product", PRODUCT_PREDICATE)
         installChecks(db, "barcode", BARCODE_PREDICATE)
@@ -48,11 +64,76 @@ internal object CulinarySchemaExtras {
         installChecks(db, "app_metadata", APP_METADATA_PREDICATE)
 
         installPublishedImmutability(db, "sauce_version", "sauce_id")
-        installPublishedImmutability(db, "recipe_version", "recipe_id")
+        installPublishedImmutability(
+            db = db,
+            table = "recipe_version",
+            ownerColumn = "recipe_id",
+            extraContentChanges = listOf("NEW.servings <> OLD.servings"),
+        )
         installAppendOnly(db, "inventory_ledger")
         installAppendOnly(db, "production_plan_snapshot")
         installAppendOnly(db, "change_log")
+        installCalculationRecordImmutability(db)
+        installCalculationRecordLineGuard(db)
         installPlanDeletionGuard(db)
+    }
+
+    /** 删除 v1 的 recipe_version 触发器，使新增的 servings 约束可以生效。 */
+    private fun dropRecipeVersionTriggers(db: SupportSQLiteDatabase) {
+        listOf(
+            "trg_recipe_version_check_insert",
+            "trg_recipe_version_check_update",
+            "trg_recipe_version_published_immutable",
+        ).forEach { trigger -> db.execSQL("DROP TRIGGER IF EXISTS `$trigger`") }
+    }
+
+    /**
+     * 计算记录确认后不可变：任何 UPDATE 都拒绝；已确认记录也不允许删除。
+     * `PREVIEW → CONFIRMED` 的首次确认发生在 OLD.status 仍为 PREVIEW 时，可以写入。
+     */
+    private fun installCalculationRecordImmutability(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            "CREATE TRIGGER IF NOT EXISTS trg_calculation_record_confirmed_immutable " +
+                "BEFORE UPDATE ON calculation_record " +
+                "WHEN OLD.status = 'CONFIRMED' " +
+                "BEGIN SELECT RAISE(ABORT, 'confirmed calculation record is immutable'); END",
+        )
+        db.execSQL(
+            "CREATE TRIGGER IF NOT EXISTS trg_calculation_record_confirmed_no_delete " +
+                "BEFORE DELETE ON calculation_record " +
+                "WHEN OLD.status = 'CONFIRMED' " +
+                "BEGIN SELECT RAISE(ABORT, 'confirmed calculation record cannot be deleted'); END",
+        )
+    }
+
+    /**
+     * 需求行不可变：已确认记录的行不允许新增/修改/删除。
+     * 记录头被删除时由外键 CASCADE 清理行；已确认记录本身已被禁止删除。
+     */
+    private fun installCalculationRecordLineGuard(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            "CREATE TRIGGER IF NOT EXISTS trg_calculation_record_line_no_insert " +
+                "BEFORE INSERT ON calculation_record_line " +
+                "WHEN (SELECT status FROM calculation_record " +
+                "WHERE id = NEW.calculation_record_id) = 'CONFIRMED' " +
+                "BEGIN SELECT RAISE(ABORT, 'confirmed calculation record lines are immutable'); END",
+        )
+        db.execSQL(
+            "CREATE TRIGGER IF NOT EXISTS trg_calculation_record_line_no_update " +
+                "BEFORE UPDATE ON calculation_record_line " +
+                "WHEN (SELECT status FROM calculation_record " +
+                "WHERE id = OLD.calculation_record_id) = 'CONFIRMED' " +
+                "OR (SELECT status FROM calculation_record " +
+                "WHERE id = NEW.calculation_record_id) = 'CONFIRMED' " +
+                "BEGIN SELECT RAISE(ABORT, 'confirmed calculation record lines are immutable'); END",
+        )
+        db.execSQL(
+            "CREATE TRIGGER IF NOT EXISTS trg_calculation_record_line_no_delete " +
+                "BEFORE DELETE ON calculation_record_line " +
+                "WHEN (SELECT status FROM calculation_record " +
+                "WHERE id = OLD.calculation_record_id) = 'CONFIRMED' " +
+                "BEGIN SELECT RAISE(ABORT, 'confirmed calculation record lines are immutable'); END",
+        )
     }
 
     /**
@@ -105,15 +186,18 @@ internal object CulinarySchemaExtras {
         db: SupportSQLiteDatabase,
         table: String,
         ownerColumn: String,
+        extraContentChanges: List<String> = emptyList(),
     ) {
         val contentChanged =
-            """
-            NEW.yield_qty <> OLD.yield_qty
-            OR NEW.yield_unit_id <> OLD.yield_unit_id
-            OR NEW.instructions_md IS NOT OLD.instructions_md
-            OR NEW.version_no <> OLD.version_no
-            OR NEW.$ownerColumn <> OLD.$ownerColumn
-            """.trimIndent()
+            (
+                listOf(
+                    "NEW.yield_qty <> OLD.yield_qty",
+                    "NEW.yield_unit_id <> OLD.yield_unit_id",
+                    "NEW.instructions_md IS NOT OLD.instructions_md",
+                    "NEW.version_no <> OLD.version_no",
+                    "NEW.$ownerColumn <> OLD.$ownerColumn",
+                ) + extraContentChanges
+            ).joinToString(separator = "\nOR ")
         db.execSQL(
             "CREATE TRIGGER IF NOT EXISTS trg_${table}_published_immutable " +
                 "BEFORE UPDATE ON $table " +
@@ -121,6 +205,19 @@ internal object CulinarySchemaExtras {
                 "BEGIN SELECT RAISE(ABORT, 'published version is immutable'); END",
         )
     }
+
+    private val PARTIAL_INDEX_NAMES =
+        listOf(
+            "ux_ingredient_normalized_name",
+            "ux_sauce_normalized_name",
+            "ux_recipe_normalized_name",
+            "ux_sauce_current",
+            "ux_recipe_current",
+            "ux_supplier_normalized_name",
+            "ux_barcode_primary",
+            "ux_image_primary",
+            "ux_reservation_active",
+        )
 
     private val PARTIAL_INDEXES =
         listOf(
@@ -210,6 +307,35 @@ internal object CulinarySchemaExtras {
         OR NEW.version_no < 1
         OR NEW.is_current NOT IN (0, 1)
         OR (NEW.published_at IS NOT NULL AND NEW.published_at < 0)
+    """
+
+    /** 在共享版本约束上追加 v2 的 servings > 0；仅用于 recipe_version。 */
+    private const val RECIPE_VERSION_PREDICATE = """
+        NEW.status NOT IN ('DRAFT', 'PUBLISHED', 'SUPERSEDED')
+        OR NEW.yield_qty <= 0
+        OR NEW.version_no < 1
+        OR NEW.is_current NOT IN (0, 1)
+        OR (NEW.published_at IS NOT NULL AND NEW.published_at < 0)
+        OR NEW.servings < 1
+    """
+
+    private const val CALCULATION_RECORD_PREDICATE = """
+        NEW.status NOT IN ('PREVIEW', 'CONFIRMED')
+        OR NEW.servings <= 0
+        OR NEW.engine_version = ''
+        OR NEW.payload_hash = ''
+        OR length(NEW.payload_hash) <> 64
+        OR NEW.payload_hash GLOB '*[^0-9a-f]*'
+        OR NEW.created_at < 0
+        OR (NEW.confirmed_at IS NOT NULL AND NEW.confirmed_at < 0)
+        OR (NEW.status = 'CONFIRMED' AND NEW.confirmed_at IS NULL)
+        OR (NEW.status = 'PREVIEW' AND NEW.confirmed_at IS NOT NULL)
+    """
+
+    private const val CALCULATION_RECORD_LINE_PREDICATE = """
+        NEW.line_no < 1
+        OR NEW.quantity <= 0
+        OR NEW.is_optional NOT IN (0, 1)
     """
 
     private const val COMPONENT_PREDICATE = """
