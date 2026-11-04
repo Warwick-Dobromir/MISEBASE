@@ -6,7 +6,7 @@
 **日期**：2026-11-04
 **授权**：[MB-SC-00](MB-SC-00-AUTHORIZATION.md)
 **分支 / 基线**：`misebase/main`，起点 `a698c863d5fe81cf8dca1cfdeef4bedff16ffa08`
-**报告正文提交**：`@@REPORT_COMMIT@@`
+**报告正文提交**：`6d0dbac759a62bc8bfef6a78aebf9f18feb00950`
 
 ---
 
@@ -248,8 +248,8 @@ JVM 测试使用 `1.json` 的 `createSql` 与 `identityHash` 建 v1，由真实 
 | 8 | `61820c1663fe83f762c42f9b5e92b7ef3ab4f5c4` | 回滚路径验证 |
 | 9 | `f18721ec6124949a818f22a54404611ace834b31` | 迁移后部分索引重建断言 |
 
-报告正文提交：`@@REPORT_COMMIT@@`。检查点标签：`checkpoint/misebase-schema-change-20261104`。
-最终 HEAD 与标签解析提交在最终回执中给出；未移动任何既有标签。
+报告正文提交：`6d0dbac759a62bc8bfef6a78aebf9f18feb00950`。检查点标签：`checkpoint/misebase-schema-change-20261104`。
+最终 HEAD 哈希钉扎提交在最终回执中给出；未移动任何既有标签。
 
 ### 11.2 变更范围摘要
 
