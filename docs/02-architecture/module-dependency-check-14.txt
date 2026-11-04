@@ -1,0 +1,25 @@
+﻿# MISEBASE 14 模块依赖检查结果（生成物）
+
+生成时间：2026-11-05 01:57:48 +08:00
+
+MISEBASE 14-MODULE DEPENDENCY CHECK
+Decision: MB-D-004; stage: MB-S5-001
+Modules: 14 (expected 14)
+Declared dependency edges: 39
+Source import edges: 839
+Topological order (dependencies first):
+   1. core:common
+   2. core:database
+   3. core:designsystem
+   4. core:domain
+   5. core:data
+   6. core:platform
+   7. feature:ingredients
+   8. feature:inventory
+   9. feature:products
+  10. feature:recipes
+  11. feature:sauces
+  12. feature:scan
+  13. feature:settings
+  14. app
+Result: PASS (DAG, no violations)

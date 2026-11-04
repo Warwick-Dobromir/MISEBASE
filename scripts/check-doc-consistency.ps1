@@ -75,10 +75,11 @@ if (-not (Test-Path -LiteralPath $settingsPath)) {
     }
 }
 
-# 2. README 事实
+# 2. README 事实（Stage 5：模块集 14、测试口径 503 唯一）
 $readme = Read-Text 'README.md'
 if ($readme -ne '') {
-    Assert-Contains 'README.md' $readme '13 模块' '13 模块事实'
+    Assert-Contains 'README.md' $readme '14 模块' '14 模块事实'
+    Assert-Contains 'README.md' $readme '503 唯一 JVM 用例' '503 唯一用例事实'
     Assert-Contains 'README.md' $readme '197 例 JVM 测试' '197 例测试事实'
     Assert-Contains 'README.md' $readme 'schema **v1 / 31 表**' 'schema v1/31 表事实'
     Assert-Contains 'README.md' $readme 'DORMANT' '休眠表标注'

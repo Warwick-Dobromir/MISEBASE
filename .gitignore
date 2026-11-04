@@ -34,3 +34,6 @@ tmp/
 .cache/
 .DS_Store
 Thumbs.db
+
+# Stage verification logs (local only)
+build-stage5-verify.log
