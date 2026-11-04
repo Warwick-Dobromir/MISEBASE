@@ -6,7 +6,7 @@
 |---|---|
 | 品牌/项目名 | MISEBASE（包名暂留 `com.culinary`，发布前按 D-017/MB-D-001 决定） |
 | 架构基线 | `0.4.1`（G1 已签收）；G2 已收档于 `framework-0.1.0` / `2b523de` |
-| 当前阶段 | **Stage 2 CLOSED（2026-11-04，审查结论：有条件通过）**：核心领域模型、单位/展开规则、版本固定、库存扣减、缺料与采购清单、计算记录快照、Repository 契约；Stage 3 未启动 |
+| 当前阶段 | **Stage 2 CLOSED（2026-11-04，审查结论：有条件通过）**：核心领域模型、单位/展开规则、版本固定、库存扣减、缺料与采购清单、计算记录快照、Repository 契约；**Schema 变更任务待执行**，Stage 3 未启动 |
 | 工程状态 | **13 模块**；Room schema **v1 / 31 表**（11 表 `DORMANT`）；食材 CRUD；配方展开/需求/缺口算法；Debug APK 可构建；**197 例 JVM 测试**（G2 基线），Stage 2 后合计 **264 例** |
 | 数据库 | **已创建**：schema v1（31 表），导出 `1.json`；本阶段未创建 v2、未改 Schema/Entity/DAO |
 | 构建基线 | AGP 8.13.0 / Kotlin 2.2.20 / Gradle 8.14.3 / JDK 21 / minSdk 26 / compile & target 36 |
@@ -92,12 +92,14 @@ feature/
 
 ## 决策状态（2026-11-04）
 
-已接受（10/18，负责人授权，见 [S0-05](docs/05-handover/S0-05-OWNER-SIGNOFF.md)）：
+已接受（12/18，负责人授权，见 [S0-05](docs/05-handover/S0-05-OWNER-SIGNOFF.md)）：
 
 - MB-D-001 接管基线与项目身份；
 - MB-D-002 范围冻结（五项功能；采购清单归 Inventory）；
 - MB-D-003 目标 13 模块；
 - MB-D-005 11 张休眠表保留并标 `DORMANT`；
+- MB-D-008 UI 视觉方向 A（专业厨房档案：暖中性 + Orange 强调）；
+- MB-D-009 导航 N1（酱汁/食材/菜谱/库存/扫码五个底部入口 + 顶栏设置）；
 - MB-D-013 子配方版本固定（发布时写入明确版本 ID）；
 - MB-D-014 库存扣减模式（先预览、确认后写流水）；
 - MB-D-015 可选配料缺料口径（默认不计缺口，详情可见）；
@@ -105,8 +107,8 @@ feature/
 - MB-D-017 计算记录快照（确认后不可变）；
 - MB-D-018 纯文档修正授权。
 
-仍为 `PROPOSED`（不得当作已批准，8 项）：MB-D-004 扫码 UI 归属、MB-D-006 测试口径、
-MB-D-007 备份一致性、MB-D-008/009 UI 视觉与导航、MB-D-010 CI、MB-D-011 真机、MB-D-012 签名。
+仍为 `PROPOSED`（不得当作已批准，6 项）：MB-D-004 扫码 UI 归属、MB-D-006 测试口径、
+MB-D-007 备份一致性、MB-D-010 CI、MB-D-011 真机、MB-D-012 签名。
 
 > G2 历史决策 `D-005`/`D-007` 与 MISEBASE 的 `MB-D-005`/`MB-D-007` 不是同一体系，禁止互相替代。
 > G2 的 `ACCEPTED` 不自动构成对应 `MB-D-*` 的 `ACCEPTED`；MB-D 状态以本仓库签收记录为准。
@@ -118,10 +120,12 @@ MB-D-007 备份一致性、MB-D-008/009 UI 视觉与导航、MB-D-010 CI、MB-D-
   （2026-11-04，有条件通过），未进入 Stage 3。
 - Stage 2 由 MB-S2-001 任务书授权启动；关闭记录见
   [MB-S2-06](docs/07-stage2/MB-S2-06-STAGE2-CLOSE-RECORD.md)。
-- **两项 Schema 变更请求待负责人决策**：计算记录持久化、`recipe_version.servings`；未实施。
+- **两项 Schema 变更请求已授权**（计算记录持久化、`recipe_version.servings`），合并为一次独立
+  Schema 变更任务，在 Stage 3 开始前执行；授权不等于已修改数据库，当前仍为 Schema v1。
+- **Schema 变更任务待执行**；Stage 3 未启动，须在 Schema 变更签收后才可启动。
 - **Stage 1/2 未做**：扫码 UI、视觉定稿、导航重排、备份/恢复实现修改、Schema v2、休眠表删除/迁移。
-- **仍为 PROPOSED 的阻塞项**：MB-D-007 未签收前备份一致性不得实现；MB-D-008/009 未签收前
-  不做视觉定稿与导航重排；MB-D-004 未签收前不新建 `feature:scan`。
+- **仍为 PROPOSED 的阻塞项**：MB-D-007 未签收前备份一致性不得实现；MB-D-004 未签收前不新建
+  `feature:scan`；MB-D-008/009 已签收，视觉与导航可在 Stage 3 任务书内细化（不得改变 IA）。
 - **G5 发布门禁**：Release keystore 未创建，不影响当前阶段。
 
 ## 文档
@@ -142,6 +146,8 @@ MB-D-007 备份一致性、MB-D-008/009 UI 视觉与导航、MB-D-010 CI、MB-D-
 - [Stage 2 Repository 契约](docs/07-stage2/MB-S2-04-REPOSITORY-CONTRACTS.md)
 - [Stage 2 决策映射](docs/07-stage2/MB-S2-05-DECISION-MAPPING.md)
 - [Stage 2 关闭记录](docs/07-stage2/MB-S2-06-STAGE2-CLOSE-RECORD.md)
+- [Schema 变更授权记录](docs/08-schema-change/MB-SC-00-AUTHORIZATION.md)
+- [UI 设计书 1.0.0](docs/design/MISEBASE-UI-DESIGN-SPEC.md)
 - [G2 收档文件](docs/00-governance/A-G2-001-G2-ARCHIVE.md)
 - [决策登记册](docs/00-governance/DECISION-REGISTER.md)
 - [MISEBASE 决策登记册](docs/05-handover/MB-S0-07-DECISION-REGISTER.md)

@@ -1,7 +1,7 @@
 # CULINARY 文档索引
 
 **文档编号**：GOV-INDEX
-**版本**：`0.19.0`
+**版本**：`0.20.0`
 **状态**：`Review`
 **日期**：2026-11-04
 **维护人**：首席架构师 / 技术负责人
@@ -96,6 +96,13 @@
 | [MB-S2-05 决策映射](../07-stage2/MB-S2-05-DECISION-MAPPING.md) | MB-D-013/014/015/016/017 的落地与 Schema 变更请求 |
 | [MB-S2-06 关闭记录](../07-stage2/MB-S2-06-STAGE2-CLOSE-RECORD.md) | 审查结论（有条件通过）、关闭前 HEAD、Schema 请求、关闭标签与未决事项 |
 
+### 2.3 设计与 Schema 变更授权（2026-11-04）
+
+| 文档 | 用途 |
+|---|---|
+| [UI 设计书 1.0.0](../design/MISEBASE-UI-DESIGN-SPEC.md) | 方向 A 已签收；导航 N1；视觉 token 与页面规范基线；页面级细化留 Stage 3 |
+| [MB-SC-00 Schema 变更授权](../08-schema-change/MB-SC-00-AUTHORIZATION.md) | 授权独立 Schema 变更任务：计算记录持久化 + `recipe_version.servings`；顺序与工程边界；**未实施** |
+
 ## 3. 图表
 
 | 文件 | 内容 |
@@ -148,3 +155,4 @@
 | 0.17.2 | 2026-11-04 | Stage 1 关闭：新增 MB-S1-10；记录关闭标签 | 接管工程组 |
 | 0.18.0 | 2026-11-04 | Stage 2：新增 MB-S2-01～05；执行报告状态 Review；记录 264 例测试与 Schema 变更请求 | 接管工程组 |
 | 0.19.0 | 2026-11-04 | Stage 2 关闭：新增 MB-S2-06；报告状态 CLOSED；统一 APK 字节数；记录关闭与 Stage 3 起点标签 | 接管工程组 |
+| 0.20.0 | 2026-11-04 | MB-DECISION-SIGN-002：UI 设计书 1.0.0（方向 A/N1）；新增 MB-SC-00 Schema 变更授权 | 接管工程组 |

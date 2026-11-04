@@ -1,7 +1,7 @@
 # MB-S2-01 Stage 2 执行报告
 
 **文档编号**：MB-S2-01
-**版本**：`1.1.0`
+**版本**：`1.1.1`
 **状态**：`CLOSED`
 **日期**：2026-11-04
 **阶段**：Stage 2（核心数据模型与业务规则）
@@ -29,8 +29,8 @@ Stage 2 在**不修改 Schema v1、不修改 Entity 字段、不新增表、不�
 | Schema / Entity / 迁移 | **0 变更**；Schema 仍 v1 / 31 表；11 张休眠表 0 新引用 |
 | 备份/恢复 | **0 变更** |
 | Compose / 导航 / 扫码 UI | **0 变更**；未新建模块 |
-| 决策状态 | 10/18 `ACCEPTED`；8 项仍 `PROPOSED`，边界未突破 |
-| 报告状态 | **`Review`**（不自动关闭 Stage 2） |
+| 决策状态 | 执行时 10/18 `ACCEPTED`、8 项 `PROPOSED`；2026-11-04 补签后为 12/18、6 项 |
+| 报告状态 | **`CLOSED`**（2026-11-04 关闭；见 [MB-S2-06](MB-S2-06-STAGE2-CLOSE-RECORD.md)） |
 
 **需要负责人裁决的两项 Schema 变更请求**（本阶段均未实施，只做到 DTO/契约）：
 
@@ -47,8 +47,8 @@ Stage 2 在**不修改 Schema v1、不修改 Entity 字段、不新增表、不�
 |---:|---|---|---|
 | 1 | 工作树 clean | PASS | `git status --porcelain` 空输出 |
 | 2 | HEAD 等于或严格后继于 stage2-start | PASS | HEAD `9922300` 严格后继 `b6a6d80`，领先 1 个签收提交 |
-| 3 | 10 项决策为 ACCEPTED | PASS | S0-05 §7、MB-S0-07 §5、README、MB-S1-10 §4 |
-| 4 | 8 项 PROPOSED 边界生效 | PASS | MB-D-007/008/009/004 对应实现均未触碰；MB-D-006/010/011/012 未写成已批准 |
+| 3 | 执行时 10 项决策为 ACCEPTED | PASS | S0-05 §7、MB-S0-07 §5、README、MB-S1-10 §4 |
+| 4 | 执行时 8 项 PROPOSED 边界生效 | PASS | MB-D-007/008/009/004 对应实现均未触碰；MB-D-006/010/011/012 未写成已批准 |
 | 5 | 模块集仍为 13 | PASS | `settings.gradle.kts` 未修改 |
 | 6 | Schema 仍 v1，无 v2/迁移 | PASS | `schemas/` 无变更；`1.json` 未修改 |
 
@@ -58,6 +58,9 @@ Stage 2 在**不修改 Schema v1、不修改 Entity 字段、不新增表、不�
 |---|---|
 | `ACCEPTED`（10） | MB-D-001、002、003、005、013、014、015、016、017、018 |
 | `PROPOSED`（8） | MB-D-004、006、007、008、009、010、011、012 |
+
+> 本表为 Stage 2 **执行时快照**。2026-11-04 后续签收 MB-D-008（A）、MB-D-009（N1）后，
+> 当前计数为 **12/18 ACCEPTED、6 项 PROPOSED**（见 [MB-S2-06](MB-S2-06-STAGE2-CLOSE-RECORD.md) §3）。
 
 本阶段实现**只依赖 10 项已接受决策**；`PROPOSED` 项未被写成已批准，也未据其实现视觉、导航、
 扫码 UI 或备份一致性修复。
@@ -213,8 +216,8 @@ M  core/database/dao/*.kt（仅新增查询/受约束更新）
 
 | # | 事项 | 级别 | 说明 |
 |---:|---|---|---|
-| 1 | 计算记录持久化需要 Schema 变更授权 | 中 | 现仅 DTO + 契约 + fake；建表/迁移未授权，未实施 |
-| 2 | `recipe_version.servings` 不存在 | 中 | 读取按 1 份/整批；自定义份数需 Schema 变更 |
+| 1 | 计算记录持久化 Schema 变更 | 中 | 已授权（[MB-SC-00](../08-schema-change/MB-SC-00-AUTHORIZATION.md)），待实施；现仅 DTO + 契约 + fake |
+| 2 | `recipe_version.servings` 不存在 | 中 | 已授权（MB-SC-00）与计算记录合并为一次 Schema 变更，待实施；当前读取按 1 份/整批 |
 | 3 | `SAUCE` 组成行无法映射为领域目标 | 低 | `RecipeMapper` 返回 `CUL-REP-004`；酱汁档案与嵌套在 Stage 3 落地 |
 | 4 | Repository 写操作的原子性依赖 Use Case 事务 | 中 | `appendIfAbsent`/`savePublished` 单次调用不在内部开事务；必须在 `TransactionRunner.write` 内调用（E02 §4.3） |
 | 5 | `getVersion` 映射失败时返回 `null` | 低 | 与既有端口签名一致，但会丢失错误码；Stage 3 可改为 `Outcome` |
@@ -240,3 +243,11 @@ M  core/database/dao/*.kt（仅新增查询/受约束更新）
 
 > **未进入 Stage 3。** 本阶段未开发 Compose 页面、未接 UI、未新建模块、未改 Schema/Entity/迁移、
 > 未改备份/恢复、未移动 `framework-0.1.0` 或任何既有 checkpoint 标签。
+
+## 12. 变更记录
+
+| 版本 | 日期 | 变更 | 作者 |
+|---|---|---|---|
+| 1.0.0 | 2026-11-04 | Stage 2 执行报告，状态 Review | 接管工程组 |
+| 1.1.0 | 2026-11-04 | 按 MB-S2-CLOSE-001 改为 CLOSED；补关闭提交与标签 | 接管工程组 |
+| 1.1.1 | 2026-11-04 | MB-DECISION-SIGN-002：修正 §1 报告状态为 CLOSED；两项 Schema 风险改为“已授权（MB-SC-00），待实施” | 接管工程组 |
