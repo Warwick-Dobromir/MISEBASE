@@ -239,8 +239,8 @@
 | 项 | 结果 |
 |---|---|
 | 构建 | `BUILD SUCCESSFUL in 1m 42s`（927 tasks；133 executed） |
-| JVM 测试 | **608 次执行 / 0 失败 / 0 跳过**（debug+release；约 304 个唯一用例） |
-| 基线 | 修改前 548 次执行 / 0 失败 |
+| JVM 测试 | **608 次执行 / 0 失败 / 0 跳过**；**374 个唯一用例**（debug+release；JVM 模块单变体、Compose 测试仅 debug） |
+| 基线（MB-BK-001 开始前） | **344 个唯一用例 / 548 次执行 / 0 失败**（与 Stage 3 关闭口径一致） |
 | 新增 | **30 个唯一用例（60 次执行）**，分布见 §8–§10 与 [Worker 记录](MB-BK-001-WORKER-TEST-RECORD.md) |
 | Debug APK | `app/build/outputs/apk/debug/app-debug.apk`，37,678,729 字节 |
 | ktlint | PASS |
@@ -249,7 +249,13 @@
 | 休眠表 | 11 张、0 处新业务引用、PASS |
 | 文档一致性 | PASS |
 
-测试数未下降（548 → 608）。
+测试数未下降（唯一用例 344 → 374；执行次数 548 → 608）。
+
+> **统计口径更正（MB-BK-001-CLARIFY-001）**：本报告初稿把“Stage 3 关闭”误写成 Stage 2 基线 274，
+> 并用“执行次数 ÷ 2”估算唯一用例数（得到约 304），两者都不正确。正确口径为：
+> Stage 3 关闭 344 → 本任务 374（+30）；608 次执行对应 374 个唯一用例，差异来自
+> JVM-only 模块单变体、Android 库 debug/release 双变体、Compose/UI 测试仅 debug。
+> 未删除任何测试；`git diff --diff-filter=D 3c3db1e..HEAD` 为空。
 
 ---
 
