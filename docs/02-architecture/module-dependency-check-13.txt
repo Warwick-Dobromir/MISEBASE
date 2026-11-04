@@ -1,4 +1,9 @@
-﻿# MISEBASE 13 模块依赖检查结果（生成物）
+# MISEBASE 13 模块依赖检查结果（生成物）
+
+> **Stage 5 规划说明（2026-11-05）**：本文件是 Stage 1 的 13 模块生成物，当前校验仍以 13 为期望值。
+> MB-D-004 已签收，Stage 5 起目标模块集为 14（新增 `feature:scan`）；届时需单独任务书调整
+> `settings.gradle.kts`、`config/module-dependencies.json` 与检查脚本期望值。本文件不据此修改。
+> 当前仍为 13，未创建 `feature:scan` 目录。
 
 生成时间：2026-11-04 19:23:37 +08:00
 

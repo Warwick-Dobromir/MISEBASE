@@ -1,11 +1,11 @@
 # CULINARY 模块拆分审查提案（15 模块）
 
 **文档编号**：A03A
-**版本**：`0.3.1`
-**状态**：`Approved`（G2 历史结论）；**MISEBASE 模块集已由 MB-D-003 修订为 13**
-**日期**：2026-11-04
+**版本**：`0.3.2`
+**状态**：`Approved`（G2 历史结论）；**MISEBASE Stage 1–4 为 13 模块，Stage 5 起为 14 模块**
+**日期**：2026-11-05
 **负责人**：首席架构师 / 技术负责人
-**关联决策**：D-004（ACCEPTED，G2）；MB-D-003（ACCEPTED，MISEBASE）
+**关联决策**：D-004（ACCEPTED，G2）；MB-D-003（ACCEPTED，Stage 1–4 的 13 模块）；MB-D-004（ACCEPTED，Stage 5 起新增 `feature:scan`）
 **配套文档**：[A03 模块职责与依赖关系](A03-MODULE-DEPENDENCIES.md)、[A02 整体架构](A02-SYSTEM-ARCHITECTURE.md)
 
 ---
@@ -13,7 +13,7 @@
 > **MISEBASE 修订说明（2026-11-04；MB-D-003 / MB-D-018 已接受）**
 >
 > 本文的「15 模块」是 G2 阶段的历史事实（D-004 ACCEPTED，基线 `framework-0.1.0` / `2b523de`），
-> 按 MB-D-018 **保留正文不改**。MISEBASE 的目标模块集是 **13 模块**，由 MB-D-003 修订：
+> 按 MB-D-018 **保留正文不改**。MISEBASE **Stage 1–4** 的目标模块集是 **13 模块**，由 MB-D-003 修订：
 >
 > | 变更 | 模块 | 说明 |
 > |---|---|---|
@@ -21,11 +21,23 @@
 > | 删除 | `feature:procurement` | 不建采购/到货/供应商；缺料清单归 Inventory |
 > | 缩减 | `feature:products` | 仅商品 / 包装规格 / 条码 / 食材映射；不含供应商管理、不含扫码 UI |
 > | 保留 | `app` + 6 core + 5 feature | `ingredients`、`sauces`、`recipes`、`inventory`、`settings` |
-> | 不新建 | `feature:scan` | 扫码 UI 归属（MB-D-004）仍 PROPOSED，Stage 1 不新建、不实现 |
+> | 不新建 | `feature:scan` | **Stage 1–4** 不新建、不实现；MB-D-004 已于 2026-11-05 签收，**Stage 5 起新增** |
 >
-> 13 = 15 − 2；这是 MISEBASE 的目标，不是对 G2 历史的改写。§4 表中第 11/13/14 行的职责描述
-> 按上表理解；其余职责、依赖方向与 §8.1 备份边界继续有效。实际落地与前后对照见
+> 13 = 15 − 2；这是 **Stage 1–4 的目标**，不是对 G2 历史的改写，也不是“13 是历史错误”。
+> Stage 5 起目标为 **14 = 13 + `feature:scan`**，见下方补充说明。
+> §4 表中第 11/13/14 行的职责描述按上表理解；其余职责、依赖方向与 §8.1 备份边界继续有效。实际落地与前后对照见
 > [MB-S1-02](../06-stage1/MB-S1-02-MODULE-ADJUSTMENT.md)。
+
+---
+
+> **MB-D-004 补充说明（2026-11-05，负责人签收）**
+>
+> - MB-D-003 的 **13 模块是 Stage 1–4 目标**，Stage 4 及之前实际为 13；不得把 13 写成历史错误；
+> - MB-D-004 签收后，**Stage 5 起模块集为 14**，新增独立 `feature:scan`；
+> - `feature:scan` 职责：扫码 UI、CameraX 生命周期、ML Kit 识别、去抖/一次性消费、识别结果展示；
+> - 识别结果通过**明确接口**交给业务模块；`feature:scan` 不直接依赖其他 feature；
+> - 食材创建/导入归 `feature:products`；库存操作归 `feature:inventory`；N1 五入口不变；
+> - 本次签收不创建目录、不改 `settings.gradle.kts`、不改依赖检查当前期望值，**不构成 Stage 5 开发授权**。
 
 ---
 
@@ -301,7 +313,7 @@ interface BackupStoragePort {
 | 8 | `:feature:ingredients` | 保留 | 食材库 |
 | 9 | `:feature:sauces` | 保留 | 酱汁库 |
 | 10 | `:feature:recipes` | 保留 | 菜谱库 |
-| 11 | `:feature:products` | **缩减** | 商品 / 包装规格 / 条码 / 食材映射；无供应商管理、无扫码 UI |
+| 11 | `:feature:products` | **缩减** | 商品 / 包装规格 / 条码 / 食材映射；无供应商管理；Stage 1–4 无扫码 UI，Stage 5 起扫码归 `feature:scan` |
 | 12 | `:feature:inventory` | 保留 | 库存、需求计算、缺料/采购清单（内部能力） |
 | 13 | `:feature:settings` | 保留 | 备份/恢复/诊断入口（后续阶段接线） |
 
@@ -309,7 +321,12 @@ interface BackupStoragePort {
 feature → `core:domain`/`core:designsystem`/`core:common`；core 内部保持单向。
 实测 13 节点 / 35 条声明边，拓扑排序无环（见 [MB-S1-02](../06-stage1/MB-S1-02-MODULE-ADJUSTMENT.md)）。
 
-**不新建**：`feature:scan`、`core:model`；扫码 UI 归属仍待 MB-D-004 签收。
+**Stage 5 目标模块集（14）**：在 Stage 1–4 的 13 模块之上新增
+`:feature:scan`（扫码 UI/CameraX/识别），依赖 `core:domain`/`core:designsystem`/`core:common`；
+识别结果经 app 导航或 domain 端口交给 `feature:products`（食材创建/导入）与
+`feature:inventory`（库存操作）。Stage 5 前仍为 13，未创建目录、未改构建脚本。
+
+**Stage 1–4 不新建**：`feature:scan`、`core:model`；Stage 5 起按 MB-D-004 新增 `feature:scan`。
 **不实现**：独立计划/采购/供应商页面与模块；采购清单不落 `purchase_order*` 表。
 
 ## 14. 变更记录
@@ -320,3 +337,4 @@ feature → `core:domain`/`core:designsystem`/`core:common`；core 内部保持�
 | 0.2.0 | 2026-11-04 | 按负责人意见改为 15 模块：model 并入 domain；sauces/recipes、products/inventory 保持独立；补完整职责表、依赖图与无环检查 | 架构组 |
 | 0.3.0 | 2026-11-04 | D-004 接受；补 platform/data 备份边界与 `BackupStoragePort`；状态改为 Approved | 架构组 |
 | 0.3.1 | 2026-11-04 | MISEBASE：顶部加 13 模块修订说明；§4 标注历史；新增 §13 目标模块集；保留 G2 正文 | 接管工程组 |
+| 0.3.2 | 2026-11-05 | MB-D-004 签收：明确 13 为 Stage 1–4 目标、Stage 5 起 14（新增 `feature:scan`）；补职责/接口原则与当前不创建边界 | 接管工程组 |

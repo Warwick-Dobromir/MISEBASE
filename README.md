@@ -6,8 +6,8 @@
 |---|---|
 | 品牌/项目名 | MISEBASE（包名暂留 `com.culinary`，发布前按 D-017/MB-D-001 决定） |
 | 架构基线 | `0.4.1`（G1 已签收）；G2 已收档于 `framework-0.1.0` / `2b523de` |
-| 当前阶段 | **Stage 4 Review（2026-11-05）**：库存与自动采购清单已实现，等待负责人审查；**不自动关闭 Stage 4、不进入 Stage 5**。MB-D-007 备份一致性已 CLOSED（2026-11-04） |
-| 工程状态 | **13 模块**；Room schema **v2 / 33 表**（11 表 `DORMANT`）；三大档案库 + Inventory 可用；扫码仍为占位；**660 次执行 / 416 唯一 JVM 用例 / 0 失败** |
+| 当前阶段 | **Stage 4 CLOSED（2026-11-05，有条件通过）**；Stage 5 **未授权**，等待单独任务书。MB-D-007 备份一致性已 CLOSED（2026-11-04） |
+| 工程状态 | **13 模块（Stage 1–4）**；Stage 5 起目标 **14 模块**（新增 `feature:scan`，当前未创建）；Room schema **v2 / 33 表**（11 表 `DORMANT`）；三大档案库 + Inventory 可用；扫码仍为占位；**660 次执行 / 416 唯一 JVM 用例 / 0 失败** |
 | 数据库 | **已创建**：schema v2（33 表），导出 `1.json`、`2.json`；`1→2` 迁移已落地；本次备份一致性修复未改 Schema/Entity/DAO |
 | 构建基线 | AGP 8.13.0 / Kotlin 2.2.20 / Gradle 8.14.3 / JDK 21 / minSdk 26 / compile & target 36 |
 | 依赖注入 | Hilt 2.57.2 + KSP（D-012 `ACCEPTED`，禁止 2.59+） |
@@ -42,7 +42,10 @@ sdk.dir=C\:\\Users\\<user>\\AppData\\Local\\Android\\Sdk
 依赖仓库为镜像优先、官方回退（R02 §6.3）；`build-logic` 额外需要 Gradle Plugin Portal
 （ktlint-gradle 未同步到镜像）。
 
-## 13 模块（MB-D-003 ACCEPTED，MISEBASE 目标）
+## 13 模块（MB-D-003 ACCEPTED，Stage 1–4 目标）
+
+> **Stage 5 目标为 14 模块**：MB-D-004 已于 2026-11-05 签收，Stage 5 起新增 `feature:scan`
+>（扫码 UI/CameraX/识别）。当前仍为 13，未实际创建该目录，`settings.gradle.kts` 未改动。
 
 ```text
 app
@@ -62,8 +65,9 @@ feature/
 计划/采购不再作为独立模块。依赖检查实测 **13 节点 / 35 条声明边**，拓扑排序无环。
 
 `feature:products` 的范围是**商品 / 包装规格 / 条码 / 食材映射**，为扫码与库存提供商品主数据；
-**不包含供应商管理**，也**不包含扫码 UI**（扫码 UI 归属仍为 MB-D-004 `PROPOSED`，Stage 1 未新建
-`feature:scan`，未实现扫码页面）。
+**不包含供应商管理**。Stage 1–4 不包含扫码 UI；MB-D-004 已签收后，Stage 5 起扫码 UI/相机/识别
+归 `feature:scan`，识别结果通过明确接口交给业务模块（食材创建/导入仍归 `feature:products`，
+库存操作仍归 `feature:inventory`）。
 
 ## 架构边界
 
@@ -93,17 +97,19 @@ feature/
   `check-doc-consistency.ps1`。
 - Git：每个阶段打 `checkpoint/*` 与 `baseline/*` 标签，见 [E04](docs/03-engineering/E04-GIT-ROLLBACK.md)。
 
-## 决策状态（2026-11-04）
+## 决策状态（2026-11-05）
 
-已接受（13/18，负责人授权，见 [S0-05](docs/05-handover/S0-05-OWNER-SIGNOFF.md)）：
+已接受（15/18，负责人授权，见 [S0-05](docs/05-handover/S0-05-OWNER-SIGNOFF.md)）：
 
 - MB-D-001 接管基线与项目身份；
 - MB-D-002 范围冻结（五项功能；采购清单归 Inventory）；
-- MB-D-003 目标 13 模块；
+- MB-D-003 Stage 1–4 目标 13 模块；
+- MB-D-004 扫码 UI 归属：新建独立 `feature:scan`；Stage 5 起模块集为 14；
 - MB-D-005 11 张休眠表保留并标 `DORMANT`；
 - MB-D-007 备份一致性（**已 CLOSED，2026-11-04 审查通过**；Stage 4 前置已满足）；
 - MB-D-008 UI 视觉方向 A（专业厨房档案：暖中性 + Orange 强调）；
 - MB-D-009 导航 N1（酱汁/食材/菜谱/库存/扫码五个底部入口 + 顶栏设置）；
+- MB-D-011 真机验证设备：至少一台真机，API 26+（推荐 33+）；模拟器不可替代；保留测试记录；
 - MB-D-013 子配方版本固定（发布时写入明确版本 ID）；
 - MB-D-014 库存扣减模式（先预览、确认后写流水）；
 - MB-D-015 可选配料缺料口径（默认不计缺口，详情可见）；
@@ -111,8 +117,11 @@ feature/
 - MB-D-017 计算记录快照（确认后不可变）；
 - MB-D-018 纯文档修正授权。
 
-仍为 `PROPOSED`（不得当作已批准，5 项）：MB-D-004 扫码 UI 归属、MB-D-006 测试口径、
-MB-D-010 CI、MB-D-011 真机、MB-D-012 签名。
+仍为 `PROPOSED`（不得当作已批准，3 项）：MB-D-006 测试口径、MB-D-010 CI、MB-D-012 签名。
+
+> 2026-11-05 补记：MB-D-004（新建 `feature:scan`，Stage 5 起 14 模块）与 MB-D-011（真机验证要求）
+> 已由负责人签收为 `ACCEPTED`。本次签收**不创建 `feature:scan`、不改模块集、不构成 Stage 5
+> 开发或真机测试授权**；Stage 5 仍需单独任务书。
 
 > 历史记录：本次签收之前，MB-D-007 仍为 `PROPOSED`；2026-11-04 已由负责人签收为 `ACCEPTED`，
 > 并作为 Stage 4 强制前置；同日完成 MB-BK-001/002 并通过审查，状态更新为 **`CLOSED`**。
@@ -123,14 +132,14 @@ MB-D-010 CI、MB-D-011 真机、MB-D-012 签名。
 ## 当前状态与未决
 
 - **G2 阶段 1–9** 已完成并归档；`framework-0.1.0` 固定在 `2b523de`，未移动。
-- **Stage 0/1/2/3 均已关闭**；Schema 变更任务已关闭（v2 / 33 表）；三大档案库可用。
-- **Stage 4 状态为 Review（2026-11-05）**：库存总览/详情/入库/出库/调整/流水、需求汇总与缺口、采购清单 CSV、计算记录回放、酱汁图展开、编辑器组成行只读保护已完成；库存底部入口为真实页面，扫码仍为占位。详见
-  [Stage 4 执行报告](docs/11-stage4/MB-S4-01-EXECUTION-REPORT.md)；本报告不构成 Stage 4 关闭或 Stage 5 启动授权。
+- **Stage 0/1/2/3/4 均已关闭**；Schema 变更任务已关闭（v2 / 33 表）；三大档案库与 Inventory 可用。
+- **Stage 4 状态为 CLOSED（2026-11-05，有条件通过）**：库存总览/详情/入库/出库/调整/流水、需求汇总与缺口、采购清单 CSV、计算记录回放、酱汁图展开、编辑器组成行只读保护已完成；库存底部入口为真实页面，扫码仍为占位。详见
+  [Stage 4 关闭记录](docs/11-stage4/MB-S4-CLOSE-RECORD.md)；Stage 5 **未授权**。
 - **MB-D-007 已 CLOSED（2026-11-04，审查通过）**：六项技术事项、Schema 版本阻断修复、
   `612 / 376 / 0` 基线测试与 v2 检查点均已落库；详见
   [MB-D-007 关闭记录](docs/10-backup/MB-D-007-CLOSE-RECORD.md)。
-- **仍为 PROPOSED 的阻塞项**：MB-D-004 未签收前不新建 `feature:scan`；MB-D-010 CI、
-  MB-D-011 真机、MB-D-012 签名仍未签收。
+- **Stage 5 起模块集为 14**：新增 `feature:scan`；当前仍为 13，**未实际创建目录**，`settings.gradle.kts` 未改。
+- **仍为 PROPOSED 的阻塞项**：MB-D-006 测试口径、MB-D-010 CI、MB-D-012 签名。
 - 保留项：附件恢复、SAF 目标、生产自动备份触发点未接线；真机 kill/断电未验证；
   目录 fsync 为 best-effort；v1 测试夹具为反向构造。
 - **G5 发布门禁**：Release keystore 未创建，不影响当前阶段。
@@ -154,7 +163,9 @@ MB-D-010 CI、MB-D-011 真机、MB-D-012 签名。
 - [Stage 2 决策映射](docs/07-stage2/MB-S2-05-DECISION-MAPPING.md)
 - [Stage 2 关闭记录](docs/07-stage2/MB-S2-06-STAGE2-CLOSE-RECORD.md)
 - [Schema 变更授权记录](docs/08-schema-change/MB-SC-00-AUTHORIZATION.md)
-- [Stage 4 执行报告（Review）](docs/11-stage4/MB-S4-01-EXECUTION-REPORT.md)
+- [Stage 4 执行报告（CLOSED）](docs/11-stage4/MB-S4-01-EXECUTION-REPORT.md)
+- [Stage 4 关闭记录](docs/11-stage4/MB-S4-CLOSE-RECORD.md)
+- [MB-D-004 / MB-D-011 签收授权记录](docs/12-stage5/MB-D-004-011-AUTHORIZATION.md)
 - [Stage 4 库存页面说明](docs/11-stage4/MB-S4-02-INVENTORY-PAGES.md)
 - [Stage 4 需求汇总与缺口](docs/11-stage4/MB-S4-03-REQUIREMENT-GAP.md)
 - [Stage 4 采购清单](docs/11-stage4/MB-S4-04-PURCHASE-LIST.md)
