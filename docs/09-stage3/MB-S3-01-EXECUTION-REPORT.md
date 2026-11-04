@@ -202,7 +202,7 @@ Stage 3 在既有 Schema v2（33 表）、13 模块与已签收的 MB-D-008 A / 
 | 10 | `0779c04` | `docs(stage3): record stage 3 execution report and index` |
 | 11 | `3168d96` | `docs(stage3): fill checkpoint receipt with tag object and resolved commit` |
 | 12 | `02f7424` | `chore(domain): clean dormant-table false positives authorized by schema close` |
-| 13 | `cf61e10` | `docs(stage3): record dormant scan resolution`（检查点解析提交） |
+| 13 | 本次报告提交 | `docs(stage3): finalize stage 3 checkpoint report`（检查点解析提交；完整哈希见 MB-S3-09 回执） |
 
 ### 12.2 范围统计（`b7f2938..HEAD`，不含文档提交）
 
@@ -245,8 +245,8 @@ Stage 3 在既有 Schema v2（33 表）、13 模块与已签收的 MB-D-008 A / 
 |---|---|
 | 标签 | `checkpoint/misebase-stage3-20261104` |
 | 类型 | annotated tag |
-| 对象哈希 | `e31e45fd6c996fa240cd5eb8432bc217f37baf43` |
-| 解析提交 | `cf61e10159b5c9e1f240c8ff8d4721914bacb644` |
+| 对象哈希 | 见 MB-S3-09 回执（标签创建后记录） |
+| 解析提交 | 本次报告提交（完整哈希见 MB-S3-09 回执） |
 | 回执 | [MB-S3-09 检查点回执](MB-S3-09-CHECKPOINT-RECEIPT.md) |
 | 既有标签 | `framework-0.1.0` 与全部既有 `checkpoint/*` / `baseline/*` 未移动 |
 
