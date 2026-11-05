@@ -136,7 +136,7 @@
 
 ## 6. 修改文件清单
 
-### 6.1 新增（19）
+### 6.1 新增（35）
 
 ```text
 core/designsystem/NOTICE
@@ -158,7 +158,7 @@ docs/16-ui/evidence/*.png（21 张）
 
 （`docs/16-ui/` 与系统栏主题为本次新增；其余新增为设计系统拆分文件。）
 
-### 6.2 修改（37 个 Kotlin / 资源配置）
+### 6.2 修改（50 个代码 / 资源 / 文档）
 
 - DS：`theme/Color.kt`、`Type.kt`、`Shape.kt`、`Dimens.kt`、`Theme.kt`、
   `icon/CulinaryIcons.kt`、`component/CulinaryComponents.kt`、`DesignSystemTokensTest.kt`；
@@ -274,7 +274,7 @@ docs/16-ui/evidence/*.png（21 张）
 | `9f92f6a` | Stage 3：首页重构 + 刷新/错误码修正 |
 | `364491a` | Stage 4：全局页面统一 |
 | `52954a8` | Stage 5：顶栏/底栏/页面切换 |
-| `<本次>` | Stage 6：系统栏主题、文档、验收证据 |
+| `89e7b55` | Stage 6：系统栏主题、首页/流水细节、文档与验收证据 |
 
 回档点：`checkpoint/mb-ui-001-start-20261105`（`ac60690`）。
 
