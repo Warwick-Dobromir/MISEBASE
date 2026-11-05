@@ -88,7 +88,6 @@ class NavigationShellTest {
         compose.setContent {
             CulinaryTheme {
                 AppTopBar(
-                    currentRoute = INVENTORY_ROUTE,
                     topLevel = CulinaryDestination.INVENTORY,
                     showBack = false,
                     onOpenHome = {},
@@ -97,7 +96,6 @@ class NavigationShellTest {
             }
         }
 
-        compose.onNodeWithText("库存").assertIsDisplayed()
         compose.onNodeWithContentDescription("设置").assertDoesNotExist()
         compose.onNodeWithContentDescription("返回首页").assertIsDisplayed()
     }
@@ -108,7 +106,6 @@ class NavigationShellTest {
         compose.setContent {
             CulinaryTheme {
                 AppTopBar(
-                    currentRoute = INVENTORY_ROUTE,
                     topLevel = CulinaryDestination.INVENTORY,
                     showBack = false,
                     onOpenHome = { openedHome = true },
@@ -127,7 +124,6 @@ class NavigationShellTest {
         compose.setContent {
             CulinaryTheme {
                 AppTopBar(
-                    currentRoute = "sauces/{sauceId}",
                     topLevel = null,
                     showBack = true,
                     onOpenHome = {},
@@ -145,7 +141,6 @@ class NavigationShellTest {
         compose.setContent {
             CulinaryTheme {
                 AppTopBar(
-                    currentRoute = LIBRARY_ROUTE,
                     topLevel = CulinaryDestination.LIBRARY,
                     showBack = false,
                     onOpenHome = {},
@@ -154,7 +149,7 @@ class NavigationShellTest {
             }
         }
 
-        compose.onNodeWithText("知识库").assertIsDisplayed()
+        compose.onNodeWithContentDescription("返回首页").assertIsDisplayed()
         compose.onNodeWithContentDescription("设置").assertDoesNotExist()
     }
 
@@ -163,7 +158,6 @@ class NavigationShellTest {
         compose.setContent {
             CulinaryTheme {
                 AppTopBar(
-                    currentRoute = SCAN_ROUTE,
                     topLevel = CulinaryDestination.SCAN,
                     showBack = false,
                     onOpenHome = {},
@@ -172,7 +166,7 @@ class NavigationShellTest {
             }
         }
 
-        compose.onNodeWithText("扫码").assertIsDisplayed()
+        compose.onNodeWithContentDescription("返回首页").assertIsDisplayed()
         compose.onNodeWithContentDescription("设置").assertDoesNotExist()
     }
 }

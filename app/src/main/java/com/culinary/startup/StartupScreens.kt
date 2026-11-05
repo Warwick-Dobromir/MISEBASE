@@ -2,9 +2,12 @@ package com.culinary.startup
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Button
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -16,19 +19,32 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.culinary.R
 import com.culinary.core.data.startup.RecoveryReason
+import com.culinary.core.designsystem.component.CulinaryButton
+import com.culinary.core.designsystem.component.CulinaryRule
+import com.culinary.core.designsystem.component.Eyebrow
+import com.culinary.core.designsystem.theme.CulinarySpacing
+import com.culinary.core.designsystem.theme.CulinaryTextStyles
 
+/** 启动加载页：极简居中，不用全屏插画。 */
 @Composable
 fun StartupLoadingScreen(modifier: Modifier = Modifier) {
     Column(
-        modifier = modifier.fillMaxSize(),
+        modifier = modifier.fillMaxSize().padding(CulinarySpacing.lg),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
-        CircularProgressIndicator()
+        Eyebrow(text = stringResource(R.string.app_name))
+        Spacer(modifier = Modifier.height(CulinarySpacing.xl))
+        CircularProgressIndicator(
+            modifier = Modifier.size(24.dp),
+            strokeWidth = 1.5.dp,
+            color = MaterialTheme.colorScheme.secondary,
+        )
+        Spacer(modifier = Modifier.height(CulinarySpacing.md))
         Text(
             text = stringResource(R.string.startup_loading),
-            modifier = Modifier.padding(top = 16.dp),
-            style = MaterialTheme.typography.bodyLarge,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
 }
@@ -59,9 +75,10 @@ fun RecoveryScreen(
         body = stringResource(R.string.startup_recovery_body, reason.name),
         modifier = modifier,
         action = {
-            Button(onClick = onRetry) {
-                Text(text = stringResource(R.string.action_retry))
-            }
+            CulinaryButton(
+                text = stringResource(R.string.action_retry),
+                onClick = onRetry,
+            )
         },
     )
 }
@@ -77,22 +94,26 @@ private fun CenteredMessage(
         modifier =
             modifier
                 .fillMaxSize()
-                .padding(24.dp),
+                .padding(CulinarySpacing.lg),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
+        CulinaryRule(modifier = Modifier.fillMaxWidth())
+        Spacer(modifier = Modifier.height(CulinarySpacing.lg))
         Text(
             text = title,
-            style = MaterialTheme.typography.headlineSmall,
+            style = CulinaryTextStyles.pageTitle,
+            color = MaterialTheme.colorScheme.onSurface,
             textAlign = TextAlign.Center,
         )
+        Spacer(modifier = Modifier.height(CulinarySpacing.sm))
         Text(
             text = body,
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
-            modifier = Modifier.padding(top = 12.dp, bottom = 20.dp),
         )
+        Spacer(modifier = Modifier.height(CulinarySpacing.lg))
         action?.invoke()
     }
 }

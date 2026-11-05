@@ -12,6 +12,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.culinary.core.designsystem.component.ArchiveListItem
+import com.culinary.core.designsystem.component.CollectionHeader
 import com.culinary.core.designsystem.component.CulinaryButton
 import com.culinary.core.designsystem.component.EmptyState
 import com.culinary.core.designsystem.component.ErrorBanner
@@ -28,6 +29,7 @@ fun RecipesRoute(
     onOpenRecipe: (String) -> Unit,
     onAddRecipe: () -> Unit,
     modifier: Modifier = Modifier,
+    compactHeader: Boolean = false,
     viewModel: RecipesListViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -37,6 +39,7 @@ fun RecipesRoute(
         onOpenRecipe = onOpenRecipe,
         onAddRecipe = onAddRecipe,
         modifier = modifier,
+        compactHeader = compactHeader,
     )
 }
 
@@ -46,20 +49,35 @@ internal fun RecipesScreen(
     onOpenRecipe: (String) -> Unit,
     onAddRecipe: () -> Unit,
     modifier: Modifier = Modifier,
+    compactHeader: Boolean = false,
 ) {
     Column(modifier = modifier.fillMaxSize()) {
-        PageHeader(
-            eyebrow = EYEBROW,
-            title = stringResource(R.string.recipes_title),
-            supporting = stringResource(R.string.recipes_count, state.rows.size),
-            actions = {
-                CulinaryButton(
-                    text = stringResource(R.string.recipes_new),
-                    onClick = onAddRecipe,
-                    icon = CulinaryIcons.Add,
-                )
-            },
-        )
+        if (compactHeader) {
+            CollectionHeader(
+                title = stringResource(R.string.recipes_title),
+                supporting = stringResource(R.string.recipes_count, state.rows.size),
+                action = {
+                    CulinaryButton(
+                        text = stringResource(R.string.recipes_new),
+                        onClick = onAddRecipe,
+                        icon = CulinaryIcons.Add,
+                    )
+                },
+            )
+        } else {
+            PageHeader(
+                eyebrow = EYEBROW,
+                title = stringResource(R.string.recipes_title),
+                supporting = stringResource(R.string.recipes_count, state.rows.size),
+                actions = {
+                    CulinaryButton(
+                        text = stringResource(R.string.recipes_new),
+                        onClick = onAddRecipe,
+                        icon = CulinaryIcons.Add,
+                    )
+                },
+            )
+        }
 
         state.error?.let { message ->
             ErrorBanner(

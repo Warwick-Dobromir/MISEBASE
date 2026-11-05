@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -16,6 +17,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
 import com.culinary.core.designsystem.theme.CulinarySizes
 import com.culinary.core.designsystem.theme.CulinarySpacing
 import com.culinary.core.designsystem.theme.CulinaryTextStyles
@@ -113,6 +115,53 @@ fun BrandBar(
                 style = CulinaryTextStyles.eyebrow,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
+        }
+    }
+}
+
+/**
+ * 聚合页中的区块头部：比 PageHeader 低一级。
+ *
+ * 知识库聚合页已有页面标题「知识库」，三个库列表不再重复 PageHeader，
+ * 改用本组件形成「页面标题 → 分段控件 → 区块标题」的三级层级。
+ */
+@Composable
+fun CollectionHeader(
+    title: String,
+    supporting: String?,
+    modifier: Modifier = Modifier,
+    action: (@Composable () -> Unit)? = null,
+) {
+    Row(
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .padding(
+                    start = CulinarySpacing.pageHorizontal,
+                    end = CulinarySpacing.pageHorizontal,
+                    top = CulinarySpacing.lg,
+                    bottom = CulinarySpacing.sm,
+                ),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = title,
+                style = CulinaryTextStyles.sectionTitle,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            if (!supporting.isNullOrBlank()) {
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    text = supporting,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+        if (action != null) {
+            Spacer(modifier = Modifier.width(CulinarySpacing.xs))
+            action()
         }
     }
 }

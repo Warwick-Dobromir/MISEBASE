@@ -1,13 +1,16 @@
 package com.culinary.navigation
 
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -15,6 +18,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
@@ -25,6 +29,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.culinary.R
+import com.culinary.core.designsystem.component.CulinaryIconButton
 import com.culinary.core.designsystem.icon.CulinaryIcons
 import com.culinary.feature.ingredients.IngredientDetailRoute
 import com.culinary.feature.ingredients.IngredientEditorRoute
@@ -81,13 +86,18 @@ fun CulinaryNavHost(
         topBar = {
             // 首页自带品牌区；其他页面保留返回/品牌 + 标题。
             if (!isHome) {
-                AppTopBar(
-                    currentRoute = currentRoute,
-                    topLevel = topLevel,
-                    showBack = !showBottomBar && currentRoute != null,
-                    onOpenHome = { navController.openHome() },
-                    onBack = { navController.popBackStack() },
-                )
+                Column {
+                    AppTopBar(
+                        topLevel = topLevel,
+                        showBack = !showBottomBar && currentRoute != null,
+                        onOpenHome = { navController.openHome() },
+                        onBack = { navController.popBackStack() },
+                    )
+                    HorizontalDivider(
+                        thickness = 1.dp,
+                        color = MaterialTheme.colorScheme.outlineVariant,
+                    )
+                }
             }
         },
         bottomBar = {
@@ -101,7 +111,11 @@ fun CulinaryNavHost(
     ) { padding ->
         AppNavGraph(
             navController = navController,
-            modifier = Modifier.fillMaxSize().padding(padding),
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+                    .imePadding(),
         )
     }
 }
@@ -109,39 +123,34 @@ fun CulinaryNavHost(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun AppTopBar(
-    currentRoute: String?,
     topLevel: CulinaryDestination?,
     showBack: Boolean,
     onOpenHome: () -> Unit,
     onBack: () -> Unit,
 ) {
     TopAppBar(
-        title = { Text(text = titleFor(currentRoute = currentRoute, topLevel = topLevel)) },
+        title = {},
         navigationIcon = {
             when {
                 showBack ->
-                    IconButton(onClick = onBack) {
-                        Icon(
-                            imageVector = CulinaryIcons.Back,
-                            contentDescription = stringResource(R.string.action_back),
-                        )
-                    }
+                    CulinaryIconButton(
+                        icon = CulinaryIcons.Back,
+                        contentDescription = stringResource(R.string.action_back),
+                        onClick = onBack,
+                    )
 
                 topLevel != null ->
-                    IconButton(onClick = onOpenHome) {
-                        Icon(
-                            imageVector = CulinaryIcons.ChefHat,
-                            contentDescription = stringResource(R.string.home_brand_home),
-                            tint = MaterialTheme.colorScheme.primary,
-                        )
-                    }
+                    CulinaryIconButton(
+                        icon = CulinaryIcons.ChefHat,
+                        contentDescription = stringResource(R.string.home_brand_home),
+                        onClick = onOpenHome,
+                        tint = MaterialTheme.colorScheme.onSurface,
+                    )
             }
         },
         colors =
             TopAppBarDefaults.topAppBarColors(
-                containerColor = MaterialTheme.colorScheme.surface,
-                titleContentColor = MaterialTheme.colorScheme.onSurface,
-                navigationIconContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                containerColor = MaterialTheme.colorScheme.background,
             ),
     )
 }
@@ -155,6 +164,10 @@ private fun AppNavGraph(
         navController = navController,
         startDestination = APP_START_ROUTE,
         modifier = modifier,
+        enterTransition = { fadeIn(animationSpec = tween(durationMillis = 160)) },
+        exitTransition = { fadeOut(animationSpec = tween(durationMillis = 120)) },
+        popEnterTransition = { fadeIn(animationSpec = tween(durationMillis = 160)) },
+        popExitTransition = { fadeOut(animationSpec = tween(durationMillis = 120)) },
     ) {
         homeGraph(navController)
         libraryGraph(navController)
@@ -381,20 +394,3 @@ private object NavigationProcessState {
         return true
     }
 }
-
-@Composable
-private fun titleFor(
-    currentRoute: String?,
-    topLevel: CulinaryDestination?,
-): String =
-    when {
-        topLevel != null -> stringResource(topLevel.labelRes)
-        currentRoute == null -> stringResource(R.string.app_name)
-        currentRoute.startsWith("sauces") -> stringResource(R.string.destination_sauces)
-        currentRoute.startsWith("ingredients") -> stringResource(R.string.destination_ingredients)
-        currentRoute.startsWith("recipes") -> stringResource(R.string.destination_recipes)
-        currentRoute.startsWith("inventory") -> stringResource(R.string.destination_inventory)
-        currentRoute == ScanRoutes.CONFIRM -> stringResource(R.string.scan_confirm_title)
-        currentRoute.startsWith(SCAN_ROUTE) -> stringResource(R.string.destination_scan)
-        else -> stringResource(R.string.app_name)
-    }

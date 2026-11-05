@@ -12,6 +12,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.culinary.core.designsystem.component.ArchiveListItem
+import com.culinary.core.designsystem.component.CollectionHeader
 import com.culinary.core.designsystem.component.CulinaryButton
 import com.culinary.core.designsystem.component.EmptyState
 import com.culinary.core.designsystem.component.ErrorBanner
@@ -28,6 +29,7 @@ fun IngredientsRoute(
     onOpenIngredient: (String) -> Unit,
     onAddIngredient: () -> Unit,
     modifier: Modifier = Modifier,
+    compactHeader: Boolean = false,
     viewModel: IngredientsListViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -37,6 +39,7 @@ fun IngredientsRoute(
         onOpenIngredient = onOpenIngredient,
         onAddIngredient = onAddIngredient,
         modifier = modifier,
+        compactHeader = compactHeader,
     )
 }
 
@@ -46,20 +49,35 @@ internal fun IngredientsScreen(
     onOpenIngredient: (String) -> Unit,
     onAddIngredient: () -> Unit,
     modifier: Modifier = Modifier,
+    compactHeader: Boolean = false,
 ) {
     Column(modifier = modifier.fillMaxSize()) {
-        PageHeader(
-            eyebrow = EYEBROW,
-            title = stringResource(R.string.ingredients_title),
-            supporting = stringResource(R.string.ingredients_count, state.rows.size),
-            actions = {
-                CulinaryButton(
-                    text = stringResource(R.string.ingredients_new),
-                    onClick = onAddIngredient,
-                    icon = CulinaryIcons.Add,
-                )
-            },
-        )
+        if (compactHeader) {
+            CollectionHeader(
+                title = stringResource(R.string.ingredients_title),
+                supporting = stringResource(R.string.ingredients_count, state.rows.size),
+                action = {
+                    CulinaryButton(
+                        text = stringResource(R.string.ingredients_new),
+                        onClick = onAddIngredient,
+                        icon = CulinaryIcons.Add,
+                    )
+                },
+            )
+        } else {
+            PageHeader(
+                eyebrow = EYEBROW,
+                title = stringResource(R.string.ingredients_title),
+                supporting = stringResource(R.string.ingredients_count, state.rows.size),
+                actions = {
+                    CulinaryButton(
+                        text = stringResource(R.string.ingredients_new),
+                        onClick = onAddIngredient,
+                        icon = CulinaryIcons.Add,
+                    )
+                },
+            )
+        }
 
         state.error?.let { message ->
             ErrorBanner(

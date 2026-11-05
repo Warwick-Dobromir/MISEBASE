@@ -8,7 +8,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import com.culinary.R
 import com.culinary.core.designsystem.component.CulinarySegmentedControl
+import com.culinary.core.designsystem.component.PageHeader
 import com.culinary.core.designsystem.theme.CulinarySpacing
 
 /**
@@ -26,6 +28,10 @@ fun LibraryScreen(
 ) {
     val tabs = LibraryTab.entries
     Column(modifier = modifier.fillMaxSize()) {
+        PageHeader(
+            eyebrow = "LIBRARY",
+            title = stringResource(R.string.destination_library),
+        )
         CulinarySegmentedControl(
             options = tabs.map { stringResource(it.labelRes) },
             selectedIndex = tabs.indexOf(selectedTab),

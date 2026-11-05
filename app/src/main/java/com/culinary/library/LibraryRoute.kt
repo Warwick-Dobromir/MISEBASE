@@ -42,6 +42,7 @@ fun LibraryRoute(
                     onOpenSauce = onOpenSauce,
                     onAddSauce = onAddSauce,
                     modifier = Modifier.fillMaxSize(),
+                    compactHeader = true,
                 )
 
             LibraryTab.INGREDIENTS ->
@@ -49,6 +50,7 @@ fun LibraryRoute(
                     onOpenIngredient = onOpenIngredient,
                     onAddIngredient = onAddIngredient,
                     modifier = Modifier.fillMaxSize(),
+                    compactHeader = true,
                 )
 
             LibraryTab.RECIPES ->
@@ -56,6 +58,7 @@ fun LibraryRoute(
                     onOpenRecipe = onOpenRecipe,
                     onAddRecipe = onAddRecipe,
                     modifier = Modifier.fillMaxSize(),
+                    compactHeader = true,
                 )
         }
     }

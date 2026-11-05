@@ -7,7 +7,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
@@ -24,7 +24,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -32,16 +31,17 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.culinary.core.designsystem.icon.CulinaryIcons
 
-private val BarHeight: Dp = 96.dp
-private val BarBaseHeight: Dp = 80.dp
-private val ScanButtonSize: Dp = 56.dp
-private val ScanButtonLift: Dp = 16.dp
+private val BarHeight: Dp = 88.dp
+private val BarBaseHeight: Dp = 68.dp
+private val ScanButtonSize: Dp = 52.dp
 
 /**
- * N3 底部导航：首页 / 知识库 / 扫码（中央凸起）/ 库存 / 设置。
+ * N3 底部导航（MB-UI-001 §3.9 / Stage 5）。
  *
- * 自定义布局而不是 Material NavigationBar：中央扫码按钮需要凸起圆形，
- * 但仍保留 5 个可选中项与 ≥48dp 的点击区域。
+ * 编辑式极简处理：
+ * - 顶边一条 1dp 细线，无阴影、无选中胶囊；
+ * - 选中项用香槟金下划线 + 主文字色，未选中用次级灰；
+ * - 中央扫码保留凸起圆形主按钮（香槟金底 + 炭墨图标），不依赖阴影也能被识别。
  */
 @Composable
 fun CulinaryBottomBar(
@@ -55,12 +55,11 @@ fun CulinaryBottomBar(
                 .background(MaterialTheme.colorScheme.surface)
                 .navigationBarsPadding(),
     ) {
+        HorizontalDivider(
+            thickness = 1.dp,
+            color = MaterialTheme.colorScheme.outlineVariant,
+        )
         Box(modifier = Modifier.fillMaxWidth().height(BarHeight)) {
-            HorizontalDivider(
-                modifier = Modifier.align(Alignment.TopCenter).padding(top = ScanButtonLift),
-                thickness = 1.dp,
-                color = MaterialTheme.colorScheme.outlineVariant,
-            )
             Row(
                 modifier =
                     Modifier
@@ -101,49 +100,47 @@ private fun BottomBarItem(
 ) {
     val contentColor =
         if (selected) {
-            MaterialTheme.colorScheme.primary
+            MaterialTheme.colorScheme.onSurface
         } else {
             MaterialTheme.colorScheme.onSurfaceVariant
         }
     Column(
         modifier =
             modifier
-                .fillMaxHeight()
+                .fillMaxSize()
                 .selectable(
                     selected = selected,
                     role = Role.Tab,
                     onClick = onClick,
-                ),
+                ).padding(top = 6.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
-        Box(
-            modifier =
-                Modifier
-                    .width(44.dp)
-                    .height(28.dp)
-                    .clip(CircleShape)
-                    .background(
-                        if (selected) {
-                            MaterialTheme.colorScheme.primaryContainer
-                        } else {
-                            Color.Transparent
-                        },
-                    ),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(
-                imageVector = destination.icon,
-                contentDescription = null,
-                modifier = Modifier.size(22.dp),
-                tint = contentColor,
-            )
-        }
-        Spacer(modifier = Modifier.height(2.dp))
+        Icon(
+            imageVector = destination.icon,
+            contentDescription = null,
+            modifier = Modifier.size(22.dp),
+            tint = contentColor,
+        )
         Text(
             text = stringResource(destination.labelRes),
             style = MaterialTheme.typography.labelSmall,
             color = contentColor,
+            modifier = Modifier.padding(top = 4.dp),
+        )
+        Box(
+            modifier =
+                Modifier
+                    .padding(top = 4.dp)
+                    .width(16.dp)
+                    .height(2.dp)
+                    .background(
+                        if (selected) {
+                            MaterialTheme.colorScheme.secondary
+                        } else {
+                            Color.Transparent
+                        },
+                    ),
         )
     }
 }
@@ -157,8 +154,8 @@ private fun ScanButton(
     Column(
         modifier =
             modifier
-                .width(72.dp)
-                .height(BarHeight - ScanButtonLift)
+                .width(76.dp)
+                .height(BarHeight)
                 .selectable(
                     selected = selected,
                     role = Role.Tab,
@@ -170,9 +167,8 @@ private fun ScanButton(
             modifier =
                 Modifier
                     .size(ScanButtonSize)
-                    .shadow(elevation = 8.dp, shape = CircleShape, clip = false)
                     .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.primary)
+                    .background(MaterialTheme.colorScheme.secondary)
                     .border(
                         width = 3.dp,
                         color = MaterialTheme.colorScheme.surface,
@@ -183,17 +179,17 @@ private fun ScanButton(
             Icon(
                 imageVector = CulinaryIcons.Scan,
                 contentDescription = null,
-                modifier = Modifier.size(26.dp),
-                tint = MaterialTheme.colorScheme.onPrimary,
+                modifier = Modifier.size(24.dp),
+                tint = MaterialTheme.colorScheme.onSurface,
             )
         }
-        Spacer(modifier = Modifier.height(4.dp))
+        Spacer(modifier = Modifier.height(2.dp))
         Text(
             text = stringResource(CulinaryDestination.SCAN.labelRes),
             style = MaterialTheme.typography.labelSmall,
             color =
                 if (selected) {
-                    MaterialTheme.colorScheme.primary
+                    MaterialTheme.colorScheme.onSurface
                 } else {
                     MaterialTheme.colorScheme.onSurfaceVariant
                 },
