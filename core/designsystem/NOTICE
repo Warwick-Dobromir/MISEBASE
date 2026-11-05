@@ -1,0 +1,18 @@
+MISEBASE — core:designsystem
+============================
+
+本模块包含来自 Google Material Symbols 的图标路径数据。
+
+Material Symbols / Material Design Icons
+-----------------------------------------
+Copyright 2024 Google LLC
+来源：https://github.com/google/material-design-icons
+许可：Apache License, Version 2.0
+许可证全文：本目录 `LICENSE-APACHE-2.0.txt`
+修改说明：
+  - 仅提取 `symbols/web/<name>/materialsymbolsoutlined/<name>_24px.svg` 的 path 数据；
+  - 由 `tools/icon_pipeline/convert_symbols.py` 从 960 单位视口等比缩放到 24dp 视口，
+    并平移 y 轴；未改变图形形状，未添加或删除语义元素；
+  - 生成结果位于 `src/main/java/com/culinary/core/designsystem/icon/MaterialSymbolPaths.kt`。
+
+品牌标记 CulinaryIcons.ChefHat 为本项目自绘，不属于上述第三方资源。

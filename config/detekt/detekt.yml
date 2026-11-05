@@ -17,6 +17,9 @@ complexity:
     thresholdInClasses: 35
     # 版本/档案 DAO 的查询方法随 Stage 3 增加，接口上限与类保持一致。
     thresholdInInterfaces: 35
+    # 图标路径数据由 tools/icon_pipeline 机械生成，一个文件承载全部 Symbols 路径。
+    excludes:
+      - '**/MaterialSymbolPaths.kt'
 
 naming:
   active: true
@@ -31,6 +34,12 @@ naming:
       - '**/test/**'
       - '**/androidTest/**'
       - '**/feature/*/src/main/java/**/*Screen.kt'
+      # 设计系统组件全部是 @Composable 公共 API（PascalCase 是有意为之）；
+      # detekt 1.23 在多函数 Compose 文件中不生效于 ignoreAnnotated，故按目录排除。
+      - '**/component/**'
+      # app 是 Compose 组合根：页面/区块函数按 Compose 约定使用 PascalCase。
+      - '**/app/src/main/java/**'
+
 
 style:
   active: true

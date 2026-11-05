@@ -1,4 +1,4 @@
-package com.culinary.core.designsystem.icon
+﻿package com.culinary.core.designsystem.icon
 
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
@@ -10,30 +10,82 @@ import androidx.compose.ui.graphics.vector.path
 import androidx.compose.ui.unit.dp
 
 /**
- * 线性图标集（UI 设计书 §7：Material Symbols Outlined 风格，线宽统一）。
+ * 图标体系（MB-UI-001 §3.8）。
  *
- * 不引入第三方图标依赖：N3 五入口（首页/知识库/扫码/库存/设置）+ 品牌 + 通用操作，
- * 用 24dp 视口手绘，保证线宽与视觉重量一致。
+ * - 功能图标全部来自 **Material Symbols Outlined**（Apache-2.0），24dp 视口、
+ *   统一的字形描边宽度；填充路径由 [Icon] 着色，选中态只改颜色 + 下划线，
+ *   不做线性/填充混用，避免导航切换时视觉跳动。
+ * - 品牌标记 [ChefHat] 是唯一的例外：它独立于功能图标设计，使用更柔和的光学线宽。
+ * - 新增图标必须补进 `tools/icon_pipeline/convert_symbols.py` 并重新生成
+ *   [MaterialSymbolPaths]，不得在页面内手绘临时图标。
+ *
+ * 来源与许可证：核心模块 `NOTICE`（Material Symbols, Apache License 2.0）。
  */
 object CulinaryIcons {
-    val Home: ImageVector by lazy { lineIcon("Culinary.Home") { home() } }
-    val Library: ImageVector by lazy { lineIcon("Culinary.Library") { library() } }
-    val Sauce: ImageVector by lazy { lineIcon("Culinary.Sauce") { sauceBottle() } }
-    val Ingredient: ImageVector by lazy { lineIcon("Culinary.Ingredient") { leaf() } }
-    val Recipe: ImageVector by lazy { lineIcon("Culinary.Recipe") { book() } }
-    val Inventory: ImageVector by lazy { lineIcon("Culinary.Inventory") { box() } }
-    val Scan: ImageVector by lazy { lineIcon("Culinary.Scan") { scanFrame() } }
-    val Settings: ImageVector by lazy { lineIcon("Culinary.Settings") { sliders() } }
-    val Add: ImageVector by lazy { lineIcon("Culinary.Add") { plus() } }
-    val Back: ImageVector by lazy { lineIcon("Culinary.Back") { arrowBack() } }
-    val Edit: ImageVector by lazy { lineIcon("Culinary.Edit") { pencil() } }
-    val Check: ImageVector by lazy { lineIcon("Culinary.Check") { check() } }
-    val ChevronRight: ImageVector by lazy { lineIcon("Culinary.ChevronRight") { chevron() } }
-    val ChefHat: ImageVector by lazy { lineIcon("Culinary.ChefHat") { chefHat() } }
-    val Bolt: ImageVector by lazy { lineIcon("Culinary.Bolt") { bolt() } }
+    // ---- 导航 ----
+    val Home: ImageVector by lazy { filledIcon("Culinary.Home") { homeSymbol() } }
+    val Library: ImageVector by lazy { filledIcon("Culinary.Library") { librarySymbol() } }
+    val Inventory: ImageVector by lazy { filledIcon("Culinary.Inventory") { inventorySymbol() } }
+    val Scan: ImageVector by lazy { filledIcon("Culinary.Scan") { scanSymbol() } }
+    val Settings: ImageVector by lazy { filledIcon("Culinary.Settings") { settingsSymbol() } }
+
+    // ---- 知识库 ----
+    val Ingredient: ImageVector by lazy { filledIcon("Culinary.Ingredient") { ingredientSymbol() } }
+    val Sauce: ImageVector by lazy { filledIcon("Culinary.Sauce") { sauceSymbol() } }
+    val Recipe: ImageVector by lazy { filledIcon("Culinary.Recipe") { recipeSymbol() } }
+
+    // ---- 操作 ----
+    val Add: ImageVector by lazy { filledIcon("Culinary.Add") { addSymbol() } }
+    val Back: ImageVector by lazy { filledIcon("Culinary.Back") { backSymbol() } }
+    val Edit: ImageVector by lazy { filledIcon("Culinary.Edit") { editSymbol() } }
+    val Check: ImageVector by lazy { filledIcon("Culinary.Check") { checkSymbol() } }
+    val CheckCircle: ImageVector by lazy { filledIcon("Culinary.CheckCircle") { checkCircleSymbol() } }
+    val Close: ImageVector by lazy { filledIcon("Culinary.Close") { closeSymbol() } }
+    val More: ImageVector by lazy { filledIcon("Culinary.More") { moreSymbol() } }
+    val Search: ImageVector by lazy { filledIcon("Culinary.Search") { searchSymbol() } }
+    val Filter: ImageVector by lazy { filledIcon("Culinary.Filter") { filterSymbol() } }
+    val Sort: ImageVector by lazy { filledIcon("Culinary.Sort") { sortSymbol() } }
+    val Archive: ImageVector by lazy { filledIcon("Culinary.Archive") { archiveSymbol() } }
+    val Trash: ImageVector by lazy { filledIcon("Culinary.Trash") { trashSymbol() } }
+    val ArrowForward: ImageVector by lazy { filledIcon("Culinary.ArrowForward") { arrowForwardSymbol() } }
+    val History: ImageVector by lazy { filledIcon("Culinary.History") { historySymbol() } }
+
+    // ---- 方向 ----
+    val ChevronRight: ImageVector by lazy { filledIcon("Culinary.ChevronRight") { chevronRightSymbol() } }
+    val ChevronDown: ImageVector by lazy { filledIcon("Culinary.ChevronDown") { chevronDownSymbol() } }
+
+    // ---- 状态 ----
+    val Warning: ImageVector by lazy { filledIcon("Culinary.Warning") { warningSymbol() } }
+    val Info: ImageVector by lazy { filledIcon("Culinary.Info") { infoSymbol() } }
+    val Bolt: ImageVector by lazy { filledIcon("Culinary.Bolt") { boltSymbol() } }
+    val Flash: ImageVector by lazy { filledIcon("Culinary.Flash") { flashSymbol() } }
+
+    // ---- 品牌 ----
+
+    /** 品牌标记：厨师帽轮廓，用于首页与顶栏返回首页；不参与功能图标规范。 */
+    val ChefHat: ImageVector by lazy {
+        ImageVector
+            .Builder(
+                name = "Culinary.ChefHat",
+                defaultWidth = 24.dp,
+                defaultHeight = 24.dp,
+                viewportWidth = 24f,
+                viewportHeight = 24f,
+            ).apply {
+                path(
+                    fill = null,
+                    stroke = SolidColor(Color.Black),
+                    strokeLineWidth = 1.6f,
+                    strokeLineCap = StrokeCap.Round,
+                    strokeLineJoin = StrokeJoin.Round,
+                    pathBuilder = { chefHat() },
+                )
+            }.build()
+    }
 }
 
-private fun lineIcon(
+/** 功能图标统一装配：填充路径 + 24dp 视口，颜色由 `Icon(tint = …)` 决定。 */
+private fun filledIcon(
     name: String,
     block: PathBuilder.() -> Unit,
 ): ImageVector =
@@ -46,179 +98,12 @@ private fun lineIcon(
             viewportHeight = 24f,
         ).apply {
             path(
-                fill = null,
-                stroke = SolidColor(Color.Black),
-                strokeLineWidth = 1.8f,
-                strokeLineCap = StrokeCap.Round,
-                strokeLineJoin = StrokeJoin.Round,
+                fill = SolidColor(Color.Black),
                 pathBuilder = block,
             )
         }.build()
 
-private fun PathBuilder.home() {
-    moveTo(4f, 11f)
-    lineTo(12f, 4f)
-    lineTo(20f, 11f)
-    lineTo(20f, 20f)
-    lineTo(14f, 20f)
-    lineTo(14f, 14f)
-    lineTo(10f, 14f)
-    lineTo(10f, 20f)
-    lineTo(4f, 20f)
-    close()
-}
-
-private fun PathBuilder.library() {
-    moveTo(4.5f, 5f)
-    lineTo(8.5f, 5f)
-    lineTo(8.5f, 20f)
-    lineTo(4.5f, 20f)
-    close()
-    moveTo(10f, 5f)
-    lineTo(14f, 5f)
-    lineTo(14f, 20f)
-    lineTo(10f, 20f)
-    close()
-    moveTo(15.5f, 5.5f)
-    lineTo(19.5f, 6.5f)
-    lineTo(17.8f, 20f)
-    lineTo(15.8f, 19.5f)
-    close()
-    moveTo(4.5f, 17f)
-    lineTo(8.5f, 17f)
-    moveTo(10f, 17f)
-    lineTo(14f, 17f)
-}
-
-private fun PathBuilder.sauceBottle() {
-    moveTo(9f, 3f)
-    lineTo(15f, 3f)
-    lineTo(15f, 6f)
-    lineTo(16.5f, 8f)
-    lineTo(16.5f, 20f)
-    lineTo(7.5f, 20f)
-    lineTo(7.5f, 8f)
-    lineTo(9f, 6f)
-    close()
-    moveTo(7.5f, 12f)
-    lineTo(16.5f, 12f)
-}
-
-private fun PathBuilder.leaf() {
-    moveTo(5f, 19f)
-    lineTo(5f, 11f)
-    lineTo(9f, 10f)
-    lineTo(12f, 6f)
-    lineTo(15f, 10f)
-    lineTo(19f, 11f)
-    lineTo(19f, 19f)
-    close()
-    moveTo(12f, 6f)
-    lineTo(12f, 19f)
-}
-
-private fun PathBuilder.book() {
-    moveTo(5f, 4f)
-    lineTo(16f, 4f)
-    lineTo(19f, 7f)
-    lineTo(19f, 20f)
-    lineTo(5f, 20f)
-    close()
-    moveTo(16f, 4f)
-    lineTo(16f, 7f)
-    lineTo(19f, 7f)
-    moveTo(8f, 12f)
-    lineTo(16f, 12f)
-    moveTo(8f, 16f)
-    lineTo(14f, 16f)
-}
-
-private fun PathBuilder.box() {
-    moveTo(4f, 8f)
-    lineTo(12f, 4f)
-    lineTo(20f, 8f)
-    lineTo(20f, 17f)
-    lineTo(12f, 21f)
-    lineTo(4f, 17f)
-    close()
-    moveTo(4f, 8f)
-    lineTo(12f, 12f)
-    lineTo(20f, 8f)
-    moveTo(12f, 12f)
-    lineTo(12f, 21f)
-}
-
-private fun PathBuilder.scanFrame() {
-    moveTo(4f, 9f)
-    lineTo(4f, 4f)
-    lineTo(9f, 4f)
-    moveTo(15f, 4f)
-    lineTo(20f, 4f)
-    lineTo(20f, 9f)
-    moveTo(20f, 15f)
-    lineTo(20f, 20f)
-    lineTo(15f, 20f)
-    moveTo(9f, 20f)
-    lineTo(4f, 20f)
-    lineTo(4f, 15f)
-    moveTo(4f, 12f)
-    lineTo(20f, 12f)
-}
-
-private fun PathBuilder.sliders() {
-    moveTo(4f, 7f)
-    lineTo(20f, 7f)
-    moveTo(4f, 12f)
-    lineTo(20f, 12f)
-    moveTo(4f, 17f)
-    lineTo(20f, 17f)
-    moveTo(9f, 5f)
-    lineTo(9f, 9f)
-    moveTo(15f, 10f)
-    lineTo(15f, 14f)
-    moveTo(9f, 15f)
-    lineTo(9f, 19f)
-}
-
-private fun PathBuilder.plus() {
-    moveTo(12f, 5f)
-    lineTo(12f, 19f)
-    moveTo(5f, 12f)
-    lineTo(19f, 12f)
-}
-
-private fun PathBuilder.arrowBack() {
-    moveTo(19f, 12f)
-    lineTo(5f, 12f)
-    moveTo(11f, 6f)
-    lineTo(5f, 12f)
-    lineTo(11f, 18f)
-}
-
-private fun PathBuilder.pencil() {
-    moveTo(5f, 19f)
-    lineTo(5f, 15f)
-    lineTo(16f, 4f)
-    lineTo(20f, 8f)
-    lineTo(9f, 19f)
-    close()
-    moveTo(14f, 6f)
-    lineTo(18f, 10f)
-}
-
-private fun PathBuilder.check() {
-    moveTo(5f, 12f)
-    lineTo(10f, 17f)
-    lineTo(19f, 7f)
-}
-
-private fun PathBuilder.chevron() {
-    moveTo(9f, 6f)
-    lineTo(15f, 12f)
-    lineTo(9f, 18f)
-}
-
-/** 品牌标记：厨师帽轮廓，用于首页与顶栏返回首页。 */
+/** 品牌标记轮廓：厨师帽。 */
 private fun PathBuilder.chefHat() {
     moveTo(6.5f, 9.5f)
     curveTo(4.8f, 9.1f, 3.5f, 7.7f, 3.5f, 6f)
@@ -236,15 +121,4 @@ private fun PathBuilder.chefHat() {
     close()
     moveTo(6.5f, 15.5f)
     lineTo(17.5f, 15.5f)
-}
-
-/** 快捷操作标题标记。 */
-private fun PathBuilder.bolt() {
-    moveTo(13f, 2.5f)
-    lineTo(5f, 13.5f)
-    lineTo(11f, 13.5f)
-    lineTo(9.5f, 21.5f)
-    lineTo(19f, 10.5f)
-    lineTo(13f, 10.5f)
-    close()
 }
