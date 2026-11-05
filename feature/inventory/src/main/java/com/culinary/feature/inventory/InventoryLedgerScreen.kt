@@ -72,7 +72,7 @@ internal fun InventoryLedgerScreen(
         PageHeader(
             eyebrow = "LEDGER",
             title = stringResource(R.string.inventory_ledger_title),
-            supporting = stringResource(R.string.inventory_count, state.visibleRows.size),
+            supporting = stringResource(R.string.inventory_ledger_count, state.visibleRows.size),
         )
         CulinarySearchField(
             value = state.query,

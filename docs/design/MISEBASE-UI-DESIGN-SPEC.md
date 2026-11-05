@@ -1,8 +1,8 @@
 # MISEBASE UI 设计书
 
 **文档编号**：MB-UI-001
-**版本**：`1.4.0`
-**状态**：`Approved`（视觉方向 A、N3 导航、UI-07 首页、MB-D-004 扫码归属已签收；MB-HOME-002 完成香槟金批准与导航重构）
+**版本**：`2.0.0`
+**状态**：`Approved`（MB-UI-001 视觉系统重建：Editorial Minimalism + Swiss；MB-D-008 Rev.2 取代 Rev.1 的暖米色香槟金方案；N3 导航保持不变）
 **日期**：2026-11-05
 **依据**：MISEBASE 总任务书第六部分；MB-S0-02 范围冻结；P01 产品基线（历史）；
 MB-D-008 Rev.1（Champagne Gold，2026-11-05）、MB-D-009 Rev.2（N3，2026-11-05）、
@@ -684,6 +684,100 @@ N2 仍为未采用的历史备选。实际导航实现与视觉细化在 app 导
 
 ---
 
+---
+
+## 23. MB-UI-001 视觉系统重建（2.0.0，2026-11-05）
+
+> 本节是 **当前有效** 的视觉规范。§1–§22 中与本节冲突的色彩/排版/组件描述保留为历史记录，
+> 以本节与 `core:designsystem` 代码为准。导航结构仍以 §16 的 N3 为准，未改变。
+
+### 23.1 方向
+
+**Editorial Minimalism + Swiss Style**：白纸画布、炭墨文字、细线分节、全大写拉丁小标题、
+等宽数字与克制圆角。品牌香槟金只承担“选中/强调/关键数字”，不再大面积铺底。
+
+已签收决策：**MB-D-008 Rev.2**（取代 Rev.1 的暖米色 + `#8A6A2B` 主色方案）。
+被取代的表述包括 §1.1「不是一本菜谱杂志」；新方向允许出版物式的排版气质，
+但信息密度、可读性与操作效率仍优先于装饰。
+
+### 23.2 色彩令牌（实测对比度）
+
+| 令牌 | 亮色 | 暗色 | 对比度（实测） | 用途 |
+|---|---|---|---|---|
+| `canvas` / `background` | `#FFFFFF` | `#121212` | — | 主画布 |
+| `surface` | `#FFFFFF` | `#171717` | — | 弹层/底栏 |
+| `ink` / `onSurface` | `#1F1F1F` | `#F2F2F2` | 16.48 / 15.79 | 主文字 |
+| `inkSecondary` / `onSurfaceVariant` | `#5C5C5C` | `#C9C9C9` | 6.69 / 10.83 | 辅助文字 |
+| `inkMuted` | `#707070` | `#9A9A9A` | 4.95 / 6.37 | 元信息（≥4.5） |
+| `inkDisabled` | `#B3B3B3` | — | 2.10（仅装饰） | 禁用/水印 |
+| `line` / `outlineVariant` | `#EDEDED` | `#2E2E2E` | 1.17 | 细分割线 |
+| `lineStrong` / `outline` | `#DCDCDC` | `#3A3A3A` | — | 输入框/边界 |
+| `accent` / `secondary` | `#B8996D` | `#DCC29A` | 2.69（仅填充） | 选中底/下划线/扫码按钮 |
+| `accentSoft` / `secondaryContainer` | `#F2EBDF` | `#3A3024` | — | 选中浅底 |
+| `accentInk` | `#8A6A2B` | `#DCC29A` | 5.03 / 7.51 | 强调文字/图标 |
+| `accentDeep` | `#7A5C24` | — | 5.24 on `#F2EBDF` | 浅金底上的强调文字 |
+| `success` / `successSurface` | `#2F6B47` / `#E8F2EC` | `#7FD1A8` / `#16301F` | 5.53 / 7.85 | 成功/充足 |
+| `warning` / `warningSurface` | `#7A4E00` / `#FBF1E0` | `#F0C36A` / `#33260C` | 6.43 / 8.94 | 低库存/草稿 |
+| `danger` / `dangerSurface` | `#A32020` / `#FBEAE8` | `#FFB4AB` / `#351312` | 6.48 / 9.87 | 错误/破坏性操作 |
+| `info` / `infoSurface` | `#2F5D8A` / `#EDF3F9` | `#A8C8E8` / `#10222F` | 6.15 / 9.36 | 提示 |
+
+规则：
+- 品牌金 `#B8996D` **禁止**作为文字颜色；文字使用 `#8A6A2B`（白底）或 `#7A5C24`（浅金底）；
+- 所有正文/容器文字对比度由 `DesignSystemTokensTest` 强制 ≥4.5:1；
+- 语义色不用于装饰；状态必须同时有文字，不只靠颜色。
+
+### 23.3 字体与数字
+
+| 令牌 | 字号/行高 | 字重 | 用途 |
+|---|---|---|---|
+| `displayLarge/Medium` | 40/46、32/38 | 600 | 首页 Hero |
+| `pageTitle` | 28/36 | 600 | 页面标题（`PageHeader`） |
+| `sectionTitle` | 20/28 | 600 | 区块标题（`SectionHeader`/`CollectionHeader`） |
+| `titleMedium` | 16/24 | 500 | 列表主标题 |
+| `bodyLarge` | 15/24 | 400 | 正文 |
+| `bodySmall` | 12/18 | 400 | 说明/副标题 |
+| `eyebrow` | 11/14 | 600 | 全大写拉丁小标题，字距 0.12em |
+| `numeralXl/L/M/S` | 40/28/20/15 | 500–600 | 数字，**全部 `tnum`** |
+
+数字使用系统 sans + `fontFeatureSettings="tnum"`，不再使用 Monospace；
+数量与单位分离：数量用 numeral 样式，单位 12sp 且降低对比。
+
+### 23.4 间距、圆角、线条
+
+- 间距：4/8/12/16/20/24/32/40/48/64；页面左右 **20dp**（窄屏 16dp）；
+  一级区块 40dp，区块内 24dp，表单字段 20dp，列表行 16dp。
+- 圆角：按钮/输入/标签 **2dp**，轻容器 4dp，弹窗 12dp，底部弹层 16dp；
+  列表行为直角 + 细线；无内容卡片阴影。
+- 线条：1dp 细线；聚焦/选中下划线 1.5dp；相机遮罩 2dp。
+
+### 23.5 图标
+
+- Material Symbols Outlined（Apache-2.0），24dp 视口，填充轮廓；
+- 行内 16/20dp，导航/按钮 24dp，空状态 32dp；
+- 选中态只改颜色 + 1.5dp 香槟金下划线，不做线性/填充混用；
+- 品牌标记 `ChefHat` 自绘，可独立于功能图标规范；
+- 转换脚本：`tools/icon_pipeline/convert_symbols.py`；许可证：`core/designsystem/NOTICE`。
+
+### 23.6 组件与页面骨架
+
+- `PageHeader`：页面唯一主标题（eyebrow + 28sp 标题 + 说明 + 动作）；
+- `CollectionHeader`：聚合页内的区块标题（知识库三个库）；
+- `SectionHeader`：细线 + 区块标题 + 可选动作；
+- `CulinaryListRow` / `ArchiveListItem`：通栏、细线、右对齐数量/状态；
+- `CulinaryButton`（Primary/Secondary/Ghost/Danger/Overlay/OverlayOutline）、
+  `CulinaryTextField`、`CulinarySearchField`、`CulinarySegmentedControl`、`CulinaryFilterPill`；
+- `StatusBadge`、`ResultPanel`、`ErrorBanner`、`InlineError`、`EmptyState`、`LoadingRows`；
+- 底部导航：1dp 顶线、无阴影、无选中胶囊；中央扫码为香槟金圆形按钮（炭墨图标），
+  选中项用 1.5dp 下划线；顶栏只保留返回/品牌标记，不重复页面标题。
+
+### 23.7 页面验收结论
+
+21 张真机（模拟器 Pixel 5 / API 30）截图见
+[MB-UI-001 执行报告](../16-ui/MB-UI-001-EXECUTION-REPORT.md)；
+覆盖首页、知识库、三库列表/详情/编辑、库存总览/详情/流水/入库、扫码、设置、暗色与 1.3× 字体。
+
+---
+
 ## 变更记录
 
 | 版本 | 日期 | 变更 | 作者 |
@@ -694,3 +788,4 @@ N2 仍为未采用的历史备选。实际导航实现与视觉细化在 app 导
 | 1.2.0 | 2026-11-05 | MB-D-004 签收：扫码仍为 N1 第五入口；Stage 5 起由 `feature:scan` 实现，当前仍为占位；补 §0.1.1 | 接管工程组 |
 | 1.3.0 | 2026-11-05 | MB-HOME-001：独立首页实现与香槟金 Token 迁移；补 §0.3、Token 对照与首页实现记录；视觉修订待验收 | 接管工程组 |
 | 1.4.0 | 2026-11-05 | MB-HOME-002：香槟金正式批准；N1 → N3（首页/知识库/扫码凸起/库存/设置）；设置入底栏；知识库聚合；补 §0.4 与 §16.1 | 开发 AI |
+| 2.0.0 | 2026-11-05 | MB-UI-001：Editorial Minimalism + Swiss 视觉系统重建；MB-D-008 Rev.2 取代香槟金暖色方案；新增 §23（色彩/字体/间距/图标/组件/导航）；N3 与业务不变 | 开发 AI |

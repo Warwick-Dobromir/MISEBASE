@@ -46,9 +46,16 @@ fun EmptyState(
     actionLabel: String? = null,
     onAction: (() -> Unit)? = null,
     icon: ImageVector? = null,
+    compact: Boolean = false,
 ) {
     Column(
-        modifier = modifier.fillMaxWidth().padding(horizontal = CulinarySpacing.lg, vertical = CulinarySpacing.xl),
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .padding(
+                    horizontal = CulinarySpacing.lg,
+                    vertical = if (compact) CulinarySpacing.md else CulinarySpacing.xl,
+                ),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
@@ -56,10 +63,10 @@ fun EmptyState(
             Icon(
                 imageVector = icon,
                 contentDescription = null,
-                modifier = Modifier.size(32.dp),
+                modifier = Modifier.size(if (compact) 24.dp else 32.dp),
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            Spacer(modifier = Modifier.height(CulinarySpacing.md))
+            Spacer(modifier = Modifier.height(if (compact) CulinarySpacing.sm else CulinarySpacing.md))
         }
         Text(
             text = title,
@@ -75,12 +82,16 @@ fun EmptyState(
             textAlign = TextAlign.Center,
         )
         if (actionLabel != null && onAction != null) {
-            Spacer(modifier = Modifier.height(CulinarySpacing.block))
-            CulinaryButton(
-                text = actionLabel,
-                onClick = onAction,
-                variant = CulinaryButtonVariant.Secondary,
-            )
+            Spacer(modifier = Modifier.height(if (compact) CulinarySpacing.xs else CulinarySpacing.block))
+            if (compact) {
+                CulinaryTextButton(text = actionLabel, onClick = onAction)
+            } else {
+                CulinaryButton(
+                    text = actionLabel,
+                    onClick = onAction,
+                    variant = CulinaryButtonVariant.Secondary,
+                )
+            }
         }
     }
 }

@@ -214,7 +214,7 @@ private fun LedgerDetailRow(entry: InventoryLedgerEntry) {
                 text = signedAmount(entry.onHandDelta) + " " + entry.stockUnit.symbol,
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.weight(1f),
+                modifier = Modifier.weight(1f).padding(start = CulinarySpacing.xs),
             )
             Text(
                 text = formatAmount(entry.onHandAfter) + " " + entry.stockUnit.symbol,

@@ -37,7 +37,7 @@
     <string name="recipes_expanding">展开中…</string>
     <string name="recipes_expanded">配方展开（%1$s 份，基准 %2$s 份）</string>
     <string name="recipes_expansion_empty">该版本没有可展开的食材。</string>
-    <string name="recipes_expansion_hint">展开只做展示；库存对比与采购清单在 Stage 4 实现。</string>
+    <string name="recipes_expansion_hint">展开只做份量换算展示；库存对比与采购清单请在库存页查看。</string>
     <string name="recipes_kind_ingredient">食材</string>
     <string name="recipes_kind_recipe">子菜谱 v%1$d</string>
     <string name="recipes_kind_sauce">子酱汁 v%1$d</string>

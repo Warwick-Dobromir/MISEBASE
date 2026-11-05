@@ -1,4 +1,4 @@
-﻿package com.culinary.home
+package com.culinary.home
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -82,6 +82,7 @@ internal fun InventorySection(
                         description = stringResource(R.string.home_inventory_empty_body),
                         actionLabel = stringResource(R.string.home_inventory_empty_action),
                         onAction = onOpenReceipt,
+                        compact = true,
                     )
                 } else {
                     InventoryMetrics(

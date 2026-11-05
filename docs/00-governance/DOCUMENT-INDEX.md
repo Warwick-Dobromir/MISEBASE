@@ -100,7 +100,7 @@
 
 | 文档 | 用途 |
 |---|---|
-| [UI 设计书 1.4.0](../design/MISEBASE-UI-DESIGN-SPEC.md) | 方向 A + Champagne Gold（已批准）；N3 导航（首页/知识库/扫码凸起/库存/设置）；首页与视觉 token 基线 |
+| [UI 设计书 2.0.0](../design/MISEBASE-UI-DESIGN-SPEC.md) | Editorial Minimalism + Swiss（MB-D-008 Rev.2）；N3 导航不变；色彩/字体/间距/图标/组件与页面骨架基线 |
 | [MB-SC-00 Schema 变更授权](../08-schema-change/MB-SC-00-AUTHORIZATION.md) | 授权独立 Schema 变更任务；两项变更合并、执行顺序与工程边界；已由 MB-SC-01～07 实施，报告 `Review` |
 | [MB-SC-01 迁移方案](../08-schema-change/MB-SC-01-MIGRATION-PLAN.md) | v1→v2 表、列、约束、索引、外键、影响范围、迁移算法与回滚边界 |
 | [MB-SC-02 迁移测试记录](../08-schema-change/MB-SC-02-MIGRATION-TEST-RECORD.md) | JVM 空库/真实数据迁移、完整性、休眠表、androidTest 编译状态 |
@@ -224,6 +224,14 @@
 |---|---|
 | [MB-HOME-CLOSE-001 关闭记录](../13-home/MB-HOME-CLOSE-RECORD.md) | 审查通过、关闭前 HEAD/status、关闭提交、关闭标签、Stage 6 起点标签冲突与旧标签未移动证据；状态 `CLOSED` |
 
+### 2.12 全局视觉系统重建 MB-UI-001（2026-11-05）
+
+| 文档 | 用途 |
+|---|---|
+| [MB-UI-001 执行报告](../16-ui/MB-UI-001-EXECUTION-REPORT.md) | Design System 重建、全页面统一、第三方资源评估、构建/测试、21 张截图、遗留问题；状态 `Review` |
+| [MB-UI-001 视觉证据](../16-ui/evidence/) | 首页/知识库/三库列表详情编辑/库存/扫码/设置/暗色/1.3× 字体共 21 张 |
+| [UI 设计书 2.0.0 §23](../design/MISEBASE-UI-DESIGN-SPEC.md) | 最终色彩令牌（含对比度）、字体、间距、圆角、图标、组件与导航规范 |
+
 ### 2.12 Stage 6 最终发布与交付（MB-S6-001，2026-11-05，状态 `Review`）
 
 | 文档 | 用途 |
@@ -319,4 +327,5 @@
 | 0.34.0 | 2026-11-05 | MB-HOME-CLOSE-001：新增首页/N3 导航关闭记录；MB-HOME-002 状态改为 `CLOSED`；记录 Stage 6 起点标签已存在且未移动的冲突 | 开发 AI |
 | 0.35.0 | 2026-11-05 | MB-S6-001：新增 Stage 6 发布文档 5 份（执行报告/图标/签名/升级数据安全/测试清单）与发布构建指南；记录 v1.0.0 签名 APK、真机升级与图标证据 | 开发 AI |
 | 0.36.0 | 2026-11-05 | MB-S6-002：设置页补全（备份/恢复/诊断/关于）；新增执行报告与 6 张模拟器截图；Release APK 交付 D:\A-1\MISEBASE-Final.apk | 开发 AI |
+| 0.37.0 | 2026-11-05 | MB-UI-001：UI 设计书升 2.0.0（Editorial + Swiss，MB-D-008 Rev.2）；新增执行报告与 21 张截图；记录设计系统、第三方评估与遗留问题 | 开发 AI |
 
