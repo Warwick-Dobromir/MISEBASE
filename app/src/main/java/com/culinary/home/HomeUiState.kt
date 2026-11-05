@@ -8,6 +8,9 @@ import com.culinary.core.data.home.HomeKnowledgeSummary
  * 首页单模块状态。
  *
  * 每个模块独立加载、独立失败：库存读取失败不会替换知识库，反之亦然。
+ *
+ * [Failed] 把“给用户看的说明”和“给诊断用的错误码”分开：
+ * 界面只展示 [Failed.message]，错误码保留在 [Failed.diagnosticCode] 供日志/诊断使用。
  */
 sealed interface HomeSection<out T> {
     data object Loading : HomeSection<Nothing>
@@ -18,6 +21,7 @@ sealed interface HomeSection<out T> {
 
     data class Failed(
         val message: String,
+        val diagnosticCode: String? = null,
     ) : HomeSection<Nothing>
 }
 
@@ -25,13 +29,19 @@ data class HomeUiState(
     val todayLabel: String = "",
     val inventory: HomeSection<HomeInventorySummary> = HomeSection.Loading,
     val knowledge: HomeSection<HomeKnowledgeSummary> = HomeSection.Loading,
+    /** 后台刷新进行中；此时保留旧数据，只显示一条 2dp 细进度条。 */
+    val isRefreshing: Boolean = false,
 )
 
-/** 首页错误文案：说明发生了什么，并保留稳定错误码便于诊断。 */
+/** 首页错误文案：面向用户说明“发生了什么”，错误码单独提供给诊断。 */
 object HomeErrorMessages {
     const val UNEXPECTED: String = "读取时发生未预期错误，请重试。"
 
-    fun describe(error: CulinaryError): String = "${friendly(error)}（${error.code.value}）"
+    /** 用户可见文案，不含内部错误码。 */
+    fun userMessage(error: CulinaryError): String = friendly(error)
+
+    /** 诊断用错误码，例如 `CUL-DB-001`；不进入主界面文案。 */
+    fun diagnosticCode(error: CulinaryError): String = error.code.value
 
     private fun friendly(error: CulinaryError): String =
         when (error) {

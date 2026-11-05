@@ -1,12 +1,10 @@
-package com.culinary.home
+﻿package com.culinary.home
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.defaultMinSize
@@ -15,29 +13,34 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.HorizontalDivider
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.culinary.R
 import com.culinary.core.data.home.HomeInventorySummary
 import com.culinary.core.data.home.HomeKnowledgeSummary
+import com.culinary.core.designsystem.component.CulinaryTextButton
+import com.culinary.core.designsystem.component.EmptyState
+import com.culinary.core.designsystem.component.MetricValue
+import com.culinary.core.designsystem.component.SectionHeader
 import com.culinary.core.designsystem.icon.CulinaryIcons
+import com.culinary.core.designsystem.theme.CulinaryColorScheme
 import com.culinary.core.designsystem.theme.CulinarySpacing
+
+// 首页区块（MB-UI-001 Stage 3）。
+//
+// 三个区块共享同一套编辑式结构：
+// 拉丁小标题 + 中文区块标题 + 1dp 细线 → 内容（指标 / 操作 / 空状态）。
+// 数字统一使用 MetricValue，库存与知识库不再出现两种字号。
 
 /** 库存概览：真实商品/批次/需关注数；空、加载、失败均局部处理。 */
 @Composable
@@ -48,19 +51,22 @@ internal fun InventorySection(
     onRetry: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    HomeCard(modifier = modifier) {
+    Column(modifier = modifier.fillMaxWidth()) {
         SectionHeader(
-            icon = CulinaryIcons.Inventory,
             title = stringResource(R.string.home_inventory_title),
-            onClick = if (state is HomeSection.Ready) onOpenInventory else null,
-            action = {
+            eyebrow = stringResource(R.string.home_inventory_eyebrow),
+            modifier = Modifier.padding(horizontal = CulinarySpacing.pageHorizontal),
+            action =
                 if (state is HomeSection.Ready) {
-                    DetailsAction()
-                }
-            },
+                    {
+                        DetailsAction(onClick = onOpenInventory)
+                    }
+                } else {
+                    null
+                },
         )
         when (state) {
-            HomeSection.Loading -> InventorySkeleton()
+            HomeSection.Loading -> MetricSkeleton()
             is HomeSection.Failed ->
                 SectionError(
                     title = stringResource(R.string.home_inventory_error),
@@ -70,15 +76,18 @@ internal fun InventorySection(
 
             is HomeSection.Ready ->
                 if (state.value.isEmpty) {
-                    HomeEmptyState(
+                    EmptyState(
                         icon = CulinaryIcons.Inventory,
                         title = stringResource(R.string.home_inventory_empty_title),
-                        body = stringResource(R.string.home_inventory_empty_body),
+                        description = stringResource(R.string.home_inventory_empty_body),
                         actionLabel = stringResource(R.string.home_inventory_empty_action),
                         onAction = onOpenReceipt,
                     )
                 } else {
-                    InventoryMetrics(summary = state.value, onOpenInventory = onOpenInventory)
+                    InventoryMetrics(
+                        summary = state.value,
+                        onOpenInventory = onOpenInventory,
+                    )
                 }
         }
     }
@@ -90,27 +99,33 @@ private fun InventoryMetrics(
     onOpenInventory: () -> Unit,
 ) {
     Row(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = CulinarySpacing.md, vertical = CulinarySpacing.xs),
-        verticalAlignment = Alignment.CenterVertically,
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = CulinarySpacing.pageHorizontal, vertical = CulinarySpacing.xs),
+        horizontalArrangement = Arrangement.spacedBy(CulinarySpacing.md),
     ) {
-        MetricColumn(
-            value = summary.productCount,
+        MetricValue(
+            value = summary.productCount.toString(),
             label = stringResource(R.string.home_inventory_products),
             onClick = onOpenInventory,
             modifier = Modifier.weight(1f),
         )
-        MetricDivider()
-        MetricColumn(
-            value = summary.batchCount,
+        MetricValue(
+            value = summary.batchCount.toString(),
             label = stringResource(R.string.home_inventory_batches),
             onClick = onOpenInventory,
             modifier = Modifier.weight(1f),
         )
-        MetricDivider()
-        MetricColumn(
-            value = summary.attentionCount,
+        MetricValue(
+            value = summary.attentionCount.toString(),
             label = stringResource(R.string.home_inventory_attention),
-            highlight = summary.attentionCount > 0,
+            valueColor =
+                if (summary.attentionCount > 0) {
+                    CulinaryColorScheme.current.warning
+                } else {
+                    null
+                },
             onClick = onOpenInventory,
             modifier = Modifier.weight(1f),
         )
@@ -118,75 +133,28 @@ private fun InventoryMetrics(
 }
 
 @Composable
-private fun MetricColumn(
-    value: Int,
-    label: String,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-    highlight: Boolean = false,
-) {
-    Column(
+private fun DetailsAction(onClick: () -> Unit) {
+    Row(
         modifier =
-            modifier
-                .clip(MaterialTheme.shapes.small)
+            Modifier
+                .defaultMinSize(minHeight = 40.dp)
                 .clickable(role = Role.Button, onClick = onClick)
                 .padding(vertical = CulinarySpacing.xs),
-        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(
-                text = value.toString(),
-                style = MaterialTheme.typography.displaySmall,
-                color =
-                    if (highlight) {
-                        MaterialTheme.colorScheme.primary
-                    } else {
-                        MaterialTheme.colorScheme.onSurface
-                    },
-                maxLines = 1,
-            )
-            if (highlight && value > 0) {
-                Spacer(modifier = Modifier.width(CulinarySpacing.xxs))
-                AttentionMark()
-            }
-        }
         Text(
-            text = label,
-            style = MaterialTheme.typography.bodySmall,
+            text = stringResource(R.string.home_action_details),
+            style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.Center,
+        )
+        Spacer(modifier = Modifier.width(2.dp))
+        Icon(
+            imageVector = CulinaryIcons.ChevronRight,
+            contentDescription = null,
+            modifier = Modifier.size(14.dp),
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
-}
-
-@Composable
-private fun AttentionMark() {
-    Box(
-        modifier =
-            Modifier
-                .size(16.dp)
-                .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.primaryContainer),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(
-            text = "!",
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.primary,
-            fontWeight = FontWeight.Bold,
-        )
-    }
-}
-
-@Composable
-private fun MetricDivider() {
-    Box(
-        modifier =
-            Modifier
-                .width(1.dp)
-                .height(40.dp)
-                .background(MaterialTheme.colorScheme.outlineVariant),
-    )
 }
 
 /** 快捷操作：四个入口均连到真实路由，没有占位假动作。 */
@@ -198,37 +166,41 @@ internal fun QuickActionsSection(
     onNewSauce: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    HomeCard(modifier = modifier) {
+    Column(modifier = modifier.fillMaxWidth()) {
         SectionHeader(
-            icon = CulinaryIcons.Bolt,
             title = stringResource(R.string.home_quick_title),
+            eyebrow = stringResource(R.string.home_quick_eyebrow),
+            modifier = Modifier.padding(horizontal = CulinarySpacing.pageHorizontal),
         )
         Row(
             modifier =
                 Modifier
                     .fillMaxWidth()
-                    .padding(start = CulinarySpacing.md, end = CulinarySpacing.md, bottom = CulinarySpacing.md),
-            horizontalArrangement = Arrangement.spacedBy(CulinarySpacing.xs),
+                    .padding(horizontal = CulinarySpacing.pageHorizontal, vertical = CulinarySpacing.xs),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            QuickActionTile(
+            QuickAction(
                 icon = CulinaryIcons.Scan,
                 label = stringResource(R.string.home_quick_scan),
                 onClick = onOpenScan,
                 modifier = Modifier.weight(1f),
             )
-            QuickActionTile(
+            ActionDivider()
+            QuickAction(
                 icon = CulinaryIcons.Ingredient,
                 label = stringResource(R.string.home_quick_ingredient),
                 onClick = onNewIngredient,
                 modifier = Modifier.weight(1f),
             )
-            QuickActionTile(
+            ActionDivider()
+            QuickAction(
                 icon = CulinaryIcons.Recipe,
                 label = stringResource(R.string.home_quick_recipe),
                 onClick = onNewRecipe,
                 modifier = Modifier.weight(1f),
             )
-            QuickActionTile(
+            ActionDivider()
+            QuickAction(
                 icon = CulinaryIcons.Sauce,
                 label = stringResource(R.string.home_quick_sauce),
                 onClick = onNewSauce,
@@ -239,7 +211,7 @@ internal fun QuickActionsSection(
 }
 
 @Composable
-private fun QuickActionTile(
+private fun QuickAction(
     icon: ImageVector,
     label: String,
     onClick: () -> Unit,
@@ -248,38 +220,38 @@ private fun QuickActionTile(
     Column(
         modifier =
             modifier
-                .defaultMinSize(minHeight = 88.dp)
-                .clip(MaterialTheme.shapes.medium)
-                .background(MaterialTheme.colorScheme.surfaceContainer)
+                .defaultMinSize(minHeight = 72.dp)
                 .clickable(role = Role.Button, onClick = onClick)
-                .padding(horizontal = CulinarySpacing.xxs, vertical = CulinarySpacing.sm),
+                .padding(vertical = CulinarySpacing.sm),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
-        Box(
-            modifier =
-                Modifier
-                    .size(36.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.primaryContainer),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                modifier = Modifier.size(20.dp),
-                tint = MaterialTheme.colorScheme.primary,
-            )
-        }
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            modifier = Modifier.size(22.dp),
+            tint = MaterialTheme.colorScheme.onSurface,
+        )
         Spacer(modifier = Modifier.height(CulinarySpacing.xs))
         Text(
             text = label,
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurface,
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             maxLines = 1,
             textAlign = TextAlign.Center,
         )
     }
+}
+
+@Composable
+private fun ActionDivider() {
+    Box(
+        modifier =
+            Modifier
+                .width(1.dp)
+                .height(28.dp)
+                .background(MaterialTheme.colorScheme.outlineVariant),
+    )
 }
 
 /** 知识库概览：三个真实在用档案数，各自可进入对应库。 */
@@ -289,16 +261,20 @@ internal fun KnowledgeSection(
     onOpenSauces: () -> Unit,
     onOpenIngredients: () -> Unit,
     onOpenRecipes: () -> Unit,
+    onNewSauce: () -> Unit,
+    onNewIngredient: () -> Unit,
+    onNewRecipe: () -> Unit,
     onRetry: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    HomeCard(modifier = modifier) {
+    Column(modifier = modifier.fillMaxWidth()) {
         SectionHeader(
-            icon = CulinaryIcons.Recipe,
             title = stringResource(R.string.home_knowledge_title),
+            eyebrow = stringResource(R.string.home_knowledge_eyebrow),
+            modifier = Modifier.padding(horizontal = CulinarySpacing.pageHorizontal),
         )
         when (state) {
-            HomeSection.Loading -> KnowledgeSkeleton()
+            HomeSection.Loading -> MetricSkeleton()
             is HomeSection.Failed ->
                 SectionError(
                     title = stringResource(R.string.home_knowledge_error),
@@ -308,10 +284,10 @@ internal fun KnowledgeSection(
 
             is HomeSection.Ready ->
                 if (state.value.isEmpty) {
-                    HomeEmptyState(
-                        icon = CulinaryIcons.Recipe,
-                        title = stringResource(R.string.home_knowledge_empty_title),
-                        body = stringResource(R.string.home_knowledge_empty_body),
+                    KnowledgeEmptyState(
+                        onNewSauce = onNewSauce,
+                        onNewIngredient = onNewIngredient,
+                        onNewRecipe = onNewRecipe,
                     )
                 } else {
                     KnowledgeMetrics(
@@ -333,25 +309,26 @@ private fun KnowledgeMetrics(
     onOpenRecipes: () -> Unit,
 ) {
     Row(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = CulinarySpacing.md, vertical = CulinarySpacing.xs),
-        verticalAlignment = Alignment.CenterVertically,
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = CulinarySpacing.pageHorizontal, vertical = CulinarySpacing.xs),
+        horizontalArrangement = Arrangement.spacedBy(CulinarySpacing.md),
     ) {
-        KnowledgeMetric(
-            value = summary.sauceCount,
+        MetricValue(
+            value = summary.sauceCount.toString(),
             label = stringResource(R.string.home_knowledge_sauces),
             onClick = onOpenSauces,
             modifier = Modifier.weight(1f),
         )
-        MetricDivider()
-        KnowledgeMetric(
-            value = summary.ingredientCount,
+        MetricValue(
+            value = summary.ingredientCount.toString(),
             label = stringResource(R.string.home_knowledge_ingredients),
             onClick = onOpenIngredients,
             modifier = Modifier.weight(1f),
         )
-        MetricDivider()
-        KnowledgeMetric(
-            value = summary.recipeCount,
+        MetricValue(
+            value = summary.recipeCount.toString(),
             label = stringResource(R.string.home_knowledge_recipes),
             onClick = onOpenRecipes,
             modifier = Modifier.weight(1f),
@@ -359,268 +336,136 @@ private fun KnowledgeMetrics(
     }
 }
 
+/**
+ * 知识库空状态：说明三个库都为空，并给出三个真实的创建入口。
+ *
+ * 与库存空状态（单一“去入库”按钮）结构不同，因为知识库有三个独立业务入口。
+ */
 @Composable
-private fun KnowledgeMetric(
-    value: Int,
-    label: String,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
+private fun KnowledgeEmptyState(
+    onNewSauce: () -> Unit,
+    onNewIngredient: () -> Unit,
+    onNewRecipe: () -> Unit,
 ) {
     Column(
         modifier =
-            modifier
-                .clip(MaterialTheme.shapes.small)
-                .clickable(role = Role.Button, onClick = onClick)
-                .padding(vertical = CulinarySpacing.xs),
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = CulinarySpacing.pageHorizontal, vertical = CulinarySpacing.lg),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Text(
-            text = value.toString(),
-            style = MaterialTheme.typography.headlineMedium,
-            color = MaterialTheme.colorScheme.onSurface,
-            maxLines = 1,
+        Icon(
+            imageVector = CulinaryIcons.Library,
+            contentDescription = null,
+            modifier = Modifier.size(32.dp),
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
         )
+        Spacer(modifier = Modifier.height(CulinarySpacing.md))
         Text(
-            text = label,
+            text = stringResource(R.string.home_knowledge_empty_title),
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onSurface,
+        )
+        Spacer(modifier = Modifier.height(CulinarySpacing.xs))
+        Text(
+            text = stringResource(R.string.home_knowledge_empty_body),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
         )
-    }
-}
-
-@Composable
-private fun SectionHeader(
-    icon: ImageVector,
-    title: String,
-    subtitle: String? = null,
-    onClick: (() -> Unit)? = null,
-    action: (@Composable () -> Unit)? = null,
-) {
-    val clickModifier =
-        if (onClick == null) {
-            Modifier
-        } else {
-            Modifier.clickable(role = Role.Button, onClick = onClick)
-        }
-    Row(
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .then(clickModifier)
-                .padding(horizontal = CulinarySpacing.md, vertical = CulinarySpacing.sm),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        SectionIcon(icon = icon)
-        Spacer(modifier = Modifier.width(CulinarySpacing.sm))
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurface,
+        Spacer(modifier = Modifier.height(CulinarySpacing.sm))
+        Row(horizontalArrangement = Arrangement.spacedBy(CulinarySpacing.xxs)) {
+            CulinaryTextButton(
+                text = stringResource(R.string.home_quick_sauce),
+                onClick = onNewSauce,
             )
-            if (!subtitle.isNullOrBlank()) {
-                Text(
-                    text = subtitle,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
+            CulinaryTextButton(
+                text = stringResource(R.string.home_quick_ingredient),
+                onClick = onNewIngredient,
+            )
+            CulinaryTextButton(
+                text = stringResource(R.string.home_quick_recipe),
+                onClick = onNewRecipe,
+            )
         }
-        action?.invoke()
     }
 }
 
-@Composable
-private fun DetailsAction() {
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        Text(
-            text = stringResource(R.string.home_action_details),
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        Icon(
-            imageVector = CulinaryIcons.ChevronRight,
-            contentDescription = null,
-            modifier = Modifier.size(16.dp),
-            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-    }
-}
-
-@Composable
-private fun SectionIcon(icon: ImageVector) {
-    Box(
-        modifier =
-            Modifier
-                .size(32.dp)
-                .clip(MaterialTheme.shapes.small)
-                .background(MaterialTheme.colorScheme.primaryContainer),
-        contentAlignment = Alignment.Center,
-    ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = null,
-            modifier = Modifier.size(18.dp),
-            tint = MaterialTheme.colorScheme.primary,
-        )
-    }
-}
-
+/** 区块级错误：标题 + 说明 + 重试；错误码不进入界面。 */
 @Composable
 private fun SectionError(
     title: String,
     message: String,
     onRetry: () -> Unit,
 ) {
-    Row(
-        modifier = Modifier.fillMaxWidth().padding(CulinarySpacing.md),
-        verticalAlignment = Alignment.Top,
+    Column(
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = CulinarySpacing.pageHorizontal, vertical = CulinarySpacing.md),
     ) {
-        Box(
-            modifier =
-                Modifier
-                    .size(24.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.errorContainer),
-            contentAlignment = Alignment.Center,
-        ) {
-            Text(
-                text = "!",
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onErrorContainer,
-                fontWeight = FontWeight.Bold,
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(
+                imageVector = CulinaryIcons.Warning,
+                contentDescription = null,
+                modifier = Modifier.size(16.dp),
+                tint = CulinaryColorScheme.current.danger,
             )
-        }
-        Spacer(modifier = Modifier.width(CulinarySpacing.sm))
-        Column(modifier = Modifier.weight(1f)) {
+            Spacer(modifier = Modifier.width(CulinarySpacing.xs))
             Text(
                 text = title,
                 style = MaterialTheme.typography.titleSmall,
                 color = MaterialTheme.colorScheme.onSurface,
             )
-            Text(
-                text = message,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(top = 2.dp),
-            )
-            TextButton(onClick = onRetry) {
-                Text(text = stringResource(R.string.action_retry))
-            }
         }
-    }
-}
-
-@Composable
-private fun HomeEmptyState(
-    icon: ImageVector,
-    title: String,
-    body: String,
-    actionLabel: String? = null,
-    onAction: (() -> Unit)? = null,
-) {
-    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-    Column(
-        modifier = Modifier.fillMaxWidth().padding(CulinarySpacing.lg),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        Box(
-            modifier =
-                Modifier
-                    .size(40.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.primaryContainer),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                modifier = Modifier.size(20.dp),
-                tint = MaterialTheme.colorScheme.primary,
-            )
-        }
-        Spacer(modifier = Modifier.height(CulinarySpacing.sm))
+        Spacer(modifier = Modifier.height(CulinarySpacing.xxs))
         Text(
-            text = title,
-            style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.onSurface,
-        )
-        Text(
-            text = body,
+            text = message,
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.padding(top = CulinarySpacing.xxs),
         )
-        if (actionLabel != null && onAction != null) {
-            TextButton(onClick = onAction) {
-                Text(text = actionLabel)
-            }
-        }
+        Spacer(modifier = Modifier.height(CulinarySpacing.xxs))
+        CulinaryTextButton(
+            text = stringResource(R.string.action_retry),
+            onClick = onRetry,
+        )
     }
 }
 
+/** 指标骨架：保持三列布局，避免加载时跳版。 */
 @Composable
-private fun InventorySkeleton() {
-    Column(modifier = Modifier.fillMaxWidth().padding(CulinarySpacing.md)) {
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-            repeat(3) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    SkeletonBlock(width = 56.dp, height = 32.dp)
-                    Spacer(modifier = Modifier.height(CulinarySpacing.xs))
-                    SkeletonBlock(width = 44.dp, height = 10.dp)
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun KnowledgeSkeleton() {
+private fun MetricSkeleton() {
     Row(
-        modifier = Modifier.fillMaxWidth().padding(CulinarySpacing.md),
-        horizontalArrangement = Arrangement.SpaceEvenly,
-    ) {
-        repeat(3) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                SkeletonBlock(width = 44.dp, height = 24.dp)
-                Spacer(modifier = Modifier.height(CulinarySpacing.xs))
-                SkeletonBlock(width = 40.dp, height = 10.dp)
-            }
-        }
-    }
-}
-
-@Composable
-private fun SkeletonBlock(
-    width: Dp,
-    height: Dp,
-) {
-    Box(
         modifier =
             Modifier
-                .width(width)
-                .height(height)
-                .clip(MaterialTheme.shapes.extraSmall)
-                .background(MaterialTheme.colorScheme.surfaceVariant),
-    )
-}
-
-/** 统一首页卡片：1dp 暖灰边框、16dp 圆角、无阴影。 */
-@Composable
-private fun HomeCard(
-    modifier: Modifier = Modifier,
-    content: @Composable ColumnScope.() -> Unit,
-) {
-    Surface(
-        modifier = modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.large,
-        color = MaterialTheme.colorScheme.surface,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-        tonalElevation = 0.dp,
-        shadowElevation = 0.dp,
+                .fillMaxWidth()
+                .padding(horizontal = CulinarySpacing.pageHorizontal, vertical = CulinarySpacing.md),
+        horizontalArrangement = Arrangement.spacedBy(CulinarySpacing.md),
     ) {
-        Column(content = content)
+        repeat(3) {
+            Column(modifier = Modifier.weight(1f)) {
+                Box(
+                    modifier =
+                        Modifier
+                            .width(48.dp)
+                            .height(28.dp)
+                            .background(
+                                color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                                shape = RoundedCornerShape(2.dp),
+                            ),
+                )
+                Spacer(modifier = Modifier.height(CulinarySpacing.xs))
+                Box(
+                    modifier =
+                        Modifier
+                            .width(40.dp)
+                            .height(10.dp)
+                            .background(
+                                color = MaterialTheme.colorScheme.surfaceContainer,
+                                shape = RoundedCornerShape(2.dp),
+                            ),
+                )
+            }
+        }
     }
 }

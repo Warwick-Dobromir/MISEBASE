@@ -1,4 +1,4 @@
-package com.culinary.home
+﻿package com.culinary.home
 
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
@@ -72,13 +72,14 @@ class HomeScreenTest {
             state =
                 HomeUiState(
                     todayLabel = "11月5日 星期四",
-                    inventory = HomeSection.Failed("本机数据库读取失败（CUL-DB-001）"),
+                    inventory = HomeSection.Failed(message = "本机数据库读取失败，请重试。", diagnosticCode = "CUL-DB-001"),
                     knowledge = HomeSection.Ready(HomeKnowledgeSummary(3, 5, 8)),
                 ),
             onRetryInventory = { retried = true },
         )
 
         compose.onNodeWithText("库存数据暂时无法读取").assertIsDisplayed()
+        compose.onNodeWithText("CUL-DB-001", substring = true).assertDoesNotExist()
         compose.onNodeWithText("知识库概览").assertIsDisplayed()
         compose.onNodeWithText("5").assertIsDisplayed()
         compose.onNodeWithText("重试").performClick()

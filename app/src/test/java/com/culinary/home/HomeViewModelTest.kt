@@ -10,7 +10,9 @@ import com.culinary.core.data.home.HomeSummaryReader
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
@@ -75,7 +77,10 @@ class HomeViewModelTest {
 
             val state = viewModel.uiState.value
             assertThat(state.inventory).isInstanceOf(HomeSection.Failed::class.java)
-            assertThat((state.inventory as HomeSection.Failed).message).contains("CUL-DB-001")
+            assertThat((state.inventory as HomeSection.Failed).message)
+                .isEqualTo("本机数据库读取失败，请重试。")
+            assertThat((state.inventory as HomeSection.Failed).message).doesNotContain("CUL-")
+            assertThat((state.inventory as HomeSection.Failed).diagnosticCode).isEqualTo("CUL-DB-001")
             assertThat(state.knowledge).isEqualTo(HomeSection.Ready(HomeKnowledgeSummary(2, 4, 6)))
         }
 
@@ -117,12 +122,67 @@ class HomeViewModelTest {
             assertThat((viewModel.uiState.value.inventory as HomeSection.Failed).message)
                 .contains("未预期")
         }
+
+    @Test
+    fun `refresh keeps visible data and raises a lightweight refreshing flag`() =
+        runTest(dispatcher) {
+            val reader =
+                FakeReader(
+                    inventory = Outcome.success(HomeInventorySummary(1, 3, 0)),
+                    knowledge = Outcome.success(HomeKnowledgeSummary(2, 4, 6)),
+                )
+            val viewModel = HomeViewModel(reader, clock)
+            advanceUntilIdle()
+
+            reader.delayMillis = 100
+            reader.inventory = Outcome.success(HomeInventorySummary(2, 5, 1))
+            viewModel.refresh()
+
+            // 刷新期间保留旧值，不发骨架屏。
+            assertThat(viewModel.uiState.value.isRefreshing).isTrue()
+            assertThat(viewModel.uiState.value.inventory).isEqualTo(
+                HomeSection.Ready(HomeInventorySummary(1, 3, 0)),
+            )
+
+            advanceUntilIdle()
+
+            assertThat(viewModel.uiState.value.isRefreshing).isFalse()
+            assertThat(viewModel.uiState.value.inventory).isEqualTo(
+                HomeSection.Ready(HomeInventorySummary(2, 5, 1)),
+            )
+        }
+
+    @Test
+    fun `refresh during an active load is not silently dropped`() =
+        runTest(dispatcher) {
+            val reader =
+                FakeReader(
+                    inventory = Outcome.success(HomeInventorySummary(0, 0, 0)),
+                    knowledge = Outcome.success(HomeKnowledgeSummary(0, 0, 0)),
+                    delayMillis = 100,
+                )
+            val viewModel = HomeViewModel(reader, clock)
+            advanceTimeBy(10)
+
+            reader.inventory = Outcome.success(HomeInventorySummary(4, 6, 2))
+            reader.knowledge = Outcome.success(HomeKnowledgeSummary(1, 1, 1))
+            viewModel.refresh()
+            advanceUntilIdle()
+
+            assertThat(reader.inventoryCalls).isEqualTo(2)
+            assertThat(reader.knowledgeCalls).isEqualTo(2)
+            assertThat(viewModel.uiState.value.inventory).isEqualTo(
+                HomeSection.Ready(HomeInventorySummary(4, 6, 2)),
+            )
+            assertThat(viewModel.uiState.value.isRefreshing).isFalse()
+        }
 }
 
 private class FakeReader(
     var inventory: Outcome<HomeInventorySummary>,
     var knowledge: Outcome<HomeKnowledgeSummary>,
     private val throwOnInventory: Boolean = false,
+    var delayMillis: Long = 0,
 ) : HomeSummaryReader {
     var inventoryCalls: Int = 0
         private set
@@ -131,6 +191,7 @@ private class FakeReader(
 
     override suspend fun inventorySummary(): Outcome<HomeInventorySummary> {
         inventoryCalls += 1
+        if (delayMillis > 0) delay(delayMillis)
         if (throwOnInventory) error("boom")
         return inventory
     }

@@ -19,10 +19,15 @@ import java.util.Locale
 import javax.inject.Inject
 
 /**
- * 首页状态持有者（MB-HOME-001）。
+ * 首页状态持有者（MB-HOME-001 / MB-UI-001 §8.5）。
  *
  * 只做状态编排：库存与知识库分别读取、分别失败；不实现库存计算或档案规则。
- * 汇总读取在 [HomeSummaryReader] 的 IO 上下文执行，本类不直接触碰数据库。
+ *
+ * 刷新策略（本次修正）：
+ * - 旧实现用 `if (job?.isActive == true) return`，正在加载时的刷新请求会被**静默丢弃**；
+ * - 现在改为“最新请求获胜”：新请求取消同一模块的旧读取并重新执行；
+ * - 刷新不显示骨架屏，保留旧数据，只用 [HomeUiState.isRefreshing] 驱动顶部细进度条；
+ * - 两个模块的刷新计数合并，任一完成不会提前熄灭进度条。
  */
 @HiltViewModel
 @Suppress("TooGenericExceptionCaught", "SwallowedException") // 错误边界：异常在此转换为模块级错误态
@@ -37,66 +42,106 @@ class HomeViewModel
 
         private var inventoryJob: Job? = null
         private var knowledgeJob: Job? = null
+        private var refreshingLoads = 0
 
         init {
-            loadAll(showLoading = true)
+            loadAll(showLoading = true, refresh = false)
         }
 
         /** 冷启动后或从其他页面返回时刷新；已有数据保留到新结果返回，避免闪烁。 */
-        fun refresh() = loadAll(showLoading = false)
+        fun refresh() = loadAll(showLoading = false, refresh = true)
 
-        fun retryInventory() = loadInventory(showLoading = true)
+        fun retryInventory() = loadInventory(showLoading = true, refresh = false)
 
-        fun retryKnowledge() = loadKnowledge(showLoading = true)
+        fun retryKnowledge() = loadKnowledge(showLoading = true, refresh = false)
 
-        private fun loadAll(showLoading: Boolean) {
+        private fun loadAll(
+            showLoading: Boolean,
+            refresh: Boolean,
+        ) {
             _uiState.update { it.copy(todayLabel = formatToday()) }
-            loadInventory(showLoading)
-            loadKnowledge(showLoading)
+            loadInventory(showLoading = showLoading, refresh = refresh)
+            loadKnowledge(showLoading = showLoading, refresh = refresh)
         }
 
-        private fun loadInventory(showLoading: Boolean) {
-            if (inventoryJob?.isActive == true) return
+        private fun loadInventory(
+            showLoading: Boolean,
+            refresh: Boolean,
+        ) {
+            inventoryJob?.cancel()
+            if (refresh) beginRefresh()
             inventoryJob =
                 viewModelScope.launch {
-                    if (showLoading) {
-                        _uiState.update { it.copy(inventory = HomeSection.Loading) }
-                    }
-                    val next =
-                        try {
-                            when (val result = reader.inventorySummary()) {
-                                is Outcome.Success -> HomeSection.Ready(result.value)
-                                is Outcome.Failure -> HomeSection.Failed(HomeErrorMessages.describe(result.error))
-                            }
-                        } catch (e: CancellationException) {
-                            throw e
-                        } catch (e: Throwable) {
-                            HomeSection.Failed(HomeErrorMessages.UNEXPECTED)
+                    try {
+                        if (showLoading) {
+                            _uiState.update { it.copy(inventory = HomeSection.Loading) }
                         }
-                    _uiState.update { it.copy(inventory = next) }
+                        val next =
+                            try {
+                                when (val result = reader.inventorySummary()) {
+                                    is Outcome.Success -> HomeSection.Ready(result.value)
+                                    is Outcome.Failure ->
+                                        HomeSection.Failed(
+                                            message = HomeErrorMessages.userMessage(result.error),
+                                            diagnosticCode = HomeErrorMessages.diagnosticCode(result.error),
+                                        )
+                                }
+                            } catch (e: CancellationException) {
+                                throw e
+                            } catch (e: Throwable) {
+                                HomeSection.Failed(message = HomeErrorMessages.UNEXPECTED)
+                            }
+                        _uiState.update { it.copy(inventory = next) }
+                    } finally {
+                        if (refresh) endRefresh()
+                    }
                 }
         }
 
-        private fun loadKnowledge(showLoading: Boolean) {
-            if (knowledgeJob?.isActive == true) return
+        private fun loadKnowledge(
+            showLoading: Boolean,
+            refresh: Boolean,
+        ) {
+            knowledgeJob?.cancel()
+            if (refresh) beginRefresh()
             knowledgeJob =
                 viewModelScope.launch {
-                    if (showLoading) {
-                        _uiState.update { it.copy(knowledge = HomeSection.Loading) }
-                    }
-                    val next =
-                        try {
-                            when (val result = reader.knowledgeSummary()) {
-                                is Outcome.Success -> HomeSection.Ready(result.value)
-                                is Outcome.Failure -> HomeSection.Failed(HomeErrorMessages.describe(result.error))
-                            }
-                        } catch (e: CancellationException) {
-                            throw e
-                        } catch (e: Throwable) {
-                            HomeSection.Failed(HomeErrorMessages.UNEXPECTED)
+                    try {
+                        if (showLoading) {
+                            _uiState.update { it.copy(knowledge = HomeSection.Loading) }
                         }
-                    _uiState.update { it.copy(knowledge = next) }
+                        val next =
+                            try {
+                                when (val result = reader.knowledgeSummary()) {
+                                    is Outcome.Success -> HomeSection.Ready(result.value)
+                                    is Outcome.Failure ->
+                                        HomeSection.Failed(
+                                            message = HomeErrorMessages.userMessage(result.error),
+                                            diagnosticCode = HomeErrorMessages.diagnosticCode(result.error),
+                                        )
+                                }
+                            } catch (e: CancellationException) {
+                                throw e
+                            } catch (e: Throwable) {
+                                HomeSection.Failed(message = HomeErrorMessages.UNEXPECTED)
+                            }
+                        _uiState.update { it.copy(knowledge = next) }
+                    } finally {
+                        if (refresh) endRefresh()
+                    }
                 }
+        }
+
+        private fun beginRefresh() {
+            refreshingLoads += 1
+            _uiState.update { it.copy(isRefreshing = true) }
+        }
+
+        private fun endRefresh() {
+            refreshingLoads = (refreshingLoads - 1).coerceAtLeast(0)
+            if (refreshingLoads == 0) {
+                _uiState.update { it.copy(isRefreshing = false) }
+            }
         }
 
         private fun formatToday(): String {

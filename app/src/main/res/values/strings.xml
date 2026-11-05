@@ -110,4 +110,9 @@
     <string name="settings_error_journal">恢复日志写入失败，未修改任何数据。</string>
     <string name="settings_error_file">无法访问所选文件，请重新选择。</string>
     <string name="settings_error_unknown">操作失败（%1$s）。</string>
+
+    <!-- MB-UI-001：首页编辑式排版的拉丁小标题（保持全大写 + 字距） -->
+    <string name="home_inventory_eyebrow" translatable="false">INVENTORY</string>
+    <string name="home_quick_eyebrow" translatable="false">ACTIONS</string>
+    <string name="home_knowledge_eyebrow" translatable="false">LIBRARY</string>
 </resources>
