@@ -8,27 +8,24 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
+import com.culinary.core.designsystem.component.CulinaryButton
+import com.culinary.core.designsystem.component.CulinaryFilterPill
+import com.culinary.core.designsystem.component.CulinaryInfoRow
+import com.culinary.core.designsystem.component.CulinaryTextButton
+import com.culinary.core.designsystem.component.CulinaryTextField
 import com.culinary.core.designsystem.component.EmptyState
 import com.culinary.core.designsystem.component.ErrorBanner
+import com.culinary.core.designsystem.component.PageHeader
+import com.culinary.core.designsystem.component.ResultPanel
 import com.culinary.core.designsystem.component.SectionHeader
-import com.culinary.core.designsystem.component.StatusBadge
 import com.culinary.core.designsystem.component.StatusTone
-import com.culinary.core.designsystem.theme.CulinaryColorScheme
 import com.culinary.core.designsystem.theme.CulinarySpacing
 import com.culinary.core.domain.barcode.ScanSource
 import com.culinary.core.domain.scan.ScanPreviousImport
@@ -74,85 +71,103 @@ internal fun ScanConfirmScreen(
             modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = CulinarySpacing.md),
-        verticalArrangement = Arrangement.Top,
+                .padding(bottom = CulinarySpacing.xl),
     ) {
         state.error?.let { message ->
-            ErrorBanner(message = message)
+            ErrorBanner(
+                message = message,
+                modifier = Modifier.padding(horizontal = CulinarySpacing.pageHorizontal),
+            )
         }
         state.lastError?.let { message ->
             ErrorBanner(
                 message = message,
                 actionLabel = stringResource(R.string.scan_confirm_retry),
                 onAction = onRetry,
+                modifier = Modifier.padding(horizontal = CulinarySpacing.pageHorizontal),
             )
         }
-        Text(
-            text = stringResource(R.string.scan_confirm_title),
-            style = MaterialTheme.typography.titleLarge,
-        )
-        Text(
-            text = stringResource(R.string.scan_confirm_body),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        PageHeader(
+            eyebrow = "SCAN",
+            title = stringResource(R.string.scan_confirm_title),
+            supporting = stringResource(R.string.scan_confirm_body),
         )
 
-        SectionHeader(title = stringResource(R.string.scan_confirm_scan_result))
-        InfoRow(label = stringResource(R.string.scan_confirm_code), value = capture.rawValue)
-        InfoRow(label = stringResource(R.string.scan_confirm_format), value = capture.formatLabel)
-        InfoRow(label = stringResource(R.string.scan_confirm_source), value = sourceLabel(capture.source))
-
-        state.previous?.let { previous -> AlreadyImportedPanel(previous = previous) }
-
-        SectionHeader(title = stringResource(R.string.scan_confirm_target))
-        if (state.ingredients.isEmpty() && !state.createNew) {
-            Text(
-                text = stringResource(R.string.scan_confirm_no_ingredients),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+        Column(modifier = Modifier.padding(horizontal = CulinarySpacing.pageHorizontal)) {
+            SectionHeader(title = stringResource(R.string.scan_confirm_scan_result))
+            CulinaryInfoRow(
+                label = stringResource(R.string.scan_confirm_code),
+                value = capture.rawValue,
             )
-        }
-        FilterChip(
-            selected = state.createNew,
-            onClick = { onCreateNewChange(true) },
-            label = { Text(text = stringResource(R.string.scan_confirm_new_ingredient)) },
-        )
-        if (state.createNew) {
-            OutlinedTextField(
-                value = state.newIngredientName,
-                onValueChange = onNewIngredientNameChange,
-                label = { Text(text = stringResource(R.string.scan_confirm_new_name)) },
+            CulinaryInfoRow(
+                label = stringResource(R.string.scan_confirm_format),
+                value = capture.formatLabel,
+            )
+            CulinaryInfoRow(
+                label = stringResource(R.string.scan_confirm_source),
+                value = sourceLabel(capture.source),
+            )
+
+            state.previous?.let { previous -> AlreadyImportedPanel(previous = previous) }
+
+            SectionHeader(title = stringResource(R.string.scan_confirm_target))
+            if (state.ingredients.isEmpty() && !state.createNew) {
+                Text(
+                    text = stringResource(R.string.scan_confirm_no_ingredients),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(CulinarySpacing.xs)) {
+                CulinaryFilterPill(
+                    text = stringResource(R.string.scan_confirm_new_ingredient),
+                    selected = state.createNew,
+                    onClick = { onCreateNewChange(true) },
+                )
+                state.ingredients.forEach { ingredient ->
+                    CulinaryFilterPill(
+                        text = ingredient.name,
+                        selected = !state.createNew && state.selectedIngredientId == ingredient.id.value,
+                        onClick = { onSelectIngredient(ingredient.id.value) },
+                    )
+                }
+            }
+            if (state.createNew) {
+                CulinaryTextField(
+                    value = state.newIngredientName,
+                    onValueChange = onNewIngredientNameChange,
+                    label = { Text(text = stringResource(R.string.scan_confirm_new_name)) },
+                    singleLine = true,
+                    modifier = Modifier.padding(top = CulinarySpacing.sm),
+                )
+            }
+
+            Spacer(modifier = Modifier.height(CulinarySpacing.md))
+            CulinaryTextField(
+                value = state.quantity,
+                onValueChange = onQuantityChange,
+                label = { Text(text = stringResource(R.string.scan_confirm_quantity)) },
                 singleLine = true,
+            )
+            Spacer(modifier = Modifier.height(CulinarySpacing.block))
+            CulinaryButton(
+                text = stringResource(primaryActionLabel(state)),
+                onClick = onConfirm,
+                enabled = state.canConfirm,
+                loading = state.isSubmitting,
                 modifier = Modifier.fillMaxWidth(),
             )
-        }
-        state.ingredients.forEach { ingredient ->
-            FilterChip(
-                selected = !state.createNew && state.selectedIngredientId == ingredient.id.value,
-                onClick = { onSelectIngredient(ingredient.id.value) },
-                label = { Text(text = ingredient.name) },
-                modifier = Modifier.padding(top = CulinarySpacing.xxs),
+
+            state.result?.let { result ->
+                Spacer(modifier = Modifier.height(CulinarySpacing.md))
+                ImportResultPanel(result = result)
+            }
+
+            Spacer(modifier = Modifier.height(CulinarySpacing.md))
+            CulinaryTextButton(
+                text = stringResource(R.string.scan_confirm_back_to_scan),
+                onClick = onBackToScan,
             )
-        }
-
-        Spacer(modifier = Modifier.height(CulinarySpacing.md))
-        OutlinedTextField(
-            value = state.quantity,
-            onValueChange = onQuantityChange,
-            label = { Text(text = stringResource(R.string.scan_confirm_quantity)) },
-            singleLine = true,
-            modifier = Modifier.fillMaxWidth(),
-        )
-        Spacer(modifier = Modifier.height(CulinarySpacing.md))
-        Button(onClick = onConfirm, enabled = state.canConfirm) {
-            Text(text = stringResource(primaryActionLabel(state)))
-        }
-
-        state.result?.let { result -> ImportResultPanel(result = result) }
-
-        Spacer(modifier = Modifier.height(CulinarySpacing.md))
-        TextButton(onClick = onBackToScan) {
-            Text(text = stringResource(R.string.scan_confirm_back_to_scan))
         }
     }
 }
@@ -172,95 +187,40 @@ private fun primaryActionLabel(state: ScanConfirmUiState): Int =
     }
 
 @Composable
-private fun InfoRow(
-    label: String,
-    value: String,
-) {
-    Row(
-        modifier = Modifier.fillMaxWidth().padding(vertical = CulinarySpacing.xxs),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.width(72.dp),
-        )
-        Text(
-            text = value,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.weight(1f),
-        )
-    }
-}
-
-@Composable
 private fun AlreadyImportedPanel(previous: ScanPreviousImport) {
-    Surface(
-        modifier = Modifier.fillMaxWidth().padding(top = CulinarySpacing.sm),
-        color = CulinaryColorScheme.current.warning,
-        contentColor = CulinaryColorScheme.current.onWarning,
-    ) {
-        Column(modifier = Modifier.padding(CulinarySpacing.sm)) {
-            StatusBadge(
-                text = stringResource(R.string.scan_confirm_already),
-                tone = StatusTone.Warning,
-            )
-            Text(
-                text =
-                    stringResource(
-                        R.string.scan_confirm_duplicate_body,
-                        formatImportTime(previous.entry.occurredAt),
-                        formatAmount(previous.entry.onHandDelta),
-                        previous.entry.stockUnit.code,
-                    ),
-                style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.padding(top = CulinarySpacing.xxs),
-            )
-        }
-    }
+    Spacer(modifier = Modifier.height(CulinarySpacing.sm))
+    ResultPanel(
+        title = stringResource(R.string.scan_confirm_already),
+        message =
+            stringResource(
+                R.string.scan_confirm_duplicate_body,
+                formatImportTime(previous.entry.occurredAt),
+                formatAmount(previous.entry.onHandDelta),
+                previous.entry.stockUnit.code,
+            ),
+        tone = StatusTone.Warning,
+    )
 }
 
 @Composable
 private fun ImportResultPanel(result: ScanImportOutcome) {
-    Surface(
-        modifier = Modifier.fillMaxWidth().padding(top = CulinarySpacing.md),
-        color = MaterialTheme.colorScheme.secondaryContainer,
-        contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
-    ) {
-        Column(modifier = Modifier.padding(CulinarySpacing.sm)) {
-            StatusBadge(
-                text = stringResource(R.string.scan_confirm_saved_badge),
-                tone = StatusTone.Success,
-            )
-            Text(
-                text =
-                    stringResource(
-                        R.string.scan_confirm_saved,
-                        result.ingredientName,
-                        formatAmount(result.amount),
-                        result.unitCode,
-                    ),
-                style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.padding(top = CulinarySpacing.xxs),
-            )
-            if (result.replayed) {
-                Text(
-                    text = stringResource(R.string.scan_confirm_replayed),
-                    style = MaterialTheme.typography.bodySmall,
-                    modifier = Modifier.padding(top = CulinarySpacing.xxs),
-                )
-            }
-            result.batchCode?.let { code ->
-                Text(
-                    text = "${stringResource(R.string.scan_confirm_batch)} $code",
-                    style = MaterialTheme.typography.bodySmall,
-                    modifier = Modifier.padding(top = CulinarySpacing.xxs),
-                )
-            }
-        }
-    }
+    val details =
+        listOfNotNull(
+            if (result.replayed) stringResource(R.string.scan_confirm_replayed) else null,
+            result.batchCode?.let { code -> stringResource(R.string.scan_confirm_batch) + " " + code },
+        )
+    ResultPanel(
+        title = stringResource(R.string.scan_confirm_saved_badge),
+        message =
+            stringResource(
+                R.string.scan_confirm_saved,
+                result.ingredientName,
+                formatAmount(result.amount),
+                result.unitCode,
+            ),
+        tone = StatusTone.Success,
+        details = details,
+    )
 }
 
 @Composable

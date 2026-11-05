@@ -1,4 +1,4 @@
-﻿package com.culinary.core.designsystem.component
+package com.culinary.core.designsystem.component
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -26,6 +27,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import com.culinary.core.designsystem.icon.CulinaryIcons
 import com.culinary.core.designsystem.theme.CulinarySizes
@@ -52,11 +54,15 @@ fun CulinaryTextField(
     placeholder: String? = null,
     keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
     trailing: (@Composable () -> Unit)? = null,
+    fillWidth: Boolean = true,
 ) {
     OutlinedTextField(
         value = value,
         onValueChange = onValueChange,
-        modifier = modifier.fillMaxWidth().defaultMinSize(minHeight = CulinarySizes.fieldHeight),
+        modifier =
+            modifier
+                .then(if (fillWidth) Modifier.fillMaxWidth() else Modifier)
+                .defaultMinSize(minHeight = CulinarySizes.fieldHeight),
         enabled = enabled,
         isError = isError,
         singleLine = singleLine,
@@ -89,6 +95,58 @@ fun CulinaryTextField(
             },
         trailingIcon = trailing,
         keyboardOptions = keyboardOptions,
+        shape = MaterialTheme.shapes.extraSmall,
+        colors = culinaryFieldColors(),
+    )
+}
+
+/**
+ * 兼容 Material 3 调用风格的重载：`label = { Text(…) }`、`supportingText = { … }`。
+ *
+ * 既有编辑页已使用 lambda 写法，保留该重载可让页面只替换组件名，
+ * 不重写表单逻辑，降低迁移风险。
+ */
+@Composable
+fun CulinaryTextField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    label: @Composable () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    readOnly: Boolean = false,
+    singleLine: Boolean = false,
+    minLines: Int = 1,
+    isError: Boolean = false,
+    supportingText: (@Composable () -> Unit)? = null,
+    leadingIcon: (@Composable () -> Unit)? = null,
+    trailingIcon: (@Composable () -> Unit)? = null,
+    placeholder: (@Composable () -> Unit)? = null,
+    keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
+    keyboardActions: KeyboardActions = KeyboardActions.Default,
+    visualTransformation: VisualTransformation = VisualTransformation.None,
+    fillWidth: Boolean = true,
+) {
+    OutlinedTextField(
+        value = value,
+        onValueChange = onValueChange,
+        modifier =
+            modifier
+                .then(if (fillWidth) Modifier.fillMaxWidth() else Modifier)
+                .defaultMinSize(minHeight = CulinarySizes.fieldHeight),
+        enabled = enabled,
+        readOnly = readOnly,
+        isError = isError,
+        singleLine = singleLine,
+        minLines = if (singleLine) 1 else minLines,
+        textStyle = MaterialTheme.typography.bodyLarge,
+        label = label,
+        placeholder = placeholder,
+        supportingText = supportingText,
+        leadingIcon = leadingIcon,
+        trailingIcon = trailingIcon,
+        keyboardOptions = keyboardOptions,
+        keyboardActions = keyboardActions,
+        visualTransformation = visualTransformation,
         shape = MaterialTheme.shapes.extraSmall,
         colors = culinaryFieldColors(),
     )

@@ -3,6 +3,7 @@ package com.culinary.feature.sauces
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performScrollTo
 import com.culinary.core.designsystem.theme.CulinaryTheme
 import com.culinary.core.domain.model.ComponentTarget
 import com.culinary.core.domain.model.EntityStatus
@@ -158,6 +159,7 @@ class SaucesUiTest {
 
         compose
             .onNodeWithText("子菜谱 / 子酱汁组成行来自导入数据，本阶段只读保留；保存草稿会原样写回，不会丢失。")
+            .performScrollTo()
             .assertIsDisplayed()
         compose.onNodeWithText("只读保留").assertExists()
     }

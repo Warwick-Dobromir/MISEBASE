@@ -1,6 +1,5 @@
 package com.culinary.feature.scan
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -13,15 +12,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -32,16 +26,23 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
+import com.culinary.core.designsystem.component.CulinaryButton
+import com.culinary.core.designsystem.component.CulinaryButtonVariant
+import com.culinary.core.designsystem.component.CulinaryTextButton
+import com.culinary.core.designsystem.component.CulinaryTextField
 import com.culinary.core.designsystem.component.ErrorBanner
 import com.culinary.core.designsystem.icon.CulinaryIcons
 import com.culinary.core.designsystem.theme.CulinarySpacing
+import com.culinary.core.designsystem.theme.CulinaryTextStyles
 
 /**
  * 扫码页（纯 UI，可测试）。
  *
  * 相机预览以 [cameraContent] 槽位注入：Compose UI Test 传空实现即可验证权限说明、
  * 扫描框、手电筒、手工输入与返回；真实页面由 [ScanRoute] 注入 CameraX 预览。
+ *
+ * 视觉：相机区域保持极简（四角遮罩 + 细描边），操作按钮使用白色高对比变体；
+ * 权限与手工输入页回到普通页面规范（白底、细线、2dp 圆角）。
  */
 @Composable
 internal fun ScanScreen(
@@ -178,27 +179,27 @@ private fun CameraActions(
         )
         Spacer(modifier = Modifier.height(CulinarySpacing.md))
         Row(horizontalArrangement = Arrangement.spacedBy(CulinarySpacing.sm)) {
-            Button(onClick = onToggleTorch) {
-                Text(
-                    text =
-                        stringResource(
-                            if (state.torchOn) R.string.scan_torch_on else R.string.scan_torch_off,
-                        ),
-                )
-            }
-            OutlinedButton(
+            CulinaryButton(
+                text =
+                    stringResource(
+                        if (state.torchOn) R.string.scan_torch_on else R.string.scan_torch_off,
+                    ),
+                onClick = onToggleTorch,
+                variant = CulinaryButtonVariant.Overlay,
+            )
+            CulinaryButton(
+                text = stringResource(R.string.scan_manual_open),
                 onClick = onOpenManualEntry,
-                colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.White),
-                border = BorderStroke(1.dp, Color.White),
-            ) {
-                Text(text = stringResource(R.string.scan_manual_open))
-            }
+                variant = CulinaryButtonVariant.OverlayOutline,
+            )
         }
         if (!state.scanning) {
             Spacer(modifier = Modifier.height(CulinarySpacing.sm))
-            Button(onClick = onResumeScanning) {
-                Text(text = stringResource(R.string.scan_resume))
-            }
+            CulinaryButton(
+                text = stringResource(R.string.scan_resume),
+                onClick = onResumeScanning,
+                variant = CulinaryButtonVariant.Overlay,
+            )
         }
     }
 }
@@ -221,6 +222,7 @@ private fun ScanBackButton(
     }
 }
 
+@Suppress("LongMethod") // 权限说明的三个分支文案与动作同屏，拆分只会增加参数。
 @Composable
 private fun PermissionPane(
     state: ScanUiState,
@@ -245,7 +247,11 @@ private fun PermissionPane(
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.Start,
     ) {
-        Text(text = title, style = MaterialTheme.typography.titleLarge)
+        Text(
+            text = title,
+            style = CulinaryTextStyles.pageTitle,
+            color = MaterialTheme.colorScheme.onSurface,
+        )
         Spacer(modifier = Modifier.height(CulinarySpacing.sm))
         Text(
             text = body,
@@ -253,28 +259,27 @@ private fun PermissionPane(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Spacer(modifier = Modifier.height(CulinarySpacing.lg))
-        Row(horizontalArrangement = Arrangement.spacedBy(CulinarySpacing.sm)) {
-            if (state.cameraAccess != CameraAccessState.UNAVAILABLE) {
-                Button(onClick = onRequestPermission) {
-                    Text(
-                        text =
-                            stringResource(
-                                if (state.cameraAccess == CameraAccessState.DENIED) {
-                                    R.string.scan_permission_request_again
-                                } else {
-                                    R.string.scan_permission_grant
-                                },
-                            ),
-                    )
-                }
-            }
-            OutlinedButton(onClick = onOpenManualEntry) {
-                Text(text = stringResource(R.string.scan_manual_open))
-            }
-            TextButton(onClick = onBack) {
-                Text(text = stringResource(R.string.scan_back))
-            }
+        if (state.cameraAccess != CameraAccessState.UNAVAILABLE) {
+            CulinaryButton(
+                text =
+                    stringResource(
+                        if (state.cameraAccess == CameraAccessState.DENIED) {
+                            R.string.scan_permission_request_again
+                        } else {
+                            R.string.scan_permission_grant
+                        },
+                    ),
+                onClick = onRequestPermission,
+                modifier = Modifier.fillMaxWidth(),
+            )
+            Spacer(modifier = Modifier.height(CulinarySpacing.xs))
         }
+        CulinaryButton(
+            text = stringResource(R.string.scan_manual_open),
+            onClick = onOpenManualEntry,
+            variant = CulinaryButtonVariant.Secondary,
+            modifier = Modifier.fillMaxWidth(),
+        )
         if (state.cameraAccess == CameraAccessState.DENIED) {
             Spacer(modifier = Modifier.height(CulinarySpacing.md))
             Text(
@@ -283,6 +288,11 @@ private fun PermissionPane(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
+        Spacer(modifier = Modifier.height(CulinarySpacing.xs))
+        CulinaryTextButton(
+            text = stringResource(R.string.scan_back),
+            onClick = onBack,
+        )
     }
 }
 
@@ -301,7 +311,8 @@ private fun ManualEntryPane(
     ) {
         Text(
             text = stringResource(R.string.scan_manual_title),
-            style = MaterialTheme.typography.titleLarge,
+            style = CulinaryTextStyles.pageTitle,
+            color = MaterialTheme.colorScheme.onSurface,
         )
         Spacer(modifier = Modifier.height(CulinarySpacing.xs))
         Text(
@@ -310,29 +321,39 @@ private fun ManualEntryPane(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Spacer(modifier = Modifier.height(CulinarySpacing.md))
-        OutlinedTextField(
+        CulinaryTextField(
             value = state.manualCode,
             onValueChange = onManualCodeChange,
             label = { Text(text = stringResource(R.string.scan_manual_label)) },
             singleLine = true,
             isError = state.manualError != null,
-            supportingText = {
-                state.manualError?.let { Text(text = it) }
-            },
-            modifier = Modifier.fillMaxWidth(),
+            supportingText =
+                state.manualError?.let { error ->
+                    {
+                        Text(text = error)
+                    }
+                },
         )
         Spacer(modifier = Modifier.height(CulinarySpacing.md))
-        Row(horizontalArrangement = Arrangement.spacedBy(CulinarySpacing.sm)) {
-            Button(onClick = onSubmitManualCode, enabled = state.manualCode.isNotBlank()) {
-                Text(text = stringResource(R.string.scan_manual_confirm))
-            }
-            OutlinedButton(onClick = onCloseManualEntry, enabled = state.hasCamera) {
-                Text(text = stringResource(R.string.scan_manual_back_to_camera))
-            }
-            TextButton(onClick = onBack) {
-                Text(text = stringResource(R.string.scan_back))
-            }
-        }
+        CulinaryButton(
+            text = stringResource(R.string.scan_manual_confirm),
+            onClick = onSubmitManualCode,
+            enabled = state.manualCode.isNotBlank(),
+            modifier = Modifier.fillMaxWidth(),
+        )
+        Spacer(modifier = Modifier.height(CulinarySpacing.xs))
+        CulinaryButton(
+            text = stringResource(R.string.scan_manual_back_to_camera),
+            onClick = onCloseManualEntry,
+            variant = CulinaryButtonVariant.Secondary,
+            enabled = state.hasCamera,
+            modifier = Modifier.fillMaxWidth(),
+        )
+        Spacer(modifier = Modifier.height(CulinarySpacing.xs))
+        CulinaryTextButton(
+            text = stringResource(R.string.scan_back),
+            onClick = onBack,
+        )
     }
 }
 

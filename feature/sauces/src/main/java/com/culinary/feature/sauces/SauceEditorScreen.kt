@@ -10,16 +10,14 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -35,8 +33,14 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.culinary.core.designsystem.component.CulinaryButton
+import com.culinary.core.designsystem.component.CulinaryButtonVariant
+import com.culinary.core.designsystem.component.CulinaryRule
+import com.culinary.core.designsystem.component.CulinaryTextButton
+import com.culinary.core.designsystem.component.CulinaryTextField
 import com.culinary.core.designsystem.component.ErrorBanner
 import com.culinary.core.designsystem.component.LoadingRows
+import com.culinary.core.designsystem.component.PageHeader
 import com.culinary.core.designsystem.component.QuantityText
 import com.culinary.core.designsystem.component.SectionHeader
 import com.culinary.core.designsystem.component.StatusBadge
@@ -118,7 +122,11 @@ internal fun SauceEditorScreen(
 ) {
     Column(modifier = modifier.fillMaxSize()) {
         state.error?.let { message ->
-            ErrorBanner(message = message, onAction = onDismissError)
+            ErrorBanner(
+                message = message,
+                onAction = onDismissError,
+                modifier = Modifier.padding(horizontal = CulinarySpacing.pageHorizontal),
+            )
         }
         if (state.isLoading) {
             LoadingRows()
@@ -159,55 +167,48 @@ private fun EditorForm(
             Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
-                .padding(CulinarySpacing.md),
+                .padding(bottom = CulinarySpacing.xl),
     ) {
         EditorIntro(state = state)
-        EditorBasics(
-            state = state,
-            onNameChange = onNameChange,
-            onFamilyChange = onFamilyChange,
-        )
-        EditorYield(
-            state = state,
-            onYieldAmountChange = onYieldAmountChange,
-            onOpenUnitPicker = onOpenUnitPicker,
-        )
-        EditorComponents(
-            state = state,
-            onAddIngredient = onAddIngredient,
-            onLineAmountChange = onLineAmountChange,
-            onToggleOptional = onToggleOptional,
-            onRemoveLine = onRemoveLine,
-        )
-        EditorFooter(
-            isSaving = state.isSaving,
-            onSaveDraft = onSaveDraft,
-            onSaveAndPublish = onSaveAndPublish,
-        )
-        Spacer(modifier = Modifier.height(CulinarySpacing.xl))
+        Column(modifier = Modifier.padding(horizontal = CulinarySpacing.pageHorizontal)) {
+            EditorBasics(
+                state = state,
+                onNameChange = onNameChange,
+                onFamilyChange = onFamilyChange,
+            )
+            EditorYield(
+                state = state,
+                onYieldAmountChange = onYieldAmountChange,
+                onOpenUnitPicker = onOpenUnitPicker,
+            )
+            EditorComponents(
+                state = state,
+                onAddIngredient = onAddIngredient,
+                onLineAmountChange = onLineAmountChange,
+                onToggleOptional = onToggleOptional,
+                onRemoveLine = onRemoveLine,
+            )
+            EditorFooter(
+                isSaving = state.isSaving,
+                onSaveDraft = onSaveDraft,
+                onSaveAndPublish = onSaveAndPublish,
+            )
+        }
     }
 }
 
 @Composable
 private fun EditorIntro(state: SauceEditorUiState) {
-    Text(
-        text =
+    PageHeader(
+        eyebrow = "SAUCE",
+        title =
             if (state.isNew) {
                 stringResource(R.string.sauces_editor_new_title)
             } else {
                 stringResource(R.string.sauces_editor_edit_title, state.editingVersionNo ?: 1)
             },
-        style = MaterialTheme.typography.titleLarge,
-        color = MaterialTheme.colorScheme.onSurface,
+        supporting = if (state.hasPublishedVersion) stringResource(R.string.sauces_editor_published_hint) else null,
     )
-    if (state.hasPublishedVersion) {
-        Text(
-            text = stringResource(R.string.sauces_editor_published_hint),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(top = CulinarySpacing.xs),
-        )
-    }
 }
 
 @Composable
@@ -216,19 +217,18 @@ private fun EditorBasics(
     onNameChange: (String) -> Unit,
     onFamilyChange: (String) -> Unit,
 ) {
-    OutlinedTextField(
+    CulinaryTextField(
         value = state.name,
         onValueChange = onNameChange,
         label = { Text(text = stringResource(R.string.sauces_name_label)) },
         singleLine = true,
-        modifier = Modifier.fillMaxWidth().padding(top = CulinarySpacing.md),
     )
-    OutlinedTextField(
+    Spacer(modifier = Modifier.height(CulinarySpacing.field))
+    CulinaryTextField(
         value = state.family,
         onValueChange = onFamilyChange,
         label = { Text(text = stringResource(R.string.sauces_family_label)) },
         singleLine = true,
-        modifier = Modifier.fillMaxWidth().padding(top = CulinarySpacing.sm),
     )
 }
 
@@ -240,18 +240,22 @@ private fun EditorYield(
 ) {
     SectionHeader(title = stringResource(R.string.sauces_yield))
     Row(verticalAlignment = Alignment.CenterVertically) {
-        OutlinedTextField(
+        CulinaryTextField(
             value = state.yieldAmount,
             onValueChange = onYieldAmountChange,
             label = { Text(text = stringResource(R.string.sauces_yield_amount)) },
             singleLine = true,
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+            fillWidth = false,
             modifier = Modifier.weight(1f),
         )
-        Spacer(modifier = Modifier.width(CulinarySpacing.xs))
-        OutlinedButton(onClick = onOpenUnitPicker) {
-            Text(text = state.yieldUnit?.symbol ?: "—")
-        }
+        Spacer(modifier = Modifier.width(CulinarySpacing.sm))
+        CulinaryButton(
+            text = state.yieldUnit?.symbol ?: "—",
+            onClick = onOpenUnitPicker,
+            variant = CulinaryButtonVariant.Secondary,
+            icon = CulinaryIcons.ChevronDown,
+        )
     }
 }
 
@@ -269,7 +273,7 @@ private fun EditorComponents(
             text = stringResource(R.string.sauces_locked_components_hint),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(bottom = CulinarySpacing.xs),
+            modifier = Modifier.padding(bottom = CulinarySpacing.sm),
         )
     }
     state.lines.forEach { line ->
@@ -287,12 +291,13 @@ private fun EditorComponents(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
-    OutlinedButton(
+    CulinaryButton(
+        text = stringResource(R.string.sauces_add_ingredient),
         onClick = onAddIngredient,
+        variant = CulinaryButtonVariant.Secondary,
+        icon = CulinaryIcons.Add,
         modifier = Modifier.padding(top = CulinarySpacing.xs),
-    ) {
-        Text(text = stringResource(R.string.sauces_add_ingredient))
-    }
+    )
 }
 
 @Composable
@@ -302,26 +307,27 @@ private fun EditorFooter(
     onSaveAndPublish: () -> Unit,
 ) {
     Row(
-        modifier = Modifier.fillMaxWidth().padding(top = CulinarySpacing.lg),
+        modifier = Modifier.fillMaxWidth().padding(top = CulinarySpacing.block),
         horizontalArrangement = Arrangement.spacedBy(CulinarySpacing.sm),
     ) {
-        OutlinedButton(
+        CulinaryButton(
+            text = stringResource(R.string.sauces_save_draft),
             onClick = onSaveDraft,
+            variant = CulinaryButtonVariant.Secondary,
             enabled = !isSaving,
             modifier = Modifier.weight(1f),
-        ) {
-            Text(text = stringResource(R.string.sauces_save_draft))
-        }
-        Button(
+        )
+        CulinaryButton(
+            text = stringResource(R.string.sauces_save_publish),
             onClick = onSaveAndPublish,
             enabled = !isSaving,
+            loading = isSaving,
             modifier = Modifier.weight(1f),
-        ) {
-            Text(text = stringResource(R.string.sauces_save_publish))
-        }
+        )
     }
 }
 
+@Suppress("LongMethod") // 行编辑器的只读/可编辑两态共享同一行布局。
 @Composable
 private fun SauceLineRowEditor(
     line: SauceLineEditor,
@@ -329,7 +335,7 @@ private fun SauceLineRowEditor(
     onToggleOptional: () -> Unit,
     onRemove: () -> Unit,
 ) {
-    Column(modifier = Modifier.fillMaxWidth().padding(vertical = CulinarySpacing.xxs)) {
+    Column(modifier = Modifier.fillMaxWidth().padding(vertical = CulinarySpacing.sm)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
@@ -354,18 +360,20 @@ private fun SauceLineRowEditor(
                     tone = StatusTone.Neutral,
                 )
             } else {
-                OutlinedTextField(
+                CulinaryTextField(
                     value = line.amount,
                     onValueChange = onAmountChange,
                     label = { Text(text = stringResource(R.string.sauces_amount)) },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     trailingIcon = { Text(text = line.unit.symbol) },
+                    fillWidth = false,
                     modifier = Modifier.width(132.dp),
                 )
-                TextButton(onClick = onRemove) {
-                    Text(text = stringResource(R.string.sauces_remove_line))
-                }
+                CulinaryTextButton(
+                    text = stringResource(R.string.sauces_remove_line),
+                    onClick = onRemove,
+                )
             }
         }
         if (!line.isReadOnly) {
@@ -377,11 +385,13 @@ private fun SauceLineRowEditor(
                         ),
                     tone = if (line.isOptional) StatusTone.Warning else StatusTone.Neutral,
                 )
-                TextButton(onClick = onToggleOptional) {
-                    Text(text = stringResource(R.string.sauces_optional))
-                }
+                CulinaryTextButton(
+                    text = stringResource(R.string.sauces_optional),
+                    onClick = onToggleOptional,
+                )
             }
         }
+        CulinaryRule()
     }
 }
 
@@ -394,7 +404,14 @@ private fun UnitPickerDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(text = stringResource(R.string.sauces_unit_picker_title)) },
+        shape = MaterialTheme.shapes.large,
+        containerColor = MaterialTheme.colorScheme.surface,
+        title = {
+            Text(
+                text = stringResource(R.string.sauces_unit_picker_title),
+                style = MaterialTheme.typography.headlineSmall,
+            )
+        },
         text = {
             Column(modifier = Modifier.heightIn(max = 360.dp).verticalScroll(rememberScrollState())) {
                 units.forEach { unit ->
@@ -409,18 +426,28 @@ private fun UnitPickerDialog(
                         Text(
                             text = "${unit.name}（${unit.symbol}）",
                             style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurface,
                             modifier = Modifier.weight(1f),
                         )
                         if (unit.id.value == selectedId) {
-                            Icon(imageVector = CulinaryIcons.Check, contentDescription = null)
+                            Icon(
+                                imageVector = CulinaryIcons.Check,
+                                contentDescription = null,
+                                modifier = Modifier.size(20.dp),
+                                tint = MaterialTheme.colorScheme.secondary,
+                            )
                         }
                     }
+                    CulinaryRule()
                 }
             }
         },
         confirmButton = {
             TextButton(onClick = onDismiss) {
-                Text(text = stringResource(R.string.sauces_cancel))
+                Text(
+                    text = stringResource(R.string.sauces_cancel),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
             }
         },
     )
@@ -434,7 +461,14 @@ private fun IngredientPickerDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(text = stringResource(R.string.sauces_ingredient_picker_title)) },
+        shape = MaterialTheme.shapes.large,
+        containerColor = MaterialTheme.colorScheme.surface,
+        title = {
+            Text(
+                text = stringResource(R.string.sauces_ingredient_picker_title),
+                style = MaterialTheme.typography.headlineSmall,
+            )
+        },
         text = {
             if (ingredients.isEmpty()) {
                 Text(text = stringResource(R.string.sauces_picker_empty))
@@ -452,15 +486,20 @@ private fun IngredientPickerDialog(
                             Text(
                                 text = ingredient.name,
                                 style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.onSurface,
                             )
                         }
+                        CulinaryRule()
                     }
                 }
             }
         },
         confirmButton = {
             TextButton(onClick = onDismiss) {
-                Text(text = stringResource(R.string.sauces_cancel))
+                Text(
+                    text = stringResource(R.string.sauces_cancel),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
             }
         },
     )

@@ -122,8 +122,8 @@ class IngredientsUiTest {
             }
         }
 
-        compose.onNodeWithText("测试换算").assertIsDisplayed()
-        compose.onNodeWithText("归档").assertIsDisplayed()
+        compose.onNodeWithText("测试换算").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("归档").performScrollTo().assertIsDisplayed()
     }
 
     private fun gram(): UnitModel = UnitModel(UnitId("g"), "g", "克", "g", UnitDimension.MASS, 1.0, true, false, 0)

@@ -119,7 +119,7 @@ class RecipesUiTest {
         }
 
         compose.onAllNodesWithText("低筋面粉").onFirst().assertIsDisplayed()
-        compose.onNodeWithText("可选").assertIsDisplayed()
+        compose.onNodeWithText("可选").performScrollTo().assertIsDisplayed()
         compose.onAllNodesWithText("展开").onFirst().assertExists()
     }
 

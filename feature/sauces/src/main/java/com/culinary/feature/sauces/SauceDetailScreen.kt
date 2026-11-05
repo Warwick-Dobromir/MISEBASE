@@ -1,4 +1,4 @@
-﻿package com.culinary.feature.sauces
+package com.culinary.feature.sauces
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -10,9 +10,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -21,8 +19,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.culinary.core.designsystem.component.CulinaryButton
+import com.culinary.core.designsystem.component.CulinaryButtonVariant
 import com.culinary.core.designsystem.component.ErrorBanner
 import com.culinary.core.designsystem.component.LoadingRows
+import com.culinary.core.designsystem.component.PageHeader
 import com.culinary.core.designsystem.component.QuantityText
 import com.culinary.core.designsystem.component.SectionHeader
 import com.culinary.core.designsystem.component.StatusBadge
@@ -69,6 +70,7 @@ internal fun SauceDetailScreen(
                 message = message,
                 actionLabel = stringResource(R.string.sauces_retry),
                 onAction = onRetry,
+                modifier = Modifier.padding(horizontal = CulinarySpacing.pageHorizontal),
             )
         }
         when {
@@ -78,7 +80,7 @@ internal fun SauceDetailScreen(
                     text = stringResource(R.string.sauces_load_failed),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(CulinarySpacing.md),
+                    modifier = Modifier.padding(CulinarySpacing.pageHorizontal),
                 )
 
             else ->
@@ -104,58 +106,50 @@ internal fun SauceDetailContent(
     val latestDraft = detail.versions.firstOrNull { it.status == VersionStatus.DRAFT }
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
-        contentPadding =
-            PaddingValues(
-                start = CulinarySpacing.md,
-                end = CulinarySpacing.md,
-                bottom = CulinarySizes.listBottomInset,
-            ),
+        contentPadding = PaddingValues(bottom = CulinarySizes.listBottomInset),
     ) {
         item { DetailHeader(detail) }
-        item { CurrentVersionSection(detail) }
         item {
-            DetailActions(
-                detail = detail,
-                latestDraft = latestDraft,
-                isPublishing = isPublishing,
-                onEdit = onEdit,
-                onPublish = onPublish,
-                onDismissError = onDismissError,
-            )
+            Column(modifier = Modifier.padding(horizontal = CulinarySpacing.pageHorizontal)) {
+                CurrentVersionSection(detail)
+                DetailActions(
+                    detail = detail,
+                    latestDraft = latestDraft,
+                    isPublishing = isPublishing,
+                    onEdit = onEdit,
+                    onPublish = onPublish,
+                    onDismissError = onDismissError,
+                )
+            }
         }
         item { ComponentsHeader(lineCount = detail.lines.size) }
         items(detail.lines, key = { it.lineNo }) { line -> SauceLineRow(line) }
-        item { SectionHeader(title = stringResource(R.string.sauces_versions)) }
+        item {
+            SectionHeader(
+                title = stringResource(R.string.sauces_versions),
+                modifier = Modifier.padding(horizontal = CulinarySpacing.pageHorizontal),
+            )
+        }
         items(detail.versions, key = { it.id.value }) { version -> VersionRow(version) }
     }
 }
 
 @Composable
 private fun DetailHeader(detail: SauceDetail) {
-    Text(
-        text = detail.sauce.name,
-        style = MaterialTheme.typography.headlineMedium,
-        color = MaterialTheme.colorScheme.onSurface,
-        modifier = Modifier.padding(top = CulinarySpacing.sm),
+    PageHeader(
+        eyebrow = "SAUCE",
+        title = detail.sauce.name,
+        supporting = detail.sauce.family ?: stringResource(R.string.sauces_uncategorized),
+        actions = {
+            StatusBadge(
+                text =
+                    stringResource(
+                        if (detail.sauce.isActive) R.string.sauces_active else R.string.sauces_archived,
+                    ),
+                tone = if (detail.sauce.isActive) StatusTone.Success else StatusTone.Neutral,
+            )
+        },
     )
-    Row(
-        modifier = Modifier.padding(top = CulinarySpacing.xs),
-        horizontalArrangement = Arrangement.spacedBy(CulinarySpacing.xs),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        StatusBadge(
-            text =
-                stringResource(
-                    if (detail.sauce.isActive) R.string.sauces_active else R.string.sauces_archived,
-                ),
-            tone = if (detail.sauce.isActive) StatusTone.Success else StatusTone.Neutral,
-        )
-        Text(
-            text = detail.sauce.family ?: stringResource(R.string.sauces_uncategorized),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-    }
 }
 
 @Composable
@@ -202,41 +196,45 @@ private fun DetailActions(
     onDismissError: () -> Unit,
 ) {
     Row(
-        modifier = Modifier.fillMaxWidth().padding(top = CulinarySpacing.md),
+        modifier = Modifier.fillMaxWidth().padding(top = CulinarySpacing.block),
         horizontalArrangement = Arrangement.spacedBy(CulinarySpacing.sm),
     ) {
-        OutlinedButton(onClick = { onEdit(detail.sauce.id.value) }) {
-            Text(text = stringResource(R.string.sauces_edit))
-        }
+        CulinaryButton(
+            text = stringResource(R.string.sauces_edit),
+            onClick = { onEdit(detail.sauce.id.value) },
+            variant = CulinaryButtonVariant.Secondary,
+        )
         if (latestDraft != null) {
-            Button(
+            CulinaryButton(
+                text =
+                    if (isPublishing) {
+                        stringResource(R.string.sauces_publishing)
+                    } else {
+                        stringResource(R.string.sauces_publish, latestDraft.versionNo)
+                    },
                 onClick = {
                     onDismissError()
                     onPublish(latestDraft.id)
                 },
                 enabled = !isPublishing,
-            ) {
-                Text(
-                    text =
-                        if (isPublishing) {
-                            stringResource(R.string.sauces_publishing)
-                        } else {
-                            stringResource(R.string.sauces_publish, latestDraft.versionNo)
-                        },
-                )
-            }
+                loading = isPublishing,
+            )
         }
     }
 }
 
 @Composable
 private fun ComponentsHeader(lineCount: Int) {
-    SectionHeader(title = stringResource(R.string.sauces_components, lineCount))
+    SectionHeader(
+        title = stringResource(R.string.sauces_components, lineCount),
+        modifier = Modifier.padding(horizontal = CulinarySpacing.pageHorizontal),
+    )
     if (lineCount == 0) {
         Text(
             text = stringResource(R.string.sauces_no_components),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(horizontal = CulinarySpacing.pageHorizontal),
         )
     }
 }
@@ -244,7 +242,10 @@ private fun ComponentsHeader(lineCount: Int) {
 @Composable
 private fun SauceLineRow(line: SauceLineView) {
     Row(
-        modifier = Modifier.fillMaxWidth().padding(vertical = CulinarySpacing.xs),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = CulinarySpacing.pageHorizontal, vertical = CulinarySpacing.sm),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
@@ -270,7 +271,10 @@ private fun SauceLineRow(line: SauceLineView) {
 @Composable
 private fun VersionRow(version: SauceVersion) {
     Row(
-        modifier = Modifier.fillMaxWidth().padding(vertical = CulinarySpacing.xs),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = CulinarySpacing.pageHorizontal, vertical = CulinarySpacing.sm),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(

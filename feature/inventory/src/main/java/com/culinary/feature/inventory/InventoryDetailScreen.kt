@@ -8,9 +8,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -21,9 +19,12 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.culinary.core.designsystem.component.CulinaryRule
+import com.culinary.core.designsystem.component.CulinaryTextButton
 import com.culinary.core.designsystem.component.EmptyState
 import com.culinary.core.designsystem.component.ErrorBanner
 import com.culinary.core.designsystem.component.LoadingRows
+import com.culinary.core.designsystem.component.PageHeader
 import com.culinary.core.designsystem.component.QuantityText
 import com.culinary.core.designsystem.component.SectionHeader
 import com.culinary.core.designsystem.component.StatusBadge
@@ -62,12 +63,18 @@ internal fun InventoryDetailScreen(
 ) {
     Column(modifier = modifier.fillMaxSize()) {
         state.error?.let { message ->
-            ErrorBanner(message = message, actionLabel = stringResource(R.string.inventory_retry), onAction = onRetry)
+            ErrorBanner(
+                message = message,
+                actionLabel = stringResource(R.string.inventory_retry),
+                onAction = onRetry,
+                modifier = Modifier.padding(horizontal = CulinarySpacing.pageHorizontal),
+            )
         }
         when {
             state.isLoading -> LoadingRows()
             state.detail == null ->
                 EmptyState(
+                    icon = com.culinary.core.designsystem.icon.CulinaryIcons.Inventory,
                     title = stringResource(R.string.inventory_empty_title),
                     description = stringResource(R.string.inventory_empty_body),
                 )
@@ -79,64 +86,66 @@ internal fun InventoryDetailScreen(
                         Modifier
                             .fillMaxSize()
                             .verticalScroll(rememberScrollState())
-                            .padding(CulinarySpacing.md),
+                            .padding(bottom = CulinarySpacing.xl),
                 ) {
-                    Text(
-                        text = detail.product.name,
-                        style = MaterialTheme.typography.titleLarge,
-                    )
-                    Text(
-                        text = detail.ingredientName,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
                     val total = detail.batches.sumOf { it.item.available }
-                    QuantityText(
-                        amount = formatAmount(total),
-                        unit = detail.product.stockUnit.symbol,
-                        modifier = Modifier.padding(top = CulinarySpacing.xs),
+                    PageHeader(
+                        eyebrow = "PRODUCT",
+                        title = detail.product.name,
+                        supporting = detail.ingredientName,
+                        actions = {
+                            QuantityText(
+                                amount = formatAmount(total),
+                                unit = detail.product.stockUnit.symbol,
+                            )
+                        },
                     )
-                    SectionHeader(title = stringResource(R.string.inventory_batch_count, detail.batches.size))
-                    if (detail.batches.isEmpty()) {
-                        Text(
-                            text = stringResource(R.string.inventory_no_batches),
-                            style = MaterialTheme.typography.bodyMedium,
-                        )
-                    } else {
-                        detail.batches.forEach { batch ->
-                            BatchCard(
-                                batch = batch,
-                                onIssue = { onIssueBatch(batch.item.batchId.value) },
-                                onAdjust = { onAdjustBatch(batch.item.batchId.value) },
-                            )
-                        }
-                    }
-                    SectionHeader(title = stringResource(R.string.inventory_ledger_title))
-                    if (detail.ledger.isEmpty()) {
-                        Text(
-                            text = stringResource(R.string.inventory_ledger_empty),
-                            style = MaterialTheme.typography.bodyMedium,
-                        )
-                    } else {
-                        detail.ledger.forEach { entry ->
-                            LedgerDetailRow(entry = entry)
-                            HorizontalDivider()
-                        }
-                    }
-                    SectionHeader(title = stringResource(R.string.inventory_related_recipes))
-                    if (detail.relatedRecipeNames.isEmpty()) {
-                        Text(
-                            text = stringResource(R.string.inventory_no_related),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    } else {
-                        detail.relatedRecipeNames.forEach { name ->
+                    Column(modifier = Modifier.padding(horizontal = CulinarySpacing.pageHorizontal)) {
+                        SectionHeader(title = stringResource(R.string.inventory_batch_count, detail.batches.size))
+                        if (detail.batches.isEmpty()) {
                             Text(
-                                text = "· $name",
+                                text = stringResource(R.string.inventory_no_batches),
                                 style = MaterialTheme.typography.bodyMedium,
-                                modifier = Modifier.padding(vertical = CulinarySpacing.xxs),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
+                        } else {
+                            detail.batches.forEach { batch ->
+                                BatchRow(
+                                    batch = batch,
+                                    onIssue = { onIssueBatch(batch.item.batchId.value) },
+                                    onAdjust = { onAdjustBatch(batch.item.batchId.value) },
+                                )
+                            }
+                        }
+                        SectionHeader(title = stringResource(R.string.inventory_ledger_title))
+                        if (detail.ledger.isEmpty()) {
+                            Text(
+                                text = stringResource(R.string.inventory_ledger_empty),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        } else {
+                            detail.ledger.forEach { entry ->
+                                LedgerDetailRow(entry = entry)
+                                CulinaryRule()
+                            }
+                        }
+                        SectionHeader(title = stringResource(R.string.inventory_related_recipes))
+                        if (detail.relatedRecipeNames.isEmpty()) {
+                            Text(
+                                text = stringResource(R.string.inventory_no_related),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        } else {
+                            detail.relatedRecipeNames.forEach { name ->
+                                Text(
+                                    text = "· $name",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                    modifier = Modifier.padding(vertical = CulinarySpacing.xxs),
+                                )
+                            }
                         }
                     }
                 }
@@ -146,12 +155,12 @@ internal fun InventoryDetailScreen(
 }
 
 @Composable
-private fun BatchCard(
+private fun BatchRow(
     batch: InventoryBatchSummary,
     onIssue: () -> Unit,
     onAdjust: () -> Unit,
 ) {
-    Column(modifier = Modifier.fillMaxWidth().padding(vertical = CulinarySpacing.xs)) {
+    Column(modifier = Modifier.fillMaxWidth().padding(vertical = CulinarySpacing.sm)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
@@ -159,6 +168,7 @@ private fun BatchCard(
                         batch.batchCode?.takeIf { it.isNotBlank() } ?: batch.item.batchId.value
                             .take(8),
                     style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
                 )
                 Text(
                     text =
@@ -173,19 +183,22 @@ private fun BatchCard(
             QuantityText(amount = formatAmount(batch.item.available), unit = batch.item.stockUnit.symbol)
         }
         Row(horizontalArrangement = Arrangement.spacedBy(CulinarySpacing.xs)) {
-            OutlinedButton(onClick = onIssue) {
-                Text(text = stringResource(R.string.inventory_issue))
-            }
-            OutlinedButton(onClick = onAdjust) {
-                Text(text = stringResource(R.string.inventory_adjust))
-            }
+            CulinaryTextButton(
+                text = stringResource(R.string.inventory_issue),
+                onClick = onIssue,
+            )
+            CulinaryTextButton(
+                text = stringResource(R.string.inventory_adjust),
+                onClick = onAdjust,
+            )
         }
+        CulinaryRule()
     }
 }
 
 @Composable
 private fun LedgerDetailRow(entry: InventoryLedgerEntry) {
-    Column(modifier = Modifier.fillMaxWidth().padding(vertical = CulinarySpacing.xs)) {
+    Column(modifier = Modifier.fillMaxWidth().padding(vertical = CulinarySpacing.sm)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             StatusBadge(
                 text = ledgerTypeLabel(entry.type),
@@ -200,11 +213,13 @@ private fun LedgerDetailRow(entry: InventoryLedgerEntry) {
             Text(
                 text = signedAmount(entry.onHandDelta) + " " + entry.stockUnit.symbol,
                 style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.weight(1f),
             )
             Text(
                 text = formatAmount(entry.onHandAfter) + " " + entry.stockUnit.symbol,
                 style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface,
             )
         }
     }

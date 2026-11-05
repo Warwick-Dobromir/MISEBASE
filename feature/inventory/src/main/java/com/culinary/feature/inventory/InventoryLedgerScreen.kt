@@ -8,9 +8,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -21,12 +19,18 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.culinary.core.designsystem.component.CulinaryFilterPill
+import com.culinary.core.designsystem.component.CulinaryRule
+import com.culinary.core.designsystem.component.CulinarySearchField
 import com.culinary.core.designsystem.component.EmptyState
 import com.culinary.core.designsystem.component.ErrorBanner
 import com.culinary.core.designsystem.component.LoadingRows
+import com.culinary.core.designsystem.component.PageHeader
 import com.culinary.core.designsystem.component.StatusBadge
 import com.culinary.core.designsystem.component.StatusTone
+import com.culinary.core.designsystem.icon.CulinaryIcons
 import com.culinary.core.designsystem.theme.CulinarySpacing
+import com.culinary.core.designsystem.theme.CulinaryTextStyles
 import com.culinary.core.domain.model.InventoryLedgerRow
 import com.culinary.core.domain.model.LedgerEntryType
 
@@ -47,6 +51,7 @@ fun InventoryLedgerRoute(
     )
 }
 
+@Suppress("LongMethod") // 标题、搜索、筛选与列表属于同一屏状态，拆分只会传递更多参数。
 @Composable
 internal fun InventoryLedgerScreen(
     state: InventoryLedgerUiState,
@@ -57,41 +62,47 @@ internal fun InventoryLedgerScreen(
 ) {
     Column(modifier = modifier.fillMaxSize()) {
         state.error?.let { message ->
-            ErrorBanner(message = message, actionLabel = stringResource(R.string.inventory_retry), onAction = onRetry)
+            ErrorBanner(
+                message = message,
+                actionLabel = stringResource(R.string.inventory_retry),
+                onAction = onRetry,
+                modifier = Modifier.padding(horizontal = CulinarySpacing.pageHorizontal),
+            )
         }
-        Text(
-            text = stringResource(R.string.inventory_ledger_title),
-            style = MaterialTheme.typography.titleLarge,
-            modifier = Modifier.padding(horizontal = CulinarySpacing.md, vertical = CulinarySpacing.sm),
+        PageHeader(
+            eyebrow = "LEDGER",
+            title = stringResource(R.string.inventory_ledger_title),
+            supporting = stringResource(R.string.inventory_count, state.visibleRows.size),
         )
-        OutlinedTextField(
+        CulinarySearchField(
             value = state.query,
             onValueChange = onQueryChange,
-            label = { Text(text = stringResource(R.string.inventory_search)) },
-            singleLine = true,
-            modifier = Modifier.fillMaxWidth().padding(horizontal = CulinarySpacing.md),
+            placeholder = stringResource(R.string.inventory_search),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = CulinarySpacing.pageHorizontal),
         )
         Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = CulinarySpacing.md, vertical = CulinarySpacing.xs),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = CulinarySpacing.pageHorizontal, vertical = CulinarySpacing.sm),
             horizontalArrangement = Arrangement.spacedBy(CulinarySpacing.xs),
         ) {
             LedgerTypeFilter.entries.forEach { filter ->
-                FilterChip(
+                CulinaryFilterPill(
+                    text =
+                        stringResource(
+                            when (filter) {
+                                LedgerTypeFilter.ALL -> R.string.inventory_filter_all
+                                LedgerTypeFilter.RECEIPT -> R.string.inventory_filter_receipt
+                                LedgerTypeFilter.ISSUE -> R.string.inventory_filter_issue
+                                LedgerTypeFilter.ADJUSTMENT -> R.string.inventory_filter_adjust
+                            },
+                        ),
                     selected = state.typeFilter == filter,
                     onClick = { onTypeFilterChange(filter) },
-                    label = {
-                        Text(
-                            text =
-                                stringResource(
-                                    when (filter) {
-                                        LedgerTypeFilter.ALL -> R.string.inventory_filter_all
-                                        LedgerTypeFilter.RECEIPT -> R.string.inventory_filter_receipt
-                                        LedgerTypeFilter.ISSUE -> R.string.inventory_filter_issue
-                                        LedgerTypeFilter.ADJUSTMENT -> R.string.inventory_filter_adjust
-                                    },
-                                ),
-                        )
-                    },
                 )
             }
         }
@@ -99,6 +110,7 @@ internal fun InventoryLedgerScreen(
             state.isLoading -> LoadingRows()
             state.visibleRows.isEmpty() ->
                 EmptyState(
+                    icon = CulinaryIcons.History,
                     title = stringResource(R.string.inventory_ledger_empty),
                     description = stringResource(R.string.inventory_empty_body),
                 )
@@ -115,7 +127,12 @@ internal fun InventoryLedgerScreen(
 
 @Composable
 private fun LedgerRow(row: InventoryLedgerRow) {
-    Column(modifier = Modifier.fillMaxWidth().padding(horizontal = CulinarySpacing.md, vertical = CulinarySpacing.sm)) {
+    Column(
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = CulinarySpacing.pageHorizontal, vertical = CulinarySpacing.sm),
+    ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             StatusBadge(
                 text = ledgerTypeLabel(row.entry.type),
@@ -129,13 +146,21 @@ private fun LedgerRow(row: InventoryLedgerRow) {
             )
             Text(
                 text = signedAmount(row.entry.onHandDelta) + " " + row.entry.stockUnit.symbol,
-                style = MaterialTheme.typography.titleMedium,
+                style = CulinaryTextStyles.numeralS,
+                color =
+                    if (row.entry.onHandDelta >= 0.0) {
+                        com.culinary.core.designsystem.theme.CulinaryColorScheme.current.success
+                    } else {
+                        com.culinary.core.designsystem.theme.CulinaryColorScheme.current.danger
+                    },
                 modifier = Modifier.weight(1f),
+                textAlign = androidx.compose.ui.text.style.TextAlign.End,
             )
         }
         Text(
             text = "${row.productName} · ${row.ingredientName} · ${row.locationName}",
             style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurface,
         )
         Text(
             text =
@@ -156,6 +181,7 @@ private fun LedgerRow(row: InventoryLedgerRow) {
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
+        CulinaryRule()
     }
 }
 

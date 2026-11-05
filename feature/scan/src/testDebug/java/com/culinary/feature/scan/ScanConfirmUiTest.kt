@@ -6,6 +6,7 @@ import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performScrollTo
 import com.culinary.core.designsystem.theme.CulinaryTheme
 import com.culinary.core.domain.barcode.ScanCapture
 import com.culinary.core.domain.barcode.ScanSource
@@ -153,7 +154,7 @@ class ScanConfirmUiTest {
             }
         }
 
-        compose.onNodeWithText("新食材名称").assertIsDisplayed()
+        compose.onNodeWithText("新食材名称").performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("确认导入").assertIsEnabled()
     }
 

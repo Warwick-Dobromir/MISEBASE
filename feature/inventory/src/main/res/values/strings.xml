@@ -79,4 +79,6 @@
     <string name="inventory_loading">加载中…</string>
     <string name="inventory_optional_short">可选</string>
     <string name="inventory_required_short">必需</string>
+    <string name="inventory_picker_empty">没有可选项</string>
+    <string name="inventory_movement_hint">确认后写入库存流水；数量与单位会按当前库存单位校验。</string>
 </resources>

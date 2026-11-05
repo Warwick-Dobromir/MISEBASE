@@ -4,11 +4,8 @@ import android.content.Context
 import android.content.Intent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -16,36 +13,35 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.culinary.R
 import com.culinary.core.common.ErrorCode
 import com.culinary.core.designsystem.component.ConfirmDialog
+import com.culinary.core.designsystem.component.CulinaryButton
+import com.culinary.core.designsystem.component.CulinaryButtonVariant
+import com.culinary.core.designsystem.component.CulinaryInfoRow
+import com.culinary.core.designsystem.component.CulinaryRule
+import com.culinary.core.designsystem.component.PageHeader
+import com.culinary.core.designsystem.component.ResultPanel
 import com.culinary.core.designsystem.component.SectionHeader
+import com.culinary.core.designsystem.component.StatusTone
 import com.culinary.core.designsystem.icon.CulinaryIcons
-import com.culinary.core.designsystem.theme.CulinaryColorScheme
 import com.culinary.core.designsystem.theme.CulinarySpacing
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -113,29 +109,32 @@ internal fun SettingsScreen(
             modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
-                .padding(bottom = CulinarySpacing.xxl),
+                .padding(bottom = CulinarySpacing.xl),
     ) {
-        Text(
-            text = stringResource(R.string.settings_intro),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(horizontal = CulinarySpacing.md, vertical = CulinarySpacing.sm),
+        PageHeader(
+            eyebrow = "PREFERENCES",
+            title = stringResource(R.string.destination_settings),
+            supporting = stringResource(R.string.settings_intro),
         )
-        BackupSection(state = state, onBackupClick = onBackupClick)
-        RestoreSection(
-            state = state,
-            onRestoreClick = onRestoreClick,
-            onCancelRestore = onCancelRestore,
-        )
-        DiagnosticsSection(state = state, onExportDiagnostics = onExportDiagnostics)
-        AboutSection(state = state, onShowLicenses = onShowLicenses)
-        Text(
-            text = stringResource(R.string.settings_footer),
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.fillMaxWidth().padding(top = CulinarySpacing.lg),
-        )
+        Column(modifier = Modifier.padding(horizontal = CulinarySpacing.pageHorizontal)) {
+            BackupSection(state = state, onBackupClick = onBackupClick)
+            RestoreSection(
+                state = state,
+                onRestoreClick = onRestoreClick,
+                onCancelRestore = onCancelRestore,
+            )
+            DiagnosticsSection(state = state, onExportDiagnostics = onExportDiagnostics)
+            AboutSection(state = state, onShowLicenses = onShowLicenses)
+            Spacer(modifier = Modifier.height(CulinarySpacing.block))
+            CulinaryRule()
+            Spacer(modifier = Modifier.height(CulinarySpacing.md))
+            Text(
+                text = stringResource(R.string.settings_footer),
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
     }
 
     if (state.showRestoreConfirm) {
@@ -168,48 +167,50 @@ private fun BackupSection(
     state: SettingsUiState,
     onBackupClick: () -> Unit,
 ) {
-    SectionHeader(
-        title = stringResource(R.string.settings_section_backup),
-        modifier = Modifier.padding(horizontal = CulinarySpacing.md),
+    SectionHeader(title = stringResource(R.string.settings_section_backup))
+    Text(
+        text = stringResource(R.string.settings_backup_body),
+        style = MaterialTheme.typography.bodyMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
-    SettingCard {
-        Text(
-            text = stringResource(R.string.settings_backup_body),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        Spacer(modifier = Modifier.height(CulinarySpacing.sm))
-        Button(
-            onClick = onBackupClick,
-            enabled = state.backup !is BackupState.Running,
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            Text(text = stringResource(R.string.settings_backup_action))
-        }
-        when (val backup = state.backup) {
-            BackupState.Idle -> Unit
-            BackupState.Running -> RunningRow(text = stringResource(R.string.settings_backup_running))
-            is BackupState.Done ->
-                ResultText(
-                    text =
-                        stringResource(
-                            R.string.settings_backup_success,
-                            backup.archiveName,
-                            formatBytes(backup.sizeBytes),
-                        ),
-                    color = CulinaryColorScheme.current.success,
-                )
+    Spacer(modifier = Modifier.height(CulinarySpacing.sm))
+    CulinaryButton(
+        text = stringResource(R.string.settings_backup_action),
+        onClick = onBackupClick,
+        enabled = state.backup !is BackupState.Running,
+        loading = state.backup is BackupState.Running,
+        modifier = Modifier.fillMaxWidth(),
+    )
+    when (val backup = state.backup) {
+        BackupState.Idle -> Unit
+        BackupState.Running -> RunningRow(text = stringResource(R.string.settings_backup_running))
+        is BackupState.Done ->
+            ResultPanel(
+                title = stringResource(R.string.settings_section_backup),
+                message =
+                    stringResource(
+                        R.string.settings_backup_success,
+                        backup.archiveName,
+                        formatBytes(backup.sizeBytes),
+                    ),
+                tone = StatusTone.Success,
+                modifier = Modifier.padding(top = CulinarySpacing.xs),
+            )
 
-            is BackupState.Failed ->
-                ResultText(text = failureText(backup.code), color = MaterialTheme.colorScheme.error)
-        }
-        Text(
-            text = stringResource(R.string.settings_backup_hint),
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(top = CulinarySpacing.xs),
-        )
+        is BackupState.Failed ->
+            ResultPanel(
+                title = stringResource(R.string.settings_section_backup),
+                message = failureText(backup.code),
+                tone = StatusTone.Danger,
+                modifier = Modifier.padding(top = CulinarySpacing.xs),
+            )
     }
+    Text(
+        text = stringResource(R.string.settings_backup_hint),
+        style = MaterialTheme.typography.labelSmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(top = CulinarySpacing.xs),
+    )
 }
 
 @Composable
@@ -218,52 +219,57 @@ private fun RestoreSection(
     onRestoreClick: () -> Unit,
     onCancelRestore: () -> Unit,
 ) {
-    SectionHeader(
-        title = stringResource(R.string.settings_section_restore),
-        modifier = Modifier.padding(horizontal = CulinarySpacing.md),
+    SectionHeader(title = stringResource(R.string.settings_section_restore))
+    Text(
+        text = stringResource(R.string.settings_restore_body),
+        style = MaterialTheme.typography.bodyMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
-    SettingCard {
-        Text(
-            text = stringResource(R.string.settings_restore_body),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        Spacer(modifier = Modifier.height(CulinarySpacing.sm))
-        OutlinedButton(
-            onClick = onRestoreClick,
-            enabled = state.restore !is RestoreState.Running,
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            Text(text = stringResource(R.string.settings_restore_action))
-        }
-        when (val restore = state.restore) {
-            RestoreState.Idle -> Unit
-            RestoreState.Running -> RunningRow(text = stringResource(R.string.settings_restore_running))
-            is RestoreState.Done ->
-                ResultText(
-                    text =
-                        stringResource(
-                            R.string.settings_restore_success_inline,
-                            restore.backupVersionName,
-                            restore.backupSchemaVersion,
-                        ),
-                    color = CulinaryColorScheme.current.success,
-                )
+    Spacer(modifier = Modifier.height(CulinarySpacing.sm))
+    CulinaryButton(
+        text = stringResource(R.string.settings_restore_action),
+        onClick = onRestoreClick,
+        variant = CulinaryButtonVariant.Secondary,
+        enabled = state.restore !is RestoreState.Running,
+        modifier = Modifier.fillMaxWidth(),
+    )
+    when (val restore = state.restore) {
+        RestoreState.Idle -> Unit
+        RestoreState.Running -> RunningRow(text = stringResource(R.string.settings_restore_running))
+        is RestoreState.Done ->
+            ResultPanel(
+                title = stringResource(R.string.settings_section_restore),
+                message =
+                    stringResource(
+                        R.string.settings_restore_success_inline,
+                        restore.backupVersionName,
+                        restore.backupSchemaVersion,
+                    ),
+                tone = StatusTone.Success,
+                modifier = Modifier.padding(top = CulinarySpacing.xs),
+            )
 
-            is RestoreState.Failed -> {
-                ResultText(text = failureText(restore.code), color = MaterialTheme.colorScheme.error)
-                TextButton(onClick = onCancelRestore) {
-                    Text(text = stringResource(R.string.settings_restore_clear))
-                }
+        is RestoreState.Failed -> {
+            ResultPanel(
+                title = stringResource(R.string.settings_section_restore),
+                message = failureText(restore.code),
+                tone = StatusTone.Danger,
+                modifier = Modifier.padding(top = CulinarySpacing.xs),
+            )
+            TextButton(onClick = onCancelRestore) {
+                Text(
+                    text = stringResource(R.string.settings_restore_clear),
+                    color = MaterialTheme.colorScheme.secondary,
+                )
             }
         }
-        Text(
-            text = stringResource(R.string.settings_restore_hint),
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(top = CulinarySpacing.xs),
-        )
     }
+    Text(
+        text = stringResource(R.string.settings_restore_hint),
+        style = MaterialTheme.typography.labelSmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(top = CulinarySpacing.xs),
+    )
 }
 
 @Composable
@@ -271,57 +277,59 @@ private fun DiagnosticsSection(
     state: SettingsUiState,
     onExportDiagnostics: () -> Unit,
 ) {
-    SectionHeader(
-        title = stringResource(R.string.settings_section_diagnostics),
-        modifier = Modifier.padding(horizontal = CulinarySpacing.md),
+    SectionHeader(title = stringResource(R.string.settings_section_diagnostics))
+    CulinaryInfoRow(
+        label = stringResource(R.string.settings_diag_app_version),
+        value = "${state.appVersionName}（${state.appVersionCode}）",
     )
-    SettingCard {
-        DiagnosticRow(
-            label = stringResource(R.string.settings_diag_app_version),
-            value = "${state.appVersionName}（${state.appVersionCode}）",
-        )
-        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-        DiagnosticRow(
-            label = stringResource(R.string.settings_diag_db_version),
-            value = stringResource(R.string.settings_diag_db_version_value, state.schemaVersion),
-        )
-        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-        DiagnosticRow(
-            label = stringResource(R.string.settings_diag_db_size),
-            value = formatBytes(state.databaseSizeBytes),
-        )
-        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-        DiagnosticRow(
-            label = stringResource(R.string.settings_diag_device),
-            value = state.deviceLabel,
-        )
-        Spacer(modifier = Modifier.height(CulinarySpacing.sm))
-        OutlinedButton(
-            onClick = onExportDiagnostics,
-            enabled = state.diagnosticsExport !is DiagnosticsExportState.Running,
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            Text(text = stringResource(R.string.settings_diag_export))
-        }
-        when (val export = state.diagnosticsExport) {
-            DiagnosticsExportState.Idle -> Unit
-            DiagnosticsExportState.Running -> RunningRow(text = stringResource(R.string.settings_diag_export_running))
-            is DiagnosticsExportState.Done ->
-                ResultText(
-                    text = stringResource(R.string.settings_diag_export_success, export.fileName),
-                    color = CulinaryColorScheme.current.success,
-                )
+    CulinaryRule()
+    CulinaryInfoRow(
+        label = stringResource(R.string.settings_diag_db_version),
+        value = stringResource(R.string.settings_diag_db_version_value, state.schemaVersion),
+    )
+    CulinaryRule()
+    CulinaryInfoRow(
+        label = stringResource(R.string.settings_diag_db_size),
+        value = formatBytes(state.databaseSizeBytes),
+    )
+    CulinaryRule()
+    CulinaryInfoRow(
+        label = stringResource(R.string.settings_diag_device),
+        value = state.deviceLabel,
+    )
+    Spacer(modifier = Modifier.height(CulinarySpacing.sm))
+    CulinaryButton(
+        text = stringResource(R.string.settings_diag_export),
+        onClick = onExportDiagnostics,
+        variant = CulinaryButtonVariant.Secondary,
+        enabled = state.diagnosticsExport !is DiagnosticsExportState.Running,
+        modifier = Modifier.fillMaxWidth(),
+    )
+    when (val export = state.diagnosticsExport) {
+        DiagnosticsExportState.Idle -> Unit
+        DiagnosticsExportState.Running -> RunningRow(text = stringResource(R.string.settings_diag_export_running))
+        is DiagnosticsExportState.Done ->
+            ResultPanel(
+                title = stringResource(R.string.settings_section_diagnostics),
+                message = stringResource(R.string.settings_diag_export_success, export.fileName),
+                tone = StatusTone.Success,
+                modifier = Modifier.padding(top = CulinarySpacing.xs),
+            )
 
-            is DiagnosticsExportState.Failed ->
-                ResultText(text = failureText(export.code), color = MaterialTheme.colorScheme.error)
-        }
-        Text(
-            text = stringResource(R.string.settings_diag_hint),
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(top = CulinarySpacing.xs),
-        )
+        is DiagnosticsExportState.Failed ->
+            ResultPanel(
+                title = stringResource(R.string.settings_section_diagnostics),
+                message = failureText(export.code),
+                tone = StatusTone.Danger,
+                modifier = Modifier.padding(top = CulinarySpacing.xs),
+            )
     }
+    Text(
+        text = stringResource(R.string.settings_diag_hint),
+        style = MaterialTheme.typography.labelSmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(top = CulinarySpacing.xs),
+    )
 }
 
 @Composable
@@ -329,58 +337,66 @@ private fun AboutSection(
     state: SettingsUiState,
     onShowLicenses: () -> Unit,
 ) {
-    SectionHeader(
-        title = stringResource(R.string.settings_section_about),
-        modifier = Modifier.padding(horizontal = CulinarySpacing.md),
+    SectionHeader(title = stringResource(R.string.settings_section_about))
+    Text(
+        text = stringResource(R.string.settings_about_body),
+        style = MaterialTheme.typography.bodyMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
-    SettingCard {
+    Spacer(modifier = Modifier.height(CulinarySpacing.sm))
+    Text(
+        text = stringResource(R.string.settings_about_version, state.appVersionName, state.appVersionCode),
+        style = MaterialTheme.typography.bodyMedium,
+        color = MaterialTheme.colorScheme.onSurface,
+    )
+    Spacer(modifier = Modifier.height(CulinarySpacing.xs))
+    CulinaryRule()
+    Row(
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .clickable(onClick = onShowLicenses)
+                .padding(vertical = CulinarySpacing.sm),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
         Text(
-            text = stringResource(R.string.settings_about_body),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        Spacer(modifier = Modifier.height(CulinarySpacing.sm))
-        Text(
-            text = stringResource(R.string.settings_about_version, state.appVersionName, state.appVersionCode),
+            text = stringResource(R.string.settings_about_license),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.weight(1f),
         )
-        HorizontalDivider(
-            modifier = Modifier.padding(vertical = CulinarySpacing.xs),
-            color = MaterialTheme.colorScheme.outlineVariant,
+        Icon(
+            imageVector = CulinaryIcons.ChevronRight,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
         )
-        Row(
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .clickable(onClick = onShowLicenses)
-                    .padding(vertical = CulinarySpacing.sm),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                text = stringResource(R.string.settings_about_license),
-                style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.weight(1f),
-            )
-            Icon(
-                imageVector = CulinaryIcons.ChevronRight,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
     }
+    CulinaryRule()
 }
 
 @Composable
 private fun RestartDialog(onRestart: () -> Unit) {
     AlertDialog(
         onDismissRequest = { },
-        title = { Text(text = stringResource(R.string.settings_restart_title)) },
-        text = { Text(text = stringResource(R.string.settings_restart_body)) },
+        shape = MaterialTheme.shapes.large,
+        containerColor = MaterialTheme.colorScheme.surface,
+        title = {
+            Text(
+                text = stringResource(R.string.settings_restart_title),
+                style = MaterialTheme.typography.headlineSmall,
+            )
+        },
+        text = {
+            Text(
+                text = stringResource(R.string.settings_restart_body),
+                style = MaterialTheme.typography.bodyMedium,
+            )
+        },
         confirmButton = {
-            Button(onClick = onRestart) {
-                Text(text = stringResource(R.string.settings_restart_action))
-            }
+            CulinaryButton(
+                text = stringResource(R.string.settings_restart_action),
+                onClick = onRestart,
+            )
         },
     )
 }
@@ -389,7 +405,14 @@ private fun RestartDialog(onRestart: () -> Unit) {
 private fun LicenseDialog(onDismiss: () -> Unit) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(text = stringResource(R.string.settings_license_title)) },
+        shape = MaterialTheme.shapes.large,
+        containerColor = MaterialTheme.colorScheme.surface,
+        title = {
+            Text(
+                text = stringResource(R.string.settings_license_title),
+                style = MaterialTheme.typography.headlineSmall,
+            )
+        },
         text = {
             Column(
                 modifier =
@@ -407,47 +430,13 @@ private fun LicenseDialog(onDismiss: () -> Unit) {
         },
         confirmButton = {
             TextButton(onClick = onDismiss) {
-                Text(text = stringResource(R.string.settings_close))
+                Text(
+                    text = stringResource(R.string.settings_close),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
             }
         },
     )
-}
-
-@Composable
-private fun SettingCard(content: @Composable ColumnScope.() -> Unit) {
-    Surface(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = CulinarySpacing.md),
-        shape = MaterialTheme.shapes.medium,
-        color = MaterialTheme.colorScheme.surface,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-    ) {
-        Column(modifier = Modifier.padding(CulinarySpacing.md), content = content)
-    }
-}
-
-@Composable
-private fun DiagnosticRow(
-    label: String,
-    value: String,
-) {
-    Row(
-        modifier = Modifier.fillMaxWidth().padding(vertical = CulinarySpacing.xs),
-        horizontalArrangement = Arrangement.spacedBy(CulinarySpacing.sm),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.width(96.dp),
-        )
-        Text(
-            text = value,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.weight(1f),
-        )
-    }
 }
 
 @Composable
@@ -456,27 +445,18 @@ private fun RunningRow(text: String) {
         modifier = Modifier.padding(top = CulinarySpacing.xs),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
-        Spacer(modifier = Modifier.width(CulinarySpacing.xs))
+        CircularProgressIndicator(
+            modifier = Modifier.size(16.dp),
+            strokeWidth = 1.5.dp,
+            color = MaterialTheme.colorScheme.secondary,
+        )
+        Spacer(modifier = Modifier.size(CulinarySpacing.xs))
         Text(
             text = text,
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
-}
-
-@Composable
-private fun ResultText(
-    text: String,
-    color: Color,
-) {
-    Text(
-        text = text,
-        style = MaterialTheme.typography.bodySmall,
-        color = color,
-        modifier = Modifier.padding(top = CulinarySpacing.xs),
-    )
 }
 
 @Composable

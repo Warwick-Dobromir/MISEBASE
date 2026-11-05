@@ -3,6 +3,7 @@ package com.culinary.feature.inventory
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performScrollTo
 import com.culinary.core.designsystem.theme.CulinaryTheme
 import com.culinary.core.domain.model.CalculationRecord
 import com.culinary.core.domain.model.CalculationRecordId
@@ -197,8 +198,8 @@ class InventoryUiTest {
             }
         }
 
-        compose.onNodeWithText("需求汇总与缺口").assertIsDisplayed()
-        compose.onNodeWithText("可选缺口（不计入采购）").assertIsDisplayed()
+        compose.onNodeWithText("需求汇总与缺口").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("可选缺口（不计入采购）").performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("导出 CSV").assertExists()
         compose.onNodeWithText("盐").assertExists()
     }

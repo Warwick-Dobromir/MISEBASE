@@ -12,11 +12,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -32,11 +28,18 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.culinary.core.designsystem.component.CulinaryButton
+import com.culinary.core.designsystem.component.CulinaryButtonVariant
+import com.culinary.core.designsystem.component.CulinaryFilterPill
+import com.culinary.core.designsystem.component.CulinaryRule
+import com.culinary.core.designsystem.component.CulinaryTextField
 import com.culinary.core.designsystem.component.ErrorBanner
 import com.culinary.core.designsystem.component.LoadingRows
+import com.culinary.core.designsystem.component.PageHeader
 import com.culinary.core.designsystem.component.SectionHeader
 import com.culinary.core.designsystem.component.StatusBadge
 import com.culinary.core.designsystem.component.StatusTone
+import com.culinary.core.designsystem.icon.CulinaryIcons
 import com.culinary.core.designsystem.theme.CulinarySpacing
 import com.culinary.core.domain.usecase.inventory.StockIssueReason
 
@@ -99,7 +102,13 @@ internal fun StockMovementScreen(
 ) {
     var picker by remember { mutableStateOf<MovementPicker?>(null) }
     Column(modifier = modifier.fillMaxSize()) {
-        state.error?.let { message -> ErrorBanner(message = message, onAction = onDismissError) }
+        state.error?.let { message ->
+            ErrorBanner(
+                message = message,
+                onAction = onDismissError,
+                modifier = Modifier.padding(horizontal = CulinarySpacing.pageHorizontal),
+            )
+        }
         if (state.isLoading) {
             LoadingRows()
         } else {
@@ -108,66 +117,69 @@ internal fun StockMovementScreen(
                     Modifier
                         .fillMaxSize()
                         .verticalScroll(rememberScrollState())
-                        .padding(CulinarySpacing.md),
+                        .padding(bottom = CulinarySpacing.xl),
             ) {
-                Text(text = movementTitle(state.mode), style = MaterialTheme.typography.titleLarge)
-                when (state.mode) {
-                    StockMovementMode.RECEIPT ->
-                        ReceiptFields(
-                            state = state,
-                            onSourceChange = onSourceChange,
-                            onBatchCodeChange = onBatchCodeChange,
-                            onExpiryDateChange = onExpiryDateChange,
-                            onOpenPicker = { picker = it },
-                        )
+                PageHeader(
+                    eyebrow = "STOCK",
+                    title = movementTitle(state.mode),
+                    supporting = stringResource(R.string.inventory_movement_hint),
+                )
+                Column(modifier = Modifier.padding(horizontal = CulinarySpacing.pageHorizontal)) {
+                    when (state.mode) {
+                        StockMovementMode.RECEIPT ->
+                            ReceiptFields(
+                                state = state,
+                                onSourceChange = onSourceChange,
+                                onBatchCodeChange = onBatchCodeChange,
+                                onExpiryDateChange = onExpiryDateChange,
+                                onOpenPicker = { picker = it },
+                            )
 
-                    StockMovementMode.ISSUE, StockMovementMode.ADJUST -> {
-                        BatchField(state) { picker = MovementPicker.BATCH }
-                        if (state.mode == StockMovementMode.ISSUE) {
-                            ReasonField(state.reason, onReasonChange)
+                        StockMovementMode.ISSUE, StockMovementMode.ADJUST -> {
+                            BatchField(state) { picker = MovementPicker.BATCH }
+                            if (state.mode == StockMovementMode.ISSUE) {
+                                ReasonField(state.reason, onReasonChange)
+                            }
                         }
                     }
-                }
-                SectionHeader(title = stringResource(R.string.inventory_quantity))
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    OutlinedTextField(
-                        value = state.quantity,
-                        onValueChange = onQuantityChange,
-                        label = { Text(text = stringResource(R.string.inventory_quantity)) },
-                        singleLine = true,
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                        modifier = Modifier.weight(1f),
-                    )
-                    OutlinedButton(
-                        onClick = { picker = MovementPicker.UNIT },
-                        modifier = Modifier.padding(start = CulinarySpacing.xs),
-                    ) {
-                        Text(text = state.unitCode)
-                    }
-                }
-                OutlinedTextField(
-                    value = state.note,
-                    onValueChange = onNoteChange,
-                    label = { Text(text = stringResource(R.string.inventory_note)) },
-                    singleLine = false,
-                    modifier = Modifier.fillMaxWidth().padding(top = CulinarySpacing.xs),
-                )
-                if (state.mode == StockMovementMode.ISSUE) {
-                    val batch = state.selectedBatch
-                    if (batch != null) {
-                        StatusBadge(
-                            text = "可用 ${formatAmount(batch.item.available)} ${batch.item.stockUnit.symbol}",
-                            tone = StatusTone.Neutral,
-                            modifier = Modifier.padding(top = CulinarySpacing.xs),
+                    SectionHeader(title = stringResource(R.string.inventory_quantity))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        CulinaryTextField(
+                            value = state.quantity,
+                            onValueChange = onQuantityChange,
+                            label = { Text(text = stringResource(R.string.inventory_quantity)) },
+                            singleLine = true,
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                            fillWidth = false,
+                            modifier = Modifier.weight(1f),
+                        )
+                        CulinaryButton(
+                            text = state.unitCode,
+                            onClick = { picker = MovementPicker.UNIT },
+                            variant = CulinaryButtonVariant.Secondary,
+                            modifier = Modifier.padding(start = CulinarySpacing.sm),
                         )
                     }
-                }
-                Button(
-                    onClick = onSubmit,
-                    enabled = !state.isSaving,
-                    modifier = Modifier.fillMaxWidth().padding(top = CulinarySpacing.lg),
-                ) {
-                    Text(
+                    CulinaryTextField(
+                        value = state.note,
+                        onValueChange = onNoteChange,
+                        label = { Text(text = stringResource(R.string.inventory_note)) },
+                        singleLine = false,
+                        modifier = Modifier.padding(top = CulinarySpacing.md),
+                    )
+                    if (state.mode == StockMovementMode.ISSUE) {
+                        val batch = state.selectedBatch
+                        if (batch != null) {
+                            StatusBadge(
+                                text =
+                                    "可用 ${formatAmount(batch.item.available)} " +
+                                        batch.item.stockUnit.symbol,
+                                tone = StatusTone.Neutral,
+                                modifier = Modifier.padding(top = CulinarySpacing.sm),
+                            )
+                        }
+                    }
+                    CulinaryButton(
                         text =
                             stringResource(
                                 when (state.mode) {
@@ -176,6 +188,10 @@ internal fun StockMovementScreen(
                                     StockMovementMode.ADJUST -> R.string.inventory_confirm_adjust
                                 },
                             ),
+                        onClick = onSubmit,
+                        enabled = !state.isSaving,
+                        loading = state.isSaving,
+                        modifier = Modifier.fillMaxWidth().padding(top = CulinarySpacing.block),
                     )
                 }
             }
@@ -256,58 +272,61 @@ private fun ReceiptFields(
     onOpenPicker: (MovementPicker) -> Unit,
 ) {
     Row(horizontalArrangement = Arrangement.spacedBy(CulinarySpacing.xs)) {
-        FilterChip(
+        CulinaryFilterPill(
+            text = stringResource(R.string.inventory_source_product),
             selected = state.source == StockSource.PRODUCT,
             onClick = { onSourceChange(StockSource.PRODUCT) },
-            label = { Text(text = stringResource(R.string.inventory_source_product)) },
         )
-        FilterChip(
+        CulinaryFilterPill(
+            text = stringResource(R.string.inventory_source_ingredient),
             selected = state.source == StockSource.INGREDIENT,
             onClick = { onSourceChange(StockSource.INGREDIENT) },
-            label = { Text(text = stringResource(R.string.inventory_source_ingredient)) },
         )
     }
     if (state.source == StockSource.PRODUCT) {
-        OutlinedButton(
+        CulinaryButton(
+            text = state.selectedProductName ?: stringResource(R.string.inventory_product),
             onClick = { onOpenPicker(MovementPicker.PRODUCT) },
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            Text(text = state.selectedProductName ?: stringResource(R.string.inventory_product))
-        }
+            variant = CulinaryButtonVariant.Secondary,
+            icon = CulinaryIcons.ChevronDown,
+            modifier = Modifier.fillMaxWidth().padding(top = CulinarySpacing.xs),
+        )
     } else {
         val ingredient =
             state.options.ingredients
                 .firstOrNull { it.id.value == state.selectedIngredientId }
                 ?.name
-        OutlinedButton(
+        CulinaryButton(
+            text = ingredient ?: stringResource(R.string.inventory_ingredient),
             onClick = { onOpenPicker(MovementPicker.INGREDIENT) },
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            Text(text = ingredient ?: stringResource(R.string.inventory_ingredient))
-        }
+            variant = CulinaryButtonVariant.Secondary,
+            icon = CulinaryIcons.ChevronDown,
+            modifier = Modifier.fillMaxWidth().padding(top = CulinarySpacing.xs),
+        )
     }
-    OutlinedTextField(
+    CulinaryTextField(
         value = state.batchCode,
         onValueChange = onBatchCodeChange,
         label = { Text(text = stringResource(R.string.inventory_batch_code)) },
-        modifier = Modifier.fillMaxWidth().padding(top = CulinarySpacing.xs),
+        modifier = Modifier.padding(top = CulinarySpacing.md),
     )
-    OutlinedTextField(
+    CulinaryTextField(
         value = state.expiryDate,
         onValueChange = onExpiryDateChange,
         label = { Text(text = stringResource(R.string.inventory_expiry_date)) },
-        modifier = Modifier.fillMaxWidth().padding(top = CulinarySpacing.xs),
+        modifier = Modifier.padding(top = CulinarySpacing.md),
     )
-    OutlinedButton(
-        onClick = { onOpenPicker(MovementPicker.LOCATION) },
-        modifier = Modifier.fillMaxWidth().padding(top = CulinarySpacing.xs),
-    ) {
-        val location =
+    CulinaryButton(
+        text =
             state.options.locations
                 .firstOrNull { it.id.value == state.locationId }
                 ?.name
-        Text(text = location ?: stringResource(R.string.inventory_location))
-    }
+                ?: stringResource(R.string.inventory_location),
+        onClick = { onOpenPicker(MovementPicker.LOCATION) },
+        variant = CulinaryButtonVariant.Secondary,
+        icon = CulinaryIcons.ChevronDown,
+        modifier = Modifier.fillMaxWidth().padding(top = CulinarySpacing.md),
+    )
 }
 
 @Composable
@@ -315,9 +334,13 @@ private fun BatchField(
     state: StockMovementUiState,
     onOpen: () -> Unit,
 ) {
-    OutlinedButton(onClick = onOpen, modifier = Modifier.fillMaxWidth()) {
-        Text(text = state.selectedBatchLabel ?: stringResource(R.string.inventory_batch))
-    }
+    CulinaryButton(
+        text = state.selectedBatchLabel ?: stringResource(R.string.inventory_batch),
+        onClick = onOpen,
+        variant = CulinaryButtonVariant.Secondary,
+        icon = CulinaryIcons.ChevronDown,
+        modifier = Modifier.fillMaxWidth(),
+    )
 }
 
 @Composable
@@ -328,10 +351,10 @@ private fun ReasonField(
     SectionHeader(title = stringResource(R.string.inventory_reason))
     Row(horizontalArrangement = Arrangement.spacedBy(CulinarySpacing.xs)) {
         StockIssueReason.entries.forEach { value ->
-            FilterChip(
+            CulinaryFilterPill(
+                text = issueReasonLabel(value),
                 selected = reason == value,
                 onClick = { onReasonChange(value) },
-                label = { Text(text = issueReasonLabel(value)) },
             )
         }
     }
@@ -365,26 +388,45 @@ private fun <T> SelectionDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(text = title) },
+        shape = MaterialTheme.shapes.large,
+        containerColor = MaterialTheme.colorScheme.surface,
+        title = {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.headlineSmall,
+            )
+        },
         text = {
-            Column(modifier = Modifier.heightIn(max = 420.dp).verticalScroll(rememberScrollState())) {
-                items.forEach { item ->
-                    Row(
-                        modifier =
-                            Modifier
-                                .fillMaxWidth()
-                                .clickable { onSelect(item) }
-                                .padding(vertical = CulinarySpacing.sm),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Text(text = label(item), style = MaterialTheme.typography.bodyLarge)
+            if (items.isEmpty()) {
+                Text(text = stringResource(R.string.inventory_picker_empty))
+            } else {
+                Column(modifier = Modifier.heightIn(max = 420.dp).verticalScroll(rememberScrollState())) {
+                    items.forEach { item ->
+                        Row(
+                            modifier =
+                                Modifier
+                                    .fillMaxWidth()
+                                    .clickable { onSelect(item) }
+                                    .padding(vertical = CulinarySpacing.sm),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text(
+                                text = label(item),
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.onSurface,
+                            )
+                        }
+                        CulinaryRule()
                     }
                 }
             }
         },
         confirmButton = {
             TextButton(onClick = onDismiss) {
-                Text(text = stringResource(R.string.inventory_cancel))
+                Text(
+                    text = stringResource(R.string.inventory_cancel),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
             }
         },
     )

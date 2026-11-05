@@ -2,6 +2,7 @@ package com.culinary.feature.inventory
 
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -13,11 +14,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -34,12 +31,20 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.culinary.core.designsystem.component.CulinaryButton
+import com.culinary.core.designsystem.component.CulinaryButtonVariant
+import com.culinary.core.designsystem.component.CulinaryRule
+import com.culinary.core.designsystem.component.CulinaryTextButton
+import com.culinary.core.designsystem.component.CulinaryTextField
 import com.culinary.core.designsystem.component.ErrorBanner
 import com.culinary.core.designsystem.component.LoadingRows
+import com.culinary.core.designsystem.component.PageHeader
 import com.culinary.core.designsystem.component.QuantityText
 import com.culinary.core.designsystem.component.SectionHeader
 import com.culinary.core.designsystem.component.StatusBadge
 import com.culinary.core.designsystem.component.StatusTone
+import com.culinary.core.designsystem.icon.CulinaryIcons
+import com.culinary.core.designsystem.theme.CulinaryColorScheme
 import com.culinary.core.designsystem.theme.CulinarySpacing
 import com.culinary.core.domain.model.CalculationRecord
 import com.culinary.core.domain.model.PurchaseListLine
@@ -108,9 +113,19 @@ internal fun RequirementPlanScreen(
 ) {
     var showRecipePicker by remember { mutableStateOf(false) }
     Column(modifier = modifier.fillMaxSize()) {
-        state.error?.let { message -> ErrorBanner(message = message, onAction = onDismissMessages) }
+        state.error?.let { message ->
+            ErrorBanner(
+                message = message,
+                onAction = onDismissMessages,
+                modifier = Modifier.padding(horizontal = CulinarySpacing.pageHorizontal),
+            )
+        }
         state.message?.let { message ->
-            StatusBadge(text = message, tone = StatusTone.Success, modifier = Modifier.padding(CulinarySpacing.md))
+            StatusBadge(
+                text = message,
+                tone = StatusTone.Success,
+                modifier = Modifier.padding(horizontal = CulinarySpacing.pageHorizontal, vertical = CulinarySpacing.xs),
+            )
         }
         if (state.isLoading) {
             LoadingRows()
@@ -120,60 +135,69 @@ internal fun RequirementPlanScreen(
                     Modifier
                         .fillMaxSize()
                         .verticalScroll(rememberScrollState())
-                        .padding(CulinarySpacing.md),
+                        .padding(bottom = CulinarySpacing.xl),
             ) {
-                Text(
-                    text = stringResource(R.string.inventory_plan_title),
-                    style = MaterialTheme.typography.titleLarge,
+                PageHeader(
+                    eyebrow = "PLAN",
+                    title = stringResource(R.string.inventory_plan_title),
                 )
-                OutlinedButton(
-                    onClick = { showRecipePicker = true },
-                    modifier = Modifier.fillMaxWidth().padding(top = CulinarySpacing.sm),
-                ) {
-                    Text(text = state.selectedRecipeName ?: stringResource(R.string.inventory_no_recipe))
-                }
-                OutlinedTextField(
-                    value = state.servings,
-                    onValueChange = onServingsChange,
-                    label = { Text(text = stringResource(R.string.inventory_servings)) },
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                    modifier = Modifier.fillMaxWidth().padding(top = CulinarySpacing.xs),
-                )
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(CulinarySpacing.xs),
-                    modifier = Modifier.padding(top = CulinarySpacing.xs),
-                ) {
-                    OutlinedButton(onClick = onCalculate, enabled = !state.isWorking) {
-                        Text(text = stringResource(R.string.inventory_calculate))
-                    }
-                    OutlinedButton(onClick = onGenerateList, enabled = !state.isWorking) {
-                        Text(text = stringResource(R.string.inventory_generate_list))
-                    }
-                }
-                state.plan?.let { plan ->
-                    PlanContent(
-                        plan = plan,
-                        ingredientNames = state.ingredientNames,
-                        isWorking = state.isWorking,
-                        onConfirmDeduction = onConfirmDeduction,
-                        onExportCsv = onExportCsv,
+                Column(modifier = Modifier.padding(horizontal = CulinarySpacing.pageHorizontal)) {
+                    CulinaryButton(
+                        text = state.selectedRecipeName ?: stringResource(R.string.inventory_no_recipe),
+                        onClick = { showRecipePicker = true },
+                        variant = CulinaryButtonVariant.Secondary,
+                        icon = CulinaryIcons.ChevronDown,
+                        modifier = Modifier.fillMaxWidth(),
                     )
-                }
-                SectionHeader(title = stringResource(R.string.inventory_records))
-                if (state.records.isEmpty()) {
-                    Text(
-                        text = stringResource(R.string.inventory_records_empty),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    CulinaryTextField(
+                        value = state.servings,
+                        onValueChange = onServingsChange,
+                        label = { Text(text = stringResource(R.string.inventory_servings)) },
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                        modifier = Modifier.padding(top = CulinarySpacing.md),
                     )
-                } else {
-                    state.records.forEach { record ->
-                        RecordRow(
-                            record = record,
-                            onReplay = { onReplay(record) },
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(CulinarySpacing.sm),
+                        modifier = Modifier.padding(top = CulinarySpacing.sm),
+                    ) {
+                        CulinaryButton(
+                            text = stringResource(R.string.inventory_calculate),
+                            onClick = onCalculate,
+                            variant = CulinaryButtonVariant.Secondary,
+                            enabled = !state.isWorking,
                         )
-                        HorizontalDivider()
+                        CulinaryButton(
+                            text = stringResource(R.string.inventory_generate_list),
+                            onClick = onGenerateList,
+                            enabled = !state.isWorking,
+                            loading = state.isWorking,
+                        )
+                    }
+                    state.plan?.let { plan ->
+                        PlanContent(
+                            plan = plan,
+                            ingredientNames = state.ingredientNames,
+                            isWorking = state.isWorking,
+                            onConfirmDeduction = onConfirmDeduction,
+                            onExportCsv = onExportCsv,
+                        )
+                    }
+                    SectionHeader(title = stringResource(R.string.inventory_records))
+                    if (state.records.isEmpty()) {
+                        Text(
+                            text = stringResource(R.string.inventory_records_empty),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    } else {
+                        state.records.forEach { record ->
+                            RecordRow(
+                                record = record,
+                                onReplay = { onReplay(record) },
+                            )
+                            CulinaryRule()
+                        }
                     }
                 }
             }
@@ -223,33 +247,38 @@ private fun PlanContent(
         plan.purchaseList.lines.forEach { line ->
             PurchaseRow(line = line, name = ingredientNames[line.ingredientId.value] ?: line.ingredientId.value)
         }
-        OutlinedButton(onClick = onExportCsv) {
-            Text(text = stringResource(R.string.inventory_export_csv))
-        }
+        CulinaryButton(
+            text = stringResource(R.string.inventory_export_csv),
+            onClick = onExportCsv,
+            variant = CulinaryButtonVariant.Secondary,
+            modifier = Modifier.padding(top = CulinarySpacing.xs),
+        )
     }
-    Button(
+    CulinaryButton(
+        text = stringResource(R.string.inventory_confirm_deduction),
         onClick = onConfirmDeduction,
         enabled = !isWorking && !plan.hasRequiredShortfall,
-        modifier = Modifier.fillMaxWidth().padding(top = CulinarySpacing.md),
-    ) {
-        Text(text = stringResource(R.string.inventory_confirm_deduction))
-    }
+        loading = isWorking,
+        modifier = Modifier.fillMaxWidth().padding(top = CulinarySpacing.block),
+    )
     if (plan.hasRequiredShortfall) {
         Text(
             text = "存在必需缺口，补齐库存后才能确认扣减。",
             style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.error,
+            color = CulinaryColorScheme.current.danger,
+            modifier = Modifier.padding(top = CulinarySpacing.xs),
         )
     }
 }
 
 @Composable
 private fun RequirementRow(line: RequirementPreviewLine) {
-    Column(modifier = Modifier.fillMaxWidth().padding(vertical = CulinarySpacing.xxs)) {
+    Column(modifier = Modifier.fillMaxWidth().padding(vertical = CulinarySpacing.sm)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
                 text = line.ingredientName,
                 style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.weight(1f),
             )
             StatusBadge(
@@ -273,10 +302,11 @@ private fun RequirementRow(line: RequirementPreviewLine) {
                 QuantityText(
                     amount = formatAmount(line.shortfall.amount),
                     unit = line.shortfall.unit.symbol,
-                    emphasisColor = MaterialTheme.colorScheme.error,
+                    emphasisColor = CulinaryColorScheme.current.danger,
                 )
             }
         }
+        CulinaryRule()
     }
 }
 
@@ -285,37 +315,27 @@ private fun PurchaseRow(
     line: PurchaseListLine,
     name: String,
 ) {
-    ArchiveRow(
-        title = name,
-        subtitle =
-            "需求 ${formatAmount(line.required.amount)} · 可用 ${formatAmount(line.available.amount)} " +
-                line.required.unit.symbol,
-        trailing = {
-            QuantityText(amount = formatAmount(line.toPurchase.amount), unit = line.toPurchase.unit.symbol)
-        },
-    )
-}
-
-@Composable
-private fun ArchiveRow(
-    title: String,
-    subtitle: String,
-    trailing: @Composable () -> Unit,
-) {
     Row(
-        modifier = Modifier.fillMaxWidth().padding(vertical = CulinarySpacing.xxs),
+        modifier = Modifier.fillMaxWidth().padding(vertical = CulinarySpacing.sm),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(modifier = Modifier.weight(1f)) {
-            Text(text = title, style = MaterialTheme.typography.bodyLarge)
             Text(
-                text = subtitle,
+                text = name,
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            Text(
+                text =
+                    "需求 ${formatAmount(line.required.amount)} · 可用 ${formatAmount(line.available.amount)} " +
+                        line.required.unit.symbol,
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
-        trailing()
+        QuantityText(amount = formatAmount(line.toPurchase.amount), unit = line.toPurchase.unit.symbol)
     }
+    CulinaryRule()
 }
 
 @Composable
@@ -324,13 +344,14 @@ private fun RecordRow(
     onReplay: () -> Unit,
 ) {
     Row(
-        modifier = Modifier.fillMaxWidth().padding(vertical = CulinarySpacing.xs),
+        modifier = Modifier.fillMaxWidth().padding(vertical = CulinarySpacing.sm),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = formatInstant(record.confirmedAt ?: record.createdAt),
                 style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurface,
             )
             Text(
                 text = stringResource(R.string.inventory_payload_hash) + " " + record.payloadHash.take(12),
@@ -338,9 +359,10 @@ private fun RecordRow(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
-        TextButton(onClick = onReplay) {
-            Text(text = stringResource(R.string.inventory_replay))
-        }
+        CulinaryTextButton(
+            text = stringResource(R.string.inventory_replay),
+            onClick = onReplay,
+        )
     }
 }
 
@@ -352,7 +374,14 @@ private fun RecipePickerDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(text = stringResource(R.string.inventory_recipe)) },
+        shape = MaterialTheme.shapes.large,
+        containerColor = MaterialTheme.colorScheme.surface,
+        title = {
+            Text(
+                text = stringResource(R.string.inventory_recipe),
+                style = MaterialTheme.typography.headlineSmall,
+            )
+        },
         text = {
             Column(modifier = Modifier.heightIn(max = 420.dp).verticalScroll(rememberScrollState())) {
                 recipes.forEach { option ->
@@ -360,23 +389,28 @@ private fun RecipePickerDialog(
                         modifier =
                             Modifier
                                 .fillMaxWidth()
+                                .clickable { onSelect(option) }
                                 .padding(vertical = CulinarySpacing.sm),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        TextButton(onClick = { onSelect(option) }) {
-                            Text(
-                                text =
-                                    option.recipe.name +
-                                        if (option.currentVersion == null) "（无当前版本）" else "",
-                            )
-                        }
+                        Text(
+                            text =
+                                option.recipe.name +
+                                    if (option.currentVersion == null) "（无当前版本）" else "",
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurface,
+                        )
                     }
+                    CulinaryRule()
                 }
             }
         },
         confirmButton = {
             TextButton(onClick = onDismiss) {
-                Text(text = stringResource(R.string.inventory_close))
+                Text(
+                    text = stringResource(R.string.inventory_close),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
             }
         },
     )
@@ -390,12 +424,20 @@ private fun ReplayDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(text = stringResource(R.string.inventory_replay_title)) },
+        shape = MaterialTheme.shapes.large,
+        containerColor = MaterialTheme.colorScheme.surface,
+        title = {
+            Text(
+                text = stringResource(R.string.inventory_replay_title),
+                style = MaterialTheme.typography.headlineSmall,
+            )
+        },
         text = {
             Column(modifier = Modifier.heightIn(max = 420.dp).verticalScroll(rememberScrollState())) {
                 Text(
                     text = stringResource(R.string.inventory_payload_hash) + "：" + record.payloadHash,
                     style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 record.lines.forEach { line ->
                     Text(
@@ -404,6 +446,7 @@ private fun ReplayDialog(
                                 "${formatAmount(line.quantity.amount)} ${line.quantity.unit.symbol}" +
                                 if (line.isOptional) "  (可选)" else "",
                         style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.padding(vertical = CulinarySpacing.xxs),
                     )
                 }
@@ -411,7 +454,10 @@ private fun ReplayDialog(
         },
         confirmButton = {
             TextButton(onClick = onDismiss) {
-                Text(text = stringResource(R.string.inventory_close))
+                Text(
+                    text = stringResource(R.string.inventory_close),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
             }
         },
     )

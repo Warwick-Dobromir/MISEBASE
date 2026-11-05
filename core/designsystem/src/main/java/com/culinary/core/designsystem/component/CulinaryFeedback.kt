@@ -216,6 +216,7 @@ fun ResultPanel(
     message: String,
     modifier: Modifier = Modifier,
     tone: StatusTone = StatusTone.Success,
+    details: List<String> = emptyList(),
 ) {
     val container =
         when (tone) {
@@ -243,6 +244,10 @@ fun ResultPanel(
             Text(text = title, style = MaterialTheme.typography.labelLarge)
             Spacer(modifier = Modifier.height(2.dp))
             Text(text = message, style = MaterialTheme.typography.bodySmall)
+            details.forEach { detail ->
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(text = detail, style = MaterialTheme.typography.bodySmall)
+            }
         }
     }
 }

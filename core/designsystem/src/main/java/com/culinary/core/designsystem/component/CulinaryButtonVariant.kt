@@ -1,4 +1,4 @@
-﻿package com.culinary.core.designsystem.component
+package com.culinary.core.designsystem.component
 
 /**
  * 按钮语义变体（MB-UI-001 §3.9）。
@@ -11,4 +11,10 @@ enum class CulinaryButtonVariant {
     Secondary,
     Ghost,
     Danger,
+
+    /** 相机/图像遮罩上的主操作：白底深字，始终与深色预览对比。 */
+    Overlay,
+
+    /** 相机/图像遮罩上的次要操作：白描边 + 白字。 */
+    OverlayOutline,
 }

@@ -8,12 +8,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.Button
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -24,12 +18,17 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.culinary.core.designsystem.component.ArchiveListItem
+import com.culinary.core.designsystem.component.CulinaryButton
+import com.culinary.core.designsystem.component.CulinaryFilterPill
+import com.culinary.core.designsystem.component.CulinarySearchField
 import com.culinary.core.designsystem.component.EmptyState
 import com.culinary.core.designsystem.component.ErrorBanner
 import com.culinary.core.designsystem.component.LoadingRows
+import com.culinary.core.designsystem.component.PageHeader
 import com.culinary.core.designsystem.component.QuantityText
 import com.culinary.core.designsystem.component.StatusBadge
 import com.culinary.core.designsystem.component.StatusTone
+import com.culinary.core.designsystem.icon.CulinaryIcons
 import com.culinary.core.designsystem.theme.CulinarySpacing
 import com.culinary.core.domain.model.InventoryOverviewRow
 
@@ -73,61 +72,72 @@ internal fun InventoryOverviewScreen(
 ) {
     Column(modifier = modifier.fillMaxSize()) {
         state.error?.let { message ->
-            ErrorBanner(message = message, actionLabel = stringResource(R.string.inventory_retry), onAction = onRetry)
+            ErrorBanner(
+                message = message,
+                actionLabel = stringResource(R.string.inventory_retry),
+                onAction = onRetry,
+                modifier = Modifier.padding(horizontal = CulinarySpacing.pageHorizontal),
+            )
         }
+        PageHeader(
+            eyebrow = "INVENTORY",
+            title = stringResource(R.string.inventory_title),
+            supporting = stringResource(R.string.inventory_count, state.rows.size),
+            actions = {
+                CulinaryButton(
+                    text = stringResource(R.string.inventory_action_receipt),
+                    onClick = onReceipt,
+                    icon = CulinaryIcons.Add,
+                )
+            },
+        )
         Row(
             modifier =
                 Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = CulinarySpacing.md, vertical = CulinarySpacing.sm),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = stringResource(R.string.inventory_title),
-                    style = MaterialTheme.typography.titleLarge,
-                )
-                Text(
-                    text = stringResource(R.string.inventory_count, state.rows.size),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-            Button(onClick = onReceipt) {
-                Text(text = stringResource(R.string.inventory_action_receipt))
-            }
-        }
-        Row(
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = CulinarySpacing.md),
+                    .padding(horizontal = CulinarySpacing.pageHorizontal),
             horizontalArrangement = Arrangement.spacedBy(CulinarySpacing.xs),
         ) {
-            OutlinedButton(onClick = onOpenLedger) {
-                Text(text = stringResource(R.string.inventory_action_ledger))
-            }
-            OutlinedButton(onClick = onOpenPlan) {
-                Text(text = stringResource(R.string.inventory_action_plan))
-            }
+            CulinaryButton(
+                text = stringResource(R.string.inventory_action_ledger),
+                onClick = onOpenLedger,
+                variant = com.culinary.core.designsystem.component.CulinaryButtonVariant.Secondary,
+            )
+            CulinaryButton(
+                text = stringResource(R.string.inventory_action_plan),
+                onClick = onOpenPlan,
+                variant = com.culinary.core.designsystem.component.CulinaryButtonVariant.Secondary,
+            )
         }
-        OutlinedTextField(
+        CulinarySearchField(
             value = state.query,
             onValueChange = onQueryChange,
-            label = { Text(text = stringResource(R.string.inventory_search)) },
-            singleLine = true,
-            modifier = Modifier.fillMaxWidth().padding(horizontal = CulinarySpacing.md, vertical = CulinarySpacing.xs),
+            placeholder = stringResource(R.string.inventory_search),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(
+                        start = CulinarySpacing.pageHorizontal,
+                        end = CulinarySpacing.pageHorizontal,
+                        top = CulinarySpacing.md,
+                    ),
         )
-        FilterChip(
+        CulinaryFilterPill(
+            text = stringResource(R.string.inventory_low_only),
             selected = state.onlyLowStock,
             onClick = onToggleLowStock,
-            label = { Text(text = stringResource(R.string.inventory_low_only)) },
-            modifier = Modifier.padding(horizontal = CulinarySpacing.md),
+            modifier =
+                Modifier.padding(
+                    start = CulinarySpacing.pageHorizontal,
+                    top = CulinarySpacing.sm,
+                    bottom = CulinarySpacing.xs,
+                ),
         )
         when {
             state.isLoading -> LoadingRows()
             state.rows.isEmpty() ->
                 EmptyState(
+                    icon = CulinaryIcons.Inventory,
                     title = stringResource(R.string.inventory_empty_title),
                     description = stringResource(R.string.inventory_empty_body),
                     actionLabel = stringResource(R.string.inventory_action_receipt),
@@ -136,6 +146,7 @@ internal fun InventoryOverviewScreen(
 
             state.visibleRows.isEmpty() ->
                 EmptyState(
+                    icon = CulinaryIcons.Search,
                     title = stringResource(R.string.inventory_search),
                     description = stringResource(R.string.inventory_empty_body),
                 )

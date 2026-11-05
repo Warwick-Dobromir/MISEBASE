@@ -1,4 +1,4 @@
-﻿package com.culinary.core.designsystem.component
+package com.culinary.core.designsystem.component
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.PaddingValues
@@ -122,6 +122,42 @@ fun CulinaryButton(
                     ButtonDefaults.outlinedButtonColors(
                         contentColor = MaterialTheme.colorScheme.onSurface,
                         disabledContentColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f),
+                        containerColor = Color.Transparent,
+                    ),
+                elevation = null,
+                contentPadding = contentPadding,
+                content = content,
+            )
+
+        CulinaryButtonVariant.Overlay ->
+            Button(
+                onClick = onClick,
+                modifier = modifier.heightIn(min = CulinarySizes.buttonHeight),
+                enabled = effectiveEnabled,
+                shape = shape,
+                colors =
+                    ButtonDefaults.buttonColors(
+                        containerColor = Color.White,
+                        contentColor = Color(0xFF1F1F1F),
+                        disabledContainerColor = Color.White.copy(alpha = 0.38f),
+                        disabledContentColor = Color(0xFF1F1F1F).copy(alpha = 0.6f),
+                    ),
+                elevation = null,
+                contentPadding = contentPadding,
+                content = content,
+            )
+
+        CulinaryButtonVariant.OverlayOutline ->
+            OutlinedButton(
+                onClick = onClick,
+                modifier = modifier.heightIn(min = CulinarySizes.buttonHeight),
+                enabled = effectiveEnabled,
+                shape = shape,
+                border = BorderStroke(1.dp, Color.White.copy(alpha = if (effectiveEnabled) 1f else 0.5f)),
+                colors =
+                    ButtonDefaults.outlinedButtonColors(
+                        contentColor = Color.White,
+                        disabledContentColor = Color.White.copy(alpha = 0.5f),
                         containerColor = Color.Transparent,
                     ),
                 elevation = null,
