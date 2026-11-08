@@ -4,7 +4,9 @@
 版本：**1.0.5 (6)**  
 数据库：**schema v6**  
 分支：`restore-v7`  
-回滚点：`pre-archive-unified-v6`（提交后打 tag）
+提交：`6a4474c feat(archive): unify six libraries with dynamic categories and reading views`  
+回滚点：`pre-archive-unified-v6`（指向 `0f2ca78`）  
+交付标签：`archive-unified-v1.0.5`
 
 ---
 
@@ -157,7 +159,15 @@ kitchen_reference_content     烹饪技术/制作标准/储存标准的专业字
 截图位于：
 
 ```text
-docs/24-archive-unified/screenshots/  （由运行截图整理）
+docs/24-archive-unified/screenshots/00-final-library.png
+docs/24-archive-unified/screenshots/01-sauce-library-formal-test.png
+docs/24-archive-unified/screenshots/02-test-category-both.png
+docs/24-archive-unified/screenshots/03-test-editor-level3.png
+docs/24-archive-unified/screenshots/04-single-library-search.png
+docs/24-archive-unified/screenshots/05-test-sauce-detail-path.png
+docs/24-archive-unified/screenshots/06-production-standard-detail.png
+docs/24-archive-unified/screenshots/07-category-test-cleanup.png
+docs/24-archive-unified/screenshots/08-category-only-no-new-version.png
 ```
 
 ---
@@ -228,10 +238,10 @@ dist/ARCHIVE-UNIFIED-001/MISEBASE-1.0.5-archive-unified-release.apk
 SHA-256：
 
 ```text
-d1964528cab6cae3f27c621a37138b07f223091d1394bbb129aed4c5dc4d67ca
+ee219ccd02f540a72e4c7c985b4019d1dc178076123ec4c942f18b082c631405
 ```
 
-大小：24,697,492 bytes
+大小：24,697,503 bytes
 
 安装信息：
 
