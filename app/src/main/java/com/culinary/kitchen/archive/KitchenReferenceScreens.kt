@@ -301,7 +301,7 @@ internal fun KitchenReferenceDetailScreen(
                         )
                     }
                 }
-                if (state.categoryPath.isNotEmpty()) {
+                if (state.categoryPath.size > 1) {
                     Text(
                         text = state.categoryPath.joinToString(" / "),
                         style = MaterialTheme.typography.labelLarge,
@@ -309,7 +309,7 @@ internal fun KitchenReferenceDetailScreen(
                     )
                     Spacer(modifier = Modifier.height(CulinarySpacing.md))
                 }
-                if (state.categoryPath.isEmpty()) {
+                if (state.categoryPath.size <= 1) {
                     record.category?.takeIf { it.isNotBlank() }?.let { category ->
                         Text(
                             text = category,

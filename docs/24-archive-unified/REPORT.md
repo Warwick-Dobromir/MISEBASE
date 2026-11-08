@@ -238,10 +238,10 @@ dist/ARCHIVE-UNIFIED-001/MISEBASE-1.0.5-archive-unified-release.apk
 SHA-256：
 
 ```text
-ee219ccd02f540a72e4c7c985b4019d1dc178076123ec4c942f18b082c631405
+8841a9405e1e9af0a290d9edc7a23ab969032ecc561900fef6d753a0a949dede
 ```
 
-大小：24,697,503 bytes
+大小：24,697,497 bytes
 
 安装信息：
 
