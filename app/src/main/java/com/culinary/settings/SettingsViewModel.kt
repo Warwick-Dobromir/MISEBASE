@@ -9,6 +9,7 @@ import androidx.lifecycle.viewModelScope
 import com.culinary.BuildConfig
 import com.culinary.core.common.ErrorCode
 import com.culinary.core.common.Outcome
+import com.culinary.core.data.kitchen.ArchiveCategorySeeder
 import com.culinary.core.data.kitchen.KitchenSeedImporter
 import com.culinary.core.data.settings.SettingsMaintenance
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -35,6 +36,7 @@ class SettingsViewModel
         @ApplicationContext private val context: Context,
         private val maintenance: SettingsMaintenance,
         private val seedImporter: KitchenSeedImporter,
+        private val categorySeeder: ArchiveCategorySeeder,
     ) : ViewModel() {
         private val _uiState =
             MutableStateFlow(
@@ -97,6 +99,36 @@ class SettingsViewModel
                             } else {
                                 SeedActionState.Failed
                             },
+                    )
+                }
+            }
+        }
+
+        /** 重建分类测试树与测试档案；不影响正式分类/真实档案。 */
+        fun reseedCategoryTest() {
+            viewModelScope.launch {
+                _uiState.update { it.copy(categoryTestRunning = true, categoryTestMessage = null) }
+                val result = withContext(Dispatchers.IO) { categorySeeder.reseedTestData() }
+                _uiState.update {
+                    it.copy(
+                        categoryTestRunning = false,
+                        categoryTestMessage =
+                            if (result is Outcome.Success) "分类测试数据已重建" else "分类测试数据重建失败",
+                    )
+                }
+            }
+        }
+
+        /** 清理分类测试树与测试档案；正式分类和真实档案保留。 */
+        fun clearCategoryTest() {
+            viewModelScope.launch {
+                _uiState.update { it.copy(categoryTestRunning = true, categoryTestMessage = null) }
+                val result = withContext(Dispatchers.IO) { categorySeeder.clearTestData() }
+                _uiState.update {
+                    it.copy(
+                        categoryTestRunning = false,
+                        categoryTestMessage =
+                            if (result is Outcome.Success) "分类测试数据已清理" else "分类测试数据清理失败",
                     )
                 }
             }

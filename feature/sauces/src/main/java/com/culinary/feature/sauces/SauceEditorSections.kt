@@ -14,6 +14,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -35,19 +37,22 @@ import com.culinary.core.designsystem.icon.CulinaryIcons
 import com.culinary.core.designsystem.theme.CulinarySpacing
 import com.culinary.core.designsystem.theme.CulinaryTextStyles
 
-@Suppress("LongMethod") // 头部四层文字 + 三栏元数据是一个不可拆的排版单元
+@Suppress("LongMethod") // 头部品牌/分类路径 + 双语标题 + 三栏元数据是一个排版单元
 @Composable
 internal fun SauceHeaderSection(
     state: SauceEditorUiState,
     actions: SauceEditorActions,
 ) {
+    val pathCategories =
+        state.categoryPathIds.mapNotNull { id -> state.categories.firstOrNull { it.id == id } }
     Column(modifier = Modifier.fillMaxWidth().padding(top = CulinarySpacing.lg)) {
-        EditorInlineField(
-            value = state.family,
-            onValueChange = actions.onFamilyChange,
-            placeholder = "CLASSIC FRENCH SAUCE",
-            textStyle = CulinaryTextStyles.eyebrow,
-            modifier = Modifier.fillMaxWidth(),
+        Text(
+            text =
+                pathCategories
+                    .joinToString(" / ") { it.name }
+                    .ifBlank { "CLASSIFICATION / 分类归属" },
+            style = CulinaryTextStyles.eyebrow,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Spacer(modifier = Modifier.height(CulinarySpacing.sm))
         EditorInlineField(
@@ -74,20 +79,12 @@ internal fun SauceHeaderSection(
             modifier = Modifier.fillMaxWidth(),
         )
         Spacer(modifier = Modifier.height(CulinarySpacing.lg))
+        SauceClassificationSelector(state = state, actions = actions)
+        Spacer(modifier = Modifier.height(CulinarySpacing.lg))
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(CulinarySpacing.md),
         ) {
-            Column(modifier = Modifier.weight(1f)) {
-                MetaLabel(text = "CATEGORY")
-                EditorInlineField(
-                    value = state.family,
-                    onValueChange = actions.onFamilyChange,
-                    placeholder = "分类",
-                    textStyle = MaterialTheme.typography.bodyMedium,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-            }
             Column(modifier = Modifier.weight(1f)) {
                 MetaLabel(text = "YIELD")
                 Row(verticalAlignment = Alignment.Bottom) {
@@ -119,6 +116,111 @@ internal fun SauceHeaderSection(
                 )
             }
         }
+    }
+}
+
+@Suppress("LoopWithTooManyJumpStatements")
+@Composable
+private fun SauceClassificationSelector(
+    state: SauceEditorUiState,
+    actions: SauceEditorActions,
+) {
+    val formal = state.categories.filter { state.isTestRecord || !it.isTest }
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Text(
+            text = "CLASSIFICATION / 分类归属",
+            style = CulinaryTextStyles.eyebrow,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Spacer(modifier = Modifier.height(CulinarySpacing.xs))
+        if (formal.isEmpty()) {
+            Text(
+                text = "分类数据尚未加载。",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            return
+        }
+        var level = 0
+        while (level <= state.categoryPathIds.size) {
+            val parentId = if (level == 0) null else state.categoryPathIds.getOrNull(level - 1)
+            val options = formal.filter { it.parentId == parentId }
+            if (options.isEmpty()) break
+            CategoryLevelField(
+                level = level,
+                selectedId = state.categoryPathIds.getOrNull(level),
+                options = options,
+                onSelect = { id -> actions.onCategorySelect(level, id) },
+            )
+            level++
+            if (level > 32) break
+        }
+    }
+}
+
+@Composable
+private fun CategoryLevelField(
+    level: Int,
+    selectedId: String?,
+    options: List<com.culinary.core.domain.model.ArchiveCategory>,
+    onSelect: (String?) -> Unit,
+) {
+    var expanded by remember { mutableStateOf(false) }
+    val selected = options.firstOrNull { it.id == selectedId }
+    Column(modifier = Modifier.fillMaxWidth().padding(top = CulinarySpacing.xs)) {
+        Text(
+            text = "LEVEL ${(level + 1).toString().padStart(2, '0')}",
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Box(modifier = Modifier.fillMaxWidth()) {
+            Row(
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .clickable { expanded = true }
+                        .padding(vertical = CulinarySpacing.xs),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = selected?.name ?: "选择分类",
+                    style = MaterialTheme.typography.bodyLarge,
+                    color =
+                        if (selected == null) {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        } else {
+                            MaterialTheme.colorScheme.onSurface
+                        },
+                    modifier = Modifier.weight(1f),
+                )
+                if (selected != null) {
+                    Text(
+                        text = "清除",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.clickable { onSelect(null) },
+                    )
+                }
+                Icon(
+                    imageVector = CulinaryIcons.ChevronDown,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(start = CulinarySpacing.xs).size(14.dp),
+                )
+            }
+            DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+                options.forEach { category ->
+                    DropdownMenuItem(
+                        text = { Text(category.name) },
+                        onClick = {
+                            expanded = false
+                            onSelect(category.id)
+                        },
+                    )
+                }
+            }
+        }
+        CulinaryRule()
     }
 }
 

@@ -234,5 +234,14 @@ private fun emptyRelations(): ObserveKitchenRelationsUseCase =
     ObserveKitchenRelationsUseCase(
         object : KitchenRelationRepository {
             override fun observeForRecord(recordId: String): Flow<List<KitchenRelatedRecord>> = flowOf(emptyList())
+
+            override suspend fun replaceRelations(
+                sourceRecordId: String,
+                sourceKind: com.culinary.core.domain.model.KitchenRecordKind,
+                targetKind: com.culinary.core.domain.model.KitchenRecordKind,
+                relations: List<com.culinary.core.domain.model.KitchenRelationDraft>,
+            ): com.culinary.core.common.Outcome<Unit> =
+                com.culinary.core.common.Outcome
+                    .success(Unit)
         },
     )

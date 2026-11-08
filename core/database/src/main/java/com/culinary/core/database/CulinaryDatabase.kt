@@ -9,6 +9,8 @@ import com.culinary.core.database.converter.InventoryConverters
 import com.culinary.core.database.converter.PlanConverters
 import com.culinary.core.database.converter.ProcurementConverters
 import com.culinary.core.database.dao.AppMetadataDao
+import com.culinary.core.database.dao.ArchiveCategoryAssignmentDao
+import com.culinary.core.database.dao.ArchiveCategoryDao
 import com.culinary.core.database.dao.BackupRecordDao
 import com.culinary.core.database.dao.BarcodeDao
 import com.culinary.core.database.dao.CalculationRecordDao
@@ -22,6 +24,7 @@ import com.culinary.core.database.dao.IngredientUnitConversionDao
 import com.culinary.core.database.dao.InventoryBatchDao
 import com.culinary.core.database.dao.InventoryLedgerDao
 import com.culinary.core.database.dao.InventoryReservationDao
+import com.culinary.core.database.dao.KitchenReferenceContentDao
 import com.culinary.core.database.dao.KitchenReferenceDao
 import com.culinary.core.database.dao.KitchenRelationDao
 import com.culinary.core.database.dao.MaterialRequirementDao
@@ -43,6 +46,8 @@ import com.culinary.core.database.dao.StorageLocationDao
 import com.culinary.core.database.dao.SupplierDao
 import com.culinary.core.database.dao.UnitDao
 import com.culinary.core.database.entity.AppMetadataEntity
+import com.culinary.core.database.entity.ArchiveCategoryAssignmentEntity
+import com.culinary.core.database.entity.ArchiveCategoryEntity
 import com.culinary.core.database.entity.BackupRecordEntity
 import com.culinary.core.database.entity.BarcodeEntity
 import com.culinary.core.database.entity.CalculationRecordEntity
@@ -57,6 +62,7 @@ import com.culinary.core.database.entity.IngredientUnitConversionEntity
 import com.culinary.core.database.entity.InventoryBatchEntity
 import com.culinary.core.database.entity.InventoryLedgerEntity
 import com.culinary.core.database.entity.InventoryReservationEntity
+import com.culinary.core.database.entity.KitchenReferenceContentEntity
 import com.culinary.core.database.entity.KitchenReferenceEntity
 import com.culinary.core.database.entity.KitchenRelationEntity
 import com.culinary.core.database.entity.MaterialRequirementEntity
@@ -79,13 +85,15 @@ import com.culinary.core.database.entity.SupplierEntity
 import com.culinary.core.database.entity.UnitEntity
 
 /**
- * CULINARY 数据库（schema v5）。
+ * CULINARY 数据库（schema v6）。
  *
  * `exportSchema = true`：每个版本必须提交 `schemas/` JSON，迁移测试依赖它。
  * v2 新增计算记录与 recipe_version.servings；v3 新增 kitchen_reference；
  * v4 补充六库档案的扩展展示字段、测试种子标记和厨房关系表；
- * v5 增加酱汁编辑器的描述/难度/图注、步骤 JSON、原料名称覆盖与关系排序。
+ * v5 增加酱汁编辑器的描述/难度/图注、步骤 JSON、原料名称覆盖与关系排序；
+ * v6 新增六库分类树/档案分类归属与参考资料专业内容行。
  */
+@Suppress("TooManyFunctions")
 @Database(
     entities = [
         UnitEntity::class,
@@ -122,9 +130,12 @@ import com.culinary.core.database.entity.UnitEntity
         CalculationRecordEntity::class,
         CalculationRecordLineEntity::class,
         KitchenReferenceEntity::class,
+        KitchenReferenceContentEntity::class,
         KitchenRelationEntity::class,
+        ArchiveCategoryEntity::class,
+        ArchiveCategoryAssignmentEntity::class,
     ],
-    version = 5,
+    version = 6,
     exportSchema = true,
 )
 @TypeConverters(
@@ -201,7 +212,13 @@ abstract class CulinaryDatabase : RoomDatabase() {
 
     abstract fun kitchenReferenceDao(): KitchenReferenceDao
 
+    abstract fun kitchenReferenceContentDao(): KitchenReferenceContentDao
+
     abstract fun kitchenRelationDao(): KitchenRelationDao
+
+    abstract fun archiveCategoryDao(): ArchiveCategoryDao
+
+    abstract fun archiveCategoryAssignmentDao(): ArchiveCategoryAssignmentDao
 
     companion object {
         const val DATABASE_NAME: String = "culinary.db"

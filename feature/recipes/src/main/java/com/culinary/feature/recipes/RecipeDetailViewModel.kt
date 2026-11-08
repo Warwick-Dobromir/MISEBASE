@@ -4,9 +4,13 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.culinary.core.common.Outcome
+import com.culinary.core.domain.model.ArchiveImageOwner
+import com.culinary.core.domain.model.KitchenRecordKind
 import com.culinary.core.domain.model.RecipeDetail
 import com.culinary.core.domain.model.RecipeId
 import com.culinary.core.domain.model.RecipeVersionId
+import com.culinary.core.domain.usecase.archive.ArchiveImageUseCase
+import com.culinary.core.domain.usecase.archive.GetArchiveCategoryForRecordUseCase
 import com.culinary.core.domain.usecase.kitchen.ObserveKitchenRelationsUseCase
 import com.culinary.core.domain.usecase.recipe.ExpandRecipeUseCase
 import com.culinary.core.domain.usecase.recipe.GetRecipeDetailUseCase
@@ -29,6 +33,9 @@ class RecipeDetailViewModel
         private val expandRecipe: ExpandRecipeUseCase,
         private val publishStoredVersion: PublishStoredRecipeVersionUseCase,
         private val getRelations: ObserveKitchenRelationsUseCase,
+        private val getArchiveCategoryForRecord: GetArchiveCategoryForRecordUseCase =
+            GetArchiveCategoryForRecordUseCase(),
+        private val archiveImages: ArchiveImageUseCase = ArchiveImageUseCase(),
     ) : ViewModel() {
         private val recipeId = RecipeId(savedStateHandle.get<String>(RecipesRoutes.ARG_RECIPE_ID).orEmpty())
         private val _uiState = MutableStateFlow(RecipeDetailUiState())
@@ -49,9 +56,19 @@ class RecipeDetailViewModel
                 when (val result = getRecipeDetail(recipeId)) {
                     is Outcome.Success -> {
                         val detail = result.value
+                        val category =
+                            runCatching {
+                                getArchiveCategoryForRecord(KitchenRecordKind.RECIPE, recipeId.value)
+                            }.getOrNull()
+                        val image =
+                            runCatching {
+                                archiveImages.primary(ArchiveImageOwner.RECIPE, recipeId.value)
+                            }.getOrNull()
                         _uiState.update {
                             it.copy(
                                 detail = detail,
+                                categoryPath = category?.path.orEmpty(),
+                                imageBytes = image,
                                 isLoading = false,
                                 isPublishing = false,
                                 targetServings = detail.baseServings.toString(),

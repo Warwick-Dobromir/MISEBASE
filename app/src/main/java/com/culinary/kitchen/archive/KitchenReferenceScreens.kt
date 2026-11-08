@@ -32,6 +32,7 @@ import com.culinary.core.designsystem.component.CulinaryButtonVariant
 import com.culinary.core.designsystem.component.CulinaryRelationItem
 import com.culinary.core.designsystem.component.CulinaryRelationSection
 import com.culinary.core.designsystem.component.CulinaryRule
+import com.culinary.core.designsystem.component.CulinaryTextButton
 import com.culinary.core.designsystem.component.CulinaryTextField
 import com.culinary.core.designsystem.component.ErrorBanner
 import com.culinary.core.designsystem.component.PageHeader
@@ -57,6 +58,12 @@ fun KitchenReferenceEditorRoute(
         onNameChange = viewModel::onNameChange,
         onCategoryChange = viewModel::onCategoryChange,
         onDescriptionChange = viewModel::onDescriptionChange,
+        onFieldChange = viewModel::onFieldChange,
+        onItemTitleChange = viewModel::onItemTitleChange,
+        onItemBodyChange = viewModel::onItemBodyChange,
+        onAddItem = viewModel::addItem,
+        onRemoveItem = viewModel::removeItem,
+        onMoveItem = viewModel::moveItem,
         onSave = viewModel::save,
         modifier = modifier,
     )
@@ -69,6 +76,12 @@ internal fun KitchenReferenceEditorScreen(
     onNameChange: (String) -> Unit,
     onCategoryChange: (String) -> Unit,
     onDescriptionChange: (String) -> Unit,
+    onFieldChange: (String, String) -> Unit,
+    onItemTitleChange: (String, String) -> Unit,
+    onItemBodyChange: (String, String) -> Unit,
+    onAddItem: (String) -> Unit,
+    onRemoveItem: (String) -> Unit,
+    onMoveItem: (String, Int) -> Unit,
     onSave: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -130,6 +143,63 @@ internal fun KitchenReferenceEditorScreen(
                 minLines = 5,
                 enabled = !state.isSaving,
             )
+            val schema = KitchenReferenceSchema.of(state.type)
+            schema.fields.forEach { field ->
+                CulinaryTextField(
+                    value = state.fields[field.key].orEmpty(),
+                    onValueChange = { value -> onFieldChange(field.key, value) },
+                    label = field.label,
+                    placeholder = field.hint,
+                    minLines = if (field.multiline) 2 else 1,
+                    enabled = !state.isSaving,
+                )
+            }
+            schema.lists.forEach { list ->
+                val items = state.items.filter { it.section == list.key }
+                Text(
+                    text = list.title,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+                items.forEachIndexed { index, item ->
+                    Column(verticalArrangement = Arrangement.spacedBy(CulinarySpacing.xs)) {
+                        CulinaryTextField(
+                            value = item.title,
+                            onValueChange = { value -> onItemTitleChange(item.id, value) },
+                            label = "${list.itemLabel} ${index + 1}",
+                            placeholder = "标题",
+                            singleLine = true,
+                            enabled = !state.isSaving,
+                        )
+                        CulinaryTextField(
+                            value = item.body,
+                            onValueChange = { value -> onItemBodyChange(item.id, value) },
+                            label = "说明",
+                            placeholder = "具体内容",
+                            minLines = 2,
+                            enabled = !state.isSaving,
+                        )
+                        Row(horizontalArrangement = Arrangement.spacedBy(CulinarySpacing.xs)) {
+                            CulinaryTextButton(
+                                text = "上移",
+                                onClick = { onMoveItem(item.id, -1) },
+                            )
+                            CulinaryTextButton(
+                                text = "下移",
+                                onClick = { onMoveItem(item.id, 1) },
+                            )
+                            CulinaryTextButton(
+                                text = "删除",
+                                onClick = { onRemoveItem(item.id) },
+                            )
+                        }
+                    }
+                }
+                CulinaryTextButton(
+                    text = "添加${list.itemLabel}",
+                    onClick = { onAddItem(list.key) },
+                )
+            }
             CulinaryButton(
                 text = stringResource(R.string.kitchen_reference_save),
                 onClick = onSave,
@@ -182,7 +252,7 @@ fun KitchenReferenceDetailRoute(
     }
 }
 
-@Suppress("LongMethod") // 详情、错误、分类说明与编辑/归档操作保持单屏结构
+@Suppress("LongMethod", "CyclomaticComplexMethod") // 详情、字段/列表、分类说明与编辑/归档保持单屏结构
 @Composable
 internal fun KitchenReferenceDetailScreen(
     state: KitchenReferenceDetailUiState,
@@ -231,13 +301,23 @@ internal fun KitchenReferenceDetailScreen(
                         )
                     }
                 }
-                record.category?.takeIf { it.isNotBlank() }?.let { category ->
+                if (state.categoryPath.isNotEmpty()) {
                     Text(
-                        text = category,
+                        text = state.categoryPath.joinToString(" / "),
                         style = MaterialTheme.typography.labelLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                     Spacer(modifier = Modifier.height(CulinarySpacing.md))
+                }
+                if (state.categoryPath.isEmpty()) {
+                    record.category?.takeIf { it.isNotBlank() }?.let { category ->
+                        Text(
+                            text = category,
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        Spacer(modifier = Modifier.height(CulinarySpacing.md))
+                    }
                 }
                 record.englishName?.takeIf { it.isNotBlank() }?.let { englishName ->
                     Text(
@@ -252,6 +332,61 @@ internal fun KitchenReferenceDetailScreen(
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurface,
                 )
+                val schema = KitchenReferenceSchema.of(record.type)
+                val bySection = record.content.groupBy { it.section }
+                schema.fields.forEach { field ->
+                    val value = bySection[field.key]?.firstOrNull()?.value
+                    if (!value.isNullOrBlank()) {
+                        Spacer(modifier = Modifier.height(CulinarySpacing.md))
+                        Text(
+                            text = field.label,
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        Text(
+                            text = value,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurface,
+                        )
+                    }
+                }
+                schema.lists.forEach { list ->
+                    val items = bySection[list.key].orEmpty().sortedBy { it.sortOrder }
+                    if (items.isNotEmpty()) {
+                        Spacer(modifier = Modifier.height(CulinarySpacing.lg))
+                        Text(
+                            text = list.title,
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.onSurface,
+                        )
+                        items.forEachIndexed { index, item ->
+                            Row(
+                                modifier = Modifier.fillMaxWidth().padding(top = CulinarySpacing.sm),
+                                horizontalArrangement = Arrangement.spacedBy(CulinarySpacing.sm),
+                            ) {
+                                Text(
+                                    text = (index + 1).toString().padStart(2, '0'),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                                Column(modifier = Modifier.weight(1f)) {
+                                    item.label?.takeIf { it.isNotBlank() }?.let {
+                                        Text(
+                                            text = it,
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            color = MaterialTheme.colorScheme.onSurface,
+                                        )
+                                    }
+                                    Text(
+                                        text = item.value,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurface,
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
                 record.seedNote?.takeIf { it.isNotBlank() }?.let { seedNote ->
                     Spacer(modifier = Modifier.height(CulinarySpacing.md))
                     Text(

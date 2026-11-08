@@ -75,6 +75,7 @@ fun SauceEditorRoute(
         onOpenSauce = onOpenSauce,
         onDismissError = viewModel::clearError,
         onFamilyChange = viewModel::onFamilyChange,
+        onCategorySelect = viewModel::onCategorySelect,
         onEnglishNameChange = viewModel::onEnglishNameChange,
         onNameChange = viewModel::onNameChange,
         onDescriptionChange = viewModel::onDescriptionChange,
@@ -122,6 +123,7 @@ internal fun SauceEditorScreen(
     onOpenSauce: (String) -> Unit,
     onDismissError: () -> Unit,
     onFamilyChange: (String) -> Unit,
+    onCategorySelect: (Int, String?) -> Unit = { _, _ -> },
     onEnglishNameChange: (String) -> Unit,
     onNameChange: (String) -> Unit,
     onDescriptionChange: (String) -> Unit,
@@ -164,6 +166,7 @@ internal fun SauceEditorScreen(
     val actions =
         SauceEditorActions(
             onFamilyChange = onFamilyChange,
+            onCategorySelect = onCategorySelect,
             onEnglishNameChange = onEnglishNameChange,
             onNameChange = onNameChange,
             onDescriptionChange = onDescriptionChange,
@@ -401,6 +404,7 @@ private fun formatUpdatedAt(epochMillis: Long): String =
 /** 九个分节共用的编辑器事件集合；保持状态与 UI 解耦。 */
 internal data class SauceEditorActions(
     val onFamilyChange: (String) -> Unit,
+    val onCategorySelect: (Int, String?) -> Unit = { _, _ -> },
     val onEnglishNameChange: (String) -> Unit,
     val onNameChange: (String) -> Unit,
     val onDescriptionChange: (String) -> Unit,

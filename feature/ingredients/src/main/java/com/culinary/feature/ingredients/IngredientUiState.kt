@@ -24,6 +24,8 @@ data class IngredientsListUiState(
 /** 食材详情状态。 */
 data class IngredientDetailUiState(
     val detail: IngredientDetail? = null,
+    val categoryPath: List<String> = emptyList(),
+    val imageBytes: ByteArray? = null,
     val isLoading: Boolean = true,
     val isArchiving: Boolean = false,
     val archived: Boolean = false,

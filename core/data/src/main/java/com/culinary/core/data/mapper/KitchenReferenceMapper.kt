@@ -1,16 +1,21 @@
 package com.culinary.core.data.mapper
 
+import com.culinary.core.database.entity.KitchenReferenceContentEntity
 import com.culinary.core.database.entity.KitchenReferenceEntity
 import com.culinary.core.database.model.EntityStatusDb
 import com.culinary.core.database.model.KitchenReferenceKindDb
 import com.culinary.core.domain.model.EntityStatus
 import com.culinary.core.domain.model.KitchenReference
+import com.culinary.core.domain.model.KitchenReferenceContent
 import com.culinary.core.domain.model.KitchenReferenceId
 import com.culinary.core.domain.model.KitchenReferenceKind
 
 /** 新增厨房参考资料 Entity ↔ 领域模型。 */
 object KitchenReferenceMapper {
-    fun toDomain(entity: KitchenReferenceEntity): KitchenReference =
+    fun toDomain(
+        entity: KitchenReferenceEntity,
+        content: List<KitchenReferenceContentEntity> = emptyList(),
+    ): KitchenReference =
         KitchenReference(
             id = KitchenReferenceId(entity.id),
             kind =
@@ -32,6 +37,15 @@ object KitchenReferenceMapper {
             seedNote = entity.seedNote,
             seedId = entity.seedId,
             seedVersion = entity.seedVersion,
+            content =
+                content.map {
+                    KitchenReferenceContent(
+                        section = it.section,
+                        label = it.label,
+                        value = it.value,
+                        sortOrder = it.sortOrder,
+                    )
+                },
         )
 
     fun toEntity(
@@ -65,4 +79,20 @@ object KitchenReferenceMapper {
             updatedAt = updatedAt,
             revision = revision,
         )
+
+    fun toContentEntities(
+        referenceId: String,
+        content: List<KitchenReferenceContent>,
+        idFactory: () -> String,
+    ): List<KitchenReferenceContentEntity> =
+        content.mapIndexed { index, item ->
+            KitchenReferenceContentEntity(
+                id = idFactory(),
+                referenceId = referenceId,
+                section = item.section,
+                label = item.label,
+                value = item.value,
+                sortOrder = item.sortOrder.takeIf { it > 0 } ?: index,
+            )
+        }
 }

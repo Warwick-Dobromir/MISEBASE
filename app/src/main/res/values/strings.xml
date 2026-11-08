@@ -285,4 +285,21 @@
     <string name="home_inventory_eyebrow" translatable="false">INVENTORY</string>
     <string name="home_quick_eyebrow" translatable="false">ACTIONS</string>
     <string name="home_knowledge_eyebrow" translatable="false">LIBRARY</string>
+    <string name="kitchen_search_global_hint">全局搜索</string>
+    <string name="kitchen_search_empty_title">没有匹配档案</string>
+    <string name="kitchen_search_empty_body">尝试中文名、英文名、别名或分类路径。</string>
+    <string name="kitchen_search_result_count">%1$d 条结果</string>
+    <string name="kitchen_library_load_failed">档案加载失败</string>
+    <string name="kitchen_directory_subcategories">下级分类</string>
+    <string name="kitchen_directory_records">档案</string>
+    <string name="kitchen_directory_current_records">当前分类档案</string>
+    <string name="kitchen_directory_empty_title">此分类暂无内容</string>
+    <string name="kitchen_directory_empty_body">可以在当前分类中新建档案。</string>
+    <string name="kitchen_directory_add">新增档案</string>
+    <string name="kitchen_directory_counts">%1$d 个子分类 · %2$d 条直接档案</string>
+    <string name="kitchen_directory_category_meta">%1$d 个子分类 · %2$d 条档案</string>
+    <string name="kitchen_directory_test_badge">测试</string>
+    <string name="kitchen_directory_test_section">测试分类 · 仅供验收，可清理</string>
+    <string name="kitchen_directory_page_count">显示 %1$d / %2$d 项</string>
+    <string name="kitchen_directory_load_more">加载更多 ↓</string>
 </resources>

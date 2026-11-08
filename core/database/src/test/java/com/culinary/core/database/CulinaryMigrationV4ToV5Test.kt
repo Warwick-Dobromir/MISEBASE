@@ -1,4 +1,4 @@
-package com.culinary.core.database
+﻿package com.culinary.core.database
 
 import android.database.sqlite.SQLiteDatabase
 import androidx.room.Room
@@ -36,14 +36,14 @@ class CulinaryMigrationV4ToV5Test {
             Room
                 .databaseBuilder(context, CulinaryDatabase::class.java, DATABASE_NAME)
                 .setJournalMode(RoomDatabase.JournalMode.TRUNCATE)
-                .addMigrations(CulinaryMigrations.MIGRATION_4_5)
+                .addMigrations(CulinaryMigrations.MIGRATION_4_5, CulinaryMigrations.MIGRATION_5_6)
                 .addCallback(CulinaryDatabaseCallback())
                 .allowMainThreadQueries()
                 .build()
         database = opened
         val sqlite = opened.openHelper.writableDatabase
 
-        assertThat(userVersion(sqlite)).isEqualTo(5)
+        assertThat(userVersion(sqlite)).isEqualTo(6)
         assertThat(columnNames(sqlite, "sauce"))
             .containsAtLeast("description", "difficulty", "hero_caption")
         assertThat(columnNames(sqlite, "sauce_version")).contains("steps_json")

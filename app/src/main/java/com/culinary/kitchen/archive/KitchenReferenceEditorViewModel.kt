@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.culinary.core.common.CulinaryError
 import com.culinary.core.common.Outcome
+import com.culinary.core.data.kitchen.KitchenReferenceContentRecord
 import com.culinary.core.data.kitchen.KitchenReferenceStore
 import com.culinary.core.data.kitchen.KitchenReferenceType
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -22,12 +23,21 @@ enum class KitchenReferenceError {
     GENERIC,
 }
 
+data class EditableReferenceItem(
+    val id: String,
+    val section: String,
+    val title: String = "",
+    val body: String = "",
+)
+
 data class KitchenReferenceEditorUiState(
     val type: KitchenReferenceType = KitchenReferenceType.TECHNIQUE,
     val id: String? = null,
     val name: String = "",
     val category: String = "",
     val description: String = "",
+    val fields: Map<String, String> = emptyMap(),
+    val items: List<EditableReferenceItem> = emptyList(),
     val isLoading: Boolean = true,
     val isSaving: Boolean = false,
     val error: KitchenReferenceError? = null,
@@ -79,6 +89,66 @@ class KitchenReferenceEditorViewModel
             _uiState.update { it.copy(description = value, error = null) }
         }
 
+        fun onFieldChange(
+            key: String,
+            value: String,
+        ) {
+            _uiState.update { it.copy(fields = it.fields + (key to value), error = null) }
+        }
+
+        fun onItemTitleChange(
+            id: String,
+            value: String,
+        ) {
+            _uiState.update { state ->
+                state.copy(
+                    items = state.items.map { if (it.id == id) it.copy(title = value) else it },
+                    error = null,
+                )
+            }
+        }
+
+        fun onItemBodyChange(
+            id: String,
+            value: String,
+        ) {
+            _uiState.update { state ->
+                state.copy(
+                    items = state.items.map { if (it.id == id) it.copy(body = value) else it },
+                    error = null,
+                )
+            }
+        }
+
+        fun addItem(section: String) {
+            _uiState.update { state ->
+                val id = "new-$section-${state.items.size}-${System.nanoTime()}"
+                state.copy(items = state.items + EditableReferenceItem(id = id, section = section))
+            }
+        }
+
+        fun removeItem(id: String) {
+            _uiState.update { state -> state.copy(items = state.items.filterNot { it.id == id }) }
+        }
+
+        fun moveItem(
+            id: String,
+            delta: Int,
+        ) {
+            _uiState.update { state ->
+                val index = state.items.indexOfFirst { it.id == id }
+                val target = index + delta
+                if (index < 0 || target !in state.items.indices) {
+                    state
+                } else {
+                    val mutable = state.items.toMutableList()
+                    val item = mutable.removeAt(index)
+                    mutable.add(target, item)
+                    state.copy(items = mutable)
+                }
+            }
+        }
+
         fun save() {
             val current = _uiState.value
             if (current.name.isBlank()) {
@@ -96,6 +166,7 @@ class KitchenReferenceEditorViewModel
                             name = current.name,
                             category = current.category,
                             description = current.description,
+                            content = buildContent(current),
                         )
                 ) {
                     is Outcome.Success -> _uiState.update { it.copy(isSaving = false, saved = true) }
@@ -110,16 +181,38 @@ class KitchenReferenceEditorViewModel
         private fun load(id: String) {
             viewModelScope.launch {
                 when (val result = store.get(id)) {
-                    is Outcome.Success ->
+                    is Outcome.Success -> {
+                        val loaded = result.value
+                        val schema = KitchenReferenceSchema.of(loaded.type)
+                        val listKeys = schema.lists.map { it.key }.toSet()
+                        val fields =
+                            loaded.content
+                                .filter { it.section !in listKeys }
+                                .associate { it.section to it.value }
+                        val items =
+                            loaded.content
+                                .filter { it.section in listKeys }
+                                .sortedBy { it.sortOrder }
+                                .mapIndexed { index, item ->
+                                    EditableReferenceItem(
+                                        id = "${item.section}-$index-${item.sortOrder}",
+                                        section = item.section,
+                                        title = item.label.orEmpty(),
+                                        body = item.value,
+                                    )
+                                }
                         _uiState.update {
                             it.copy(
-                                type = result.value.type,
-                                name = result.value.name,
-                                category = result.value.category.orEmpty(),
-                                description = result.value.description.orEmpty(),
+                                type = loaded.type,
+                                name = loaded.name,
+                                category = loaded.category.orEmpty(),
+                                description = loaded.description.orEmpty(),
+                                fields = fields,
+                                items = items,
                                 isLoading = false,
                             )
                         }
+                    }
 
                     is Outcome.Failure ->
                         _uiState.update {
@@ -135,6 +228,34 @@ class KitchenReferenceEditorViewModel
                         }
                 }
             }
+        }
+
+        private fun buildContent(state: KitchenReferenceEditorUiState): List<KitchenReferenceContentRecord> {
+            val schema = KitchenReferenceSchema.of(state.type)
+            val listKeys = schema.lists.map { it.key }.toSet()
+            val fieldContent =
+                schema.fields.mapIndexedNotNull { index, field ->
+                    state.fields[field.key]?.trim()?.takeIf { it.isNotEmpty() }?.let { value ->
+                        KitchenReferenceContentRecord(
+                            section = field.key,
+                            value = value,
+                            sortOrder = index,
+                        )
+                    }
+                }
+            val itemContent =
+                state.items
+                    .filter { it.section in listKeys }
+                    .filter { it.title.isNotBlank() || it.body.isNotBlank() }
+                    .mapIndexed { index, item ->
+                        KitchenReferenceContentRecord(
+                            section = item.section,
+                            label = item.title.trim().takeIf { it.isNotEmpty() },
+                            value = item.body.trim(),
+                            sortOrder = index,
+                        )
+                    }
+            return fieldContent + itemContent
         }
     }
 

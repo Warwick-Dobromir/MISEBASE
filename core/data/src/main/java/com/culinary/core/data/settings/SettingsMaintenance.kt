@@ -1,4 +1,4 @@
-package com.culinary.core.data.settings
+﻿package com.culinary.core.data.settings
 
 import android.content.Context
 import com.culinary.core.common.Clock
@@ -134,7 +134,7 @@ class SettingsMaintenance
                         val prechecked =
                             RestorePrecheck(
                                 currentSchemaVersion = currentSchemaVersion(),
-                                testedMigrationSources = setOf(2, 3, 4),
+                                testedMigrationSources = setOf(2, 3, 4, 5),
                             ).check(manifest)
                     ) {
                         is Outcome.Success -> prechecked.value

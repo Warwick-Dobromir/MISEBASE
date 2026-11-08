@@ -11,6 +11,13 @@ enum class KitchenReferenceType {
 }
 
 /** app 编辑/详情使用的只读投影。 */
+data class KitchenReferenceContentRecord(
+    val section: String,
+    val label: String? = null,
+    val value: String,
+    val sortOrder: Int = 0,
+)
+
 data class KitchenReferenceRecord(
     val id: String,
     val type: KitchenReferenceType,
@@ -20,6 +27,7 @@ data class KitchenReferenceRecord(
     val englishName: String? = null,
     val seedNote: String? = null,
     val isSeed: Boolean = false,
+    val content: List<KitchenReferenceContentRecord> = emptyList(),
 )
 
 /**
@@ -39,6 +47,7 @@ interface KitchenReferenceStore {
         category: String?,
         description: String?,
         englishName: String? = null,
+        content: List<KitchenReferenceContentRecord> = emptyList(),
     ): Outcome<String>
 
     suspend fun archive(id: String): Outcome<Unit>

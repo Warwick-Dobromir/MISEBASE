@@ -7,7 +7,9 @@ import com.culinary.core.common.Outcome
 import com.culinary.core.data.kitchen.KitchenReferenceRecord
 import com.culinary.core.data.kitchen.KitchenReferenceStore
 import com.culinary.core.data.kitchen.KitchenReferenceType
+import com.culinary.core.domain.model.KitchenRecordKind
 import com.culinary.core.domain.model.KitchenRelatedRecord
+import com.culinary.core.domain.usecase.archive.GetArchiveCategoryForRecordUseCase
 import com.culinary.core.domain.usecase.kitchen.ObserveKitchenRelationsUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -20,6 +22,7 @@ import javax.inject.Inject
 data class KitchenReferenceDetailUiState(
     val type: KitchenReferenceType = KitchenReferenceType.TECHNIQUE,
     val record: KitchenReferenceRecord? = null,
+    val categoryPath: List<String> = emptyList(),
     val isLoading: Boolean = true,
     val isArchiving: Boolean = false,
     val archived: Boolean = false,
@@ -35,6 +38,8 @@ class KitchenReferenceDetailViewModel
         savedStateHandle: SavedStateHandle,
         private val store: KitchenReferenceStore,
         private val getRelations: ObserveKitchenRelationsUseCase,
+        private val getArchiveCategoryForRecord: GetArchiveCategoryForRecordUseCase =
+            GetArchiveCategoryForRecordUseCase(),
     ) : ViewModel() {
         private val type =
             kitchenReferenceTypeFromRoute(savedStateHandle.get<String>(KITCHEN_REFERENCE_KIND_ARG))
@@ -82,14 +87,29 @@ class KitchenReferenceDetailViewModel
             }
             viewModelScope.launch {
                 when (val result = store.get(referenceId)) {
-                    is Outcome.Success ->
+                    is Outcome.Success -> {
+                        val record = result.value
+                        val recordKind =
+                            when (record.type) {
+                                KitchenReferenceType.TECHNIQUE -> KitchenRecordKind.TECHNIQUE
+                                KitchenReferenceType.PRODUCTION_STANDARD ->
+                                    KitchenRecordKind.PRODUCTION_STANDARD
+                                KitchenReferenceType.STORAGE_STANDARD ->
+                                    KitchenRecordKind.STORAGE_STANDARD
+                            }
+                        val category =
+                            runCatching {
+                                getArchiveCategoryForRecord(recordKind, referenceId)
+                            }.getOrNull()
                         _uiState.update {
                             it.copy(
-                                type = result.value.type,
-                                record = result.value,
+                                type = record.type,
+                                record = record,
+                                categoryPath = category?.path.orEmpty(),
                                 isLoading = false,
                             )
                         }
+                    }
 
                     is Outcome.Failure ->
                         _uiState.update {

@@ -21,6 +21,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.culinary.core.designsystem.component.ArchiveHeroImage
 import com.culinary.core.designsystem.component.CulinaryButton
 import com.culinary.core.designsystem.component.CulinaryButtonVariant
 import com.culinary.core.designsystem.component.CulinaryRelationItem
@@ -97,6 +98,8 @@ internal fun SauceDetailScreen(
             else ->
                 SauceDetailContent(
                     detail = state.detail,
+                    categoryPath = state.categoryPath,
+                    imageBytes = state.imageBytes,
                     isPublishing = state.isPublishing,
                     onEdit = onEdit,
                     onPublish = onPublish,
@@ -111,6 +114,8 @@ internal fun SauceDetailScreen(
 @Composable
 internal fun SauceDetailContent(
     detail: SauceDetail,
+    categoryPath: List<String> = emptyList(),
+    imageBytes: ByteArray? = null,
     isPublishing: Boolean,
     onEdit: (String) -> Unit,
     onPublish: (SauceVersionId) -> Unit,
@@ -123,7 +128,15 @@ internal fun SauceDetailContent(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(bottom = CulinarySizes.listBottomInset),
     ) {
-        item { DetailHeader(detail) }
+        item { DetailHeader(detail, categoryPath) }
+        imageBytes?.let { bytes ->
+            item {
+                ArchiveHeroImage(
+                    bytes = bytes,
+                    modifier = Modifier.padding(horizontal = CulinarySpacing.pageHorizontal),
+                )
+            }
+        }
         item { SauceProfileSection(detail.sauce) }
         item {
             Column(modifier = Modifier.padding(horizontal = CulinarySpacing.pageHorizontal)) {
@@ -153,11 +166,17 @@ internal fun SauceDetailContent(
 }
 
 @Composable
-private fun DetailHeader(detail: SauceDetail) {
+private fun DetailHeader(
+    detail: SauceDetail,
+    categoryPath: List<String>,
+) {
     PageHeader(
         eyebrow = "SAUCE",
         title = detail.sauce.name,
-        supporting = detail.sauce.family ?: stringResource(R.string.sauces_uncategorized),
+        supporting =
+            categoryPath.joinToString(" / ").ifBlank {
+                detail.sauce.family ?: stringResource(R.string.sauces_uncategorized)
+            },
         actions = {
             Row(horizontalArrangement = Arrangement.spacedBy(CulinarySpacing.xs)) {
                 if (detail.sauce.isSeed) {

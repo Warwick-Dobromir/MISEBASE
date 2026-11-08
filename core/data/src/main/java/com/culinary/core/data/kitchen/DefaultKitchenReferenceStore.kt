@@ -3,6 +3,7 @@ package com.culinary.core.data.kitchen
 import com.culinary.core.common.Outcome
 import com.culinary.core.common.map
 import com.culinary.core.domain.model.KitchenReference
+import com.culinary.core.domain.model.KitchenReferenceContent
 import com.culinary.core.domain.model.KitchenReferenceId
 import com.culinary.core.domain.model.KitchenReferenceKind
 import com.culinary.core.domain.usecase.kitchen.ArchiveKitchenReferenceUseCase
@@ -36,6 +37,7 @@ class DefaultKitchenReferenceStore
             category: String?,
             description: String?,
             englishName: String?,
+            content: List<KitchenReferenceContentRecord>,
         ): Outcome<String> =
             saveReference(
                 SaveKitchenReferenceInput(
@@ -45,6 +47,15 @@ class DefaultKitchenReferenceStore
                     category = category,
                     description = description,
                     englishName = englishName,
+                    content =
+                        content.map {
+                            KitchenReferenceContent(
+                                section = it.section,
+                                label = it.label,
+                                value = it.value,
+                                sortOrder = it.sortOrder,
+                            )
+                        },
                 ),
             ).map { it.value }
 
@@ -61,6 +72,15 @@ private fun KitchenReference.toRecord(): KitchenReferenceRecord =
         englishName = englishName,
         seedNote = seedNote,
         isSeed = isSeed,
+        content =
+            content.map {
+                KitchenReferenceContentRecord(
+                    section = it.section,
+                    label = it.label,
+                    value = it.value,
+                    sortOrder = it.sortOrder,
+                )
+            },
     )
 
 private fun KitchenReferenceKind.toAppType(): KitchenReferenceType =

@@ -467,6 +467,8 @@ class RecipesViewModelTest {
 
         override suspend fun save(sauce: Sauce): Outcome<SauceId> = Outcome.success(sauce.id)
 
+        override suspend fun archive(id: SauceId): Outcome<Unit> = Outcome.success(Unit)
+
         override suspend fun saveDraft(version: SauceVersion): Outcome<SauceVersionId> {
             versions[version.id] = version
             return Outcome.success(version.id)
@@ -512,5 +514,14 @@ private fun emptyRelations(): ObserveKitchenRelationsUseCase =
     ObserveKitchenRelationsUseCase(
         object : KitchenRelationRepository {
             override fun observeForRecord(recordId: String): Flow<List<KitchenRelatedRecord>> = flowOf(emptyList())
+
+            override suspend fun replaceRelations(
+                sourceRecordId: String,
+                sourceKind: com.culinary.core.domain.model.KitchenRecordKind,
+                targetKind: com.culinary.core.domain.model.KitchenRecordKind,
+                relations: List<com.culinary.core.domain.model.KitchenRelationDraft>,
+            ): com.culinary.core.common.Outcome<Unit> =
+                com.culinary.core.common.Outcome
+                    .success(Unit)
         },
     )

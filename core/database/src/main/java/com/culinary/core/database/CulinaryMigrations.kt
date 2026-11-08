@@ -13,6 +13,7 @@ import com.culinary.core.database.schema.CulinarySchemaExtras
  * v3 → v4：补充六库档案扩展字段、测试种子标记与档案关系表；旧行全部保持 null。
  * v4 → v5：酱汁编辑器所需的描述、难度、图注、步骤 JSON、原料名称覆盖与关系排序；
  * 只增加可空列或带默认值的列，不移动/重写既有数据。
+ * v5 → v6：六库分类树/档案分类归属与参考资料专业内容行；新增表，不改旧表数据。
  */
 internal object CulinaryMigrations {
     val MIGRATION_1_2: Migration = MIGRATION_1_2_IMPL
@@ -23,7 +24,10 @@ internal object CulinaryMigrations {
 
     val MIGRATION_4_5: Migration = MIGRATION_4_5_IMPL
 
-    val ALL: Array<Migration> = arrayOf(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
+    val MIGRATION_5_6: Migration = MIGRATION_5_6_IMPL
+
+    val ALL: Array<Migration> =
+        arrayOf(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6)
 }
 
 private val MIGRATION_1_2_IMPL =
@@ -82,6 +86,91 @@ private val MIGRATION_4_5_IMPL =
             )
         }
     }
+
+private val MIGRATION_5_6_IMPL =
+    object : Migration(5, 6) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            CulinarySchemaExtras.dropPartialIndexes(db)
+            db.execSQL(CREATE_ARCHIVE_CATEGORY)
+            db.execSQL(CREATE_ARCHIVE_CATEGORY_ASSIGNMENT)
+            db.execSQL(CREATE_KITCHEN_REFERENCE_CONTENT)
+            CREATE_ARCHIVE_CATEGORY_INDICES.forEach(db::execSQL)
+            CREATE_ARCHIVE_CATEGORY_ASSIGNMENT_INDICES.forEach(db::execSQL)
+            CREATE_KITCHEN_REFERENCE_CONTENT_INDICES.forEach(db::execSQL)
+        }
+    }
+
+private const val CREATE_ARCHIVE_CATEGORY = """
+    CREATE TABLE IF NOT EXISTS `archive_category` (
+        `id` TEXT NOT NULL,
+        `library` TEXT NOT NULL,
+        `parent_id` TEXT,
+        `name` TEXT NOT NULL,
+        `normalized_name` TEXT NOT NULL,
+        `english_name` TEXT,
+        `sort_order` INTEGER NOT NULL,
+        `status` TEXT NOT NULL,
+        `test_batch` TEXT,
+        `created_at` INTEGER NOT NULL,
+        `updated_at` INTEGER NOT NULL,
+        `revision` INTEGER NOT NULL,
+        PRIMARY KEY(`id`),
+        FOREIGN KEY(`parent_id`) REFERENCES `archive_category`(`id`)
+            ON UPDATE NO ACTION ON DELETE RESTRICT
+    )
+"""
+
+private val CREATE_ARCHIVE_CATEGORY_INDICES =
+    listOf(
+        "CREATE INDEX IF NOT EXISTS `index_archive_category_library_parent_id_sort_order` " +
+            "ON `archive_category` (`library`, `parent_id`, `sort_order`)",
+        "CREATE INDEX IF NOT EXISTS `index_archive_category_test_batch` " +
+            "ON `archive_category` (`test_batch`)",
+    )
+
+private const val CREATE_ARCHIVE_CATEGORY_ASSIGNMENT = """
+    CREATE TABLE IF NOT EXISTS `archive_category_assignment` (
+        `id` TEXT NOT NULL,
+        `record_kind` TEXT NOT NULL,
+        `record_id` TEXT NOT NULL,
+        `category_id` TEXT NOT NULL,
+        `created_at` INTEGER NOT NULL,
+        `updated_at` INTEGER NOT NULL,
+        PRIMARY KEY(`id`),
+        FOREIGN KEY(`category_id`) REFERENCES `archive_category`(`id`)
+            ON UPDATE NO ACTION ON DELETE RESTRICT
+    )
+"""
+
+private val CREATE_ARCHIVE_CATEGORY_ASSIGNMENT_INDICES =
+    listOf(
+        "CREATE UNIQUE INDEX IF NOT EXISTS `index_archive_category_assignment_record_kind_record_id` " +
+            "ON `archive_category_assignment` (`record_kind`, `record_id`)",
+        "CREATE INDEX IF NOT EXISTS `index_archive_category_assignment_category_id` " +
+            "ON `archive_category_assignment` (`category_id`)",
+    )
+
+private const val CREATE_KITCHEN_REFERENCE_CONTENT = """
+    CREATE TABLE IF NOT EXISTS `kitchen_reference_content` (
+        `id` TEXT NOT NULL,
+        `reference_id` TEXT NOT NULL,
+        `section` TEXT NOT NULL,
+        `label` TEXT,
+        `value` TEXT NOT NULL,
+        `sort_order` INTEGER NOT NULL,
+        PRIMARY KEY(`id`),
+        FOREIGN KEY(`reference_id`) REFERENCES `kitchen_reference`(`id`)
+            ON UPDATE NO ACTION ON DELETE CASCADE
+    )
+"""
+
+private val CREATE_KITCHEN_REFERENCE_CONTENT_INDICES =
+    listOf(
+        "CREATE INDEX IF NOT EXISTS `index_kitchen_reference_content_reference_id_section_sort_order` " +
+            "ON `kitchen_reference_content` (`reference_id`, `section`, `sort_order`)",
+        "CREATE INDEX IF NOT EXISTS `index_kitchen_reference_content_reference_id` " +
+            "ON `kitchen_reference_content` (`reference_id`)",
+    )
 
 private val SAUCE_V5_COLUMNS =
     listOf(

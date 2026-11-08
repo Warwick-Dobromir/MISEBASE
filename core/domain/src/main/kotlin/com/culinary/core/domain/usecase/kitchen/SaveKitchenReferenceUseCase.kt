@@ -6,6 +6,7 @@ import com.culinary.core.common.Outcome
 import com.culinary.core.common.flatMap
 import com.culinary.core.domain.model.EntityStatus
 import com.culinary.core.domain.model.KitchenReference
+import com.culinary.core.domain.model.KitchenReferenceContent
 import com.culinary.core.domain.model.KitchenReferenceId
 import com.culinary.core.domain.model.KitchenReferenceKind
 import com.culinary.core.domain.repository.KitchenReferenceRepository
@@ -19,6 +20,7 @@ data class SaveKitchenReferenceInput(
     val category: String? = null,
     val description: String? = null,
     val englishName: String? = null,
+    val content: List<KitchenReferenceContent> = emptyList(),
 )
 
 /** 新建/编辑烹饪技术或工作标准；字段最小化，但不与既有档案混用。 */
@@ -57,6 +59,7 @@ class SaveKitchenReferenceUseCase(
                 category = input.category.blankToNull(),
                 description = input.description.blankToNull(),
                 englishName = input.englishName.blankToNull() ?: existing?.englishName,
+                content = input.content.filter { it.value.isNotBlank() || !it.label.isNullOrBlank() },
             )
         return transactionRunner.write { repository.save(reference) }.flatMap { it }
     }

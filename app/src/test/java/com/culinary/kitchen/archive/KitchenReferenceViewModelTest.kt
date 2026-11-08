@@ -137,6 +137,7 @@ private class FakeReferenceStore(
         category: String?,
         description: String?,
         englishName: String?,
+        content: List<com.culinary.core.data.kitchen.KitchenReferenceContentRecord>,
     ): Outcome<String> {
         saveCalls += 1
         savedType = type

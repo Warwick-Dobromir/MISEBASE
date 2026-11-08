@@ -24,6 +24,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.culinary.core.designsystem.component.ArchiveHeroImage
 import com.culinary.core.designsystem.component.CulinaryButton
 import com.culinary.core.designsystem.component.CulinaryButtonVariant
 import com.culinary.core.designsystem.component.CulinaryRelationItem
@@ -133,7 +134,13 @@ internal fun RecipeDetailContent(
                 .verticalScroll(rememberScrollState())
                 .padding(bottom = CulinarySizes.listBottomInset),
     ) {
-        RecipeHeader(detail)
+        RecipeHeader(detail, state.categoryPath)
+        state.imageBytes?.let { bytes ->
+            ArchiveHeroImage(
+                bytes = bytes,
+                modifier = Modifier.padding(horizontal = CulinarySpacing.pageHorizontal),
+            )
+        }
         RecipeProfile(detail)
         RecipeCurrentVersion(detail)
         RecipeActions(
@@ -159,11 +166,17 @@ internal fun RecipeDetailContent(
 }
 
 @Composable
-private fun RecipeHeader(detail: RecipeDetail) {
+private fun RecipeHeader(
+    detail: RecipeDetail,
+    categoryPath: List<String>,
+) {
     PageHeader(
         eyebrow = "RECIPE",
         title = detail.recipe.name,
-        supporting = recipeCategoryLabel(detail.recipe.category),
+        supporting =
+            categoryPath.joinToString(" / ").ifBlank {
+                recipeCategoryLabel(detail.recipe.category)
+            },
         actions = {
             Row(horizontalArrangement = Arrangement.spacedBy(CulinarySpacing.xs)) {
                 if (detail.recipe.isSeed) {
@@ -190,6 +203,11 @@ private fun RecipeProfile(detail: RecipeDetail) {
     val fields =
         listOfNotNull(
             detail.recipe.englishName?.let { stringResource(R.string.recipes_english_name) to it },
+            detail.recipe.cuisine?.let { "菜系" to it },
+            detail.recipe.description?.let { "描述" to it },
+            detail.recipe.prepMinutes?.let { "准备时间（分钟）" to it.toString() },
+            detail.recipe.cookMinutes?.let { "烹饪时间（分钟）" to it.toString() },
+            detail.recipe.difficulty?.let { "难度" to it },
             detail.recipe.allergenNotes?.let { stringResource(R.string.recipes_allergen) to it },
             detail.recipe.ingredientSummary?.let { stringResource(R.string.recipes_ingredient_summary) to it },
             detail.currentVersion?.instructions?.let { stringResource(R.string.recipes_instructions) to it },

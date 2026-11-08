@@ -4,6 +4,8 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.culinary.core.common.Outcome
+import com.culinary.core.domain.model.ArchiveCategory
+import com.culinary.core.domain.model.ArchiveLibrary
 import com.culinary.core.domain.model.ComponentTarget
 import com.culinary.core.domain.model.Ingredient
 import com.culinary.core.domain.model.KitchenRecordKind
@@ -16,6 +18,9 @@ import com.culinary.core.domain.model.SauceId
 import com.culinary.core.domain.model.SauceImageOwner
 import com.culinary.core.domain.model.SauceImageRole
 import com.culinary.core.domain.model.SauceVersionId
+import com.culinary.core.domain.usecase.archive.AssignArchiveCategoryUseCase
+import com.culinary.core.domain.usecase.archive.GetArchiveCategoryForRecordUseCase
+import com.culinary.core.domain.usecase.archive.ListArchiveCategoriesUseCase
 import com.culinary.core.domain.usecase.ingredient.ListIngredientsUseCase
 import com.culinary.core.domain.usecase.kitchen.ObserveKitchenRelationsUseCase
 import com.culinary.core.domain.usecase.sauce.ArchiveSauceUseCase
@@ -64,6 +69,10 @@ class SauceEditorViewModel
         private val observeRelations: ObserveKitchenRelationsUseCase,
         private val saveSauceRelations: SaveSauceRelationsUseCase,
         private val sauceImages: SauceImageUseCase,
+        private val listArchiveCategories: ListArchiveCategoriesUseCase = ListArchiveCategoriesUseCase(),
+        private val getArchiveCategoryForRecord: GetArchiveCategoryForRecordUseCase =
+            GetArchiveCategoryForRecordUseCase(),
+        private val assignArchiveCategory: AssignArchiveCategoryUseCase = AssignArchiveCategoryUseCase(),
     ) : ViewModel() {
         private val routeSauceId: String? =
             savedStateHandle
@@ -85,11 +94,15 @@ class SauceEditorViewModel
                 val units = runCatching { listUnits() }.getOrDefault(emptyList())
                 val ingredients = runCatching { listIngredients().first() }.getOrDefault(emptyList())
                 val sauces = runCatching { listSauces().first() }.getOrDefault(emptyList())
+                val categories =
+                    runCatching { listArchiveCategories(ArchiveLibrary.SAUCE).first() }
+                        .getOrDefault(emptyList())
                 _uiState.update {
                     it.copy(
                         units = units,
                         ingredients = ingredients,
                         sauceOptions = sauces,
+                        categories = categories,
                         yieldUnit = it.yieldUnit ?: units.firstOrNull(),
                     )
                 }
@@ -174,6 +187,11 @@ class SauceEditorViewModel
                         relationLabel = relation.relationLabel.ifBlank { "衍生酱汁" },
                     )
                 }
+            val assignedCategory =
+                runCatching { getArchiveCategoryForRecord(KitchenRecordKind.SAUCE, detail.sauce.id.value) }
+                    .getOrNull()
+            val categoryPath =
+                assignedCategory?.let { buildCategoryPathIds(it.id, _uiState.value.categories) }.orEmpty()
             _uiState.update {
                 it.copy(
                     name = detail.sauce.name,
@@ -209,6 +227,9 @@ class SauceEditorViewModel
                             ?.versionNo
                             ?: ((detail.versions.maxOfOrNull { v -> v.versionNo } ?: 0) + 1),
                     hasPublishedVersion = detail.hasPublishedVersion,
+                    categoryPathIds = categoryPath,
+                    isTestRecord =
+                        detail.sauce.seedVersion == com.culinary.core.domain.model.ARCHIVE_CATEGORY_TEST_BATCH,
                     isLoading = false,
                     isDirty = false,
                 )
@@ -223,7 +244,9 @@ class SauceEditorViewModel
             }
 
         private fun mutate(transform: (SauceEditorUiState) -> SauceEditorUiState) {
-            _uiState.update { state -> transform(state).copy(isDirty = true, error = null) }
+            _uiState.update { state ->
+                transform(state).copy(isDirty = true, versionDirty = true, error = null)
+            }
         }
 
         fun onNameChange(value: String) = mutate { it.copy(name = value) }
@@ -231,6 +254,32 @@ class SauceEditorViewModel
         fun onEnglishNameChange(value: String) = mutate { it.copy(englishName = value) }
 
         fun onFamilyChange(value: String) = mutate { it.copy(family = value) }
+
+        fun onCategorySelect(
+            level: Int,
+            categoryId: String?,
+        ) {
+            _uiState.update { state ->
+                val base = state.categoryPathIds.take(level.coerceAtLeast(0))
+                val next =
+                    if (categoryId == null) {
+                        base
+                    } else {
+                        base + categoryId
+                    }
+                val leafName =
+                    next
+                        .lastOrNull()
+                        ?.let { id -> state.categories.firstOrNull { it.id == id }?.name }
+                        ?: state.family
+                state.copy(
+                    categoryPathIds = next,
+                    family = leafName,
+                    isDirty = true,
+                    error = null,
+                )
+            }
+        }
 
         fun onDescriptionChange(value: String) = mutate { it.copy(description = value) }
 
@@ -467,6 +516,10 @@ class SauceEditorViewModel
         fun save() {
             val state = _uiState.value
             if (state.isSaving) return
+            if (state.sauceId == null && state.categories.isNotEmpty() && state.categoryPathIds.isEmpty()) {
+                _uiState.update { it.copy(error = "请选择分类归属。") }
+                return
+            }
             val name = state.name.trim()
             val englishName = state.englishName.trim()
             val amount = state.yieldAmount.toDoubleOrNull()
@@ -506,6 +559,22 @@ class SauceEditorViewModel
                         is Outcome.Failure -> return@launch fail(saved.error)
                     }
                 _uiState.update { it.copy(sauceId = sauceId.value) }
+                // 分类是档案元数据；仅改分类时不创建新版本。
+                if (state.sauceId != null && !state.versionDirty) {
+                    state.categoryPathIds.lastOrNull()?.let { categoryId ->
+                        when (
+                            val result =
+                                assignArchiveCategory(KitchenRecordKind.SAUCE, sauceId.value, categoryId)
+                        ) {
+                            is Outcome.Failure -> return@launch fail(result.error)
+                            is Outcome.Success -> Unit
+                        }
+                    }
+                    _uiState.update {
+                        it.copy(isSaving = false, isDirty = false, savedSauceId = sauceId.value)
+                    }
+                    return@launch
+                }
                 val versionId =
                     when (
                         val saved =
@@ -534,6 +603,12 @@ class SauceEditorViewModel
                         is Outcome.Success -> saved.value
                         is Outcome.Failure -> return@launch fail(saved.error)
                     }
+                state.categoryPathIds.lastOrNull()?.let { categoryId ->
+                    when (val result = assignArchiveCategory(KitchenRecordKind.SAUCE, sauceId.value, categoryId)) {
+                        is Outcome.Failure -> return@launch fail(result.error)
+                        is Outcome.Success -> Unit
+                    }
+                }
                 var hasPublished = state.hasPublishedVersion
                 if (!hasPublished) {
                     when (val result = publishSauceVersion(versionId)) {
@@ -686,6 +761,21 @@ class SauceEditorViewModel
             _uiState.update {
                 it.copy(isSaving = false, error = SauceErrorMessages.describe(error))
             }
+        }
+
+        private fun buildCategoryPathIds(
+            categoryId: String,
+            categories: List<ArchiveCategory>,
+        ): List<String> {
+            val byId = categories.associateBy { it.id }
+            val path = mutableListOf<String>()
+            var cursor = byId[categoryId]
+            var guard = 0
+            while (cursor != null && guard++ < 32) {
+                path.add(0, cursor.id)
+                cursor = cursor.parentId?.let(byId::get)
+            }
+            return path
         }
 
         private fun formatAmount(value: Double): String =

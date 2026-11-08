@@ -1,9 +1,11 @@
 package com.culinary.kitchen.archive
 
+import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -11,61 +13,47 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.em
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.culinary.R
+import com.culinary.core.data.kitchen.KitchenArchiveCategory
 import com.culinary.core.data.kitchen.KitchenArchiveEntry
-import com.culinary.core.data.kitchen.KitchenArchiveKind
-import com.culinary.core.designsystem.component.CulinaryFilterPill
-import com.culinary.core.designsystem.component.CulinaryListRow
+import com.culinary.core.designsystem.component.CulinaryIconButton
 import com.culinary.core.designsystem.component.CulinaryRule
 import com.culinary.core.designsystem.component.CulinarySearchField
+import com.culinary.core.designsystem.component.CulinaryTextButton
+import com.culinary.core.designsystem.component.EmptyState
+import com.culinary.core.designsystem.component.ErrorBanner
+import com.culinary.core.designsystem.component.LoadingRows
 import com.culinary.core.designsystem.icon.CulinaryIcons
 import com.culinary.core.designsystem.theme.CulinarySpacing
 import com.culinary.core.designsystem.theme.CulinaryTextStyles
-import java.util.Locale
 
-private const val CATEGORY_UNCATEGORIZED = "__uncategorized__"
-private val RECIPE_CATEGORY_KEYS = listOf("STOCK", "PREP", "COMPONENT", "DISH", "OTHER")
-
-private data class ArchiveCategoryFilter(
-    val key: String,
-    val label: String,
-)
-
-/**
- * 六个资料库的统一页面路由。
- *
- * 页面只负责当前库的搜索、分类筛选、新增和列表浏览；
- * 厨房全局搜索不在此页重复出现，底栏由外层导航外壳保留。
- */
+/** 六库统一目录路由：分类钻取、分类/档案分区、分页和单库搜索。 */
 @Composable
 fun ArchiveLibraryRoute(
     section: KitchenArchiveSection,
     onAdd: () -> Unit,
     onOpenEntry: (KitchenArchiveEntry) -> Unit,
+    onBack: () -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: ArchiveLibraryViewModel = hiltViewModel(),
 ) {
@@ -75,355 +63,530 @@ fun ArchiveLibraryRoute(
         state = state,
         onAdd = onAdd,
         onOpenEntry = onOpenEntry,
+        onBack = onBack,
         modifier = modifier,
     )
 }
 
-@Suppress("LongMethod", "CyclomaticComplexMethod") // 统一骨架同时承载筛选、搜索、列表与空态
+@Suppress("LongMethod", "CyclomaticComplexMethod") // 目录状态机：搜索、分类、档案、空态共用同一屏
 @Composable
 internal fun ArchiveLibraryScreen(
     section: KitchenArchiveSection,
     state: ArchiveLibraryUiState,
     onAdd: () -> Unit,
     onOpenEntry: (KitchenArchiveEntry) -> Unit,
+    onBack: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
+    var currentCategoryId by rememberSaveable(section) { mutableStateOf<String?>(null) }
+    var searchOpen by rememberSaveable(section) { mutableStateOf(false) }
     var query by rememberSaveable(section) { mutableStateOf("") }
-    var selectedCategory by rememberSaveable(section) { mutableStateOf<String?>(null) }
+    var visibleLimit by rememberSaveable(section) { mutableIntStateOf(20) }
 
-    val libraryEntries = state.entries.filter { it.kind == section.kind }
-    val typeLabels = archiveKindLabels()
-    val uncategorizedLabel = stringResource(R.string.kitchen_library_uncategorized)
-    val entryCategories = libraryEntries.map { entry -> entry.normalizedCategory() }.distinct()
-    val categoryKeys =
-        if (section == KitchenArchiveSection.RECIPES) {
-            RECIPE_CATEGORY_KEYS + if (entryCategories.contains(null)) listOf(null) else emptyList()
+    val categories = state.categories
+    val entries = state.entries.filter { it.kind == section.kind }
+    val currentCategory = categories.firstOrNull { it.id == currentCategoryId }
+    val children = categories.filter { it.parentId == currentCategoryId }
+    val formalChildren = children.filter { !it.isTest }
+    val testChildren = children.filter { it.isTest }
+    val directEntries = entries.filter { entry -> entry.categoryId == currentCategoryId }
+    val searchResults =
+        if (query.isBlank()) {
+            emptyList()
         } else {
-            entryCategories
-        }
-    val categoryLabels =
-        categoryKeys.associateWith { raw ->
-            if (raw == null) uncategorizedLabel else categoryDisplayLabel(raw)
-        }
-    val categoryFilters =
-        buildList {
-            add(ArchiveCategoryFilter(key = "", label = stringResource(R.string.kitchen_library_all)))
-            categoryLabels.forEach { (raw, label) ->
-                add(
-                    ArchiveCategoryFilter(
-                        key = raw ?: CATEGORY_UNCATEGORIZED,
-                        label = label,
-                    ),
-                )
+            entries.filter {
+                it.name.contains(query, ignoreCase = true) ||
+                    (it.subtitle?.contains(query, ignoreCase = true) == true) ||
+                    it.searchText.contains(query, ignoreCase = true) ||
+                    it.categoryPathLabel.contains(query, ignoreCase = true)
             }
         }
+    val showingSearch = searchOpen && query.isNotBlank()
 
-    LaunchedEffect(categoryFilters) {
-        if (selectedCategory != null && categoryFilters.none { it.key == selectedCategory }) {
-            selectedCategory = null
+    LaunchedEffect(categories, currentCategoryId) {
+        if (currentCategoryId != null && categories.none { it.id == currentCategoryId }) {
+            currentCategoryId = null
         }
     }
+    LaunchedEffect(currentCategoryId, query, searchOpen) {
+        visibleLimit = 20
+    }
 
-    val normalizedQuery = query.trim().lowercase(Locale.ROOT)
-    val filteredEntries =
-        libraryEntries.filter { entry ->
-            val categoryMatches =
-                selectedCategory == null ||
-                    entry.normalizedCategory().let { raw ->
-                        (raw ?: CATEGORY_UNCATEGORIZED) == selectedCategory
-                    }
-            val categoryLabel = categoryLabels[entry.normalizedCategory()].orEmpty()
-            val searchText =
-                buildString {
-                    append(entry.name)
-                    append(' ')
-                    entry.subtitle?.let { append(it).append(' ') }
-                    append(categoryLabel)
-                    append(' ')
-                    append(typeLabels[entry.kind].orEmpty())
-                    append(' ')
-                    append(entry.searchText)
-                }.lowercase(Locale.ROOT)
-            categoryMatches && (normalizedQuery.isEmpty() || searchText.contains(normalizedQuery))
-        }
+    BackHandler(enabled = searchOpen) { searchOpen = false }
+    BackHandler(enabled = !searchOpen && currentCategoryId != null) {
+        currentCategoryId = currentCategory?.parentId
+    }
+    BackHandler(enabled = !searchOpen && currentCategoryId == null) { onBack() }
 
-    LazyColumn(
-        modifier = modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
-        contentPadding =
-            androidx.compose.foundation.layout
-                .PaddingValues(bottom = CulinarySpacing.xl),
+    Column(
+        modifier =
+            modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background),
     ) {
-        item {
-            LibraryHeader(
-                section = section,
-                totalCount = libraryEntries.size,
-            )
-        }
-        item {
+        ArchiveBrandHeader(
+            section = section,
+            isSearchOpen = searchOpen,
+            onSearch = { searchOpen = true },
+            onCloseSearch = { searchOpen = false },
+        )
+        AnimatedVisibility(
+            visible = searchOpen,
+            enter = slideInHorizontally(initialOffsetX = { it }),
+            exit = slideOutHorizontally(targetOffsetX = { it }),
+        ) {
             CulinarySearchField(
                 value = query,
                 onValueChange = { query = it },
-                placeholder = stringResource(section.searchHintRes),
+                placeholder = stringResource(R.string.kitchen_search_global_hint),
                 modifier =
                     Modifier.padding(
                         start = CulinarySpacing.pageHorizontal,
                         end = CulinarySpacing.pageHorizontal,
-                        top = CulinarySpacing.xs,
+                        bottom = CulinarySpacing.sm,
                     ),
             )
         }
-        item {
-            CategoryAndAddRow(
-                section = section,
+        CulinaryRule()
+        if (state.isLoading) {
+            LoadingRows()
+            return@Column
+        }
+        if (state.loadFailed) {
+            ErrorBanner(
+                message = stringResource(R.string.kitchen_library_load_failed),
+                modifier = Modifier.padding(CulinarySpacing.pageHorizontal),
+            )
+            return@Column
+        }
+        if (showingSearch) {
+            SearchResultList(
+                entries = searchResults,
+                limit = visibleLimit,
+                onLoadMore = { visibleLimit += 20 },
+                onOpenEntry = onOpenEntry,
+            )
+            return@Column
+        }
+        if (categories.isEmpty()) {
+            LegacyFlatList(
+                entries = entries,
+                limit = visibleLimit,
+                onLoadMore = { visibleLimit += 20 },
+                onOpenEntry = onOpenEntry,
                 onAdd = onAdd,
             )
+            return@Column
         }
-        item {
-            Row(
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .horizontalScroll(rememberScrollState())
-                        .padding(
-                            start = CulinarySpacing.pageHorizontal,
-                            end = CulinarySpacing.pageHorizontal,
-                            top = CulinarySpacing.xs,
-                            bottom = CulinarySpacing.md,
-                        ),
-                horizontalArrangement = Arrangement.spacedBy(CulinarySpacing.xs),
-            ) {
-                categoryFilters.forEach { filter ->
-                    val selected = (selectedCategory ?: "") == filter.key
-                    CulinaryFilterPill(
-                        text = filter.label,
-                        selected = selected,
-                        onClick = { selectedCategory = filter.key.ifEmpty { null } },
-                        modifier = Modifier.testTag("archive-filter-${filter.key.ifEmpty { "all" }}"),
+
+        LazyColumn(modifier = Modifier.fillMaxSize()) {
+            item {
+                ArchiveContextHeader(
+                    section = section,
+                    currentCategory = currentCategory,
+                    parentName =
+                        currentCategory?.parentId?.let { parentId ->
+                            categories.firstOrNull { it.id == parentId }?.name
+                        } ?: stringResource(R.string.kitchen_title),
+                    categoryPath =
+                        currentCategory?.let { category -> categoryPath(category, categories) }.orEmpty(),
+                    childCount = children.size,
+                    directCount = directEntries.size,
+                    onBack = {
+                        if (currentCategory == null) onBack() else currentCategoryId = currentCategory.parentId
+                    },
+                )
+            }
+            if (formalChildren.isNotEmpty()) {
+                item { SectionLabel(stringResource(R.string.kitchen_directory_subcategories)) }
+                items(formalChildren, key = { it.id }) { category ->
+                    CategoryRow(
+                        category = category,
+                        onClick = { currentCategoryId = category.id },
                     )
                 }
             }
-        }
-        when {
-            state.isLoading ->
-                item {
-                    LibraryMessage(text = stringResource(R.string.kitchen_library_loading))
-                }
-
-            state.loadFailed ->
-                item {
-                    LibraryMessage(
-                        text = stringResource(R.string.kitchen_library_load_error),
-                        color = MaterialTheme.colorScheme.error,
+            if (testChildren.isNotEmpty()) {
+                item { SectionLabel(stringResource(R.string.kitchen_directory_test_section)) }
+                items(testChildren, key = { it.id }) { category ->
+                    CategoryRow(
+                        category = category,
+                        onClick = { currentCategoryId = category.id },
                     )
                 }
-
-            filteredEntries.isEmpty() ->
+            }
+            if (directEntries.isNotEmpty()) {
                 item {
-                    LibraryEmptyState(
-                        hasQuery = normalizedQuery.isNotEmpty() || selectedCategory != null,
+                    SectionLabel(
+                        if (children.isEmpty()) {
+                            stringResource(R.string.kitchen_directory_records)
+                        } else {
+                            stringResource(R.string.kitchen_directory_current_records)
+                        },
                     )
                 }
-
-            else ->
-                items(filteredEntries, key = { "${it.kind}:${it.id}" }) { entry ->
-                    ArchiveEntryRow(
-                        entry = entry,
-                        typeLabels = typeLabels,
-                        categoryLabel = categoryLabels[entry.normalizedCategory()].orEmpty(),
-                        onClick = { onOpenEntry(entry) },
+                items(directEntries.take(visibleLimit), key = { it.kind.name + it.id }) { entry ->
+                    EntryRow(entry = entry, onClick = { onOpenEntry(entry) })
+                }
+                if (visibleLimit < directEntries.size) {
+                    item {
+                        LoadMore(
+                            shown = visibleLimit.coerceAtMost(directEntries.size),
+                            total = directEntries.size,
+                            onLoadMore = { visibleLimit += 20 },
+                        )
+                    }
+                }
+            }
+            if (children.isEmpty() && directEntries.isEmpty()) {
+                item {
+                    EmptyState(
+                        icon = CulinaryIcons.Library,
+                        title = stringResource(R.string.kitchen_directory_empty_title),
+                        description = stringResource(R.string.kitchen_directory_empty_body),
+                        actionLabel = section.newLabel(),
+                        onAction = onAdd,
                     )
                 }
-        }
-        item {
-            CulinaryRule()
-            Text(
-                text =
-                    stringResource(
-                        R.string.kitchen_library_display,
-                        filteredEntries.size,
-                        libraryEntries.size,
-                    ),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier =
-                    Modifier.padding(
-                        start = CulinarySpacing.pageHorizontal,
-                        end = CulinarySpacing.pageHorizontal,
-                        top = CulinarySpacing.md,
-                        bottom = CulinarySpacing.xl,
-                    ),
-            )
+            }
         }
     }
 }
 
 @Composable
-private fun LibraryHeader(
+private fun ArchiveBrandHeader(
     section: KitchenArchiveSection,
-    totalCount: Int,
+    isSearchOpen: Boolean,
+    onSearch: () -> Unit,
+    onCloseSearch: () -> Unit,
 ) {
     Row(
         modifier =
             Modifier
                 .fillMaxWidth()
-                .padding(
-                    start = CulinarySpacing.pageHorizontal,
-                    end = CulinarySpacing.pageHorizontal,
-                    top = CulinarySpacing.lg,
-                    bottom = CulinarySpacing.sm,
-                ),
+                .padding(horizontal = CulinarySpacing.pageHorizontal, vertical = CulinarySpacing.sm),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                text = stringResource(section.titleRes),
-                style = CulinaryTextStyles.pageTitle,
+                text = "MISEBASE",
+                style = CulinaryTextStyles.eyebrow,
                 color = MaterialTheme.colorScheme.onSurface,
             )
-            Spacer(modifier = Modifier.height(2.dp))
             Text(
                 text = stringResource(section.subtitleRes),
-                style =
-                    MaterialTheme.typography.labelSmall.copy(
-                        fontWeight = FontWeight.Normal,
-                        letterSpacing = 0.12.em,
-                    ),
+                style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
-        Spacer(modifier = Modifier.width(CulinarySpacing.sm))
+        if (isSearchOpen) {
+            CulinaryTextButton(
+                text = stringResource(R.string.kitchen_search_close),
+                onClick = onCloseSearch,
+            )
+        } else {
+            CulinaryIconButton(
+                icon = CulinaryIcons.Search,
+                contentDescription = stringResource(R.string.kitchen_search_global_hint),
+                onClick = onSearch,
+                tint = MaterialTheme.colorScheme.onSurface,
+            )
+        }
+    }
+}
+
+@Composable
+private fun ArchiveContextHeader(
+    section: KitchenArchiveSection,
+    currentCategory: KitchenArchiveCategory?,
+    parentName: String,
+    categoryPath: List<String>,
+    childCount: Int,
+    directCount: Int,
+    onBack: () -> Unit,
+) {
+    Column(modifier = Modifier.padding(horizontal = CulinarySpacing.pageHorizontal)) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(top = CulinarySpacing.sm),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(
+                imageVector = CulinaryIcons.Back,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(18.dp).clickable(onClick = onBack),
+            )
+            Text(
+                text = parentName,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(start = CulinarySpacing.xxs),
+            )
+        }
+        Spacer(modifier = Modifier.height(CulinarySpacing.xs))
         Text(
-            text = stringResource(R.string.kitchen_library_total, totalCount),
-            style =
-                MaterialTheme.typography.labelLarge.copy(
-                    fontFeatureSettings = "tnum",
-                ),
+            text = currentCategory?.name ?: section.title(),
+            style = MaterialTheme.typography.headlineMedium,
+            color = MaterialTheme.colorScheme.onSurface,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+        )
+        if (categoryPath.isNotEmpty()) {
+            Text(
+                text = categoryPath.joinToString(" / "),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+        Spacer(modifier = Modifier.height(CulinarySpacing.xs))
+        Text(
+            text = stringResource(R.string.kitchen_directory_counts, childCount, directCount),
+            style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            maxLines = 1,
         )
     }
 }
 
 @Composable
-private fun CategoryAndAddRow(
-    section: KitchenArchiveSection,
-    onAdd: () -> Unit,
+private fun SectionLabel(text: String) {
+    Column(modifier = Modifier.fillMaxWidth().padding(top = CulinarySpacing.lg)) {
+        CulinaryRule()
+        Text(
+            text = text,
+            style = CulinaryTextStyles.eyebrow,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(horizontal = CulinarySpacing.pageHorizontal, vertical = CulinarySpacing.sm),
+        )
+    }
+}
+
+@Composable
+private fun CategoryRow(
+    category: KitchenArchiveCategory,
+    onClick: () -> Unit,
 ) {
     Row(
         modifier =
             Modifier
                 .fillMaxWidth()
-                .padding(
-                    start = CulinarySpacing.pageHorizontal,
-                    end = CulinarySpacing.pageHorizontal,
-                    top = CulinarySpacing.md,
-                ),
+                .clickable(onClick = onClick)
+                .padding(horizontal = CulinarySpacing.pageHorizontal, vertical = CulinarySpacing.md),
         verticalAlignment = Alignment.CenterVertically,
     ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = category.name,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+                if (category.isTest) {
+                    Text(
+                        text = stringResource(R.string.kitchen_directory_test_badge),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.secondary,
+                        modifier = Modifier.padding(start = CulinarySpacing.xs),
+                    )
+                }
+            }
+            category.englishName?.takeIf { it.isNotBlank() }?.let {
+                Text(
+                    text = it,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            Text(
+                text =
+                    stringResource(
+                        R.string.kitchen_directory_category_meta,
+                        category.childCount,
+                        category.directCount,
+                    ),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
         Text(
-            text = stringResource(R.string.kitchen_library_category),
-            style = MaterialTheme.typography.labelLarge,
-            color = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.weight(1f),
+            text = category.descendantCount.toString(),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
-        Text(
-            text = stringResource(section.newLabelRes),
-            style = MaterialTheme.typography.labelLarge,
-            color = MaterialTheme.colorScheme.secondary,
-            modifier =
-                Modifier
-                    .testTag("archive-add")
-                    .clickable(role = Role.Button, onClick = onAdd)
-                    .padding(vertical = CulinarySpacing.xs),
+        Icon(
+            imageVector = CulinaryIcons.ChevronRight,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.size(16.dp).padding(start = 4.dp),
         )
     }
+    CulinaryRule(modifier = Modifier.padding(horizontal = CulinarySpacing.pageHorizontal))
 }
 
 @Composable
-private fun ArchiveEntryRow(
+private fun EntryRow(
     entry: KitchenArchiveEntry,
-    typeLabels: Map<KitchenArchiveKind, String>,
-    categoryLabel: String,
     onClick: () -> Unit,
 ) {
-    val typeLabel = typeLabels[entry.kind].orEmpty()
-    CulinaryListRow(
-        title = entry.name,
-        modifier = Modifier.testTag("archive-entry-${entry.id}"),
-        subtitle =
-            entry.subtitle
-                ?: stringResource(R.string.kitchen_archive_subtitle, typeLabel),
-        meta = categoryLabel.ifBlank { stringResource(R.string.kitchen_library_uncategorized) },
-        trailing = {
-            Icon(
-                imageVector = CulinaryIcons.ChevronRight,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        },
-        onClick = onClick,
-        minHeight = 72.dp,
-    )
-}
-
-@Composable
-private fun LibraryEmptyState(hasQuery: Boolean) {
-    Column(
+    Row(
         modifier =
             Modifier
                 .fillMaxWidth()
-                .padding(
-                    horizontal = CulinarySpacing.pageHorizontal,
-                    vertical = CulinarySpacing.xl,
-                ),
+                .clickable(onClick = onClick)
+                .padding(horizontal = CulinarySpacing.pageHorizontal, vertical = CulinarySpacing.md),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(
-            text =
-                stringResource(
-                    if (hasQuery) R.string.kitchen_library_no_match else R.string.kitchen_library_empty,
-                ),
-            style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.onSurface,
-        )
-        if (!hasQuery) {
-            Spacer(modifier = Modifier.height(CulinarySpacing.xs))
+        Column(modifier = Modifier.weight(1f)) {
             Text(
-                text = stringResource(R.string.kitchen_library_empty_body),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                text = entry.name,
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurface,
             )
+            entry.subtitle?.takeIf { it.isNotBlank() }?.let {
+                Text(
+                    text = it,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+        }
+        Icon(
+            imageVector = CulinaryIcons.ChevronRight,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.size(16.dp),
+        )
+    }
+    CulinaryRule(modifier = Modifier.padding(horizontal = CulinarySpacing.pageHorizontal))
+}
+
+@Composable
+private fun SearchResultList(
+    entries: List<KitchenArchiveEntry>,
+    limit: Int,
+    onLoadMore: () -> Unit,
+    onOpenEntry: (KitchenArchiveEntry) -> Unit,
+) {
+    if (entries.isEmpty()) {
+        EmptyState(
+            icon = CulinaryIcons.Search,
+            title = stringResource(R.string.kitchen_search_empty_title),
+            description = stringResource(R.string.kitchen_search_empty_body),
+        )
+        return
+    }
+    LazyColumn(modifier = Modifier.fillMaxSize()) {
+        item { SectionLabel(stringResource(R.string.kitchen_search_result_count, entries.size)) }
+        items(entries.take(limit), key = { it.kind.name + it.id }) { entry ->
+            Column(
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .clickable { onOpenEntry(entry) }
+                        .padding(horizontal = CulinarySpacing.pageHorizontal, vertical = CulinarySpacing.md),
+            ) {
+                Text(
+                    text = entry.name,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+                if (entry.categoryPathLabel.isNotBlank()) {
+                    Text(
+                        text = entry.categoryPathLabel,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+            CulinaryRule(modifier = Modifier.padding(horizontal = CulinarySpacing.pageHorizontal))
+        }
+        if (limit < entries.size) {
+            item { LoadMore(shown = limit.coerceAtMost(entries.size), total = entries.size, onLoadMore) }
         }
     }
 }
 
 @Composable
-private fun LibraryMessage(
-    text: String,
-    color: Color = MaterialTheme.colorScheme.onSurfaceVariant,
+private fun LoadMore(
+    shown: Int,
+    total: Int,
+    onLoadMore: () -> Unit,
 ) {
-    Text(
-        text = text,
-        style = MaterialTheme.typography.bodyMedium,
-        color = color,
-        modifier =
-            Modifier.padding(
-                horizontal = CulinarySpacing.pageHorizontal,
-                vertical = CulinarySpacing.xl,
-            ),
-    )
+    Column(modifier = Modifier.fillMaxWidth().padding(CulinarySpacing.md)) {
+        Text(
+            text = stringResource(R.string.kitchen_directory_page_count, shown, total),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        CulinaryTextButton(
+            text = stringResource(R.string.kitchen_directory_load_more),
+            onClick = onLoadMore,
+        )
+    }
 }
 
 @Composable
-private fun archiveKindLabels(): Map<KitchenArchiveKind, String> =
-    KitchenArchiveKind.entries.associateWith { kind ->
-        stringResource(kind.typeLabelRes())
+private fun LegacyFlatList(
+    entries: List<KitchenArchiveEntry>,
+    limit: Int,
+    onLoadMore: () -> Unit,
+    onOpenEntry: (KitchenArchiveEntry) -> Unit,
+    onAdd: () -> Unit,
+) {
+    if (entries.isEmpty()) {
+        EmptyState(
+            icon = CulinaryIcons.Library,
+            title = stringResource(R.string.kitchen_directory_empty_title),
+            description = stringResource(R.string.kitchen_directory_empty_body),
+            actionLabel = stringResource(R.string.kitchen_directory_add),
+            onAction = onAdd,
+        )
+        return
+    }
+    LazyColumn(modifier = Modifier.fillMaxSize()) {
+        items(entries.take(limit), key = { it.id }) { entry ->
+            EntryRow(entry = entry, onClick = { onOpenEntry(entry) })
+        }
+        if (limit < entries.size) {
+            item { LoadMore(shown = limit.coerceAtMost(entries.size), total = entries.size, onLoadMore) }
+        }
+    }
+}
+
+private fun KitchenArchiveSection.title(): String =
+    when (this) {
+        KitchenArchiveSection.SAUCES -> "酱汁库"
+        KitchenArchiveSection.INGREDIENTS -> "食材库"
+        KitchenArchiveSection.RECIPES -> "菜谱库"
+        KitchenArchiveSection.TECHNIQUES -> "烹饪技术"
+        KitchenArchiveSection.PRODUCTION_STANDARDS -> "制作标准"
+        KitchenArchiveSection.STORAGE_STANDARDS -> "储存标准"
     }
 
-@Composable
-private fun categoryDisplayLabel(raw: String): String {
-    if (raw.startsWith("__")) return raw
-    return recipeCategoryLabelRes(raw)?.let { stringResource(it) }
-        ?: raw
+private fun categoryPath(
+    category: KitchenArchiveCategory,
+    categories: List<KitchenArchiveCategory>,
+): List<String> {
+    val byId = categories.associateBy { it.id }
+    val path = mutableListOf<String>()
+    var cursor: KitchenArchiveCategory? = category
+    var guard = 0
+    while (cursor != null && guard++ < 32) {
+        path.add(0, cursor.name)
+        cursor = cursor.parentId?.let(byId::get)
+    }
+    return path
 }
 
-private fun KitchenArchiveEntry.normalizedCategory(): String? = category?.trim()?.takeIf { it.isNotEmpty() }
+private fun KitchenArchiveSection.newLabel(): String =
+    when (this) {
+        KitchenArchiveSection.SAUCES -> "新建酱汁"
+        KitchenArchiveSection.INGREDIENTS -> "新建食材"
+        KitchenArchiveSection.RECIPES -> "新建菜谱"
+        KitchenArchiveSection.TECHNIQUES -> "新建技术"
+        KitchenArchiveSection.PRODUCTION_STANDARDS -> "新建制作标准"
+        KitchenArchiveSection.STORAGE_STANDARDS -> "新建储存标准"
+    }

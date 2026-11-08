@@ -93,6 +93,7 @@ import com.culinary.settings.SettingsRoute
  * 底部五项：首页 / 厨房 / 扫码 / 库存 / 我的。
  * 厨房一级页自带品牌头；六个资料库页面保留底栏并显示“返回 + 厨房”顶栏。
  */
+@Suppress("LongMethod", "CyclomaticComplexMethod", "ComplexCondition")
 @Composable
 fun CulinaryNavHost(
     modifier: Modifier = Modifier,
@@ -106,6 +107,22 @@ fun CulinaryNavHost(
     val isKitchenArchive = currentRoute == LIBRARY_TAB_ROUTE
     val isSauceEditor = currentRoute == SaucesRoutes.EDIT
     val showBottomBar = topLevel != null
+    val detailContext =
+        when (currentRoute) {
+            SaucesRoutes.DETAIL -> "酱汁库"
+            IngredientsRoutes.DETAIL -> "食材库"
+            RecipesRoutes.DETAIL -> "菜谱库"
+            KITCHEN_REFERENCE_DETAIL_ROUTE ->
+                when (
+                    backStackEntry?.arguments?.getString(KITCHEN_REFERENCE_KIND_ARG)
+                ) {
+                    "TECHNIQUE", "technique" -> "烹饪技术"
+                    "PRODUCTION_STANDARD", "production-standard" -> "制作标准"
+                    "STORAGE_STANDARD", "storage-standard" -> "储存标准"
+                    else -> "厨房"
+                }
+            else -> null
+        }
 
     // 冷启动（新进程）一律回到首页；同一进程内的旋转/重建仍保留用户当前路由。
     LaunchedEffect(navController) {
@@ -117,8 +134,8 @@ fun CulinaryNavHost(
     Scaffold(
         modifier = modifier.fillMaxSize(),
         topBar = {
-            // 首页与厨房首页自带品牌区；酱汁编辑器自带“返回 / 取消 / 保存”顶栏。
-            if (!isHome && !isKitchen && !isSauceEditor) {
+            // 首页、厨房首页、六库目录与酱汁编辑器都自带品牌/操作顶栏。
+            if (!isHome && !isKitchen && !isKitchenArchive && !isSauceEditor) {
                 Column {
                     AppTopBar(
                         topLevel = topLevel,
@@ -127,7 +144,7 @@ fun CulinaryNavHost(
                             if (isKitchenArchive) {
                                 stringResource(R.string.destination_kitchen)
                             } else {
-                                null
+                                detailContext
                             },
                         onOpenHome = { navController.openHome() },
                         onBack = { navController.popBackStack() },
@@ -284,7 +301,6 @@ private fun NavGraphBuilder.libraryGraph(navController: NavHostController) {
             onOpenCategory = { category ->
                 navController.navigate("$LIBRARY_ROUTE/${category.toArchiveSection().routeValue}")
             },
-            onOpenSearchEntry = { entry -> navController.openArchiveEntry(entry) },
         )
     }
     composable(
@@ -301,6 +317,7 @@ private fun NavGraphBuilder.libraryGraph(navController: NavHostController) {
             section = section,
             onAdd = { navController.openArchiveAdd(section) },
             onOpenEntry = { archiveEntry -> navController.openArchiveEntry(archiveEntry) },
+            onBack = { navController.popBackStack() },
         )
     }
 }

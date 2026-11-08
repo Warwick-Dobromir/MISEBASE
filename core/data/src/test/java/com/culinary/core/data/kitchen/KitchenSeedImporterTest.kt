@@ -62,7 +62,13 @@ class KitchenSeedImporterTest {
                     clock,
                     idGenerator,
                 ),
-            referenceRepository = KitchenReferenceRepositoryImpl(database.kitchenReferenceDao(), clock),
+            referenceRepository =
+                KitchenReferenceRepositoryImpl(
+                    database.kitchenReferenceDao(),
+                    database.kitchenReferenceContentDao(),
+                    clock,
+                    idGenerator,
+                ),
             unitRepository = UnitRepositoryImpl(database.unitDao(), database.ingredientUnitConversionDao()),
             transactionRunner = transactionRunner,
             metadataDao = database.appMetadataDao(),

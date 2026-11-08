@@ -1,4 +1,4 @@
-package com.culinary.core.database
+﻿package com.culinary.core.database
 
 import android.database.sqlite.SQLiteException
 import androidx.room.Room
@@ -66,7 +66,7 @@ class DatabaseFoundationTest {
                 cursor.getInt(0)
             }
 
-        assertThat(version).isEqualTo(5)
+        assertThat(version).isEqualTo(6)
     }
 
     @Test

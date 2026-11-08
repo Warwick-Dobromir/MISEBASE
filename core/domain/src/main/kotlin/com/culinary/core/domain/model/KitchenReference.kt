@@ -16,11 +16,19 @@ value class KitchenReferenceId(
     val value: String,
 )
 
+/** 参考资料专业内容行：section + 标题/正文 + 顺序。 */
+data class KitchenReferenceContent(
+    val section: String,
+    val label: String? = null,
+    val value: String,
+    val sortOrder: Int = 0,
+)
+
 /**
  * 厨房参考资料（烹饪技术 / 制作标准 / 储存标准）。
  *
- * 现有酱汁、食材、菜谱继续使用各自聚合；本模型只承载任务书新增的三类，
- * 字段保持最小：名称、分类、说明，不把既有档案字段强行套入。
+ * 现有酱汁、食材、菜谱继续使用各自聚合；本模型承载三类资料，
+ * 简单专业字段与可重复条目放在 [content]，不把既有档案字段强行套入。
  */
 data class KitchenReference(
     val id: KitchenReferenceId,
@@ -34,6 +42,7 @@ data class KitchenReference(
     val seedNote: String? = null,
     val seedId: String? = null,
     val seedVersion: String? = null,
+    val content: List<KitchenReferenceContent> = emptyList(),
 ) {
     init {
         require(name.isNotBlank()) { "kitchen reference name must not be blank" }

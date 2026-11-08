@@ -1,4 +1,4 @@
-package com.culinary.core.database
+﻿package com.culinary.core.database
 
 import android.database.sqlite.SQLiteDatabase
 import androidx.room.Room
@@ -36,14 +36,17 @@ class CulinaryMigrationV3ToV4Test {
             Room
                 .databaseBuilder(context, CulinaryDatabase::class.java, DATABASE_NAME)
                 .setJournalMode(RoomDatabase.JournalMode.TRUNCATE)
-                .addMigrations(CulinaryMigrations.MIGRATION_3_4, CulinaryMigrations.MIGRATION_4_5)
-                .addCallback(CulinaryDatabaseCallback())
+                .addMigrations(
+                    CulinaryMigrations.MIGRATION_3_4,
+                    CulinaryMigrations.MIGRATION_4_5,
+                    CulinaryMigrations.MIGRATION_5_6,
+                ).addCallback(CulinaryDatabaseCallback())
                 .allowMainThreadQueries()
                 .build()
         database = opened
         val sqlite = opened.openHelper.writableDatabase
 
-        assertThat(userVersion(sqlite)).isEqualTo(5)
+        assertThat(userVersion(sqlite)).isEqualTo(6)
         assertThat(tableExists(sqlite, "kitchen_relation")).isTrue()
         assertThat(columnNames(sqlite, "sauce")).contains("english_name")
         assertThat(columnNames(sqlite, "ingredient")).contains("example_products")

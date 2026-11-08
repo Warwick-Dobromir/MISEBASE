@@ -2,8 +2,11 @@ package com.culinary.core.data.di
 
 import com.culinary.core.database.CulinaryDatabase
 import com.culinary.core.database.dao.AppMetadataDao
+import com.culinary.core.database.dao.ArchiveCategoryAssignmentDao
+import com.culinary.core.database.dao.ArchiveCategoryDao
 import com.culinary.core.database.dao.ImageAssetDao
 import com.culinary.core.database.dao.IngredientUnitConversionDao
+import com.culinary.core.database.dao.KitchenReferenceContentDao
 import com.culinary.core.database.dao.KitchenReferenceDao
 import com.culinary.core.database.dao.KitchenRelationDao
 import com.culinary.core.database.dao.RecipeComponentDao
@@ -67,4 +70,18 @@ object ArchiveDaoModule {
     @Provides
     @Singleton
     fun provideImageAssetDao(database: CulinaryDatabase): ImageAssetDao = database.imageAssetDao()
+
+    @Provides
+    @Singleton
+    fun provideKitchenReferenceContentDao(database: CulinaryDatabase): KitchenReferenceContentDao =
+        database.kitchenReferenceContentDao()
+
+    @Provides
+    @Singleton
+    fun provideArchiveCategoryDao(database: CulinaryDatabase): ArchiveCategoryDao = database.archiveCategoryDao()
+
+    @Provides
+    @Singleton
+    fun provideArchiveCategoryAssignmentDao(database: CulinaryDatabase): ArchiveCategoryAssignmentDao =
+        database.archiveCategoryAssignmentDao()
 }

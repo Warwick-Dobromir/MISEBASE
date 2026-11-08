@@ -24,6 +24,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.culinary.core.designsystem.component.ArchiveHeroImage
 import com.culinary.core.designsystem.component.ConfirmDialog
 import com.culinary.core.designsystem.component.CulinaryButton
 import com.culinary.core.designsystem.component.CulinaryButtonVariant
@@ -122,8 +123,17 @@ internal fun IngredientDetailContent(
         PageHeader(
             eyebrow = "INGREDIENT",
             title = detail.ingredient.name,
-            supporting = detail.ingredient.category ?: stringResource(R.string.ingredients_uncategorized),
+            supporting =
+                detailState.categoryPath.joinToString(" / ").ifBlank {
+                    detail.ingredient.category ?: stringResource(R.string.ingredients_uncategorized)
+                },
         )
+        detailState.imageBytes?.let { bytes ->
+            ArchiveHeroImage(
+                bytes = bytes,
+                modifier = Modifier.padding(horizontal = CulinarySpacing.pageHorizontal),
+            )
+        }
         Column(modifier = Modifier.padding(horizontal = CulinarySpacing.pageHorizontal)) {
             Row(horizontalArrangement = Arrangement.spacedBy(CulinarySpacing.xs)) {
                 if (detail.ingredient.isSeed) {
@@ -152,6 +162,7 @@ internal fun IngredientDetailContent(
     }
 }
 
+@Suppress("CyclomaticComplexMethod")
 @Composable
 private fun IngredientSummary(
     detail: com.culinary.core.domain.model.IngredientDetail,
@@ -179,6 +190,12 @@ private fun IngredientSummary(
 
         listOfNotNull(
             detail.ingredient.englishName?.let { stringResource(R.string.ingredients_english_name) to it },
+            detail.ingredient.scientificName?.let { "学名" to it },
+            detail.ingredient.flavorProfile?.let { "风味" to it },
+            detail.ingredient.seasonality?.let { "时令" to it },
+            detail.ingredient.origin?.let { "产地" to it },
+            detail.ingredient.selectionNotes?.let { "挑选" to it },
+            detail.ingredient.prepNotes?.let { "预处理" to it },
             detail.ingredient.exampleProducts?.let { stringResource(R.string.ingredients_example_products) to it },
             detail.ingredient.storageNotes?.let { stringResource(R.string.ingredients_storage) to it },
             detail.ingredient.allergenNotes?.let { stringResource(R.string.ingredients_allergen) to it },

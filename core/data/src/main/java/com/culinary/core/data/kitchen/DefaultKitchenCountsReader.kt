@@ -1,5 +1,6 @@
 package com.culinary.core.data.kitchen
 
+import com.culinary.core.domain.model.ARCHIVE_CATEGORY_TEST_BATCH
 import com.culinary.core.domain.model.KitchenReferenceKind
 import com.culinary.core.domain.usecase.ingredient.ListIngredientsUseCase
 import com.culinary.core.domain.usecase.kitchen.ListKitchenReferencesUseCase
@@ -29,16 +30,21 @@ class DefaultKitchenCountsReader
                 listRecipes(),
                 listKitchenReferences(),
             ) { sauces, ingredients, recipes, references ->
+                val formalSauces = sauces.filter { it.seedVersion != ARCHIVE_CATEGORY_TEST_BATCH }
+                val formalIngredients = ingredients.filter { it.seedVersion != ARCHIVE_CATEGORY_TEST_BATCH }
+                val formalRecipes = recipes.filter { it.seedVersion != ARCHIVE_CATEGORY_TEST_BATCH }
+                val formalReferences =
+                    references.filter { it.seedVersion != ARCHIVE_CATEGORY_TEST_BATCH }
                 KitchenCounts(
-                    sauceCount = sauces.size,
-                    ingredientCount = ingredients.size,
-                    recipeCount = recipes.size,
+                    sauceCount = formalSauces.size,
+                    ingredientCount = formalIngredients.size,
+                    recipeCount = formalRecipes.size,
                     cookingTechniqueCount =
-                        references.count { it.kind == KitchenReferenceKind.TECHNIQUE },
+                        formalReferences.count { it.kind == KitchenReferenceKind.TECHNIQUE },
                     productionStandardCount =
-                        references.count { it.kind == KitchenReferenceKind.PRODUCTION_STANDARD },
+                        formalReferences.count { it.kind == KitchenReferenceKind.PRODUCTION_STANDARD },
                     storageStandardCount =
-                        references.count { it.kind == KitchenReferenceKind.STORAGE_STANDARD },
+                        formalReferences.count { it.kind == KitchenReferenceKind.STORAGE_STANDARD },
                 )
             }
     }

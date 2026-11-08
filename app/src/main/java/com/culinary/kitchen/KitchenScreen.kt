@@ -2,7 +2,6 @@ package com.culinary.kitchen
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -20,8 +19,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -35,8 +32,6 @@ import androidx.compose.ui.unit.em
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.culinary.R
-import com.culinary.core.data.kitchen.KitchenArchiveEntry
-import com.culinary.core.designsystem.component.CulinaryIconButton
 import com.culinary.core.designsystem.component.CulinaryRule
 import com.culinary.core.designsystem.icon.CulinaryIcons
 import com.culinary.core.designsystem.theme.CulinarySpacing
@@ -50,18 +45,14 @@ import com.culinary.core.designsystem.theme.CulinaryTextStyles
 @Composable
 fun KitchenRoute(
     onOpenCategory: (KitchenCategory) -> Unit,
-    onOpenSearchEntry: (KitchenArchiveEntry) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: KitchenViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
-    val archiveEntries by viewModel.archiveEntries.collectAsStateWithLifecycle()
 
     KitchenScreen(
         state = state,
-        archiveEntries = archiveEntries,
         onOpenCategory = onOpenCategory,
-        onOpenSearchEntry = onOpenSearchEntry,
         modifier = modifier,
     )
 }
@@ -70,77 +61,61 @@ fun KitchenRoute(
  * 厨房首页视觉结构：字标/标题 → 烹饪资料 → 工作标准。
  *
  * 顶部区固定，分类主体独立滚动；底栏由导航外壳提供，不参与本页滚动。
- * 右上角只有厨房全局搜索；搜索面板以覆盖层从右侧进入。
+ * 跨库搜索已按任务要求移除；六库各自在目录页提供单库搜索。
  */
 @Composable
 internal fun KitchenScreen(
     state: KitchenUiState,
-    archiveEntries: List<KitchenArchiveEntry>,
     onOpenCategory: (KitchenCategory) -> Unit,
-    onOpenSearchEntry: (KitchenArchiveEntry) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    var isSearchOpen by rememberSaveable { mutableStateOf(false) }
-
-    Box(modifier = modifier.fillMaxSize()) {
+    Column(
+        modifier =
+            modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background),
+    ) {
+        KitchenHeader()
+        CulinaryRule()
         Column(
             modifier =
                 Modifier
-                    .fillMaxSize()
-                    .background(MaterialTheme.colorScheme.background),
+                    .fillMaxWidth()
+                    .weight(1f)
+                    .verticalScroll(rememberScrollState()),
         ) {
-            KitchenHeader(onOpenSearch = { isSearchOpen = true })
-            CulinaryRule()
-            Column(
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .weight(1f)
-                        .verticalScroll(rememberScrollState()),
-            ) {
-                if (state.loadFailed) {
-                    Text(
-                        text = stringResource(R.string.kitchen_count_error),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.error,
-                        modifier =
-                            Modifier.padding(
-                                start = CulinarySpacing.pageHorizontal,
-                                end = CulinarySpacing.pageHorizontal,
-                                top = CulinarySpacing.md,
-                            ),
-                    )
-                }
-                KitchenSectionBlock(
-                    section = KitchenSection.REFERENCES,
-                    state = state,
-                    onOpenCategory = onOpenCategory,
+            if (state.loadFailed) {
+                Text(
+                    text = stringResource(R.string.kitchen_count_error),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error,
+                    modifier =
+                        Modifier.padding(
+                            start = CulinarySpacing.pageHorizontal,
+                            end = CulinarySpacing.pageHorizontal,
+                            top = CulinarySpacing.md,
+                        ),
                 )
-                Spacer(modifier = Modifier.height(CulinarySpacing.xl))
-                KitchenSectionBlock(
-                    section = KitchenSection.STANDARDS,
-                    state = state,
-                    onOpenCategory = onOpenCategory,
-                )
-                Spacer(modifier = Modifier.height(CulinarySpacing.xl))
             }
+            KitchenSectionBlock(
+                section = KitchenSection.REFERENCES,
+                state = state,
+                onOpenCategory = onOpenCategory,
+            )
+            Spacer(modifier = Modifier.height(CulinarySpacing.xl))
+            KitchenSectionBlock(
+                section = KitchenSection.STANDARDS,
+                state = state,
+                onOpenCategory = onOpenCategory,
+            )
+            Spacer(modifier = Modifier.height(CulinarySpacing.xl))
         }
-        KitchenGlobalSearchPanel(
-            visible = isSearchOpen,
-            entries = archiveEntries,
-            onDismiss = { isSearchOpen = false },
-            onOpenEntry = { entry ->
-                isSearchOpen = false
-                onOpenSearchEntry(entry)
-            },
-            modifier = Modifier.fillMaxSize(),
-        )
     }
 }
 
-/** 顶部：小号 MISEBASE、厨房标题、CULINARY 副标题与厨房全局搜索入口。 */
+/** 顶部：小号 MISEBASE、厨房标题与 CULINARY 副标题。 */
 @Composable
-private fun KitchenHeader(onOpenSearch: () -> Unit) {
+private fun KitchenHeader() {
     Row(
         modifier =
             Modifier
@@ -180,12 +155,6 @@ private fun KitchenHeader(onOpenSearch: () -> Unit) {
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
-        CulinaryIconButton(
-            icon = CulinaryIcons.Search,
-            contentDescription = stringResource(R.string.kitchen_search_entry),
-            onClick = onOpenSearch,
-            tint = MaterialTheme.colorScheme.onSurface,
-        )
     }
 }
 

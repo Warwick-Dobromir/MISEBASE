@@ -216,6 +216,7 @@ internal object CulinarySchemaExtras {
             "ux_supplier_normalized_name",
             "ux_barcode_primary",
             "ux_image_primary",
+            "ux_archive_category_sibling_name",
             "ux_reservation_active",
         )
 
@@ -253,6 +254,10 @@ internal object CulinarySchemaExtras {
             CREATE UNIQUE INDEX IF NOT EXISTS ux_image_primary
             ON image_asset(owner_type, owner_id)
             WHERE role = 'PRIMARY' AND deleted_at IS NULL
+            """.trimIndent(),
+            """
+            CREATE UNIQUE INDEX IF NOT EXISTS ux_archive_category_sibling_name
+            ON archive_category(library, COALESCE(parent_id, ''), normalized_name)
             """.trimIndent(),
             """
             CREATE UNIQUE INDEX IF NOT EXISTS ux_reservation_active

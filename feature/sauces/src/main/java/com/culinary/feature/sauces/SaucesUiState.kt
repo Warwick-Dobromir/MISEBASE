@@ -1,6 +1,7 @@
 package com.culinary.feature.sauces
 
 import com.culinary.core.common.CulinaryError
+import com.culinary.core.domain.model.ArchiveCategory
 import com.culinary.core.domain.model.ComponentTarget
 import com.culinary.core.domain.model.Ingredient
 import com.culinary.core.domain.model.KitchenRelatedRecord
@@ -21,6 +22,8 @@ data class SaucesListUiState(
 /** 酱汁详情状态。 */
 data class SauceDetailUiState(
     val detail: SauceDetail? = null,
+    val categoryPath: List<String> = emptyList(),
+    val imageBytes: ByteArray? = null,
     val isLoading: Boolean = true,
     val isPublishing: Boolean = false,
     val error: String? = null,
@@ -85,6 +88,10 @@ data class SauceEditorUiState(
     val yieldUnit: UnitModel? = null,
     val units: List<UnitModel> = emptyList(),
     val ingredients: List<Ingredient> = emptyList(),
+    val categories: List<ArchiveCategory> = emptyList(),
+    val categoryPathIds: List<String> = emptyList(),
+    val isTestRecord: Boolean = false,
+    val versionDirty: Boolean = false,
     val sauceOptions: List<Sauce> = emptyList(),
     val lines: List<SauceLineEditor> = emptyList(),
     val steps: List<SauceStepEditor> = emptyList(),

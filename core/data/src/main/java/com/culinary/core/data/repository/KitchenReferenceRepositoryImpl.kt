@@ -2,9 +2,11 @@ package com.culinary.core.data.repository
 
 import com.culinary.core.common.Clock
 import com.culinary.core.common.CulinaryError
+import com.culinary.core.common.IdGenerator
 import com.culinary.core.common.Outcome
 import com.culinary.core.data.mapper.KitchenReferenceMapper
 import com.culinary.core.data.transaction.DbErrorMapper
+import com.culinary.core.database.dao.KitchenReferenceContentDao
 import com.culinary.core.database.dao.KitchenReferenceDao
 import com.culinary.core.database.model.KitchenReferenceKindDb
 import com.culinary.core.domain.model.KitchenReference
@@ -22,7 +24,9 @@ class KitchenReferenceRepositoryImpl
     @Inject
     constructor(
         private val dao: KitchenReferenceDao,
+        private val contentDao: KitchenReferenceContentDao,
         private val clock: Clock,
+        private val idGenerator: IdGenerator,
     ) : KitchenReferenceRepository {
         override fun observeActive(kind: KitchenReferenceKind): Flow<List<KitchenReference>> =
             dao.observeActive(kind.toDb()).map { entities -> entities.map(KitchenReferenceMapper::toDomain) }
@@ -34,7 +38,8 @@ class KitchenReferenceRepositoryImpl
             val entity =
                 dao.findById(id.value)
                     ?: return Outcome.failure(CulinaryError.NotFound(entity = "kitchen_reference", id = id.value))
-            return Outcome.success(KitchenReferenceMapper.toDomain(entity))
+            val content = contentDao.listByReference(id.value)
+            return Outcome.success(KitchenReferenceMapper.toDomain(entity, content))
         }
 
         override suspend fun save(reference: KitchenReference): Outcome<KitchenReferenceId> =
@@ -65,6 +70,14 @@ class KitchenReferenceRepositoryImpl
                             ),
                         )
                     }
+                    contentDao.deleteByReference(reference.id.value)
+                    contentDao.insertAll(
+                        KitchenReferenceMapper.toContentEntities(
+                            referenceId = reference.id.value,
+                            content = reference.content,
+                            idFactory = idGenerator::newId,
+                        ),
+                    )
                     Outcome.success(reference.id)
                 }
             } catch (e: CancellationException) {

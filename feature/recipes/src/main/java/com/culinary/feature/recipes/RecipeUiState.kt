@@ -34,6 +34,8 @@ data class RecipesListUiState(
 /** 菜谱详情状态：详情 + 按份数展开结果。 */
 data class RecipeDetailUiState(
     val detail: RecipeDetail? = null,
+    val categoryPath: List<String> = emptyList(),
+    val imageBytes: ByteArray? = null,
     val isLoading: Boolean = true,
     val isPublishing: Boolean = false,
     val isExpanding: Boolean = false,

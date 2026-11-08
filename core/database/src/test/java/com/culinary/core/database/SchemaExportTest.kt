@@ -1,4 +1,4 @@
-package com.culinary.core.database
+﻿package com.culinary.core.database
 
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
@@ -69,8 +69,20 @@ class SchemaExportTest {
     }
 
     @Test
+    fun `exports schema version 6 with category and reference content tables`() {
+        val v6 = File(schemaDirectory, "6.json")
+
+        assertThat(v6.exists()).isTrue()
+        assertThat(v6.readText()).contains("\"version\": 6")
+        assertThat(v6.readText()).contains("\"tableName\": \"archive_category\"")
+        assertThat(v6.readText()).contains("\"tableName\": \"archive_category_assignment\"")
+        assertThat(v6.readText()).contains("\"tableName\": \"kitchen_reference_content\"")
+        assertThat(tableCount(v6)).isEqualTo(38)
+    }
+
+    @Test
     fun `registers all forward migrations`() {
-        assertThat(CulinaryMigrations.ALL).hasLength(4)
+        assertThat(CulinaryMigrations.ALL).hasLength(5)
         assertThat(CulinaryMigrations.MIGRATION_1_2.startVersion).isEqualTo(1)
         assertThat(CulinaryMigrations.MIGRATION_1_2.endVersion).isEqualTo(2)
         assertThat(CulinaryMigrations.MIGRATION_2_3.startVersion).isEqualTo(2)
@@ -79,6 +91,8 @@ class SchemaExportTest {
         assertThat(CulinaryMigrations.MIGRATION_3_4.endVersion).isEqualTo(4)
         assertThat(CulinaryMigrations.MIGRATION_4_5.startVersion).isEqualTo(4)
         assertThat(CulinaryMigrations.MIGRATION_4_5.endVersion).isEqualTo(5)
+        assertThat(CulinaryMigrations.MIGRATION_5_6.startVersion).isEqualTo(5)
+        assertThat(CulinaryMigrations.MIGRATION_5_6.endVersion).isEqualTo(6)
     }
 
     private fun tableCount(file: File): Int = Regex("\"tableName\"").findAll(file.readText()).count()

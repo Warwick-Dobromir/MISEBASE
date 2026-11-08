@@ -1,4 +1,4 @@
-package com.culinary.core.data.startup
+﻿package com.culinary.core.data.startup
 
 import android.content.Context
 import android.database.DatabaseErrorHandler
@@ -105,7 +105,7 @@ class StartupCoordinator(
          * 保持同步。** 升级 Schema 时必须同时修改两处，并补“已持久化库再次启动”的回归测试；
          * 否则会把当前版本的库误判为“更新版本”，把应用锁在 [StartupState.Incompatible]。
          */
-        const val EXPECTED_SCHEMA_VERSION = 5
+        const val EXPECTED_SCHEMA_VERSION = 6
 
         val SQLITE_HEADER: ByteArray = "SQLite format 3\u0000".toByteArray(Charsets.ISO_8859_1)
 
