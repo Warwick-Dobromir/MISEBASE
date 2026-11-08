@@ -15,6 +15,9 @@ interface AppMetadataDao {
     @Query("SELECT * FROM app_metadata WHERE key = :key")
     suspend fun find(key: String): AppMetadataEntity?
 
+    @Query("DELETE FROM app_metadata WHERE key = :key")
+    suspend fun delete(key: String)
+
     @Query("SELECT COUNT(*) FROM app_metadata")
     suspend fun count(): Int
 }

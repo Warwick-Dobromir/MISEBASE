@@ -70,6 +70,10 @@ fun IngredientEditorRoute(
                 onNameChange = viewModel::onNameChange,
                 onCategoryChange = viewModel::onCategoryChange,
                 onDescriptionChange = viewModel::onDescriptionChange,
+                onEnglishNameChange = viewModel::onEnglishNameChange,
+                onExampleProductsChange = viewModel::onExampleProductsChange,
+                onStorageNotesChange = viewModel::onStorageNotesChange,
+                onAllergenNotesChange = viewModel::onAllergenNotesChange,
                 onOpenUnitPicker = { showUnitPicker = true },
                 onSave = viewModel::save,
             )
@@ -96,6 +100,10 @@ internal fun IngredientEditorForm(
     onNameChange: (String) -> Unit,
     onCategoryChange: (String) -> Unit,
     onDescriptionChange: (String) -> Unit,
+    onEnglishNameChange: (String) -> Unit,
+    onExampleProductsChange: (String) -> Unit,
+    onStorageNotesChange: (String) -> Unit,
+    onAllergenNotesChange: (String) -> Unit,
     onOpenUnitPicker: () -> Unit,
     onSave: () -> Unit,
 ) {
@@ -144,6 +152,34 @@ internal fun IngredientEditorForm(
                 onValueChange = onDescriptionChange,
                 label = { Text(text = stringResource(R.string.ingredients_description_label)) },
                 minLines = 3,
+            )
+            Spacer(modifier = Modifier.height(CulinarySpacing.field))
+            CulinaryTextField(
+                value = state.englishName,
+                onValueChange = onEnglishNameChange,
+                label = { Text(text = stringResource(R.string.ingredients_english_name)) },
+                singleLine = true,
+            )
+            Spacer(modifier = Modifier.height(CulinarySpacing.field))
+            CulinaryTextField(
+                value = state.exampleProducts,
+                onValueChange = onExampleProductsChange,
+                label = { Text(text = stringResource(R.string.ingredients_example_products)) },
+                minLines = 2,
+            )
+            Spacer(modifier = Modifier.height(CulinarySpacing.field))
+            CulinaryTextField(
+                value = state.storageNotes,
+                onValueChange = onStorageNotesChange,
+                label = { Text(text = stringResource(R.string.ingredients_storage)) },
+                minLines = 2,
+            )
+            Spacer(modifier = Modifier.height(CulinarySpacing.field))
+            CulinaryTextField(
+                value = state.allergenNotes,
+                onValueChange = onAllergenNotesChange,
+                label = { Text(text = stringResource(R.string.ingredients_allergen)) },
+                minLines = 2,
             )
             Spacer(modifier = Modifier.height(CulinarySpacing.xl))
             CulinaryButton(

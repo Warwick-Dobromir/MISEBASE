@@ -7,6 +7,7 @@ import com.culinary.core.common.Outcome
 import com.culinary.core.domain.model.RecipeDetail
 import com.culinary.core.domain.model.RecipeId
 import com.culinary.core.domain.model.RecipeVersionId
+import com.culinary.core.domain.usecase.kitchen.ObserveKitchenRelationsUseCase
 import com.culinary.core.domain.usecase.recipe.ExpandRecipeUseCase
 import com.culinary.core.domain.usecase.recipe.GetRecipeDetailUseCase
 import com.culinary.core.domain.usecase.recipe.PublishStoredRecipeVersionUseCase
@@ -27,6 +28,7 @@ class RecipeDetailViewModel
         private val getRecipeDetail: GetRecipeDetailUseCase,
         private val expandRecipe: ExpandRecipeUseCase,
         private val publishStoredVersion: PublishStoredRecipeVersionUseCase,
+        private val getRelations: ObserveKitchenRelationsUseCase,
     ) : ViewModel() {
         private val recipeId = RecipeId(savedStateHandle.get<String>(RecipesRoutes.ARG_RECIPE_ID).orEmpty())
         private val _uiState = MutableStateFlow(RecipeDetailUiState())
@@ -34,6 +36,11 @@ class RecipeDetailViewModel
 
         init {
             load()
+            viewModelScope.launch {
+                getRelations(recipeId.value).collect { relations ->
+                    _uiState.update { it.copy(relations = relations) }
+                }
+            }
         }
 
         fun load() {

@@ -7,9 +7,17 @@ data class Recipe(
     val normalizedName: String,
     val category: RecipeCategory,
     val status: EntityStatus,
+    val englishName: String? = null,
+    val allergenNotes: String? = null,
+    val ingredientSummary: String? = null,
+    val seedNote: String? = null,
+    val seedId: String? = null,
+    val seedVersion: String? = null,
 ) {
     init {
         require(name.isNotBlank()) { "recipe name must not be blank" }
         require(normalizedName.isNotBlank()) { "recipe normalizedName must not be blank" }
     }
+
+    val isSeed: Boolean get() = seedId != null
 }

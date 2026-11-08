@@ -17,6 +17,13 @@ data class SaveSauceInput(
     val id: SauceId? = null,
     val family: String? = null,
     val usageNotes: String? = null,
+    val englishName: String? = null,
+    val mainIngredients: String? = null,
+    val preparationSummary: String? = null,
+    val keyParameters: String? = null,
+    val storageNotes: String? = null,
+    val flavorProfile: String? = null,
+    val adjustableNotes: String? = null,
 )
 
 /**
@@ -29,6 +36,7 @@ class SaveSauceUseCase(
     private val idGenerator: IdGenerator,
     private val transactionRunner: TransactionRunner,
 ) {
+    @Suppress("CyclomaticComplexMethod") // 多个可选档案字段的保留/覆盖分支集中在一个编辑入口
     suspend operator fun invoke(input: SaveSauceInput): Outcome<SauceId> {
         val name = input.name.trim()
         if (name.isEmpty()) return invalid("must not be blank")
@@ -43,14 +51,26 @@ class SaveSauceUseCase(
                     is Outcome.Success -> result.value
                 }
             }
-        val sauce =
-            Sauce(
+        val base =
+            existing ?: Sauce(
                 id = input.id ?: SauceId(idGenerator.newId()),
                 name = name,
                 normalizedName = NameText.normalize(name),
-                status = existing?.status ?: EntityStatus.ACTIVE,
+                status = EntityStatus.ACTIVE,
+            )
+        val sauce =
+            base.copy(
+                name = name,
+                normalizedName = NameText.normalize(name),
                 family = input.family.blankToNull(),
-                usageNotes = input.usageNotes.blankToNull(),
+                usageNotes = input.usageNotes.blankToNull() ?: existing?.usageNotes,
+                englishName = input.englishName.blankToNull() ?: existing?.englishName,
+                mainIngredients = input.mainIngredients.blankToNull() ?: existing?.mainIngredients,
+                preparationSummary = input.preparationSummary.blankToNull() ?: existing?.preparationSummary,
+                keyParameters = input.keyParameters.blankToNull() ?: existing?.keyParameters,
+                storageNotes = input.storageNotes.blankToNull() ?: existing?.storageNotes,
+                flavorProfile = input.flavorProfile.blankToNull() ?: existing?.flavorProfile,
+                adjustableNotes = input.adjustableNotes.blankToNull() ?: existing?.adjustableNotes,
             )
         return transactionRunner.write { repository.save(sauce) }.flatMap { it }
     }

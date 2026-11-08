@@ -22,6 +22,8 @@ import com.culinary.core.database.dao.IngredientUnitConversionDao
 import com.culinary.core.database.dao.InventoryBatchDao
 import com.culinary.core.database.dao.InventoryLedgerDao
 import com.culinary.core.database.dao.InventoryReservationDao
+import com.culinary.core.database.dao.KitchenReferenceDao
+import com.culinary.core.database.dao.KitchenRelationDao
 import com.culinary.core.database.dao.MaterialRequirementDao
 import com.culinary.core.database.dao.MaterialRequirementSourceDao
 import com.culinary.core.database.dao.PlanSnapshotDao
@@ -55,6 +57,8 @@ import com.culinary.core.database.entity.IngredientUnitConversionEntity
 import com.culinary.core.database.entity.InventoryBatchEntity
 import com.culinary.core.database.entity.InventoryLedgerEntity
 import com.culinary.core.database.entity.InventoryReservationEntity
+import com.culinary.core.database.entity.KitchenReferenceEntity
+import com.culinary.core.database.entity.KitchenRelationEntity
 import com.culinary.core.database.entity.MaterialRequirementEntity
 import com.culinary.core.database.entity.MaterialRequirementSourceEntity
 import com.culinary.core.database.entity.ProcurementRequirementEntity
@@ -75,11 +79,11 @@ import com.culinary.core.database.entity.SupplierEntity
 import com.culinary.core.database.entity.UnitEntity
 
 /**
- * CULINARY 数据库（schema v2，A06 + MB-SC-001）。
+ * CULINARY 数据库（schema v4）。
  *
  * `exportSchema = true`：每个版本必须提交 `schemas/` JSON，迁移测试依赖它。
- * v2 新增计算记录持久化结构，并为 `recipe_version` 增加 `servings`；
- * v1 的 31 张表（含 11 张 DORMANT）结构不改。
+ * v2 新增计算记录与 recipe_version.servings；v3 新增 kitchen_reference；
+ * v4 补充六库档案的扩展展示字段、测试种子标记和厨房关系表。
  */
 @Database(
     entities = [
@@ -116,8 +120,10 @@ import com.culinary.core.database.entity.UnitEntity
         AppMetadataEntity::class,
         CalculationRecordEntity::class,
         CalculationRecordLineEntity::class,
+        KitchenReferenceEntity::class,
+        KitchenRelationEntity::class,
     ],
-    version = 2,
+    version = 4,
     exportSchema = true,
 )
 @TypeConverters(
@@ -191,6 +197,10 @@ abstract class CulinaryDatabase : RoomDatabase() {
     abstract fun appMetadataDao(): AppMetadataDao
 
     abstract fun calculationRecordDao(): CalculationRecordDao
+
+    abstract fun kitchenReferenceDao(): KitchenReferenceDao
+
+    abstract fun kitchenRelationDao(): KitchenRelationDao
 
     companion object {
         const val DATABASE_NAME: String = "culinary.db"

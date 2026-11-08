@@ -41,4 +41,13 @@ interface SauceDao {
 
     @Query("DELETE FROM sauce WHERE id = :id")
     suspend fun deleteById(id: String)
+
+    @Query("DELETE FROM sauce WHERE seed_version = :seedVersion")
+    suspend fun deleteSeed(seedVersion: String): Int
+
+    @Query("DELETE FROM sauce WHERE seed_version IS NOT NULL")
+    suspend fun deleteAllSeed(): Int
+
+    @Query("SELECT COUNT(*) FROM sauce WHERE seed_version = :seedVersion")
+    suspend fun countSeed(seedVersion: String): Int
 }

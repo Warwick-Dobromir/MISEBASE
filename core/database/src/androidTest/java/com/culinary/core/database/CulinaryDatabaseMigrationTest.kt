@@ -11,11 +11,10 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 /**
- * 设备上的 v1 → v2 迁移测试（MB-SC-001）。
+ * 设备上的增量迁移测试。
  *
- * 与 JVM 的 `CulinaryMigrationV1ToV2Test` 互补：这里使用官方
- * [MigrationTestHelper] 从 `schemas/1.json` 建 v1，执行 [CulinaryMigrations.MIGRATION_1_2]，
- * 再用 `2.json` 校验。需要设备/模拟器；当前环境无设备时仅编译、不执行。
+ * 使用官方 [MigrationTestHelper] 验证 v1→v2 与 v2→v3：
+ * v2→v3 只新增 kitchen_reference，旧数据与旧表保留。需要设备/模拟器。
  */
 @RunWith(AndroidJUnit4::class)
 class CulinaryDatabaseMigrationTest {
@@ -71,6 +70,58 @@ class CulinaryDatabaseMigrationTest {
             db
                 .query("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'calculation_record'")
                 .use { cursor -> assertTrue(cursor.moveToFirst()) }
+            assertIntegrity(db)
+        }
+    }
+
+    @Test
+    fun migratesV2ToV3AndCreatesKitchenReferenceTable() {
+        helper.createDatabase(DATABASE_NAME, 2).close()
+
+        val migrated =
+            helper.runMigrationsAndValidate(
+                DATABASE_NAME,
+                3,
+                true,
+                CulinaryMigrations.MIGRATION_2_3,
+            )
+        migrated.use { db ->
+            val version =
+                db.query("PRAGMA user_version").use { cursor ->
+                    cursor.moveToFirst()
+                    cursor.getInt(0)
+                }
+            assertEquals(3, version)
+            db
+                .query("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'kitchen_reference'")
+                .use { cursor -> assertTrue(cursor.moveToFirst()) }
+            assertIntegrity(db)
+        }
+    }
+
+    @Test
+    fun migratesV3ToV4AndCreatesRelationAndSeedColumns() {
+        helper.createDatabase(DATABASE_NAME, 3).close()
+
+        val migrated =
+            helper.runMigrationsAndValidate(
+                DATABASE_NAME,
+                4,
+                true,
+                CulinaryMigrations.MIGRATION_3_4,
+            )
+        migrated.use { db ->
+            val version =
+                db.query("PRAGMA user_version").use { cursor ->
+                    cursor.moveToFirst()
+                    cursor.getInt(0)
+                }
+            assertEquals(4, version)
+            db
+                .query("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'kitchen_relation'")
+                .use { cursor -> assertTrue(cursor.moveToFirst()) }
+            assertTrue(columnInfo(db, "sauce", "english_name").notNull.not())
+            assertTrue(columnInfo(db, "ingredient", "example_products").notNull.not())
             assertIntegrity(db)
         }
     }

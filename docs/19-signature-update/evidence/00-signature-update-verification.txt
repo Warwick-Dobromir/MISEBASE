@@ -1,0 +1,56 @@
+MISEBASE signing / in-place upgrade verification
+Date: 2026-11-08 (Asia/Hong_Kong)
+Device: Android 16 / API 36.1 x86_64 emulator
+Package: com.culinary
+
+Certificate comparison
+---------------------
+Provided release.keystore certificate SHA-256:
+  5ca41959d9f450cdc851dcb9f052ac9130aaeab71c64062173a699355056af61
+Local existing release keystore certificate SHA-256:
+  5ca41959d9f450cdc851dcb9f052ac9130aaeab71c64062173a699355056af61
+Previous release APK certificate SHA-256:
+  5ca41959d9f450cdc851dcb9f052ac9130aaeab71c64062173a699355056af61
+New release APK certificate SHA-256:
+  5ca41959d9f450cdc851dcb9f052ac9130aaeab71c64062173a699355056af61
+Installed updated package certificate SHA-256:
+  5ca41959d9f450cdc851dcb9f052ac9130aaeab71c64062173a699355056af61
+Result: ALL_MATCH
+
+No new keystore was generated.
+No keystore, password, alias value, or credential file content is included in this evidence.
+
+Baseline installed before update
+--------------------------------
+APK: MISEBASE-1.0.0-home001-20261108-release.apk
+versionCode: 1
+versionName: 1.0.0
+firstInstallTime: 2026-11-08 15:07:41
+Created data via old app: 1 ingredient ("Persisted_Ingredient")
+
+Update operation (without uninstall)
+------------------------------------
+adb install -r MISEBASE-1.0.1-kitchen-home-20261108-release.apk
+=> Success
+
+Package after update
+--------------------
+versionCode: 2
+versionName: 1.0.1
+firstInstallTime: 2026-11-08 15:07:41   (unchanged)
+lastUpdateTime: 2026-11-08 15:08:54     (changed)
+Cold start: Status ok, LaunchState COLD, TotalTime 917ms
+
+Data preservation check
+-----------------------
+Old app list before update: 共 1 个食材
+New app kitchen page after update: 食材 1 项
+Data survived the in-place update.
+
+Delivered APK
+-------------
+Path: D:\MISEBASE\dist\KITCHEN-HOME-001\MISEBASE-1.0.1-kitchen-home-20261108-release.apk
+Size: 24,467,519 bytes
+SHA-256: b8cff1334d0b821399412be5631ee85355ba513f4c73ef3fc87db31651d0f68a
+APK signature: APK Signature Scheme v2 verified
+Installed base.apk byte-identical to delivered APK: true

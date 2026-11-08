@@ -2,6 +2,7 @@ package com.culinary.feature.ingredients
 
 import com.culinary.core.common.CulinaryError
 import com.culinary.core.domain.model.IngredientDetail
+import com.culinary.core.domain.model.KitchenRelatedRecord
 import com.culinary.core.domain.model.Unit as UnitModel
 
 /** 食材列表行：已解析默认单位标签，UI 不直接查仓库。 */
@@ -27,6 +28,7 @@ data class IngredientDetailUiState(
     val isArchiving: Boolean = false,
     val archived: Boolean = false,
     val error: String? = null,
+    val relations: List<KitchenRelatedRecord> = emptyList(),
 )
 
 /** 食材编辑器状态。 */
@@ -35,6 +37,10 @@ data class IngredientEditorUiState(
     val name: String = "",
     val category: String = "",
     val description: String = "",
+    val englishName: String = "",
+    val exampleProducts: String = "",
+    val storageNotes: String = "",
+    val allergenNotes: String = "",
     val defaultUnit: UnitModel? = null,
     val units: List<UnitModel> = emptyList(),
     val isLoading: Boolean = true,

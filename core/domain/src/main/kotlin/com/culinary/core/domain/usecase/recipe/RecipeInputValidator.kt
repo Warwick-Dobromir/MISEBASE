@@ -42,6 +42,7 @@ internal object RecipeInputValidator {
             yield = Quantity(input.yieldAmount, input.yieldUnit),
             components = components,
             servings = input.servings,
+            instructions = input.instructions?.trim()?.takeIf { it.isNotEmpty() },
         )
 
     private fun invalid(

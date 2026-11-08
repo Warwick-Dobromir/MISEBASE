@@ -15,6 +15,7 @@ import com.culinary.core.database.model.RecipeCategoryDb
     tableName = "recipe",
     indices = [
         Index(value = ["category", "status"]),
+        Index(value = ["seed_id"], unique = true),
     ],
 )
 data class RecipeEntity(
@@ -37,6 +38,16 @@ data class RecipeEntity(
     val cookMinutes: Int? = null,
     @ColumnInfo(name = "difficulty")
     val difficulty: String? = null,
+    @ColumnInfo(name = "english_name")
+    val englishName: String? = null,
+    @ColumnInfo(name = "allergen_notes")
+    val allergenNotes: String? = null,
+    @ColumnInfo(name = "seed_note")
+    val seedNote: String? = null,
+    @ColumnInfo(name = "seed_id")
+    val seedId: String? = null,
+    @ColumnInfo(name = "seed_version")
+    val seedVersion: String? = null,
     @ColumnInfo(name = "status")
     val status: EntityStatusDb = EntityStatusDb.ACTIVE,
     @ColumnInfo(name = "created_at")

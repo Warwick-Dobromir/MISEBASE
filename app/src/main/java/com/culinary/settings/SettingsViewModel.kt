@@ -9,6 +9,7 @@ import androidx.lifecycle.viewModelScope
 import com.culinary.BuildConfig
 import com.culinary.core.common.ErrorCode
 import com.culinary.core.common.Outcome
+import com.culinary.core.data.kitchen.KitchenSeedImporter
 import com.culinary.core.data.settings.SettingsMaintenance
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -33,6 +34,7 @@ class SettingsViewModel
     constructor(
         @ApplicationContext private val context: Context,
         private val maintenance: SettingsMaintenance,
+        private val seedImporter: KitchenSeedImporter,
     ) : ViewModel() {
         private val _uiState =
             MutableStateFlow(
@@ -55,7 +57,48 @@ class SettingsViewModel
             viewModelScope.launch {
                 val schema = withContext(Dispatchers.IO) { maintenance.currentSchemaVersion() }
                 val size = withContext(Dispatchers.IO) { maintenance.databaseSizeBytes() }
-                _uiState.update { it.copy(schemaVersion = schema, databaseSizeBytes = size) }
+                val seed = withContext(Dispatchers.IO) { seedImporter.status() }
+                _uiState.update { it.copy(schemaVersion = schema, databaseSizeBytes = size, seedStatus = seed) }
+            }
+        }
+
+        /** 重新写入厨房测试种子；已存在种子先清理，不会重复。 */
+        fun reimportSeed() {
+            viewModelScope.launch {
+                _uiState.update { it.copy(seedAction = SeedActionState.Running) }
+                val result = withContext(Dispatchers.IO) { seedImporter.reimport() }
+                val seed = withContext(Dispatchers.IO) { seedImporter.status() }
+                _uiState.update {
+                    it.copy(
+                        seedStatus = seed,
+                        seedAction =
+                            if (result is Outcome.Success) {
+                                SeedActionState.Done(imported = result.value.imported)
+                            } else {
+                                SeedActionState.Failed
+                            },
+                    )
+                }
+            }
+        }
+
+        /** 清理测试种子；保留正式档案，并阻止下次启动自动回填。 */
+        fun clearSeed() {
+            viewModelScope.launch {
+                _uiState.update { it.copy(seedAction = SeedActionState.Running) }
+                val result = withContext(Dispatchers.IO) { seedImporter.clear() }
+                val seed = withContext(Dispatchers.IO) { seedImporter.status() }
+                _uiState.update {
+                    it.copy(
+                        seedStatus = seed,
+                        seedAction =
+                            if (result is Outcome.Success) {
+                                SeedActionState.Done(imported = false)
+                            } else {
+                                SeedActionState.Failed
+                            },
+                    )
+                }
             }
         }
 
@@ -220,6 +263,7 @@ class SettingsViewModel
                 appendLine("构建类型: ${if (BuildConfig.DEBUG) "debug" else "release"}")
                 appendLine("数据库 schema: v${state.schemaVersion}")
                 appendLine("数据库大小: ${formatBytes(state.databaseSizeBytes)}")
+                appendLine("厨房测试种子: ${state.seedStatus?.version ?: "未导入"}")
                 appendLine("设备: ${state.deviceLabel}")
                 appendLine("Android: ${Build.VERSION.RELEASE} / API ${Build.VERSION.SDK_INT}")
                 appendLine("ABI: ${Build.SUPPORTED_ABIS.joinToString(",")}")

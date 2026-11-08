@@ -1,4 +1,4 @@
-﻿"""MB-UI-001 图标资源管线（一次性，可复现）。
+"""MB-UI-001 图标资源管线（一次性，可复现）。
 
 从 Material Symbols（Apache-2.0）取 24px Outlined SVG 的 path 数据，
 转换成 Compose `PathBuilder` 调用（24dp 视口、y 轴从 -960 平移到 0）。
@@ -25,6 +25,8 @@ ICONS = {
     "Inventory": "inventory_2",
     "Scan": "qr_code_scanner",
     "Settings": "tune",
+    "Profile": "person",
+    "Timer": "timer",
     "Add": "add",
     "Back": "arrow_back",
     "Edit": "edit",

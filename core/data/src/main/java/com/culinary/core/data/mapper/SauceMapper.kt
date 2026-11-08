@@ -47,6 +47,14 @@ object SauceMapper {
             usageNotes = entity.usageNotes,
             storageNotes = entity.storageNotes,
             shelfLifeDays = entity.shelfLifeDays,
+            englishName = entity.englishName,
+            mainIngredients = entity.mainIngredients,
+            preparationSummary = entity.preparationSummary,
+            keyParameters = entity.keyParameters,
+            adjustableNotes = entity.adjustableNotes,
+            seedNote = entity.seedNote,
+            seedId = entity.seedId,
+            seedVersion = entity.seedVersion,
         )
 
     fun toEntity(
@@ -65,6 +73,14 @@ object SauceMapper {
             usageNotes = sauce.usageNotes,
             storageNotes = sauce.storageNotes,
             shelfLifeDays = sauce.shelfLifeDays,
+            englishName = sauce.englishName,
+            mainIngredients = sauce.mainIngredients,
+            preparationSummary = sauce.preparationSummary,
+            keyParameters = sauce.keyParameters,
+            adjustableNotes = sauce.adjustableNotes,
+            seedNote = sauce.seedNote,
+            seedId = sauce.seedId,
+            seedVersion = sauce.seedVersion,
             status =
                 when (sauce.status) {
                     EntityStatus.ACTIVE -> EntityStatusDb.ACTIVE
@@ -92,6 +108,7 @@ object SauceMapper {
                 },
             yieldQty = version.yield.amount,
             yieldUnitId = version.yield.unit.id.value,
+            instructionsMd = version.instructions,
             isCurrent = version.isCurrent,
             createdAt = createdAt,
             publishedAt = publishedAt,
@@ -137,6 +154,7 @@ object SauceMapper {
                 yield = Quantity(version.yieldQty, yieldUnit),
                 components = mapped,
                 isCurrent = version.isCurrent,
+                instructions = version.instructionsMd,
             ),
         )
     }

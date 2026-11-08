@@ -8,15 +8,18 @@ import com.culinary.core.domain.model.EntityStatus
 import com.culinary.core.domain.model.Ingredient
 import com.culinary.core.domain.model.IngredientId
 import com.culinary.core.domain.model.IngredientUnitConversion
+import com.culinary.core.domain.model.KitchenRelatedRecord
 import com.culinary.core.domain.model.UnitDimension
 import com.culinary.core.domain.model.UnitId
 import com.culinary.core.domain.repository.IngredientRepository
+import com.culinary.core.domain.repository.KitchenRelationRepository
 import com.culinary.core.domain.repository.UnitRepository
 import com.culinary.core.domain.transaction.TransactionRunner
 import com.culinary.core.domain.usecase.ingredient.ArchiveIngredientUseCase
 import com.culinary.core.domain.usecase.ingredient.GetIngredientDetailUseCase
 import com.culinary.core.domain.usecase.ingredient.ListIngredientsUseCase
 import com.culinary.core.domain.usecase.ingredient.SaveIngredientUseCase
+import com.culinary.core.domain.usecase.kitchen.ObserveKitchenRelationsUseCase
 import com.culinary.core.domain.usecase.unit.ListUnitsUseCase
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.Dispatchers
@@ -84,6 +87,7 @@ class IngredientsViewModelTest {
                     savedStateHandle = SavedStateHandle(mapOf(IngredientsRoutes.ARG_INGREDIENT_ID to ID)),
                     getIngredientDetail = detail,
                     archiveIngredient = archiveIngredient,
+                    getRelations = emptyRelations(),
                 )
 
             advanceUntilIdle()
@@ -144,6 +148,7 @@ class IngredientsViewModelTest {
                     savedStateHandle = SavedStateHandle(mapOf(IngredientsRoutes.ARG_INGREDIENT_ID to ID)),
                     getIngredientDetail = detail,
                     archiveIngredient = archiveIngredient,
+                    getRelations = emptyRelations(),
                 )
             advanceUntilIdle()
 
@@ -224,3 +229,10 @@ class IngredientsViewModelTest {
         const val ID = "ingredient-flour"
     }
 }
+
+private fun emptyRelations(): ObserveKitchenRelationsUseCase =
+    ObserveKitchenRelationsUseCase(
+        object : KitchenRelationRepository {
+            override fun observeForRecord(recordId: String): Flow<List<KitchenRelatedRecord>> = flowOf(emptyList())
+        },
+    )

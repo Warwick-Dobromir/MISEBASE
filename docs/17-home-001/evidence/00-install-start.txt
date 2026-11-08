@@ -1,0 +1,32 @@
+HOME-001 Release install / cold-start check
+Date: 2026-11-08 (Asia/Hong_Kong)
+Device: Android 16 / API 36.1 x86_64 emulator (sdk_gphone64_x86_64)
+Display: 1260x2800, 453dpi
+
+APK:
+D:\MISEBASE\dist\HOME-001\MISEBASE-1.0.0-home001-20261108-release.apk
+SHA-256: 8ba1ed2381891079203cc26d4ec71c3ac58ea5bada2b5bc6ce3ce3052fd66b45
+
+Install:
+adb install "...\MISEBASE-1.0.0-home001-20261108-release.apk"
+=> Success
+
+Cold start (process stopped first):
+adb shell am force-stop com.culinary
+adb shell am start -W -n com.culinary/.MainActivity
+=> Status: ok
+=> LaunchState: COLD
+=> TotalTime: 587
+=> WaitTime: 593
+
+Package:
+versionCode=1
+versionName=1.0.0
+minSdk=26
+targetSdk=36
+
+Focus after start:
+mCurrentFocus=Window{... com.culinary/com.culinary.MainActivity}
+
+Crash check:
+No FATAL EXCEPTION and no app ANR in final host-GPU cold-start run.

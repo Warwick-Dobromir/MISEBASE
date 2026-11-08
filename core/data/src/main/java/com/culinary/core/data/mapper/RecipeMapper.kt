@@ -52,6 +52,12 @@ object RecipeMapper {
                     EntityStatusDb.ACTIVE -> EntityStatus.ACTIVE
                     EntityStatusDb.ARCHIVED -> EntityStatus.ARCHIVED
                 },
+            englishName = entity.englishName,
+            allergenNotes = entity.allergenNotes,
+            ingredientSummary = entity.description,
+            seedNote = entity.seedNote,
+            seedId = entity.seedId,
+            seedVersion = entity.seedVersion,
         )
 
     fun toEntity(
@@ -77,6 +83,12 @@ object RecipeMapper {
                     EntityStatus.ACTIVE -> EntityStatusDb.ACTIVE
                     EntityStatus.ARCHIVED -> EntityStatusDb.ARCHIVED
                 },
+            englishName = recipe.englishName,
+            allergenNotes = recipe.allergenNotes,
+            description = recipe.ingredientSummary,
+            seedNote = recipe.seedNote,
+            seedId = recipe.seedId,
+            seedVersion = recipe.seedVersion,
             createdAt = createdAt,
             updatedAt = updatedAt,
             revision = revision,
@@ -100,6 +112,7 @@ object RecipeMapper {
             yieldQty = version.yield.amount,
             yieldUnitId = version.yield.unit.id.value,
             servings = version.servings,
+            instructionsMd = version.instructions,
             isCurrent = version.isCurrent,
             createdAt = createdAt,
             publishedAt = publishedAt,
@@ -150,6 +163,7 @@ object RecipeMapper {
                 components = mapped,
                 servings = version.servings,
                 isCurrent = version.isCurrent,
+                instructions = version.instructionsMd,
             ),
         )
     }

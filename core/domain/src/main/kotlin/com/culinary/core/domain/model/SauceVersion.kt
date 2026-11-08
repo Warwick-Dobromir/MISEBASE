@@ -14,6 +14,7 @@ data class SauceVersion(
     val yield: Quantity,
     val components: List<SauceComponent>,
     val isCurrent: Boolean = false,
+    val instructions: String? = null,
 ) {
     init {
         require(versionNo > 0) { "sauce versionNo must be > 0, was $versionNo" }

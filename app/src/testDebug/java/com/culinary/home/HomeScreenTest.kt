@@ -1,14 +1,21 @@
-﻿package com.culinary.home
+package com.culinary.home
 
-import androidx.compose.ui.test.assertCountEquals
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsOff
+import androidx.compose.ui.test.assertIsOn
+import androidx.compose.ui.test.assertRangeInfoEquals
 import androidx.compose.ui.test.junit4.createComposeRule
-import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
-import com.culinary.core.data.home.HomeInventorySummary
-import com.culinary.core.data.home.HomeKnowledgeSummary
+import androidx.compose.ui.test.performScrollTo
 import com.culinary.core.designsystem.theme.CulinaryTheme
 import com.google.common.truth.Truth.assertThat
 import org.junit.Rule
@@ -17,7 +24,7 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
-/** 首页 Compose：真实数字、空/失败状态、四个快捷入口与品牌回调；Hero 不再有设置。 */
+/** 首页视觉与交互：四条计划、动态计数/进度、三条采购记录及全部入口回调。 */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [34], qualifiers = "w411dp-h1200dp")
 class HomeScreenTest {
@@ -25,156 +32,139 @@ class HomeScreenTest {
     val compose = createComposeRule()
 
     @Test
-    fun `content state shows inventory and knowledge numbers from state`() {
-        show(
-            state =
-                HomeUiState(
-                    todayLabel = "11月5日 星期四",
-                    inventory = HomeSection.Ready(HomeInventorySummary(7, 12, 2)),
-                    knowledge = HomeSection.Ready(HomeKnowledgeSummary(3, 5, 8)),
-                ),
-        )
+    fun `home shows masthead today plans and purchase records`() {
+        compose.setContent { HomeUnderTest() }
 
-        compose.onNodeWithText("库存概览").assertIsDisplayed()
-        compose.onNodeWithText("库存项目").assertIsDisplayed()
-        compose.onNodeWithText("批次总数").assertIsDisplayed()
-        compose.onNodeWithText("需关注").assertIsDisplayed()
-        compose.onNodeWithText("7").assertIsDisplayed()
-        compose.onNodeWithText("12").assertIsDisplayed()
-        compose.onNodeWithText("2").assertIsDisplayed()
-        compose.onNodeWithText("知识库概览").assertIsDisplayed()
-        compose.onNodeWithText("3").assertIsDisplayed()
-        compose.onNodeWithText("5").assertIsDisplayed()
-        compose.onNodeWithText("8").assertIsDisplayed()
-        compose.onNodeWithText("11月5日 星期四").assertIsDisplayed()
+        compose.onNodeWithText("MISEBASE").assertIsDisplayed()
+        compose.onNodeWithText("Culinary Records and Inventory System").assertIsDisplayed()
+
+        compose.onNodeWithText("今日计划").assertIsDisplayed()
+        compose.onNodeWithText("Today’s Preparation").assertIsDisplayed()
+        compose.onNodeWithText("00/04").assertIsDisplayed()
+        compose.onNodeWithText("准备今日高汤").assertIsDisplayed()
+        compose.onNodeWithText("准备今日酱汁").assertIsDisplayed()
+        compose.onNodeWithText("检查食材库存").assertIsDisplayed()
+        compose.onNodeWithText("整理今日菜谱").assertIsDisplayed()
+        compose
+            .onNodeWithTag("today-plan-progress")
+            .assertRangeInfoEquals(ProgressBarRangeInfo(0f, 0f..1f))
+
+        compose.onNodeWithText("采购单").assertIsDisplayed()
+        compose.onNodeWithText("Purchase Records").assertIsDisplayed()
+        compose.onNodeWithText("今日蔬菜采购").assertIsDisplayed()
+        compose.onNodeWithText("创建日期：2026.11.08").assertIsDisplayed()
+        compose.onNodeWithText("创建时间：08:30").assertIsDisplayed()
+        compose.onNodeWithText("乳制品补充").assertIsDisplayed()
+        compose.onNodeWithText("肉类及高汤原料").assertIsDisplayed()
+        compose.onNodeWithText("查看完整采购单").performScrollTo().assertIsDisplayed()
     }
 
     @Test
-    fun `empty state is explicit instead of fabricated data`() {
-        show(
-            state =
-                HomeUiState(
-                    todayLabel = "11月5日 星期四",
-                    inventory = HomeSection.Ready(HomeInventorySummary(0, 0, 0)),
-                    knowledge = HomeSection.Ready(HomeKnowledgeSummary(0, 0, 0)),
-                ),
-        )
+    fun `tapping a plan toggles completion count and progress`() {
+        compose.setContent { HomeUnderTest() }
 
-        compose.onNodeWithText("还没有库存批次").assertIsDisplayed()
-        compose.onNodeWithText("档案库还是空的").assertIsDisplayed()
-        compose.onNodeWithText("去入库").assertIsDisplayed()
+        compose.onNodeWithText("准备今日高汤").assertIsOff().performClick()
+        compose.onNodeWithText("01/04").assertExists()
+        compose.onNodeWithText("准备今日高汤").assertIsOn()
+        compose
+            .onNodeWithTag("today-plan-progress")
+            .assertRangeInfoEquals(ProgressBarRangeInfo(0.25f, 0f..1f))
+
+        compose.onNodeWithText("准备今日高汤").performClick()
+        compose.onNodeWithText("00/04").assertExists()
+        compose.onNodeWithText("准备今日高汤").assertIsOff()
+        compose
+            .onNodeWithTag("today-plan-progress")
+            .assertRangeInfoEquals(ProgressBarRangeInfo(0f, 0f..1f))
     }
 
     @Test
-    fun `inventory failure degrades locally and keeps knowledge visible`() {
-        var retried = false
-        show(
-            state =
-                HomeUiState(
-                    todayLabel = "11月5日 星期四",
-                    inventory = HomeSection.Failed(message = "本机数据库读取失败，请重试。", diagnosticCode = "CUL-DB-001"),
-                    knowledge = HomeSection.Ready(HomeKnowledgeSummary(3, 5, 8)),
-                ),
-            onRetryInventory = { retried = true },
-        )
+    fun `all plan and purchase actions invoke their callbacks`() {
+        var timer = false
+        var settings = false
+        var allPlans = false
+        var addPlan = false
+        var newPurchase = false
+        var allPurchases = false
+        var openedPurchase: String? = null
 
-        compose.onNodeWithText("库存数据暂时无法读取").assertIsDisplayed()
-        compose.onNodeWithText("CUL-DB-001", substring = true).assertDoesNotExist()
-        compose.onNodeWithText("知识库概览").assertIsDisplayed()
-        compose.onNodeWithText("5").assertIsDisplayed()
-        compose.onNodeWithText("重试").performClick()
-        assertThat(retried).isTrue()
-    }
-
-    @Test
-    fun `quick actions invoke real destinations`() {
-        var scan = false
-        var ingredient = false
-        var recipe = false
-        var sauce = false
-        show(
-            state = readyState(),
-            onOpenScan = { scan = true },
-            onNewIngredient = { ingredient = true },
-            onNewRecipe = { recipe = true },
-            onNewSauce = { sauce = true },
-        )
-
-        compose.onNodeWithText("扫码").performClick()
-        compose.onNodeWithText("新建食材").performClick()
-        compose.onNodeWithText("新建菜谱").performClick()
-        compose.onNodeWithText("新建酱汁").performClick()
-
-        assertThat(scan).isTrue()
-        assertThat(ingredient).isTrue()
-        assertThat(recipe).isTrue()
-        assertThat(sauce).isTrue()
-    }
-
-    @Test
-    fun `brand invokes the home callback and settings is gone from the hero`() {
-        var home = false
-        show(
-            state = readyState(),
-            onOpenHome = { home = true },
-        )
-
-        compose.onNodeWithText("MISEBASE").performClick()
-        compose.onNodeWithContentDescription("设置").assertDoesNotExist()
-
-        assertThat(home).isTrue()
-    }
-
-    @Test
-    fun `loading state renders skeletons without error banners`() {
-        show(state = HomeUiState(todayLabel = "11月5日 星期四"))
-
-        compose.onNodeWithText("库存概览").assertIsDisplayed()
-        compose.onAllNodesWithText("重试").assertCountEquals(0)
-        compose.onAllNodesWithText("库存数据暂时无法读取").assertCountEquals(0)
-    }
-
-    private fun readyState(): HomeUiState =
-        HomeUiState(
-            todayLabel = "11月5日 星期四",
-            inventory = HomeSection.Ready(HomeInventorySummary(1, 3, 0)),
-            knowledge = HomeSection.Ready(HomeKnowledgeSummary(0, 1, 0)),
-        )
-
-    @Suppress("LongParameterList")
-    private fun show(
-        state: HomeUiState,
-        onOpenInventory: () -> Unit = {},
-        onOpenReceipt: () -> Unit = {},
-        onOpenSauces: () -> Unit = {},
-        onOpenIngredients: () -> Unit = {},
-        onOpenRecipes: () -> Unit = {},
-        onOpenScan: () -> Unit = {},
-        onNewIngredient: () -> Unit = {},
-        onNewRecipe: () -> Unit = {},
-        onNewSauce: () -> Unit = {},
-        onOpenHome: () -> Unit = {},
-        onRetryInventory: () -> Unit = {},
-        onRetryKnowledge: () -> Unit = {},
-    ) {
         compose.setContent {
-            CulinaryTheme {
-                HomeScreen(
-                    state = state,
-                    onOpenInventory = onOpenInventory,
-                    onOpenReceipt = onOpenReceipt,
-                    onOpenSauces = onOpenSauces,
-                    onOpenIngredients = onOpenIngredients,
-                    onOpenRecipes = onOpenRecipes,
-                    onOpenScan = onOpenScan,
-                    onNewIngredient = onNewIngredient,
-                    onNewRecipe = onNewRecipe,
-                    onNewSauce = onNewSauce,
-                    onOpenHome = onOpenHome,
-                    onRetryInventory = onRetryInventory,
-                    onRetryKnowledge = onRetryKnowledge,
-                )
-            }
+            HomeUnderTest(
+                onOpenTimer = { timer = true },
+                onOpenSettings = { settings = true },
+                onOpenAllPlans = { allPlans = true },
+                onAddPlan = { addPlan = true },
+                onNewPurchase = { newPurchase = true },
+                onOpenAllPurchases = { allPurchases = true },
+                onOpenPurchase = { openedPurchase = it },
+            )
         }
+
+        compose.onNodeWithContentDescription("计时器").performClick()
+        compose.onNodeWithContentDescription("设置与更多").performClick()
+        compose.onNodeWithText("查看全部").performClick()
+        compose.onNodeWithText("＋ 添加计划").performClick()
+        compose.onNodeWithText("＋ 新建").performClick()
+        compose.onNodeWithText("查看完整采购单").performScrollTo().performClick()
+        compose.onNodeWithText("今日蔬菜采购").performScrollTo().performClick()
+
+        assertThat(timer).isTrue()
+        assertThat(settings).isTrue()
+        assertThat(allPlans).isTrue()
+        assertThat(addPlan).isTrue()
+        assertThat(newPurchase).isTrue()
+        assertThat(allPurchases).isTrue()
+        assertThat(openedPurchase).isEqualTo("vegetables")
+    }
+}
+
+/** 短屏适配：首页必须可滚动到采购单尾部，内容不能被底栏或屏幕裁掉。 */
+@RunWith(RobolectricTestRunner::class)
+@Config(sdk = [34], qualifiers = "w411dp-h640dp")
+class HomeScreenSmallHeightTest {
+    @get:Rule
+    val compose = createComposeRule()
+
+    @Test
+    fun `purchase footer is reachable by vertical scrolling`() {
+        compose.setContent { HomeUnderTest() }
+
+        compose.onNodeWithText("肉类及高汤原料").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("查看完整采购单").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("以上为本地演示数据，未写入正式数据库。").performScrollTo().assertIsDisplayed()
+    }
+}
+
+@Composable
+private fun HomeUnderTest(
+    onOpenTimer: () -> Unit = {},
+    onOpenSettings: () -> Unit = {},
+    onOpenAllPlans: () -> Unit = {},
+    onAddPlan: () -> Unit = {},
+    onNewPurchase: () -> Unit = {},
+    onOpenAllPurchases: () -> Unit = {},
+    onOpenPurchase: (String) -> Unit = {},
+) {
+    var state by remember { mutableStateOf(HomeUiState()) }
+    CulinaryTheme {
+        HomeScreen(
+            state = state,
+            onTogglePlan = { planId ->
+                state =
+                    state.copy(
+                        plans =
+                            state.plans.map { plan ->
+                                if (plan.id == planId) plan.copy(completed = !plan.completed) else plan
+                            },
+                    )
+            },
+            onOpenTimer = onOpenTimer,
+            onOpenSettings = onOpenSettings,
+            onOpenAllPlans = onOpenAllPlans,
+            onAddPlan = onAddPlan,
+            onNewPurchase = onNewPurchase,
+            onOpenAllPurchases = onOpenAllPurchases,
+            onOpenPurchase = onOpenPurchase,
+        )
     }
 }

@@ -45,4 +45,5 @@ data class RecipeVersionInput(
     val yieldUnit: Unit,
     val servings: Int,
     val components: List<RecipeLineInput>,
+    val instructions: String? = null,
 )

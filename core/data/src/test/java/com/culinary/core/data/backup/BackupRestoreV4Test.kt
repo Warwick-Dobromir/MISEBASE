@@ -29,15 +29,15 @@ import java.io.ByteArrayOutputStream
 import java.util.zip.ZipInputStream
 
 /**
- * Schema v2 备份恢复验证（MB-SC-001）。
+ * Schema v4 备份恢复验证。
  *
  * 只调用既有 [BackupArchiveWriter]、[BackupArchiveVerifier] 与 [DatabaseRestorer]，
- * 不修改任何备份/恢复实现。验证 v2 备份 → 校验 → 恢复到 v2 → `servings` 与
+ * 不修改任何备份/恢复实现。验证 v4 备份 → 校验 → 恢复到 v4 → `servings` 与
  * 计算记录（含需求行）完整可读。
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [34])
-class BackupRestoreV2Test {
+class BackupRestoreV4Test {
     @get:Rule
     val temporaryFolder = TemporaryFolder()
 
@@ -53,9 +53,9 @@ class BackupRestoreV2Test {
     }
 
     @Test
-    fun `backs up v2 and restores servings and calculation records intact`() =
+    fun `backs up v4 and restores servings and calculation records intact`() =
         runBlocking {
-            val source = createV2Database()
+            val source = createV4Database()
             val archive = ByteArrayOutputStream()
             val manifest =
                 BackupArchiveWriter().write(
@@ -63,13 +63,13 @@ class BackupRestoreV2Test {
                     databaseFile = source,
                     appVersionName = "0.1.0",
                     appVersionCode = 100,
-                    schemaVersion = 2,
+                    schemaVersion = 4,
                     installId = "install-1",
                     device = BackupDevice("Google", "Pixel", 34),
                     counts = mapOf("calculation_record" to 1L, "recipe_version" to 1L),
                 )
 
-            assertThat(manifest.app.schemaVersion).isEqualTo(2)
+            assertThat(manifest.app.schemaVersion).isEqualTo(4)
             val verified = BackupArchiveVerifier().verify(ByteArrayInputStream(archive.toByteArray()))
             assertThat(verified).isInstanceOf(Outcome.Success::class.java)
 
@@ -83,7 +83,7 @@ class BackupRestoreV2Test {
 
             val restored = openRestored()
             val sqlite = restored.openHelper.writableDatabase
-            assertThat(userVersion(sqlite)).isEqualTo(2)
+            assertThat(userVersion(sqlite)).isEqualTo(4)
             assertThat(restored.recipeVersionDao().findById(VERSION_ID)?.servings).isEqualTo(3)
 
             val record = requireNotNull(restored.calculationRecordDao().findById(CALC_ID))
@@ -112,7 +112,7 @@ class BackupRestoreV2Test {
         }
 
     @Suppress("LongMethod") // 测试夹具需要在同一处构造完整 v2 数据，便于对照恢复结果
-    private suspend fun createV2Database(): java.io.File {
+    private suspend fun createV4Database(): java.io.File {
         context.deleteDatabase(SOURCE_DB)
         val built =
             Room

@@ -42,6 +42,7 @@ data class SaveSauceDraftInput(
     val yieldAmount: Double,
     val yieldUnit: Unit,
     val components: List<SauceDraftLineInput>,
+    val instructions: String? = null,
 )
 
 /**
@@ -83,6 +84,7 @@ class SaveSauceDraftUseCase(
                         status = VersionStatus.DRAFT,
                         yield = Quantity(input.yieldAmount, input.yieldUnit),
                         components = components,
+                        instructions = input.instructions?.trim()?.takeIf { it.isNotEmpty() },
                     )
                 repository.saveDraft(version)
             }.flatMap { it }

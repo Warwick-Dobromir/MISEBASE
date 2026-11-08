@@ -100,6 +100,8 @@ class SaucesUiTest {
                     onEdit = {},
                     onPublish = {},
                     onDismissError = {},
+                    relations = emptyList(),
+                    onOpenRelation = { _, _ -> },
                 )
             }
         }

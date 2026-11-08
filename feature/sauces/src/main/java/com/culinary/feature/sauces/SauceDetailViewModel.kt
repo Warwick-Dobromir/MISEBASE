@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.culinary.core.common.Outcome
 import com.culinary.core.domain.model.SauceId
 import com.culinary.core.domain.model.SauceVersionId
+import com.culinary.core.domain.usecase.kitchen.ObserveKitchenRelationsUseCase
 import com.culinary.core.domain.usecase.sauce.GetSauceDetailUseCase
 import com.culinary.core.domain.usecase.sauce.PublishSauceVersionUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -24,6 +25,7 @@ class SauceDetailViewModel
         savedStateHandle: SavedStateHandle,
         private val getSauceDetail: GetSauceDetailUseCase,
         private val publishSauceVersion: PublishSauceVersionUseCase,
+        private val getRelations: ObserveKitchenRelationsUseCase,
     ) : ViewModel() {
         private val sauceId = SauceId(savedStateHandle.get<String>(SaucesRoutes.ARG_SAUCE_ID).orEmpty())
         private val _uiState = MutableStateFlow(SauceDetailUiState())
@@ -31,6 +33,11 @@ class SauceDetailViewModel
 
         init {
             load()
+            viewModelScope.launch {
+                getRelations(sauceId.value).collect { relations ->
+                    _uiState.update { it.copy(relations = relations) }
+                }
+            }
         }
 
         fun load() {

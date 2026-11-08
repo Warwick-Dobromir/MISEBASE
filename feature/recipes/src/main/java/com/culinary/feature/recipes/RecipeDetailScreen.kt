@@ -21,9 +21,13 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.culinary.core.designsystem.component.CulinaryButton
 import com.culinary.core.designsystem.component.CulinaryButtonVariant
+import com.culinary.core.designsystem.component.CulinaryRelationItem
+import com.culinary.core.designsystem.component.CulinaryRelationSection
 import com.culinary.core.designsystem.component.CulinaryTextField
 import com.culinary.core.designsystem.component.ErrorBanner
 import com.culinary.core.designsystem.component.LoadingRows
@@ -35,6 +39,8 @@ import com.culinary.core.designsystem.component.StatusTone
 import com.culinary.core.designsystem.theme.CulinarySizes
 import com.culinary.core.designsystem.theme.CulinarySpacing
 import com.culinary.core.domain.model.ExpandedRecipe
+import com.culinary.core.domain.model.KitchenRecordKind
+import com.culinary.core.domain.model.KitchenRelatedRecord
 import com.culinary.core.domain.model.RecipeComponentKind
 import com.culinary.core.domain.model.RecipeComponentView
 import com.culinary.core.domain.model.RecipeDetail
@@ -46,10 +52,12 @@ import com.culinary.core.domain.model.VersionStatus
 @Composable
 fun RecipeDetailRoute(
     onEdit: (String) -> Unit,
+    onOpenRelation: (KitchenRecordKind, String) -> Unit = { _, _ -> },
     modifier: Modifier = Modifier,
     viewModel: RecipeDetailViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { viewModel.load() }
 
     RecipeDetailScreen(
         state = state,
@@ -58,6 +66,7 @@ fun RecipeDetailRoute(
         onServingsChange = viewModel::onTargetServingsChange,
         onExpand = viewModel::expand,
         onRetry = viewModel::load,
+        onOpenRelation = onOpenRelation,
         modifier = modifier,
     )
 }
@@ -70,6 +79,7 @@ private fun RecipeDetailScreen(
     onServingsChange: (String) -> Unit,
     onExpand: () -> Unit,
     onRetry: () -> Unit,
+    onOpenRelation: (KitchenRecordKind, String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(modifier = modifier.fillMaxSize()) {
@@ -99,6 +109,7 @@ private fun RecipeDetailScreen(
                     onPublish = onPublish,
                     onServingsChange = onServingsChange,
                     onExpand = onExpand,
+                    onOpenRelation = onOpenRelation,
                 )
         }
     }
@@ -112,6 +123,7 @@ internal fun RecipeDetailContent(
     onPublish: (RecipeVersionId) -> Unit,
     onServingsChange: (String) -> Unit,
     onExpand: () -> Unit,
+    onOpenRelation: (KitchenRecordKind, String) -> Unit,
 ) {
     val latestDraft = detail.versions.firstOrNull { it.status == VersionStatus.DRAFT }
     Column(
@@ -122,6 +134,7 @@ internal fun RecipeDetailContent(
                 .padding(bottom = CulinarySizes.listBottomInset),
     ) {
         RecipeHeader(detail)
+        RecipeProfile(detail)
         RecipeCurrentVersion(detail)
         RecipeActions(
             detail = detail,
@@ -136,6 +149,7 @@ internal fun RecipeDetailContent(
             onServingsChange = onServingsChange,
             onExpand = onExpand,
         )
+        RecipeRelationsSection(state.relations, onOpenRelation)
         SectionHeader(
             title = stringResource(R.string.recipes_versions),
             modifier = Modifier.padding(horizontal = CulinarySpacing.pageHorizontal),
@@ -151,18 +165,69 @@ private fun RecipeHeader(detail: RecipeDetail) {
         title = detail.recipe.name,
         supporting = recipeCategoryLabel(detail.recipe.category),
         actions = {
-            StatusBadge(
-                text =
-                    stringResource(
-                        if (detail.recipe.status == com.culinary.core.domain.model.EntityStatus.ACTIVE) {
-                            R.string.recipes_active
-                        } else {
-                            R.string.recipes_archived
-                        },
-                    ),
-                tone = StatusTone.Success,
-            )
+            Row(horizontalArrangement = Arrangement.spacedBy(CulinarySpacing.xs)) {
+                if (detail.recipe.isSeed) {
+                    StatusBadge(text = stringResource(R.string.recipes_seed_badge), tone = StatusTone.Accent)
+                }
+                StatusBadge(
+                    text =
+                        stringResource(
+                            if (detail.recipe.status == com.culinary.core.domain.model.EntityStatus.ACTIVE) {
+                                R.string.recipes_active
+                            } else {
+                                R.string.recipes_archived
+                            },
+                        ),
+                    tone = StatusTone.Success,
+                )
+            }
         },
+    )
+}
+
+@Composable
+private fun RecipeProfile(detail: RecipeDetail) {
+    val fields =
+        listOfNotNull(
+            detail.recipe.englishName?.let { stringResource(R.string.recipes_english_name) to it },
+            detail.recipe.allergenNotes?.let { stringResource(R.string.recipes_allergen) to it },
+            detail.recipe.ingredientSummary?.let { stringResource(R.string.recipes_ingredient_summary) to it },
+            detail.currentVersion?.instructions?.let { stringResource(R.string.recipes_instructions) to it },
+        )
+    if (fields.isEmpty()) return
+    Column(modifier = Modifier.padding(horizontal = CulinarySpacing.pageHorizontal)) {
+        SectionHeader(title = stringResource(R.string.recipes_profile))
+        fields.forEach { (label, value) ->
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Text(
+                text = value,
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.padding(bottom = CulinarySpacing.sm),
+            )
+        }
+    }
+}
+
+@Composable
+private fun RecipeRelationsSection(
+    relations: List<KitchenRelatedRecord>,
+    onOpenRelation: (KitchenRecordKind, String) -> Unit,
+) {
+    CulinaryRelationSection(
+        title = stringResource(R.string.recipes_relations),
+        items =
+            relations.map { relation ->
+                CulinaryRelationItem(
+                    eyebrow = relation.relationLabel,
+                    title = relation.targetLabel,
+                    onClick = { onOpenRelation(relation.targetKind, relation.targetRecordId) },
+                )
+            },
     )
 }
 

@@ -14,6 +14,13 @@ data class Ingredient(
     val status: EntityStatus,
     val category: String? = null,
     val description: String? = null,
+    val storageNotes: String? = null,
+    val allergenNotes: String? = null,
+    val englishName: String? = null,
+    val exampleProducts: String? = null,
+    val seedNote: String? = null,
+    val seedId: String? = null,
+    val seedVersion: String? = null,
 ) {
     init {
         require(name.isNotBlank()) { "ingredient name must not be blank" }
@@ -21,4 +28,6 @@ data class Ingredient(
     }
 
     val isActive: Boolean get() = status == EntityStatus.ACTIVE
+
+    val isSeed: Boolean get() = seedId != null
 }

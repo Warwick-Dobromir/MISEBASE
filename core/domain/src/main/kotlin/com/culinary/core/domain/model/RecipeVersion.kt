@@ -15,6 +15,7 @@ data class RecipeVersion(
     val components: List<RecipeComponent>,
     val servings: Int = 1,
     val isCurrent: Boolean = false,
+    val instructions: String? = null,
 ) {
     init {
         require(versionNo > 0) { "versionNo must be > 0, was $versionNo" }

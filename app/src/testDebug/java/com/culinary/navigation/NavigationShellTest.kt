@@ -18,7 +18,7 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
-/** N3 导航外壳 UI：五项底栏、中央扫码、设置入底栏、顶栏不再有设置图标。 */
+/** 五项等规格底栏：首页 / 厨房 / 扫码 / 库存 / 我的，扫码不再凸起。 */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [34])
 class NavigationShellTest {
@@ -26,7 +26,7 @@ class NavigationShellTest {
     val compose = createComposeRule()
 
     @Test
-    fun `bottom bar shows exactly the five N3 entries`() {
+    fun `bottom bar shows exactly the five equal entries`() {
         compose.setContent {
             CulinaryTheme {
                 CulinaryBottomBar(currentRoute = HOME_ROUTE, onSelect = {})
@@ -34,43 +34,59 @@ class NavigationShellTest {
         }
 
         compose.onNodeWithText("首页").assertIsDisplayed().assertIsSelected()
-        compose.onNodeWithText("知识库").assertIsDisplayed()
+        compose.onNodeWithText("厨房").assertIsDisplayed()
         compose.onNodeWithText("扫码").assertIsDisplayed()
         compose.onNodeWithText("库存").assertIsDisplayed()
-        compose.onNodeWithText("设置").assertIsDisplayed()
+        compose.onNodeWithText("我的").assertIsDisplayed()
         compose.onAllNodesWithText("酱汁").assertCountEquals(0)
         compose.onAllNodesWithText("食材").assertCountEquals(0)
         compose.onAllNodesWithText("菜谱").assertCountEquals(0)
-        compose.onAllNodes(isSelectable()).assertCountEquals(5)
+
+        val items = compose.onAllNodes(isSelectable()).fetchSemanticsNodes()
+        assertThat(items).hasSize(5)
+        val widths = items.map { it.boundsInRoot.width }
+        assertThat(widths.maxOrNull()!!).isWithin(1f).of(widths.minOrNull()!!)
     }
 
     @Test
-    fun `library tab route keeps knowledge library selected`() {
+    fun `kitchen tab route keeps kitchen selected`() {
         compose.setContent {
             CulinaryTheme {
                 CulinaryBottomBar(currentRoute = LIBRARY_TAB_ROUTE, onSelect = {})
             }
         }
 
-        compose.onNodeWithText("知识库").assertIsSelected()
+        compose.onNodeWithText("厨房").assertIsSelected()
         compose.onNodeWithText("首页").assertIsNotSelected()
         compose.onAllNodes(isSelectable()).assertCountEquals(5)
     }
 
     @Test
-    fun `settings is selected when it is the active bottom entry`() {
+    fun `scan is a normal selected tab on the scan route`() {
+        compose.setContent {
+            CulinaryTheme {
+                CulinaryBottomBar(currentRoute = SCAN_ROUTE, onSelect = {})
+            }
+        }
+
+        compose.onNodeWithText("扫码").assertIsDisplayed().assertIsSelected()
+        compose.onNodeWithText("厨房").assertIsNotSelected()
+    }
+
+    @Test
+    fun `profile entry is selected when it is the active bottom entry`() {
         compose.setContent {
             CulinaryTheme {
                 CulinaryBottomBar(currentRoute = SETTINGS_ROUTE, onSelect = {})
             }
         }
 
-        compose.onNodeWithText("设置").assertIsSelected()
+        compose.onNodeWithText("我的").assertIsSelected()
         compose.onNodeWithText("首页").assertIsNotSelected()
     }
 
     @Test
-    fun `center scan button invokes the scan destination`() {
+    fun `scan tab invokes the scan destination`() {
         var selected: CulinaryDestination? = null
         compose.setContent {
             CulinaryTheme {
@@ -137,7 +153,7 @@ class NavigationShellTest {
     }
 
     @Test
-    fun `library top level renders the library title`() {
+    fun `kitchen top level renders the brand action`() {
         compose.setContent {
             CulinaryTheme {
                 AppTopBar(
@@ -151,6 +167,25 @@ class NavigationShellTest {
 
         compose.onNodeWithContentDescription("返回首页").assertIsDisplayed()
         compose.onNodeWithContentDescription("设置").assertDoesNotExist()
+    }
+
+    @Test
+    fun `archive top bar shows back and parent kitchen title without search`() {
+        compose.setContent {
+            CulinaryTheme {
+                AppTopBar(
+                    topLevel = CulinaryDestination.LIBRARY,
+                    showBack = true,
+                    title = "厨房",
+                    onOpenHome = {},
+                    onBack = {},
+                )
+            }
+        }
+
+        compose.onNodeWithContentDescription("返回").assertIsDisplayed()
+        compose.onNodeWithText("厨房").assertIsDisplayed()
+        compose.onNodeWithContentDescription("厨房全局搜索").assertDoesNotExist()
     }
 
     @Test

@@ -129,7 +129,14 @@ class SettingsMaintenance
                     }
 
                 val precheckResult =
-                    when (val prechecked = RestorePrecheck(currentSchemaVersion()).check(manifest)) {
+                    // v2/v3 备份在 v4 上通过已测试的迁移链恢复；更老版本仍需显式迁移路径。
+                    when (
+                        val prechecked =
+                            RestorePrecheck(
+                                currentSchemaVersion = currentSchemaVersion(),
+                                testedMigrationSources = setOf(2, 3),
+                            ).check(manifest)
+                    ) {
                         is Outcome.Success -> prechecked.value
                         is Outcome.Failure -> return@withContext prechecked
                     }

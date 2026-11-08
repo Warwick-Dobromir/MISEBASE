@@ -17,6 +17,14 @@ data class Sauce(
     val usageNotes: String? = null,
     val storageNotes: String? = null,
     val shelfLifeDays: Int? = null,
+    val englishName: String? = null,
+    val mainIngredients: String? = null,
+    val preparationSummary: String? = null,
+    val keyParameters: String? = null,
+    val adjustableNotes: String? = null,
+    val seedNote: String? = null,
+    val seedId: String? = null,
+    val seedVersion: String? = null,
 ) {
     init {
         require(name.isNotBlank()) { "sauce name must not be blank" }
@@ -25,4 +33,6 @@ data class Sauce(
     }
 
     val isActive: Boolean get() = status == EntityStatus.ACTIVE
+
+    val isSeed: Boolean get() = seedId != null
 }

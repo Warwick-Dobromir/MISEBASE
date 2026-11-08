@@ -9,6 +9,7 @@ import com.culinary.core.domain.model.EntityStatus
 import com.culinary.core.domain.model.Ingredient
 import com.culinary.core.domain.model.IngredientId
 import com.culinary.core.domain.model.IngredientUnitConversion
+import com.culinary.core.domain.model.KitchenRelatedRecord
 import com.culinary.core.domain.model.Quantity
 import com.culinary.core.domain.model.Recipe
 import com.culinary.core.domain.model.RecipeCategory
@@ -24,11 +25,13 @@ import com.culinary.core.domain.model.UnitDimension
 import com.culinary.core.domain.model.UnitId
 import com.culinary.core.domain.model.VersionStatus
 import com.culinary.core.domain.repository.IngredientRepository
+import com.culinary.core.domain.repository.KitchenRelationRepository
 import com.culinary.core.domain.repository.RecipeRepository
 import com.culinary.core.domain.repository.SauceRepository
 import com.culinary.core.domain.repository.UnitRepository
 import com.culinary.core.domain.transaction.TransactionRunner
 import com.culinary.core.domain.usecase.ingredient.ListIngredientsUseCase
+import com.culinary.core.domain.usecase.kitchen.ObserveKitchenRelationsUseCase
 import com.culinary.core.domain.usecase.recipe.ExpandRecipeUseCase
 import com.culinary.core.domain.usecase.recipe.GetRecipeDetailUseCase
 import com.culinary.core.domain.usecase.recipe.ListRecipeOptionsUseCase
@@ -290,6 +293,7 @@ class RecipesViewModelTest {
             getRecipeDetail = getDetail,
             expandRecipe = expand,
             publishStoredVersion = publishStored,
+            getRelations = emptyRelations(),
         )
 
     private fun editorViewModel(id: String?): RecipeEditorViewModel =
@@ -503,3 +507,10 @@ class RecipesViewModelTest {
         const val SAUCE_VERSION_ID = "sauce-v1"
     }
 }
+
+private fun emptyRelations(): ObserveKitchenRelationsUseCase =
+    ObserveKitchenRelationsUseCase(
+        object : KitchenRelationRepository {
+            override fun observeForRecord(recordId: String): Flow<List<KitchenRelatedRecord>> = flowOf(emptyList())
+        },
+    )

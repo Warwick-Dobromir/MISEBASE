@@ -46,9 +46,9 @@ android {
     defaultConfig {
         // 包名锁定 com.culinary（MB-S6-001 §2），禁止修改。
         applicationId = "com.culinary"
-        // Stage 6 发布基线（MB-S6-001 §3.3）。
-        versionCode = 1
-        versionName = "1.0.0"
+        // 原发布为 1.0.0 (1)；1.0.1 厨房首页、1.0.2 六库统一；本次 1.0.3 (4) 覆盖升级，签名与包名保持不变。
+        versionCode = 4
+        versionName = "1.0.3"
     }
 
     testOptions {

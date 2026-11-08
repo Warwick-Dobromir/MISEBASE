@@ -1,0 +1,41 @@
+KITCHEN-HOME build / test summary
+Date: 2026-11-08
+
+Command:
+.\gradlew.bat :app:testDebugUnitTest :app:assembleDebug
+
+Result: BUILD SUCCESSFUL
+
+Unit tests:
+Test suites: 10
+Tests: 38
+Failures: 0
+Errors: 0
+
+Included suites:
+- com.culinary.crash.CrashLogWriterTest: 3
+- com.culinary.home.HomeScreenSmallHeightTest: 1
+- com.culinary.home.HomeScreenTest: 3
+- com.culinary.home.HomeViewModelTest: 4
+- com.culinary.kitchen.KitchenScreenTest: 4
+- com.culinary.kitchen.KitchenViewModelTest: 2
+- com.culinary.library.LibraryScreenTest: 2
+- com.culinary.library.LibraryTabTest: 3
+- com.culinary.navigation.CulinaryDestinationTest: 6
+- com.culinary.navigation.NavigationShellTest: 10
+
+Quality:
+.\gradlew.bat :app:ktlintCheck :app:detekt
+=> BUILD SUCCESSFUL
+
+APK:
+D:\MISEBASE\dist\KITCHEN-HOME-001\MISEBASE-1.0.0-kitchen-home-20261108-debug.apk
+Size: 39,116,272 bytes
+SHA-256: 4d1ad79ee5973fb417c167b2bf4f751c2ca2f245d2d8bd258a28228c6a754f00
+
+APK verification:
+apksigner verify => Verifies
+Scheme v2 => true
+Package: com.culinary
+versionCode=1, versionName=1.0.0
+minSdk=26, targetSdk=36

@@ -99,6 +99,14 @@ class SauceEditorViewModel
                 it.copy(
                     name = detail.sauce.name,
                     family = detail.sauce.family.orEmpty(),
+                    englishName = detail.sauce.englishName.orEmpty(),
+                    usageNotes = detail.sauce.usageNotes.orEmpty(),
+                    mainIngredients = detail.sauce.mainIngredients.orEmpty(),
+                    preparationSummary = detail.sauce.preparationSummary.orEmpty(),
+                    keyParameters = detail.sauce.keyParameters.orEmpty(),
+                    storageNotes = detail.sauce.storageNotes.orEmpty(),
+                    flavorProfile = detail.sauce.flavorProfile.orEmpty(),
+                    adjustableNotes = detail.sauce.adjustableNotes.orEmpty(),
                     yieldAmount =
                         version
                             ?.yield
@@ -127,6 +135,38 @@ class SauceEditorViewModel
 
         fun onFamilyChange(value: String) {
             _uiState.update { it.copy(family = value) }
+        }
+
+        fun onEnglishNameChange(value: String) {
+            _uiState.update { it.copy(englishName = value) }
+        }
+
+        fun onUsageNotesChange(value: String) {
+            _uiState.update { it.copy(usageNotes = value) }
+        }
+
+        fun onMainIngredientsChange(value: String) {
+            _uiState.update { it.copy(mainIngredients = value) }
+        }
+
+        fun onPreparationSummaryChange(value: String) {
+            _uiState.update { it.copy(preparationSummary = value) }
+        }
+
+        fun onKeyParametersChange(value: String) {
+            _uiState.update { it.copy(keyParameters = value) }
+        }
+
+        fun onStorageNotesChange(value: String) {
+            _uiState.update { it.copy(storageNotes = value) }
+        }
+
+        fun onFlavorProfileChange(value: String) {
+            _uiState.update { it.copy(flavorProfile = value) }
+        }
+
+        fun onAdjustableNotesChange(value: String) {
+            _uiState.update { it.copy(adjustableNotes = value) }
         }
 
         fun onYieldAmountChange(value: String) {
@@ -201,6 +241,14 @@ class SauceEditorViewModel
                                 id = submission.sauceId,
                                 name = submission.name,
                                 family = submission.family,
+                                englishName = submission.englishName,
+                                usageNotes = submission.usageNotes,
+                                mainIngredients = submission.mainIngredients,
+                                preparationSummary = submission.preparationSummary,
+                                keyParameters = submission.keyParameters,
+                                storageNotes = submission.storageNotes,
+                                flavorProfile = submission.flavorProfile,
+                                adjustableNotes = submission.adjustableNotes,
                             ),
                         )
                 ) {
@@ -245,6 +293,14 @@ class SauceEditorViewModel
                 sauceId = state.sauceId?.let { SauceId(it) },
                 name = basics.name,
                 family = state.family.trim().takeIf { it.isNotEmpty() },
+                englishName = state.englishName.trim().takeIf { it.isNotEmpty() },
+                usageNotes = state.usageNotes.trim().takeIf { it.isNotEmpty() },
+                mainIngredients = state.mainIngredients.trim().takeIf { it.isNotEmpty() },
+                preparationSummary = state.preparationSummary.trim().takeIf { it.isNotEmpty() },
+                keyParameters = state.keyParameters.trim().takeIf { it.isNotEmpty() },
+                storageNotes = state.storageNotes.trim().takeIf { it.isNotEmpty() },
+                flavorProfile = state.flavorProfile.trim().takeIf { it.isNotEmpty() },
+                adjustableNotes = state.adjustableNotes.trim().takeIf { it.isNotEmpty() },
                 yieldAmount = basics.yieldAmount,
                 yieldUnit = basics.yieldUnit,
                 components = components,
@@ -307,6 +363,14 @@ class SauceEditorViewModel
             val sauceId: SauceId?,
             val name: String,
             val family: String?,
+            val englishName: String?,
+            val usageNotes: String?,
+            val mainIngredients: String?,
+            val preparationSummary: String?,
+            val keyParameters: String?,
+            val storageNotes: String?,
+            val flavorProfile: String?,
+            val adjustableNotes: String?,
             val yieldAmount: Double,
             val yieldUnit: UnitModel,
             val components: List<SauceDraftLineInput>,

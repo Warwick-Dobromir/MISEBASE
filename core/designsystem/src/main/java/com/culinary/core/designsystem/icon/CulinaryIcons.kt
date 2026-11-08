@@ -1,4 +1,4 @@
-﻿package com.culinary.core.designsystem.icon
+package com.culinary.core.designsystem.icon
 
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
@@ -28,6 +28,7 @@ object CulinaryIcons {
     val Inventory: ImageVector by lazy { filledIcon("Culinary.Inventory") { inventorySymbol() } }
     val Scan: ImageVector by lazy { filledIcon("Culinary.Scan") { scanSymbol() } }
     val Settings: ImageVector by lazy { filledIcon("Culinary.Settings") { settingsSymbol() } }
+    val Profile: ImageVector by lazy { filledIcon("Culinary.Profile") { profileSymbol() } }
 
     // ---- 知识库 ----
     val Ingredient: ImageVector by lazy { filledIcon("Culinary.Ingredient") { ingredientSymbol() } }
@@ -42,6 +43,7 @@ object CulinaryIcons {
     val CheckCircle: ImageVector by lazy { filledIcon("Culinary.CheckCircle") { checkCircleSymbol() } }
     val Close: ImageVector by lazy { filledIcon("Culinary.Close") { closeSymbol() } }
     val More: ImageVector by lazy { filledIcon("Culinary.More") { moreSymbol() } }
+    val Timer: ImageVector by lazy { filledIcon("Culinary.Timer") { timerSymbol() } }
     val Search: ImageVector by lazy { filledIcon("Culinary.Search") { searchSymbol() } }
     val Filter: ImageVector by lazy { filledIcon("Culinary.Filter") { filterSymbol() } }
     val Sort: ImageVector by lazy { filledIcon("Culinary.Sort") { sortSymbol() } }

@@ -1,3 +1,5 @@
+@file:Suppress("TooManyFunctions") // 导航图按功能域拆分 composable，集中注册必然超过函数阈值
+
 package com.culinary.navigation
 
 import androidx.compose.animation.core.tween
@@ -11,6 +13,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -29,8 +32,12 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.culinary.R
+import com.culinary.core.data.kitchen.KitchenArchiveEntry
+import com.culinary.core.data.kitchen.KitchenArchiveKind
+import com.culinary.core.data.kitchen.KitchenReferenceType
 import com.culinary.core.designsystem.component.CulinaryIconButton
 import com.culinary.core.designsystem.icon.CulinaryIcons
+import com.culinary.core.domain.model.KitchenRecordKind
 import com.culinary.feature.ingredients.IngredientDetailRoute
 import com.culinary.feature.ingredients.IngredientEditorRoute
 import com.culinary.feature.ingredients.IngredientsRoute
@@ -52,16 +59,39 @@ import com.culinary.feature.sauces.SaucesRoutes
 import com.culinary.feature.scan.ScanConfirmRoute
 import com.culinary.feature.scan.ScanRoute
 import com.culinary.feature.scan.ScanRoutes
+import com.culinary.home.HOME_PLACEHOLDER_ROUTE
+import com.culinary.home.HOME_PLACEHOLDER_SECTION_ARG
+import com.culinary.home.HOME_PURCHASE_DETAIL_ROUTE
+import com.culinary.home.HOME_PURCHASE_ID_ARG
+import com.culinary.home.HomePlaceholderRoute
+import com.culinary.home.HomePlaceholderSection
+import com.culinary.home.HomePurchasePlaceholderRoute
 import com.culinary.home.HomeRoute
-import com.culinary.library.LibraryRoute
-import com.culinary.library.LibraryTab
+import com.culinary.home.homePlaceholderRoute
+import com.culinary.home.homePurchaseDetailRoute
+import com.culinary.kitchen.KitchenRoute
+import com.culinary.kitchen.archive.ArchiveLibraryRoute
+import com.culinary.kitchen.archive.KITCHEN_REFERENCE_DETAIL_ROUTE
+import com.culinary.kitchen.archive.KITCHEN_REFERENCE_EDIT_ROUTE
+import com.culinary.kitchen.archive.KITCHEN_REFERENCE_ID_ARG
+import com.culinary.kitchen.archive.KITCHEN_REFERENCE_KIND_ARG
+import com.culinary.kitchen.archive.KITCHEN_REFERENCE_NEW_ROUTE
+import com.culinary.kitchen.archive.KitchenArchiveSection
+import com.culinary.kitchen.archive.KitchenReferenceDetailRoute
+import com.culinary.kitchen.archive.KitchenReferenceEditorRoute
+import com.culinary.kitchen.archive.kitchenReferenceDetailRoute
+import com.culinary.kitchen.archive.kitchenReferenceEditRoute
+import com.culinary.kitchen.archive.kitchenReferenceNewRoute
+import com.culinary.kitchen.archive.kitchenReferenceTypeFromRoute
+import com.culinary.kitchen.archive.toArchiveSection
+import com.culinary.kitchen.archive.toReferenceType
 import com.culinary.settings.SettingsRoute
 
 /**
- * 应用导航外壳（N3，MB-HOME-002）。
+ * 应用导航外壳。
  *
- * 底部五项：首页 / 知识库 / 扫码（凸起）/ 库存 / 设置。
- * 知识库是外层聚合页，内部 Tab 复用三个独立 feature；设置已从顶栏移到底部。
+ * 底部五项：首页 / 厨房 / 扫码 / 库存 / 我的。
+ * 厨房一级页自带品牌头；六个资料库页面保留底栏并显示“返回 + 厨房”顶栏。
  */
 @Composable
 fun CulinaryNavHost(
@@ -72,6 +102,8 @@ fun CulinaryNavHost(
     val currentRoute = backStackEntry?.destination?.route
     val topLevel = CulinaryDestination.forRoute(currentRoute)
     val isHome = currentRoute == HOME_ROUTE
+    val isKitchen = currentRoute == LIBRARY_ROUTE
+    val isKitchenArchive = currentRoute == LIBRARY_TAB_ROUTE
     val showBottomBar = topLevel != null
 
     // 冷启动（新进程）一律回到首页；同一进程内的旋转/重建仍保留用户当前路由。
@@ -84,12 +116,18 @@ fun CulinaryNavHost(
     Scaffold(
         modifier = modifier.fillMaxSize(),
         topBar = {
-            // 首页自带品牌区；其他页面保留返回/品牌 + 标题。
-            if (!isHome) {
+            // 首页与厨房首页自带品牌区；资料库页显示“返回 + 厨房”。
+            if (!isHome && !isKitchen) {
                 Column {
                     AppTopBar(
                         topLevel = topLevel,
-                        showBack = !showBottomBar && currentRoute != null,
+                        showBack = (!showBottomBar && currentRoute != null) || isKitchenArchive,
+                        title =
+                            if (isKitchenArchive) {
+                                stringResource(R.string.destination_kitchen)
+                            } else {
+                                null
+                            },
                         onOpenHome = { navController.openHome() },
                         onBack = { navController.popBackStack() },
                     )
@@ -127,9 +165,18 @@ internal fun AppTopBar(
     showBack: Boolean,
     onOpenHome: () -> Unit,
     onBack: () -> Unit,
+    title: String? = null,
 ) {
     TopAppBar(
-        title = {},
+        title = {
+            if (!title.isNullOrBlank()) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+            }
+        },
         navigationIcon = {
             when {
                 showBack ->
@@ -170,6 +217,8 @@ private fun AppNavGraph(
         popExitTransition = { fadeOut(animationSpec = tween(durationMillis = 120)) },
     ) {
         homeGraph(navController)
+        homePlaceholderGraph()
+        kitchenReferenceGraph(navController)
         libraryGraph(navController)
         sauceGraph(navController)
         ingredientGraph(navController)
@@ -183,28 +232,59 @@ private fun AppNavGraph(
 private fun NavGraphBuilder.homeGraph(navController: NavHostController) {
     composable(HOME_ROUTE) {
         HomeRoute(
-            onOpenInventory = { navController.navigateToTopLevel(CulinaryDestination.INVENTORY.route) },
-            onOpenReceipt = { navController.navigate(InventoryRoutes.receipt()) },
-            onOpenSauces = { navController.navigateToTopLevel(libraryRoute(LibraryTab.SAUCES)) },
-            onOpenIngredients = { navController.navigateToTopLevel(libraryRoute(LibraryTab.INGREDIENTS)) },
-            onOpenRecipes = { navController.navigateToTopLevel(libraryRoute(LibraryTab.RECIPES)) },
-            onOpenScan = { navController.navigateToTopLevel(CulinaryDestination.SCAN.route) },
-            onNewIngredient = { navController.navigate(IngredientsRoutes.edit(null)) },
-            onNewRecipe = { navController.navigate(RecipesRoutes.edit(null)) },
-            onNewSauce = { navController.navigate(SaucesRoutes.edit(null)) },
-            onOpenHome = { navController.openHome() },
+            onOpenTimer = { navController.navigate(homePlaceholderRoute(HomePlaceholderSection.TIMER)) },
+            onOpenSettings = { navController.navigateToTopLevel(SETTINGS_ROUTE) },
+            onOpenAllPlans = { navController.navigate(homePlaceholderRoute(HomePlaceholderSection.PLANS)) },
+            onAddPlan = { navController.navigate(homePlaceholderRoute(HomePlaceholderSection.PLAN_ADD)) },
+            onNewPurchase = { navController.navigate(homePlaceholderRoute(HomePlaceholderSection.PURCHASE_ADD)) },
+            onOpenAllPurchases = { navController.navigate(homePlaceholderRoute(HomePlaceholderSection.PURCHASES)) },
+            onOpenPurchase = { purchaseId -> navController.navigate(homePurchaseDetailRoute(purchaseId)) },
+        )
+    }
+}
+
+/** 首页二级入口的明确占位页；本次不提前实现这些页面。 */
+private fun NavGraphBuilder.homePlaceholderGraph() {
+    composable(
+        route = HOME_PLACEHOLDER_ROUTE,
+        arguments =
+            listOf(
+                navArgument(HOME_PLACEHOLDER_SECTION_ARG) { type = NavType.StringType },
+            ),
+    ) { entry ->
+        val section =
+            HomePlaceholderSection.fromRoute(
+                entry.arguments?.getString(HOME_PLACEHOLDER_SECTION_ARG),
+            ) ?: HomePlaceholderSection.TIMER
+        HomePlaceholderRoute(section = section)
+    }
+    composable(
+        route = HOME_PURCHASE_DETAIL_ROUTE,
+        arguments =
+            listOf(
+                navArgument(HOME_PURCHASE_ID_ARG) { type = NavType.StringType },
+            ),
+    ) { entry ->
+        HomePurchasePlaceholderRoute(
+            purchaseId = entry.arguments?.getString(HOME_PURCHASE_ID_ARG).orEmpty(),
         )
     }
 }
 
 /**
- * 知识库聚合页：`library` 为默认（酱汁）Tab，`library/{tab}` 供首页数字直达。
+ * 厨房一级页与六个资料库页。
  *
- * 两种目的地都复用 [LibraryRoute]；底层仍是三个独立 feature 的列表 Route。
+ * `library` 显示厨房首页；`library/{tab}` 的 tab 取六个档案类型。
+ * 资料库页共享统一骨架，底栏保持厨房选中；详情/编辑路由由各自能力处理。
  */
 private fun NavGraphBuilder.libraryGraph(navController: NavHostController) {
     composable(LIBRARY_ROUTE) {
-        libraryDestination(navController = navController, initialTab = LibraryTab.SAUCES)
+        KitchenRoute(
+            onOpenCategory = { category ->
+                navController.navigate("$LIBRARY_ROUTE/${category.toArchiveSection().routeValue}")
+            },
+            onOpenSearchEntry = { entry -> navController.openArchiveEntry(entry) },
+        )
     }
     composable(
         route = LIBRARY_TAB_ROUTE,
@@ -213,28 +293,108 @@ private fun NavGraphBuilder.libraryGraph(navController: NavHostController) {
                 navArgument(LIBRARY_TAB_ARG) { type = NavType.StringType },
             ),
     ) { entry ->
-        val tab = LibraryTab.fromRoute(entry.arguments?.getString(LIBRARY_TAB_ARG)) ?: LibraryTab.SAUCES
-        libraryDestination(navController = navController, initialTab = tab)
+        val section =
+            KitchenArchiveSection.fromRoute(entry.arguments?.getString(LIBRARY_TAB_ARG))
+                ?: KitchenArchiveSection.SAUCES
+        ArchiveLibraryRoute(
+            section = section,
+            onAdd = { navController.openArchiveAdd(section) },
+            onOpenEntry = { archiveEntry -> navController.openArchiveEntry(archiveEntry) },
+        )
     }
 }
 
-@Composable
-private fun libraryDestination(
-    navController: NavHostController,
-    initialTab: LibraryTab,
-) {
-    LibraryRoute(
-        initialTab = initialTab,
-        onOpenSauce = { sauceId -> navController.navigate(SaucesRoutes.detail(sauceId)) },
-        onAddSauce = { navController.navigate(SaucesRoutes.edit(null)) },
-        onOpenIngredient = { id -> navController.navigate(IngredientsRoutes.detail(id)) },
-        onAddIngredient = { navController.navigate(IngredientsRoutes.edit(null)) },
-        onOpenRecipe = { id -> navController.navigate(RecipesRoutes.detail(id)) },
-        onAddRecipe = { navController.navigate(RecipesRoutes.edit(null)) },
-    )
+private fun NavHostController.openArchiveEntry(entry: KitchenArchiveEntry) {
+    when (entry.kind) {
+        KitchenArchiveKind.SAUCE -> navigate(SaucesRoutes.detail(entry.id))
+        KitchenArchiveKind.INGREDIENT -> navigate(IngredientsRoutes.detail(entry.id))
+        KitchenArchiveKind.RECIPE -> navigate(RecipesRoutes.detail(entry.id))
+        KitchenArchiveKind.TECHNIQUE,
+        KitchenArchiveKind.PRODUCTION_STANDARD,
+        KitchenArchiveKind.STORAGE_STANDARD,
+        ->
+            entry.kind.toReferenceType()?.let { type ->
+                navigate(kitchenReferenceDetailRoute(type, entry.id))
+            }
+    }
 }
 
-private fun libraryRoute(tab: LibraryTab): String = "$LIBRARY_ROUTE/${tab.route}"
+/** 关联跳转只复用既有详情路由，不引入新的页面层级。 */
+private fun NavHostController.openKitchenRelated(
+    kind: KitchenRecordKind,
+    id: String,
+) {
+    when (kind) {
+        KitchenRecordKind.SAUCE -> navigate(SaucesRoutes.detail(id))
+        KitchenRecordKind.INGREDIENT -> navigate(IngredientsRoutes.detail(id))
+        KitchenRecordKind.RECIPE -> navigate(RecipesRoutes.detail(id))
+        KitchenRecordKind.TECHNIQUE ->
+            navigate(kitchenReferenceDetailRoute(KitchenReferenceType.TECHNIQUE, id))
+
+        KitchenRecordKind.PRODUCTION_STANDARD ->
+            navigate(kitchenReferenceDetailRoute(KitchenReferenceType.PRODUCTION_STANDARD, id))
+
+        KitchenRecordKind.STORAGE_STANDARD ->
+            navigate(kitchenReferenceDetailRoute(KitchenReferenceType.STORAGE_STANDARD, id))
+    }
+}
+
+private fun NavHostController.openArchiveAdd(section: KitchenArchiveSection) {
+    when (section.kind) {
+        KitchenArchiveKind.SAUCE -> navigate(SaucesRoutes.edit(null))
+        KitchenArchiveKind.INGREDIENT -> navigate(IngredientsRoutes.edit(null))
+        KitchenArchiveKind.RECIPE -> navigate(RecipesRoutes.edit(null))
+        KitchenArchiveKind.TECHNIQUE,
+        KitchenArchiveKind.PRODUCTION_STANDARD,
+        KitchenArchiveKind.STORAGE_STANDARD,
+        ->
+            section.kind.toReferenceType()?.let { type ->
+                navigate(kitchenReferenceNewRoute(type))
+            }
+    }
+}
+
+private fun NavGraphBuilder.kitchenReferenceGraph(navController: NavHostController) {
+    composable(
+        route = KITCHEN_REFERENCE_NEW_ROUTE,
+        arguments =
+            listOf(
+                navArgument(KITCHEN_REFERENCE_KIND_ARG) { type = NavType.StringType },
+            ),
+    ) {
+        KitchenReferenceEditorRoute(onSaved = { navController.popBackStack() })
+    }
+    composable(
+        route = KITCHEN_REFERENCE_DETAIL_ROUTE,
+        arguments =
+            listOf(
+                navArgument(KITCHEN_REFERENCE_KIND_ARG) { type = NavType.StringType },
+                navArgument(KITCHEN_REFERENCE_ID_ARG) { type = NavType.StringType },
+            ),
+    ) { entry ->
+        val type = kitchenReferenceTypeFromRoute(entry.arguments?.getString(KITCHEN_REFERENCE_KIND_ARG))
+        val id = entry.arguments?.getString(KITCHEN_REFERENCE_ID_ARG).orEmpty()
+        KitchenReferenceDetailRoute(
+            onEdit = {
+                if (type != null) {
+                    navController.navigate(kitchenReferenceEditRoute(type, id))
+                }
+            },
+            onArchived = { navController.popBackStack() },
+            onOpenRelation = navController::openKitchenRelated,
+        )
+    }
+    composable(
+        route = KITCHEN_REFERENCE_EDIT_ROUTE,
+        arguments =
+            listOf(
+                navArgument(KITCHEN_REFERENCE_KIND_ARG) { type = NavType.StringType },
+                navArgument(KITCHEN_REFERENCE_ID_ARG) { type = NavType.StringType },
+            ),
+    ) {
+        KitchenReferenceEditorRoute(onSaved = { navController.popBackStack() })
+    }
+}
 
 private fun NavGraphBuilder.sauceGraph(navController: NavHostController) {
     composable(SaucesRoutes.LIST) {
@@ -246,6 +406,7 @@ private fun NavGraphBuilder.sauceGraph(navController: NavHostController) {
     composable(SaucesRoutes.DETAIL) {
         SauceDetailRoute(
             onEdit = { sauceId -> navController.navigate(SaucesRoutes.edit(sauceId)) },
+            onOpenRelation = navController::openKitchenRelated,
         )
     }
     composable(SaucesRoutes.EDIT) {
@@ -264,6 +425,7 @@ private fun NavGraphBuilder.ingredientGraph(navController: NavHostController) {
         IngredientDetailRoute(
             onEdit = { id -> navController.navigate(IngredientsRoutes.edit(id)) },
             onArchived = { navController.popBackStack() },
+            onOpenRelation = navController::openKitchenRelated,
         )
     }
     composable(IngredientsRoutes.EDIT) {
@@ -281,6 +443,7 @@ private fun NavGraphBuilder.recipeGraph(navController: NavHostController) {
     composable(RecipesRoutes.DETAIL) {
         RecipeDetailRoute(
             onEdit = { id -> navController.navigate(RecipesRoutes.edit(id)) },
+            onOpenRelation = navController::openKitchenRelated,
         )
     }
     composable(RecipesRoutes.EDIT) {
@@ -353,12 +516,17 @@ private fun NavHostController.backOrStart(startRoute: String) {
     }
 }
 
-/** 从首页或任意一级页面进入 N3 一级入口，保持五入口的保存/恢复语义。 */
+/**
+ * 从任意页面进入五项一级入口。
+ *
+ * 一级入口必须可确定地打开自己的根页；这里不保存/恢复子页面状态，
+ * 避免厨房根页与 `library/{tab}` 共用路由时被错误还原为上次的 Tab。
+ */
 private fun NavHostController.navigateToTopLevel(route: String) {
     navigate(route) {
-        popUpTo(graph.findStartDestination().id) { saveState = true }
+        popUpTo(graph.findStartDestination().id) { saveState = false }
         launchSingleTop = true
-        restoreState = true
+        restoreState = false
     }
 }
 

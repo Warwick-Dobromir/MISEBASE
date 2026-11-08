@@ -1,7 +1,10 @@
 package com.culinary.core.data.di
 
 import com.culinary.core.database.CulinaryDatabase
+import com.culinary.core.database.dao.AppMetadataDao
 import com.culinary.core.database.dao.IngredientUnitConversionDao
+import com.culinary.core.database.dao.KitchenReferenceDao
+import com.culinary.core.database.dao.KitchenRelationDao
 import com.culinary.core.database.dao.RecipeComponentDao
 import com.culinary.core.database.dao.RecipeDao
 import com.culinary.core.database.dao.RecipeVersionDao
@@ -46,4 +49,16 @@ object ArchiveDaoModule {
     @Provides
     @Singleton
     fun provideRecipeComponentDao(database: CulinaryDatabase): RecipeComponentDao = database.recipeComponentDao()
+
+    @Provides
+    @Singleton
+    fun provideKitchenReferenceDao(database: CulinaryDatabase): KitchenReferenceDao = database.kitchenReferenceDao()
+
+    @Provides
+    @Singleton
+    fun provideKitchenRelationDao(database: CulinaryDatabase): KitchenRelationDao = database.kitchenRelationDao()
+
+    @Provides
+    @Singleton
+    fun provideAppMetadataDao(database: CulinaryDatabase): AppMetadataDao = database.appMetadataDao()
 }

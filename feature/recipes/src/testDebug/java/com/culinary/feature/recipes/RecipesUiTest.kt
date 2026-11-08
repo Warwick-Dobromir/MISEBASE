@@ -114,6 +114,7 @@ class RecipesUiTest {
                     onPublish = {},
                     onServingsChange = {},
                     onExpand = {},
+                    onOpenRelation = { _, _ -> },
                 )
             }
         }

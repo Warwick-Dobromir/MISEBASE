@@ -19,12 +19,14 @@
     <string name="startup_recovery_body">数据库无法正常打开（%1$s）。现有文件已保留，可重试；如持续失败，请从备份恢复。</string>
 
     <string name="destination_home">首页</string>
+    <string name="destination_kitchen">厨房</string>
     <string name="destination_library">知识库</string>
     <string name="destination_sauces">酱汁</string>
     <string name="destination_ingredients">食材</string>
     <string name="destination_recipes">菜谱</string>
     <string name="destination_inventory">库存</string>
     <string name="destination_scan">扫码</string>
+    <string name="destination_profile">我的</string>
     <string name="destination_settings">设置</string>
     <string name="scan_confirm_title">导入确认</string>
 
@@ -56,6 +58,159 @@
     <string name="home_knowledge_error">知识库数据暂时无法读取</string>
     <string name="home_brand_home">返回首页</string>
 
+    <!-- HOME-001 首页（Editorial Minimalism + Swiss） -->
+    <string name="home_brand_subtitle" translatable="false">Culinary Records and Inventory System</string>
+    <string name="home_timer">计时器</string>
+    <string name="home_more">设置与更多</string>
+
+    <string name="home_today_title">今日计划</string>
+    <string name="home_today_subtitle" translatable="false">Today’s Preparation</string>
+    <string name="home_today_count">%1$02d/%2$02d</string>
+    <string name="home_today_view_all">查看全部</string>
+    <string name="home_today_add">＋ 添加计划</string>
+    <string name="home_plan_stock">准备今日高汤</string>
+    <string name="home_plan_sauce">准备今日酱汁</string>
+    <string name="home_plan_inventory">检查食材库存</string>
+    <string name="home_plan_recipes">整理今日菜谱</string>
+
+    <string name="home_purchase_title">采购单</string>
+    <string name="home_purchase_subtitle" translatable="false">Purchase Records</string>
+    <string name="home_purchase_new">＋ 新建</string>
+    <string name="home_purchase_status">待采购</string>
+    <string name="home_purchase_date">创建日期：%1$s</string>
+    <string name="home_purchase_time">创建时间：%1$s</string>
+    <string name="home_purchase_view_all">查看完整采购单</string>
+    <string name="home_purchase_demo_note">以上为本地演示数据，未写入正式数据库。</string>
+    <string name="home_purchase_vegetables">今日蔬菜采购</string>
+    <string name="home_purchase_dairy">乳制品补充</string>
+    <string name="home_purchase_meat">肉类及高汤原料</string>
+
+    <string name="home_placeholder_timer_title">计时器</string>
+    <string name="home_placeholder_timer_body">计时器页面尚未在本次首页任务中开发，当前为明确占位。</string>
+    <string name="home_placeholder_plans_title">全部今日计划</string>
+    <string name="home_placeholder_plans_body">完整计划列表尚未在本次首页任务中开发，当前为明确占位。</string>
+    <string name="home_placeholder_plan_add_title">添加计划</string>
+    <string name="home_placeholder_plan_add_body">添加计划页面尚未在本次首页任务中开发，当前为明确占位。</string>
+    <string name="home_placeholder_purchases_title">完整采购单</string>
+    <string name="home_placeholder_purchases_body">完整采购单列表尚未在本次首页任务中开发，当前为明确占位。</string>
+    <string name="home_placeholder_purchase_add_title">新建采购单</string>
+    <string name="home_placeholder_purchase_add_body">新建采购单页面尚未在本次首页任务中开发，当前为明确占位。</string>
+    <string name="home_placeholder_purchase_detail_title">采购单详情</string>
+    <string name="home_placeholder_purchase_detail_body">“%1$s”的详情页面尚未在本次首页任务中开发，当前为明确占位。</string>
+    <string name="home_placeholder_purchase_unknown">所选采购单</string>
+
+    <!-- 厨房首页 -->
+    <string name="kitchen_title">厨房</string>
+    <string name="kitchen_subtitle" translatable="false">CULINARY</string>
+
+    <string name="kitchen_group_references">烹饪资料</string>
+    <string name="kitchen_group_references_eyebrow" translatable="false">CULINARY REFERENCES</string>
+    <string name="kitchen_group_standards">工作标准</string>
+    <string name="kitchen_group_standards_eyebrow" translatable="false">WORKING STANDARDS</string>
+    <string name="kitchen_category_sauces">酱汁</string>
+    <string name="kitchen_category_sauces_eyebrow" translatable="false">SAUCES</string>
+    <string name="kitchen_category_ingredients">食材</string>
+    <string name="kitchen_category_ingredients_eyebrow" translatable="false">INGREDIENTS</string>
+    <string name="kitchen_category_recipes">菜谱</string>
+    <string name="kitchen_category_recipes_eyebrow" translatable="false">RECIPES</string>
+    <string name="kitchen_category_techniques">烹饪技术</string>
+    <string name="kitchen_category_techniques_eyebrow" translatable="false">COOKING TECHNIQUES</string>
+    <string name="kitchen_category_production_standards">制作标准</string>
+    <string name="kitchen_category_production_standards_eyebrow" translatable="false">PRODUCTION STANDARDS</string>
+    <string name="kitchen_category_storage_standards">储存标准</string>
+    <string name="kitchen_category_storage_standards_eyebrow" translatable="false">STORAGE STANDARDS</string>
+    <string name="kitchen_count">%1$d 项</string>
+    <string name="kitchen_count_unavailable">—</string>
+    <string name="kitchen_count_error">分类数量暂时无法读取。</string>
+    <!-- 厨房全局搜索 -->
+    <string name="kitchen_search_entry">厨房全局搜索</string>
+    <string name="kitchen_search_title">厨房搜索</string>
+    <string name="kitchen_search_close">关闭搜索</string>
+    <string name="kitchen_search_hint">搜索全部厨房档案</string>
+    <string name="kitchen_search_prompt">输入关键词搜索酱汁、食材、菜谱、烹饪技术和工作标准。</string>
+    <string name="kitchen_search_empty">没有匹配的厨房档案。</string>
+    <string name="kitchen_search_results">%1$d 条结果</string>
+
+    <!-- 厨房资料库统一页面 -->
+    <string name="kitchen_library_total">共 %1$d 条档案</string>
+    <string name="kitchen_library_display">显示 %1$d / %2$d 条记录</string>
+    <string name="kitchen_library_category">分类</string>
+    <string name="kitchen_library_all">全部</string>
+    <string name="kitchen_library_uncategorized">未分类</string>
+    <string name="kitchen_library_empty">还没有档案</string>
+    <string name="kitchen_library_empty_body">使用当前资料库的新建入口建立第一条档案。</string>
+    <string name="kitchen_library_no_match">没有匹配的档案</string>
+    <string name="kitchen_library_loading">正在读取档案…</string>
+    <string name="kitchen_library_load_error">资料库读取失败，请稍后重试。</string>
+    <string name="kitchen_archive_subtitle">%1$s档案</string>
+    <string name="kitchen_library_new_sauce">＋ 新建酱汁</string>
+    <string name="kitchen_library_new_ingredient">＋ 新建食材</string>
+    <string name="kitchen_library_new_recipe">＋ 新建菜谱</string>
+    <string name="kitchen_library_new_technique">＋ 新建烹饪技术</string>
+    <string name="kitchen_library_new_production_standard">＋ 新建制作标准</string>
+    <string name="kitchen_library_new_storage_standard">＋ 新建储存标准</string>
+
+    <string name="kitchen_library_title_sauces">酱汁库</string>
+    <string name="kitchen_library_subtitle_sauces" translatable="false">SAUCE COLLECTION</string>
+    <string name="kitchen_library_search_sauces">搜索酱汁名称</string>
+    <string name="kitchen_library_title_ingredients">食材库</string>
+    <string name="kitchen_library_subtitle_ingredients" translatable="false">INGREDIENT COLLECTION</string>
+    <string name="kitchen_library_search_ingredients">搜索食材名称</string>
+    <string name="kitchen_library_title_recipes">菜谱库</string>
+    <string name="kitchen_library_subtitle_recipes" translatable="false">RECIPE COLLECTION</string>
+    <string name="kitchen_library_search_recipes">搜索菜谱名称</string>
+    <string name="kitchen_library_title_techniques">烹饪技术</string>
+    <string name="kitchen_library_subtitle_techniques" translatable="false">COOKING TECHNIQUES</string>
+    <string name="kitchen_library_search_techniques">搜索技术名称</string>
+    <string name="kitchen_library_title_production_standards">制作标准</string>
+    <string name="kitchen_library_subtitle_production_standards" translatable="false">PRODUCTION STANDARDS</string>
+    <string name="kitchen_library_search_production_standards">搜索标准名称</string>
+    <string name="kitchen_library_title_storage_standards">储存标准</string>
+    <string name="kitchen_library_subtitle_storage_standards" translatable="false">STORAGE STANDARDS</string>
+    <string name="kitchen_library_search_storage_standards">搜索标准名称</string>
+
+    <string name="kitchen_type_sauce">酱汁</string>
+    <string name="kitchen_type_ingredient">食材</string>
+    <string name="kitchen_type_recipe">菜谱</string>
+    <string name="kitchen_type_technique">烹饪技术</string>
+    <string name="kitchen_type_production_standard">制作标准</string>
+    <string name="kitchen_type_storage_standard">储存标准</string>
+
+    <string name="kitchen_recipe_category_stock">汤底 / 高汤</string>
+    <string name="kitchen_recipe_category_prep">预制件</string>
+    <string name="kitchen_recipe_category_component">组件</string>
+    <string name="kitchen_recipe_category_dish">菜品</string>
+    <string name="kitchen_recipe_category_other">其他</string>
+
+    <!-- 新增参考资料编辑/详情 -->
+    <string name="kitchen_reference_new_title">新建%1$s</string>
+    <string name="kitchen_reference_edit_title">编辑%1$s</string>
+    <string name="kitchen_reference_detail_eyebrow" translatable="false">KITCHEN ARCHIVE</string>
+    <string name="kitchen_reference_no_description">暂无说明。</string>
+    <string name="kitchen_reference_seed_badge">测试种子</string>
+    <string name="kitchen_reference_english_name">英文名称：%1$s</string>
+    <string name="kitchen_reference_seed_note">测试备注：%1$s</string>
+    <string name="kitchen_reference_relations">关联档案</string>
+    <string name="kitchen_reference_name">名称</string>
+    <string name="kitchen_reference_name_hint">请输入名称</string>
+    <string name="kitchen_reference_category">分类（可选）</string>
+    <string name="kitchen_reference_category_hint">例如：基础、进阶</string>
+    <string name="kitchen_reference_description">说明（可选）</string>
+    <string name="kitchen_reference_description_hint">补充技术要点、适用范围或储存要求</string>
+    <string name="kitchen_reference_save">保存</string>
+    <string name="kitchen_reference_saving">正在保存…</string>
+    <string name="kitchen_reference_edit">编辑</string>
+    <string name="kitchen_reference_archive">归档</string>
+    <string name="kitchen_reference_archive_title">归档这条档案？</string>
+    <string name="kitchen_reference_archive_body">归档后不再出现在资料库和搜索结果中，历史记录保留，不会物理删除。</string>
+    <string name="kitchen_reference_archive_confirm">归档</string>
+    <string name="kitchen_reference_cancel">取消</string>
+    <string name="kitchen_reference_not_found">档案不存在或已归档。</string>
+    <string name="kitchen_reference_error">操作失败，请重试。</string>
+    <string name="kitchen_reference_name_error">名称不能为空。</string>
+    <string name="kitchen_reference_duplicate_error">同一分类下已存在同名称档案。</string>
+    <string name="kitchen_reference_saved">已保存</string>
+
     <!-- MB-S6-002 设置页 -->
     <string name="settings_intro">备份、恢复与诊断都在本机完成。应用没有网络权限，数据不会离开这台设备。</string>
     <string name="settings_footer">数据保存在本机 · 离线可用</string>
@@ -80,6 +235,21 @@
     <string name="settings_restore_unknown_file">已选择的备份文件</string>
     <string name="settings_cancel">取消</string>
 
+    <string name="settings_section_seed">厨房测试种子</string>
+    <string name="settings_seed_body">导入 MISEBASE 厨房页面 v1 测试档案，用于验证六类列表、详情、搜索、筛选和关联。</string>
+    <string name="settings_seed_counts">已导入 %1$s：食材 %2$d · 酱汁 %3$d · 菜谱 %4$d · 技术/标准 %5$d</string>
+    <string name="settings_seed_none">尚未导入测试种子。</string>
+    <string name="settings_seed_cleared">测试种子已清理，重启后不会自动回填。</string>
+    <string name="settings_seed_reimport">重新导入种子</string>
+    <string name="settings_seed_clear">清理种子</string>
+    <string name="settings_seed_clear_title">清理厨房测试种子？</string>
+    <string name="settings_seed_clear_body">只删除带 seed_id 标记的测试档案和关联，不影响正式档案；清理后重启不会自动回填。</string>
+    <string name="settings_seed_clear_confirm">清理</string>
+    <string name="settings_seed_running">正在处理测试种子…</string>
+    <string name="settings_seed_done_import">测试种子已完整导入。</string>
+    <string name="settings_seed_done_clear">测试种子已清理。</string>
+    <string name="settings_seed_failed">测试种子操作失败，已回滚。</string>
+    <string name="settings_seed_hint">测试数据以 seed_id 标记，可与正式数据区分。</string>
     <string name="settings_section_diagnostics">诊断信息</string>
     <string name="settings_diag_app_version">应用版本</string>
     <string name="settings_diag_db_version">数据库版本</string>

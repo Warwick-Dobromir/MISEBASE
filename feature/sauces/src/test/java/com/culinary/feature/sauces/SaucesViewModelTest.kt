@@ -8,6 +8,7 @@ import com.culinary.core.domain.model.ComponentTarget
 import com.culinary.core.domain.model.EntityStatus
 import com.culinary.core.domain.model.Ingredient
 import com.culinary.core.domain.model.IngredientId
+import com.culinary.core.domain.model.KitchenRelatedRecord
 import com.culinary.core.domain.model.Quantity
 import com.culinary.core.domain.model.RecipeId
 import com.culinary.core.domain.model.RecipeVersionId
@@ -20,10 +21,12 @@ import com.culinary.core.domain.model.UnitDimension
 import com.culinary.core.domain.model.UnitId
 import com.culinary.core.domain.model.VersionStatus
 import com.culinary.core.domain.repository.IngredientRepository
+import com.culinary.core.domain.repository.KitchenRelationRepository
 import com.culinary.core.domain.repository.SauceRepository
 import com.culinary.core.domain.repository.UnitRepository
 import com.culinary.core.domain.transaction.TransactionRunner
 import com.culinary.core.domain.usecase.ingredient.ListIngredientsUseCase
+import com.culinary.core.domain.usecase.kitchen.ObserveKitchenRelationsUseCase
 import com.culinary.core.domain.usecase.sauce.GetSauceDetailUseCase
 import com.culinary.core.domain.usecase.sauce.ListSaucesUseCase
 import com.culinary.core.domain.usecase.sauce.PublishSauceVersionUseCase
@@ -95,6 +98,7 @@ class SaucesViewModelTest {
                     savedStateHandle = SavedStateHandle(mapOf(SaucesRoutes.ARG_SAUCE_ID to SAUCE_ID)),
                     getSauceDetail = detail,
                     publishSauceVersion = publish,
+                    getRelations = emptyRelations(),
                 )
 
             advanceUntilIdle()
@@ -257,6 +261,7 @@ class SaucesViewModelTest {
                     savedStateHandle = SavedStateHandle(mapOf(SaucesRoutes.ARG_SAUCE_ID to SAUCE_ID)),
                     getSauceDetail = detail,
                     publishSauceVersion = publish,
+                    getRelations = emptyRelations(),
                 )
             advanceUntilIdle()
 
@@ -404,3 +409,10 @@ class SaucesViewModelTest {
         const val UNIT_ID = "unit-g"
     }
 }
+
+private fun emptyRelations(): ObserveKitchenRelationsUseCase =
+    ObserveKitchenRelationsUseCase(
+        object : KitchenRelationRepository {
+            override fun observeForRecord(recordId: String): Flow<List<KitchenRelatedRecord>> = flowOf(emptyList())
+        },
+    )

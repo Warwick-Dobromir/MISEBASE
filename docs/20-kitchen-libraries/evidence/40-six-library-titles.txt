@@ -1,0 +1,11 @@
+最终安装包 1.0.2 (3) 设备实测：六个资料库页面
+
+sauces     => 酱汁库   | SAUCE COLLECTION      | 共 0 条档案
+ingredients=> 食材库   | INGREDIENT COLLECTION | 共 1 条档案
+recipes    => 菜谱库   | RECIPE COLLECTION     | 共 0 条档案
+techniques => 烹饪技术 | COOKING TECHNIQUES    | 共 0 条档案
+production => 制作标准 | PRODUCTION STANDARDS  | 共 0 条档案
+storage    => 储存标准 | STORAGE STANDARDS     | 共 0 条档案
+
+六页均显示：返回箭头 + 厨房标题、页面标题 + 英文副标题 + 总数、
+本库搜索、分类与新建入口、列表/空态，以及底部五项导航（厨房选中）。

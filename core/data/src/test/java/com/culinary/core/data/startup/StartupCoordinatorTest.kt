@@ -7,6 +7,7 @@ import com.culinary.core.database.entity.IngredientEntity
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
+import org.json.JSONObject
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -14,15 +15,16 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
+import java.io.File
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import javax.inject.Provider
 
 /**
- * 启动协调：全新库、持久化 v2 库、v1→v2 迁移、版本过高与损坏六条路径。
+ * 启动协调：全新库、持久化 v4 库、v1→v4 迁移、版本过高与损坏六条路径。
  *
- * 回归重点：`EXPECTED_SCHEMA_VERSION` 必须与 `CulinaryDatabase` 的 v2 对齐；否则
- * 已持久化的 v2 库在第二次启动时会被误判为 `Incompatible`。
+ * 回归重点：`EXPECTED_SCHEMA_VERSION` 必须与 `CulinaryDatabase` 的 v4 对齐；否则
+ * 已持久化的 v4 库在第二次启动时会被误判为 `Incompatible`。
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [34])
@@ -55,18 +57,18 @@ class StartupCoordinatorTest {
         }
 
     @Test
-    fun `reports ready for a persisted schema v2 database`() =
+    fun `reports ready for a persisted schema v4 database`() =
         runBlocking {
-            createPersistedV2Database()
+            createPersistedV4Database()
 
             val state = coordinator().start()
 
             assertThat(state).isEqualTo(StartupState.Ready)
-            assertThat(requireNotNull(database).openHelper.writableDatabase.version).isEqualTo(2)
+            assertThat(requireNotNull(database).openHelper.writableDatabase.version).isEqualTo(4)
         }
 
     @Test
-    fun `migrates a v1 database to v2 and reports ready`() =
+    fun `migrates a v1 database to v4 and reports ready`() =
         runBlocking {
             createV1Database()
             assertV1Fixture()
@@ -79,8 +81,10 @@ class StartupCoordinatorTest {
             SQLiteDatabase
                 .openDatabase(context.getDatabasePath(DATABASE_NAME).path, null, SQLiteDatabase.OPEN_READONLY)
                 .use { sqlite ->
-                    assertThat(sqlite.version).isEqualTo(2)
+                    assertThat(sqlite.version).isEqualTo(4)
                     assertThat(columnNames(sqlite, "recipe_version")).contains("servings")
+                    assertThat(tableNames(sqlite)).contains("kitchen_reference")
+                    assertThat(tableNames(sqlite)).contains("kitchen_relation")
                     assertThat(count(sqlite, "ingredient")).isEqualTo(1)
                 }
         }
@@ -91,7 +95,7 @@ class StartupCoordinatorTest {
             val file = context.getDatabasePath(DATABASE_NAME)
             file.parentFile?.mkdirs()
             SQLiteDatabase.openOrCreateDatabase(file, null).use { sqlite ->
-                sqlite.version = 3
+                sqlite.version = 5
             }
             val coordinator = coordinator()
 
@@ -99,8 +103,8 @@ class StartupCoordinatorTest {
 
             assertThat(state).isInstanceOf(StartupState.Incompatible::class.java)
             val incompatible = state as StartupState.Incompatible
-            assertThat(incompatible.databaseVersion).isEqualTo(3)
-            assertThat(incompatible.appSchemaVersion).isEqualTo(2)
+            assertThat(incompatible.databaseVersion).isEqualTo(5)
+            assertThat(incompatible.appSchemaVersion).isEqualTo(4)
         }
 
     @Test
@@ -127,7 +131,7 @@ class StartupCoordinatorTest {
 
     private fun buildRoom(): CulinaryDatabase = DatabaseFactory.create(context, writeExecutor, readExecutor)
 
-    private fun createPersistedV2Database() {
+    private fun createPersistedV4Database() {
         context.deleteDatabase(DATABASE_NAME)
         val built = buildRoom()
         built.openHelper.writableDatabase
@@ -145,33 +149,38 @@ class StartupCoordinatorTest {
         built.close()
     }
 
-    /**
-     * 用当前 v2 库反向构造 v1 夹具：重建不含 `servings` 的 `recipe_version`、删除 v2 新增表、
-     * 降 user_version、恢复 v1 identity hash。这样 JVM 测试不需要 instrumentation/room-testing，
-     * 也不依赖 `1.json` 的路径。
-     */
+    /** 直接从冻结的 `schemas/1.json` 建 v1 夹具，避免从 v4 反向删列造成伪结构。 */
     private fun createV1Database() {
-        createPersistedV2Database()
+        context.deleteDatabase(DATABASE_NAME)
         val file = context.getDatabasePath(DATABASE_NAME)
-        SQLiteDatabase.openDatabase(file.path, null, SQLiteDatabase.OPEN_READWRITE).use { sqlite ->
-            V1_RECIPE_VERSION_TRIGGERS.forEach { trigger ->
-                sqlite.execSQL("DROP TRIGGER IF EXISTS `$trigger`")
+        file.parentFile?.mkdirs()
+        SQLiteDatabase.openOrCreateDatabase(file, null).use { sqlite ->
+            val root = JSONObject(File(SCHEMA_DIR, "1.json").readText())
+            val databaseJson = root.getJSONObject("database")
+            val entities = databaseJson.getJSONArray("entities")
+            for (index in 0 until entities.length()) {
+                val entity = entities.getJSONObject(index)
+                val tableName = entity.getString("tableName")
+                sqlite.execSQL(entity.getString("createSql").replace("\${TABLE_NAME}", tableName))
+                val indices = entity.optJSONArray("indices") ?: continue
+                for (indexIndex in 0 until indices.length()) {
+                    val createSql = indices.getJSONObject(indexIndex).getString("createSql")
+                    sqlite.execSQL(createSql.replace("\${TABLE_NAME}", tableName))
+                }
             }
-            sqlite.execSQL("PRAGMA foreign_keys = OFF")
-            sqlite.execSQL(V1_RECIPE_VERSION_TABLE)
-            sqlite.execSQL(V1_RECIPE_VERSION_COPY)
-            sqlite.execSQL("DROP TABLE `recipe_version`")
-            sqlite.execSQL("ALTER TABLE `recipe_version_v1` RENAME TO `recipe_version`")
-            V1_RECIPE_VERSION_INDICES.forEach(sqlite::execSQL)
-            sqlite.execSQL("PRAGMA foreign_keys = ON")
-
-            sqlite.execSQL("DROP TABLE IF EXISTS `calculation_record_line`")
-            sqlite.execSQL("DROP TABLE IF EXISTS `calculation_record`")
             sqlite.execSQL(
-                "INSERT OR REPLACE INTO room_master_table (id, identity_hash) VALUES (42, ?)",
-                arrayOf(V1_IDENTITY_HASH),
+                "CREATE TABLE IF NOT EXISTS room_master_table " +
+                    "(id INTEGER PRIMARY KEY, identity_hash TEXT)",
+            )
+            sqlite.execSQL(
+                "INSERT OR REPLACE INTO room_master_table (id, identity_hash) " +
+                    "VALUES (42, '${databaseJson.getString("identityHash")}')",
             )
             sqlite.version = 1
+            sqlite.execSQL(
+                "INSERT INTO ingredient (id, name, normalized_name, status, created_at, updated_at, revision) " +
+                    "VALUES ('ingredient-1', '酱油', '酱油', 'ACTIVE', $NOW, $NOW, 1)",
+            )
         }
         check(file.exists()) { "v1 fixture was not created" }
     }
@@ -194,6 +203,8 @@ class StartupCoordinatorTest {
                 assertThat(columnNames(sqlite, "recipe_version")).doesNotContain("servings")
                 assertThat(tableNames(sqlite)).doesNotContain("calculation_record")
                 assertThat(tableNames(sqlite)).doesNotContain("calculation_record_line")
+                assertThat(tableNames(sqlite)).doesNotContain("kitchen_reference")
+                assertThat(tableNames(sqlite)).doesNotContain("kitchen_relation")
             }
     }
 
@@ -215,65 +226,7 @@ class StartupCoordinatorTest {
 
     private companion object {
         val DATABASE_NAME: String = CulinaryDatabase.DATABASE_NAME
-
-        /** `schemas/1.json` 的 identityHash；v1 Schema 已冻结。 */
-        const val V1_IDENTITY_HASH = "b75e6e1b0cb2ce5b1eb24bad59e0a987"
-
-        val V1_RECIPE_VERSION_TRIGGERS =
-            listOf(
-                "trg_recipe_version_check_insert",
-                "trg_recipe_version_check_update",
-                "trg_recipe_version_published_immutable",
-            )
-
-        /** v1 `recipe_version` 结构（不含 v2 的 `servings`），与 `schemas/1.json` 对齐。 */
-        const val V1_RECIPE_VERSION_TABLE = """
-            CREATE TABLE IF NOT EXISTS `recipe_version_v1` (
-                `id` TEXT NOT NULL,
-                `recipe_id` TEXT NOT NULL,
-                `version_no` INTEGER NOT NULL,
-                `status` TEXT NOT NULL,
-                `yield_qty` REAL NOT NULL,
-                `yield_unit_id` TEXT NOT NULL,
-                `instructions_md` TEXT,
-                `change_note` TEXT,
-                `based_on_version_id` TEXT,
-                `is_current` INTEGER NOT NULL,
-                `created_at` INTEGER NOT NULL,
-                `published_at` INTEGER,
-                PRIMARY KEY(`id`),
-                FOREIGN KEY(`recipe_id`) REFERENCES `recipe`(`id`)
-                    ON UPDATE NO ACTION ON DELETE CASCADE,
-                FOREIGN KEY(`yield_unit_id`) REFERENCES `unit`(`id`)
-                    ON UPDATE NO ACTION ON DELETE RESTRICT,
-                FOREIGN KEY(`based_on_version_id`) REFERENCES `recipe_version`(`id`)
-                    ON UPDATE NO ACTION ON DELETE SET NULL
-            )
-        """
-
-        const val V1_RECIPE_VERSION_COPY = """
-            INSERT INTO `recipe_version_v1` (
-                `id`, `recipe_id`, `version_no`, `status`, `yield_qty`, `yield_unit_id`,
-                `instructions_md`, `change_note`, `based_on_version_id`, `is_current`,
-                `created_at`, `published_at`
-            )
-            SELECT
-                `id`, `recipe_id`, `version_no`, `status`, `yield_qty`, `yield_unit_id`,
-                `instructions_md`, `change_note`, `based_on_version_id`, `is_current`,
-                `created_at`, `published_at`
-            FROM `recipe_version`
-        """
-
-        val V1_RECIPE_VERSION_INDICES =
-            listOf(
-                "CREATE UNIQUE INDEX IF NOT EXISTS `index_recipe_version_recipe_id_version_no` " +
-                    "ON `recipe_version` (`recipe_id`, `version_no`)",
-                "CREATE INDEX IF NOT EXISTS `index_recipe_version_recipe_id_status` " +
-                    "ON `recipe_version` (`recipe_id`, `status`)",
-                "CREATE INDEX IF NOT EXISTS `index_recipe_version_yield_unit_id` " +
-                    "ON `recipe_version` (`yield_unit_id`)",
-                "CREATE INDEX IF NOT EXISTS `index_recipe_version_based_on_version_id` " +
-                    "ON `recipe_version` (`based_on_version_id`)",
-            )
+        const val SCHEMA_DIR = "../database/schemas/com.culinary.core.database.CulinaryDatabase"
+        const val NOW = 1_760_000_000_000L
     }
 }

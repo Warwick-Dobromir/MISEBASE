@@ -4,10 +4,10 @@ import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 
 /**
- * 导航契约（N3，MB-HOME-002）。
+ * 导航契约（厨房首页改造）。
  *
- * 底部严格五项：首页 / 知识库 / 扫码 / 库存 / 设置。
- * 三个档案库仍保留独立 feature 路由，但不占底部入口。
+ * 底部严格五项：首页 / 厨房 / 扫码 / 库存 / 我的。
+ * 厨房复用原 library 路由；三个档案库仍保留独立 feature 路由，但不占底部入口。
  */
 class CulinaryDestinationTest {
     @Test
@@ -28,7 +28,7 @@ class CulinaryDestinationTest {
     }
 
     @Test
-    fun `knowledge library is one bottom entry with an internal tab route`() {
+    fun `kitchen is one bottom entry with an internal archive tab route`() {
         assertThat(CulinaryDestination.LIBRARY.route).isEqualTo(LIBRARY_ROUTE)
         assertThat(CulinaryDestination.LIBRARY.matches(LIBRARY_ROUTE)).isTrue()
         assertThat(CulinaryDestination.LIBRARY.matches(LIBRARY_TAB_ROUTE)).isTrue()

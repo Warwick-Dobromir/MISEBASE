@@ -2,6 +2,7 @@ package com.culinary.startup
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.culinary.core.data.kitchen.KitchenSeedImporter
 import com.culinary.core.data.startup.StartupCoordinator
 import com.culinary.core.data.startup.StartupState
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -21,6 +22,7 @@ class StartupViewModel
     @Inject
     constructor(
         private val coordinator: StartupCoordinator,
+        private val seedImporter: KitchenSeedImporter,
     ) : ViewModel() {
         private val _state = MutableStateFlow<StartupState?>(null)
         val state: StateFlow<StartupState?> = _state.asStateFlow()
@@ -34,7 +36,12 @@ class StartupViewModel
         private fun start() {
             _state.value = null
             viewModelScope.launch {
-                _state.value = coordinator.start()
+                val startup = coordinator.start()
+                // 种子导入是幂等前置步骤；失败不阻断主界面，事务已回滚，下次启动可重试。
+                if (startup is StartupState.Ready) {
+                    seedImporter.ensureImported()
+                }
+                _state.value = startup
             }
         }
     }

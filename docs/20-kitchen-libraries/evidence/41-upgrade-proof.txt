@@ -1,0 +1,27 @@
+覆盖升级与真实 v2 数据迁移证据
+
+基线：
+- 安装包：MISEBASE-1.0.1-kitchen-home-20261108-release.apk
+- versionCode=2 / versionName=1.0.1
+- 在旧版新增食材：MigrationCarrot
+- 旧库校验：PRAGMA user_version = 2，ingredient 行数 = 1
+
+升级：
+- adb install -r MISEBASE-1.0.2-kitchen-libraries-20261109-release.apk
+- 未卸载旧版，安装结果 Success
+- versionCode=3 / versionName=1.0.2
+- firstInstallTime 保持 2026-11-08 16:59:23，lastUpdateTime 更新为 2026-11-08 17:09:29
+
+结果：
+- 启动进入首页，无 Incompatible / Recovery
+- 厨房首页食材数量 = 1 项
+- 食材库显示 MigrationCarrot
+- 迁移后 PRAGMA user_version = 3
+- kitchen_reference 表存在
+- 运行时局部唯一索引 ux_ingredient_normalized_name、ux_recipe_current 在 onOpen 后恢复
+- 冷启动耗时 849 ms（第二次），无 FATAL / ANR
+
+迁移实现要点：
+- v2 -> v3 只新增 kitchen_reference 及索引
+- 迁移前先 DROP 运行时局部索引，待 Room 校验通过后由 CulinarySchemaExtras.onOpen 重建
+- 不删除、不改写任何既有表

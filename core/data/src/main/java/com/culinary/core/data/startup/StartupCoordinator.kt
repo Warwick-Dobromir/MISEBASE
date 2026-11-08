@@ -66,7 +66,7 @@ class StartupCoordinator(
         }
 
     /**
-     * 文件不存在返回 0（Room 会新建 v1）。
+     * 文件不存在返回 0（Room 会新建当前版本）。
      *
      * 先校验 SQLite 文件头：损坏文件绝不能让 Room 打开——Room 的默认错误处理会删除损坏库，
      * 这违反"不自动清空数据"的硬规则。
@@ -101,11 +101,11 @@ class StartupCoordinator(
         /**
          * 应用期望的数据库 Schema 版本。
          *
-         * **必须与 [com.culinary.core.database.CulinaryDatabase] 的 `@Database(version = 2)`
+         * **必须与 [com.culinary.core.database.CulinaryDatabase] 的 `@Database(version = 4)`
          * 保持同步。** 升级 Schema 时必须同时修改两处，并补“已持久化库再次启动”的回归测试；
          * 否则会把当前版本的库误判为“更新版本”，把应用锁在 [StartupState.Incompatible]。
          */
-        const val EXPECTED_SCHEMA_VERSION = 2
+        const val EXPECTED_SCHEMA_VERSION = 4
 
         val SQLITE_HEADER: ByteArray = "SQLite format 3\u0000".toByteArray(Charsets.ISO_8859_1)
 

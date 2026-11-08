@@ -26,6 +26,13 @@ object IngredientMapper {
                 },
             category = entity.category,
             description = entity.description,
+            storageNotes = entity.storageNotes,
+            allergenNotes = entity.allergenNotes,
+            englishName = entity.englishName,
+            exampleProducts = entity.exampleProducts,
+            seedNote = entity.seedNote,
+            seedId = entity.seedId,
+            seedVersion = entity.seedVersion,
         )
 
     fun toEntity(
@@ -41,6 +48,13 @@ object IngredientMapper {
             defaultUnitId = ingredient.defaultUnitId?.value,
             category = ingredient.category,
             description = ingredient.description,
+            storageNotes = ingredient.storageNotes,
+            allergenNotes = ingredient.allergenNotes,
+            englishName = ingredient.englishName,
+            exampleProducts = ingredient.exampleProducts,
+            seedNote = ingredient.seedNote,
+            seedId = ingredient.seedId,
+            seedVersion = ingredient.seedVersion,
             status =
                 when (ingredient.status) {
                     EntityStatus.ACTIVE -> EntityStatusDb.ACTIVE

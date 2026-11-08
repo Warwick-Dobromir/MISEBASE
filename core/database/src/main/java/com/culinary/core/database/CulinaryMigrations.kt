@@ -5,18 +5,21 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 import com.culinary.core.database.schema.CulinarySchemaExtras
 
 /**
- * Schema v1 → v2（MB-SC-001）。
+ * 数据库迁移。
  *
- * 变更范围只有两项：
- * 1. `recipe_version` 增加 `servings INTEGER NOT NULL DEFAULT 1`；
- * 2. 新增 `calculation_record` 与 `calculation_record_line`。
- *
- * 31 张既有表（含 11 张 DORMANT）不删除、不重建、不改结构。`1.json` 保持不变。
+ * v1 → v2：新增计算记录，并为 recipe_version 增加 servings。
+ * v2 → v3：只新增 kitchen_reference（烹饪技术 / 制作标准 / 储存标准），
+ * 不改既有表、不移动既有数据。
+ * v3 → v4：补充六库档案扩展字段、测试种子标记与档案关系表；旧行全部保持 null。
  */
 internal object CulinaryMigrations {
     val MIGRATION_1_2: Migration = MIGRATION_1_2_IMPL
 
-    val ALL: Array<Migration> = arrayOf(MIGRATION_1_2)
+    val MIGRATION_2_3: Migration = MIGRATION_2_3_IMPL
+
+    val MIGRATION_3_4: Migration = MIGRATION_3_4_IMPL
+
+    val ALL: Array<Migration> = arrayOf(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
 }
 
 private val MIGRATION_1_2_IMPL =
@@ -33,6 +36,131 @@ private val MIGRATION_1_2_IMPL =
             CREATE_INDICES.forEach(db::execSQL)
         }
     }
+
+private val MIGRATION_2_3_IMPL =
+    object : Migration(2, 3) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            // v2 运行时同样会创建不在 Room 导出 schema 中的局部索引；
+            // 迁移校验前移除，onOpen 会按原定义重建。
+            CulinarySchemaExtras.dropPartialIndexes(db)
+            db.execSQL(CREATE_KITCHEN_REFERENCE)
+            CREATE_KITCHEN_REFERENCE_INDICES.forEach(db::execSQL)
+        }
+    }
+
+private val MIGRATION_3_4_IMPL =
+    object : Migration(3, 4) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            // v3 打开时同样会重建运行时局部索引；Room v4 校验前必须先移除。
+            CulinarySchemaExtras.dropPartialIndexes(db)
+            SAUCE_V4_COLUMNS.forEach { db.execSQL("ALTER TABLE `sauce` ADD COLUMN $it") }
+            INGREDIENT_V4_COLUMNS.forEach { db.execSQL("ALTER TABLE `ingredient` ADD COLUMN $it") }
+            RECIPE_V4_COLUMNS.forEach { db.execSQL("ALTER TABLE `recipe` ADD COLUMN $it") }
+            REFERENCE_V4_COLUMNS.forEach { db.execSQL("ALTER TABLE `kitchen_reference` ADD COLUMN $it") }
+            V4_UNIQUE_SEED_INDICES.forEach(db::execSQL)
+            db.execSQL(CREATE_KITCHEN_RELATION)
+            CREATE_KITCHEN_RELATION_INDICES.forEach(db::execSQL)
+        }
+    }
+
+private val SAUCE_V4_COLUMNS =
+    listOf(
+        "`english_name` TEXT",
+        "`main_ingredients` TEXT",
+        "`preparation_summary` TEXT",
+        "`key_parameters` TEXT",
+        "`adjustable_notes` TEXT",
+        "`seed_note` TEXT",
+        "`seed_id` TEXT",
+        "`seed_version` TEXT",
+    )
+
+private val INGREDIENT_V4_COLUMNS =
+    listOf(
+        "`english_name` TEXT",
+        "`example_products` TEXT",
+        "`seed_note` TEXT",
+        "`seed_id` TEXT",
+        "`seed_version` TEXT",
+    )
+
+private val RECIPE_V4_COLUMNS =
+    listOf(
+        "`english_name` TEXT",
+        "`allergen_notes` TEXT",
+        "`seed_note` TEXT",
+        "`seed_id` TEXT",
+        "`seed_version` TEXT",
+    )
+
+private val REFERENCE_V4_COLUMNS =
+    listOf(
+        "`english_name` TEXT",
+        "`seed_note` TEXT",
+        "`seed_id` TEXT",
+        "`seed_version` TEXT",
+    )
+
+private val V4_UNIQUE_SEED_INDICES =
+    listOf(
+        "CREATE UNIQUE INDEX IF NOT EXISTS `index_sauce_seed_id` ON `sauce` (`seed_id`)",
+        "CREATE UNIQUE INDEX IF NOT EXISTS `index_ingredient_seed_id` ON `ingredient` (`seed_id`)",
+        "CREATE UNIQUE INDEX IF NOT EXISTS `index_recipe_seed_id` ON `recipe` (`seed_id`)",
+        "CREATE UNIQUE INDEX IF NOT EXISTS `index_kitchen_reference_seed_id` " +
+            "ON `kitchen_reference` (`seed_id`)",
+    )
+
+private const val CREATE_KITCHEN_RELATION = """
+    CREATE TABLE IF NOT EXISTS `kitchen_relation` (
+        `id` TEXT NOT NULL,
+        `source_record_id` TEXT NOT NULL,
+        `source_kind` TEXT NOT NULL,
+        `target_record_id` TEXT NOT NULL,
+        `target_kind` TEXT NOT NULL,
+        `target_label` TEXT NOT NULL,
+        `relation_label` TEXT NOT NULL,
+        `seed_version` TEXT,
+        `created_at` INTEGER NOT NULL,
+        PRIMARY KEY(`id`)
+    )
+"""
+
+private val CREATE_KITCHEN_RELATION_INDICES =
+    listOf(
+        "CREATE INDEX IF NOT EXISTS `index_kitchen_relation_source_record_id` " +
+            "ON `kitchen_relation` (`source_record_id`)",
+        "CREATE INDEX IF NOT EXISTS `index_kitchen_relation_target_record_id` " +
+            "ON `kitchen_relation` (`target_record_id`)",
+        "CREATE INDEX IF NOT EXISTS `index_kitchen_relation_seed_version` " +
+            "ON `kitchen_relation` (`seed_version`)",
+    )
+
+private const val CREATE_KITCHEN_REFERENCE = """
+    CREATE TABLE IF NOT EXISTS `kitchen_reference` (
+        `id` TEXT NOT NULL,
+        `kind` TEXT NOT NULL,
+        `name` TEXT NOT NULL,
+        `normalized_name` TEXT NOT NULL,
+        `category` TEXT,
+        `description` TEXT,
+        `status` TEXT NOT NULL,
+        `created_at` INTEGER NOT NULL,
+        `updated_at` INTEGER NOT NULL,
+        `deleted_at` INTEGER,
+        `revision` INTEGER NOT NULL,
+        PRIMARY KEY(`id`)
+    )
+"""
+
+private val CREATE_KITCHEN_REFERENCE_INDICES =
+    listOf(
+        "CREATE INDEX IF NOT EXISTS `index_kitchen_reference_kind` " +
+            "ON `kitchen_reference` (`kind`)",
+        "CREATE INDEX IF NOT EXISTS `index_kitchen_reference_status` " +
+            "ON `kitchen_reference` (`status`)",
+        "CREATE INDEX IF NOT EXISTS `index_kitchen_reference_kind_normalized_name` " +
+            "ON `kitchen_reference` (`kind`, `normalized_name`)",
+    )
 
 private const val CREATE_CALCULATION_RECORD = """
     CREATE TABLE IF NOT EXISTS `calculation_record` (

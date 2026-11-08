@@ -47,8 +47,10 @@ class CulinaryMigrationV1ToV2Test {
             val opened = openV2()
             val sqlite = opened.openHelper.writableDatabase
 
-            assertThat(userVersion(sqlite)).isEqualTo(2)
-            assertThat(countTables(sqlite)).isEqualTo(33)
+            assertThat(userVersion(sqlite)).isEqualTo(4)
+            assertThat(countTables(sqlite)).isEqualTo(35)
+            assertThat(tableExists(sqlite, "kitchen_reference")).isTrue()
+            assertThat(tableExists(sqlite, "kitchen_relation")).isTrue()
             assertThat(columnInfo(sqlite, "recipe_version", "servings"))
                 .isEqualTo(ColumnInfo(type = "INTEGER", notNull = 1, defaultValue = "1"))
             assertThat(opened.calculationRecordDao().count()).isEqualTo(0)
@@ -237,6 +239,14 @@ class CulinaryMigrationV1ToV2Test {
         }
         return result
     }
+
+    private fun tableExists(
+        sqlite: SupportSQLiteDatabase,
+        table: String,
+    ): Boolean =
+        sqlite
+            .query("SELECT name FROM sqlite_master WHERE type = 'table' AND name = ?", arrayOf(table))
+            .use { cursor -> cursor.moveToFirst() }
 
     private fun userVersion(sqlite: SupportSQLiteDatabase): Int =
         sqlite.query("PRAGMA user_version").use { cursor ->

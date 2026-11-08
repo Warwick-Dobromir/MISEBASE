@@ -3,6 +3,7 @@ package com.culinary.feature.sauces
 import com.culinary.core.common.CulinaryError
 import com.culinary.core.domain.model.ComponentTarget
 import com.culinary.core.domain.model.Ingredient
+import com.culinary.core.domain.model.KitchenRelatedRecord
 import com.culinary.core.domain.model.Sauce
 import com.culinary.core.domain.model.SauceDetail
 import com.culinary.core.domain.model.Unit as UnitModel
@@ -20,6 +21,7 @@ data class SauceDetailUiState(
     val isLoading: Boolean = true,
     val isPublishing: Boolean = false,
     val error: String? = null,
+    val relations: List<KitchenRelatedRecord> = emptyList(),
 )
 
 /** 编辑器中的组成行；数量保留用户输入的字符串，提交时才解析。 */
@@ -48,6 +50,14 @@ data class SauceEditorUiState(
     val sauceId: String? = null,
     val name: String = "",
     val family: String = "",
+    val englishName: String = "",
+    val usageNotes: String = "",
+    val mainIngredients: String = "",
+    val preparationSummary: String = "",
+    val keyParameters: String = "",
+    val storageNotes: String = "",
+    val flavorProfile: String = "",
+    val adjustableNotes: String = "",
     val yieldAmount: String = "",
     val yieldUnit: UnitModel? = null,
     val units: List<UnitModel> = emptyList(),

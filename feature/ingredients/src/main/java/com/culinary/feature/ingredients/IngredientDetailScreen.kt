@@ -21,10 +21,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.culinary.core.designsystem.component.ConfirmDialog
 import com.culinary.core.designsystem.component.CulinaryButton
 import com.culinary.core.designsystem.component.CulinaryButtonVariant
+import com.culinary.core.designsystem.component.CulinaryRelationItem
+import com.culinary.core.designsystem.component.CulinaryRelationSection
 import com.culinary.core.designsystem.component.CulinaryTextButton
 import com.culinary.core.designsystem.component.ErrorBanner
 import com.culinary.core.designsystem.component.LoadingRows
@@ -35,17 +39,21 @@ import com.culinary.core.designsystem.component.StatusTone
 import com.culinary.core.designsystem.icon.CulinaryIcons
 import com.culinary.core.designsystem.theme.CulinarySpacing
 import com.culinary.core.domain.model.IngredientConversionView
+import com.culinary.core.domain.model.KitchenRecordKind
+import com.culinary.core.domain.model.KitchenRelatedRecord
 
 /** 食材详情路由：档案、默认单位、换算；可编辑或归档。 */
 @Composable
 fun IngredientDetailRoute(
     onEdit: (String) -> Unit,
     onArchived: () -> Unit,
+    onOpenRelation: (KitchenRecordKind, String) -> Unit = { _, _ -> },
     modifier: Modifier = Modifier,
     viewModel: IngredientDetailViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     var showArchiveConfirm by remember { mutableStateOf(false) }
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { viewModel.load() }
 
     LaunchedEffect(state.archived) {
         if (state.archived) onArchived()
@@ -75,6 +83,7 @@ fun IngredientDetailRoute(
                     detailState = state,
                     onEdit = onEdit,
                     onArchive = { showArchiveConfirm = true },
+                    onOpenRelation = onOpenRelation,
                 )
         }
     }
@@ -100,6 +109,7 @@ internal fun IngredientDetailContent(
     detailState: IngredientDetailUiState,
     onEdit: (String) -> Unit,
     onArchive: () -> Unit,
+    onOpenRelation: (KitchenRecordKind, String) -> Unit,
 ) {
     val detail = detailState.detail ?: return
     Column(
@@ -115,21 +125,30 @@ internal fun IngredientDetailContent(
             supporting = detail.ingredient.category ?: stringResource(R.string.ingredients_uncategorized),
         )
         Column(modifier = Modifier.padding(horizontal = CulinarySpacing.pageHorizontal)) {
-            StatusBadge(
-                text =
-                    stringResource(
-                        if (detail.ingredient.isActive) {
-                            R.string.ingredients_active
-                        } else {
-                            R.string.ingredients_archived
-                        },
-                    ),
-                tone = if (detail.ingredient.isActive) StatusTone.Success else StatusTone.Neutral,
-            )
+            Row(horizontalArrangement = Arrangement.spacedBy(CulinarySpacing.xs)) {
+                if (detail.ingredient.isSeed) {
+                    StatusBadge(
+                        text = stringResource(R.string.ingredients_seed_badge),
+                        tone = StatusTone.Accent,
+                    )
+                }
+                StatusBadge(
+                    text =
+                        stringResource(
+                            if (detail.ingredient.isActive) {
+                                R.string.ingredients_active
+                            } else {
+                                R.string.ingredients_archived
+                            },
+                        ),
+                    tone = if (detail.ingredient.isActive) StatusTone.Success else StatusTone.Neutral,
+                )
+            }
         }
 
         IngredientSummary(detail = detail, onEdit = onEdit, onArchive = onArchive)
         ConversionsSection(conversions = detail.conversions)
+        IngredientRelationsSection(detailState.relations, onOpenRelation)
     }
 }
 
@@ -158,6 +177,21 @@ private fun IngredientSummary(
             )
         }
 
+        listOfNotNull(
+            detail.ingredient.englishName?.let { stringResource(R.string.ingredients_english_name) to it },
+            detail.ingredient.exampleProducts?.let { stringResource(R.string.ingredients_example_products) to it },
+            detail.ingredient.storageNotes?.let { stringResource(R.string.ingredients_storage) to it },
+            detail.ingredient.allergenNotes?.let { stringResource(R.string.ingredients_allergen) to it },
+            detail.ingredient.seedNote?.let { stringResource(R.string.ingredients_seed_note) to it },
+        ).forEach { (label, value) ->
+            SectionHeader(title = label)
+            Text(
+                text = value,
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+        }
+
         Spacer(modifier = Modifier.height(CulinarySpacing.block))
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -176,6 +210,24 @@ private fun IngredientSummary(
             )
         }
     }
+}
+
+@Composable
+private fun IngredientRelationsSection(
+    relations: List<KitchenRelatedRecord>,
+    onOpenRelation: (KitchenRecordKind, String) -> Unit,
+) {
+    CulinaryRelationSection(
+        title = stringResource(R.string.ingredients_relations),
+        items =
+            relations.map { relation ->
+                CulinaryRelationItem(
+                    eyebrow = relation.relationLabel,
+                    title = relation.targetLabel,
+                    onClick = { onOpenRelation(relation.targetKind, relation.targetRecordId) },
+                )
+            },
+    )
 }
 
 @Composable

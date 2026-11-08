@@ -1,5 +1,7 @@
 package com.culinary.settings
 
+import com.culinary.core.data.kitchen.KitchenSeedStatus
+
 /**
  * 设置页 UI 状态。
  *
@@ -19,7 +21,21 @@ data class SettingsUiState(
     val showRestoreConfirm: Boolean = false,
     val restartRequired: Boolean = false,
     val showLicenses: Boolean = false,
+    val seedStatus: KitchenSeedStatus? = null,
+    val seedAction: SeedActionState = SeedActionState.Idle,
 )
+
+sealed interface SeedActionState {
+    data object Idle : SeedActionState
+
+    data object Running : SeedActionState
+
+    data class Done(
+        val imported: Boolean,
+    ) : SeedActionState
+
+    data object Failed : SeedActionState
+}
 
 sealed interface BackupState {
     data object Idle : BackupState

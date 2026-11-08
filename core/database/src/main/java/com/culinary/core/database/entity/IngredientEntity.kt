@@ -28,6 +28,7 @@ import com.culinary.core.database.model.EntityStatusDb
         Index(value = ["status"]),
         Index(value = ["category"]),
         Index(value = ["default_unit_id"]),
+        Index(value = ["seed_id"], unique = true),
     ],
 )
 data class IngredientEntity(
@@ -60,6 +61,16 @@ data class IngredientEntity(
     val allergenNotes: String? = null,
     @ColumnInfo(name = "default_unit_id")
     val defaultUnitId: String? = null,
+    @ColumnInfo(name = "english_name")
+    val englishName: String? = null,
+    @ColumnInfo(name = "example_products")
+    val exampleProducts: String? = null,
+    @ColumnInfo(name = "seed_note")
+    val seedNote: String? = null,
+    @ColumnInfo(name = "seed_id")
+    val seedId: String? = null,
+    @ColumnInfo(name = "seed_version")
+    val seedVersion: String? = null,
     @ColumnInfo(name = "status")
     val status: EntityStatusDb = EntityStatusDb.ACTIVE,
     @ColumnInfo(name = "created_at")

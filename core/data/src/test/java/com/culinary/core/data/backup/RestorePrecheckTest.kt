@@ -8,13 +8,13 @@ import org.junit.Test
 class RestorePrecheckTest {
     private val precheck =
         RestorePrecheck(
-            currentSchemaVersion = 3,
-            testedMigrationSources = setOf(2),
+            currentSchemaVersion = 4,
+            testedMigrationSources = setOf(2, 3),
         )
 
     @Test
     fun `accepts a backup with the same schema version`() {
-        val result = precheck.check(manifest(schemaVersion = 3))
+        val result = precheck.check(manifest(schemaVersion = 4))
 
         assertThat(result).isInstanceOf(Outcome.Success::class.java)
         assertThat((result as Outcome.Success).value.migrationRequired).isFalse()
@@ -22,7 +22,7 @@ class RestorePrecheckTest {
 
     @Test
     fun `rejects a newer backup schema`() {
-        val result = precheck.check(manifest(schemaVersion = 4))
+        val result = precheck.check(manifest(schemaVersion = 5))
 
         assertThat((result as Outcome.Failure).error.code.value).isEqualTo("CUL-BACKUP-002")
     }
@@ -33,6 +33,10 @@ class RestorePrecheckTest {
 
         assertThat(result).isInstanceOf(Outcome.Success::class.java)
         assertThat((result as Outcome.Success).value.migrationRequired).isTrue()
+
+        val v3Result = precheck.check(manifest(schemaVersion = 3))
+        assertThat(v3Result).isInstanceOf(Outcome.Success::class.java)
+        assertThat((v3Result as Outcome.Success).value.migrationRequired).isTrue()
     }
 
     @Test
@@ -45,7 +49,7 @@ class RestorePrecheckTest {
 
     @Test
     fun `rejects a partial backup without the second confirmation`() {
-        val result = precheck.check(manifest(schemaVersion = 3, status = BackupIntegrity.PARTIAL))
+        val result = precheck.check(manifest(schemaVersion = 4, status = BackupIntegrity.PARTIAL))
 
         assertThat((result as Outcome.Failure).error.code.value).isEqualTo("CUL-BACKUP-001")
         assertThat(result.error.context["reason"]).contains("PARTIAL")
@@ -55,7 +59,7 @@ class RestorePrecheckTest {
     fun `accepts a partial backup after explicit confirmation`() {
         val result =
             precheck.check(
-                manifest = manifest(schemaVersion = 3, status = BackupIntegrity.PARTIAL),
+                manifest = manifest(schemaVersion = 4, status = BackupIntegrity.PARTIAL),
                 acceptPartial = true,
             )
 
@@ -65,7 +69,7 @@ class RestorePrecheckTest {
 
     @Test
     fun `rejects an unsupported backup format version`() {
-        val result = precheck.check(manifest(schemaVersion = 3, formatVersion = 2))
+        val result = precheck.check(manifest(schemaVersion = 4, formatVersion = 2))
 
         assertThat((result as Outcome.Failure).error.code.value).isEqualTo("CUL-BACKUP-002")
     }

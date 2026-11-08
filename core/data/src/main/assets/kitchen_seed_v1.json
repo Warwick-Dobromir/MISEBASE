@@ -1,0 +1,2611 @@
+{
+  "version": "v1",
+  "generatedAt": "2026-11-09",
+  "source": "MISEBASE_厨房页面种子数据_v1.xlsx",
+  "ingredients": [
+    {
+      "seedId": "ING-001",
+      "name": "无盐黄油",
+      "englishName": "Dairy",
+      "category": "乳制品与蛋类",
+      "unitCode": "g",
+      "exampleProducts": "Président 无盐黄油 500g; Elle & Vire 无盐黄油 1kg",
+      "storageNotes": "冷藏 0–4℃",
+      "allergenNotes": "乳制品",
+      "seedNote": "测试一食材多商品"
+    },
+    {
+      "seedId": "ING-002",
+      "name": "淡奶油",
+      "englishName": "Dairy",
+      "category": "乳制品与蛋类",
+      "unitCode": "ml",
+      "exampleProducts": "淡奶油 1L",
+      "storageNotes": "冷藏 0–4℃",
+      "allergenNotes": "乳制品",
+      "seedNote": null
+    },
+    {
+      "seedId": "ING-003",
+      "name": "全脂牛奶",
+      "englishName": "Dairy",
+      "category": "乳制品与蛋类",
+      "unitCode": "ml",
+      "exampleProducts": "全脂牛奶 1L; 全脂牛奶 250ml",
+      "storageNotes": "冷藏 0–4℃",
+      "allergenNotes": "乳制品",
+      "seedNote": "测试同食材不同规格商品"
+    },
+    {
+      "seedId": "ING-004",
+      "name": "鸡蛋",
+      "englishName": "Egg",
+      "category": "乳制品与蛋类",
+      "unitCode": "piece",
+      "exampleProducts": "鲜鸡蛋 10枚装",
+      "storageNotes": "冷藏或按供应商标签要求",
+      "allergenNotes": "蛋类",
+      "seedNote": "按枚计量"
+    },
+    {
+      "seedId": "ING-005",
+      "name": "帕玛森芝士",
+      "englishName": "Dairy",
+      "category": "乳制品与蛋类",
+      "unitCode": "g",
+      "exampleProducts": "帕玛森芝士块 200g",
+      "storageNotes": "冷藏 0–4℃，密封防干",
+      "allergenNotes": "乳制品",
+      "seedNote": null
+    },
+    {
+      "seedId": "ING-006",
+      "name": "胡萝卜",
+      "englishName": "Vegetable",
+      "category": "蔬菜与水果",
+      "unitCode": "g",
+      "exampleProducts": "胡萝卜散装",
+      "storageNotes": "冷藏蔬菜区；干燥保存",
+      "allergenNotes": "无",
+      "seedNote": null
+    },
+    {
+      "seedId": "ING-007",
+      "name": "黄洋葱",
+      "englishName": "Vegetable",
+      "category": "蔬菜与水果",
+      "unitCode": "piece",
+      "exampleProducts": "黄洋葱散装",
+      "storageNotes": "阴凉通风，避光",
+      "allergenNotes": "无",
+      "seedNote": "按个计量"
+    },
+    {
+      "seedId": "ING-008",
+      "name": "土豆",
+      "englishName": "Vegetable",
+      "category": "蔬菜与水果",
+      "unitCode": "g",
+      "exampleProducts": "土豆散装",
+      "storageNotes": "阴凉、干燥、避光",
+      "allergenNotes": "无",
+      "seedNote": null
+    },
+    {
+      "seedId": "ING-009",
+      "name": "黄柠檬",
+      "englishName": "Fruit",
+      "category": "蔬菜与水果",
+      "unitCode": "piece",
+      "exampleProducts": "进口黄柠檬; 国产黄柠檬",
+      "storageNotes": "冷藏果蔬区",
+      "allergenNotes": "无",
+      "seedNote": "测试一食材多来源商品"
+    },
+    {
+      "seedId": "ING-010",
+      "name": "番茄",
+      "englishName": "Vegetable",
+      "category": "蔬菜与水果",
+      "unitCode": "g",
+      "exampleProducts": "鲜番茄散装; 罐装番茄 400g",
+      "storageNotes": "鲜品冷藏；罐装未开封常温",
+      "allergenNotes": "无",
+      "seedNote": null
+    },
+    {
+      "seedId": "ING-011",
+      "name": "三文鱼",
+      "englishName": "Seafood",
+      "category": "肉类与水产",
+      "unitCode": "g",
+      "exampleProducts": "三文鱼柳 1kg",
+      "storageNotes": "冷藏 0–2℃或冷冻按标签",
+      "allergenNotes": "鱼类",
+      "seedNote": null
+    },
+    {
+      "seedId": "ING-012",
+      "name": "鸡胸肉",
+      "englishName": "Poultry",
+      "category": "肉类与水产",
+      "unitCode": "g",
+      "exampleProducts": "鸡胸肉 1kg",
+      "storageNotes": "冷藏 0–4℃，生熟分区",
+      "allergenNotes": "无",
+      "seedNote": null
+    },
+    {
+      "seedId": "ING-013",
+      "name": "牛里脊",
+      "englishName": "Meat",
+      "category": "肉类与水产",
+      "unitCode": "g",
+      "exampleProducts": "牛里脊 1kg",
+      "storageNotes": "冷藏 0–4℃，密封防交叉污染",
+      "allergenNotes": "无",
+      "seedNote": null
+    },
+    {
+      "seedId": "ING-014",
+      "name": "虾仁",
+      "englishName": "Seafood",
+      "category": "肉类与水产",
+      "unitCode": "g",
+      "exampleProducts": "冷冻虾仁 500g",
+      "storageNotes": "冷冻 -18℃或以下",
+      "allergenNotes": "甲壳类",
+      "seedNote": "过敏原示例"
+    },
+    {
+      "seedId": "ING-015",
+      "name": "橄榄油",
+      "englishName": "Pantry",
+      "category": "干货与调味",
+      "unitCode": "ml",
+      "exampleProducts": "特级初榨橄榄油 500ml",
+      "storageNotes": "阴凉避光，远离热源",
+      "allergenNotes": "无",
+      "seedNote": null
+    },
+    {
+      "seedId": "ING-016",
+      "name": "面粉",
+      "englishName": "Pantry",
+      "category": "干货与调味",
+      "unitCode": "g",
+      "exampleProducts": "低筋/中筋面粉 1kg",
+      "storageNotes": "干燥密封，防潮防虫",
+      "allergenNotes": "含麸质谷物",
+      "seedNote": null
+    },
+    {
+      "seedId": "ING-017",
+      "name": "黑胡椒",
+      "englishName": "Spice",
+      "category": "干货与调味",
+      "unitCode": "g",
+      "exampleProducts": "黑胡椒粒 100g",
+      "storageNotes": "干燥避光密封",
+      "allergenNotes": "无",
+      "seedNote": null
+    },
+    {
+      "seedId": "ING-018",
+      "name": "百里香",
+      "englishName": "Herb",
+      "category": "香草与香料",
+      "unitCode": "g",
+      "exampleProducts": "鲜百里香 30g; 干百里香 20g",
+      "storageNotes": "鲜品冷藏；干品密封避光",
+      "allergenNotes": "无",
+      "seedNote": null
+    }
+  ],
+  "sauces": [
+    {
+      "seedId": "SAU-001",
+      "name": "白奶油黄油酱",
+      "englishName": "Beurre Blanc",
+      "family": "乳化酱汁",
+      "usageNotes": "鱼类/海鲜",
+      "mainIngredients": "白葡萄酒、白酒醋、 shallot、无盐黄油",
+      "preparationSummary": "白葡萄酒与醋液浓缩后离火，分次乳化冷黄油",
+      "keyParameters": "约65–70℃；不得沸腾",
+      "storageNotes": "即时使用；短时保温不超过60℃",
+      "finishedStandard": "酸香、细腻、乳化稳定",
+      "adjustableNotes": "柠檬汁可微调酸度",
+      "seedNote": "测试乳化与温度控制",
+      "techniqueSeeds": [
+        "TECH-001",
+        "TECH-004"
+      ],
+      "standardSeeds": [
+        "STD-001",
+        "STD-006"
+      ],
+      "ingredientSeeds": [
+        "ING-007",
+        "ING-001"
+      ]
+    },
+    {
+      "seedId": "SAU-002",
+      "name": "荷兰酱",
+      "englishName": "Hollandaise",
+      "family": "蛋黄乳化酱",
+      "usageNotes": "蛋类/蔬菜/鱼类",
+      "mainIngredients": "蛋黄、澄清黄油、柠檬汁、水",
+      "preparationSummary": "蛋黄隔水打发至浓稠，缓慢加入温热澄清黄油",
+      "keyParameters": "蛋黄基底约65℃；避免过热凝固",
+      "storageNotes": "建议现做现用；按食品安全要求控制时温",
+      "finishedStandard": "柔滑、明亮酸度、无油水分离",
+      "adjustableNotes": "过稠可少量温水调整",
+      "seedNote": "测试蛋黄乳化",
+      "techniqueSeeds": [
+        "TECH-001",
+        "TECH-002"
+      ],
+      "standardSeeds": [
+        "STD-002",
+        "STD-006"
+      ],
+      "ingredientSeeds": [
+        "ING-004",
+        "ING-001",
+        "ING-009"
+      ]
+    },
+    {
+      "seedId": "SAU-003",
+      "name": "半釉汁",
+      "englishName": "Demi-glace",
+      "family": "棕色基础酱汁",
+      "usageNotes": "红肉/禽肉",
+      "mainIngredients": "褐色高汤、棕色 espagnole、烤制香料蔬菜",
+      "preparationSummary": "小火浓缩并撇除浮沫，过滤至所需浓度",
+      "keyParameters": "微沸；避免剧烈翻滚",
+      "storageNotes": "快速冷却后冷藏或分装冷冻",
+      "finishedStandard": "深褐、浓郁、挂勺",
+      "adjustableNotes": "可作为红酒汁等复合酱底",
+      "seedNote": "测试长时制作与复合酱",
+      "techniqueSeeds": [
+        "TECH-005",
+        "TECH-006"
+      ],
+      "standardSeeds": [
+        "STD-003",
+        "STD-004"
+      ],
+      "ingredientSeeds": []
+    },
+    {
+      "seedId": "SAU-004",
+      "name": "红酒黄油酱",
+      "englishName": "Beurre Rouge",
+      "family": "乳化酱汁",
+      "usageNotes": "红肉/鸭肉",
+      "mainIngredients": "红酒、红酒醋、shallot、无盐黄油",
+      "preparationSummary": "红酒与醋液浓缩，过滤后离火乳化黄油",
+      "keyParameters": "约65–70℃；不可沸腾",
+      "storageNotes": "即时使用",
+      "finishedStandard": "酒香集中、酸度平衡、质地光亮",
+      "adjustableNotes": "可用少量高汤调整风味",
+      "seedNote": "测试与白奶油黄油酱的区分",
+      "techniqueSeeds": [
+        "TECH-001",
+        "TECH-004"
+      ],
+      "standardSeeds": [
+        "STD-001",
+        "STD-006"
+      ],
+      "ingredientSeeds": [
+        "ING-007",
+        "ING-001"
+      ]
+    },
+    {
+      "seedId": "SAU-005",
+      "name": "白色高汤酱",
+      "englishName": "Velouté",
+      "family": "基础母酱",
+      "usageNotes": "禽肉/鱼类",
+      "mainIngredients": "白色 roux、白色高汤",
+      "preparationSummary": "制作浅色 roux，逐步加入热高汤并煮至顺滑",
+      "keyParameters": "小火煮制；持续搅拌",
+      "storageNotes": "冷却后冷藏；使用前充分复热",
+      "finishedStandard": "浅色、细腻、无生粉味",
+      "adjustableNotes": "可延伸为蘑菇酱、白酒酱",
+      "seedNote": "测试基础酱与衍生酱关系",
+      "techniqueSeeds": [
+        "TECH-003",
+        "TECH-005"
+      ],
+      "standardSeeds": [
+        "STD-003",
+        "STD-004"
+      ],
+      "ingredientSeeds": [
+        "ING-016"
+      ]
+    },
+    {
+      "seedId": "SAU-006",
+      "name": "贝夏梅尔酱",
+      "englishName": "Béchamel",
+      "family": "基础母酱",
+      "usageNotes": "奶油类菜肴/焗烤",
+      "mainIngredients": "黄油、面粉、牛奶、洋葱、月桂叶",
+      "preparationSummary": "制作白色 roux，分次加入热牛奶，低温煮透",
+      "keyParameters": "小火；持续搅拌防止糊底",
+      "storageNotes": "冷却后冷藏；表面贴膜防结皮",
+      "finishedStandard": "乳白、顺滑、无粉腥",
+      "adjustableNotes": "可延伸为 Mornay 芝士酱",
+      "seedNote": "测试 roux 与牛奶关联",
+      "techniqueSeeds": [
+        "TECH-003",
+        "TECH-005"
+      ],
+      "standardSeeds": [
+        "STD-003",
+        "STD-004"
+      ],
+      "ingredientSeeds": [
+        "ING-001",
+        "ING-016",
+        "ING-003",
+        "ING-007"
+      ]
+    },
+    {
+      "seedId": "SAU-007",
+      "name": "罗勒青酱",
+      "englishName": "Pesto Genovese",
+      "family": "冷制酱汁",
+      "usageNotes": "意面/蔬菜/鱼类",
+      "mainIngredients": "罗勒、松子、帕玛森、橄榄油、大蒜",
+      "preparationSummary": "低速研磨或捣碎，分次加入橄榄油",
+      "keyParameters": "避免研磨升温导致氧化",
+      "storageNotes": "密封冷藏，表面覆油；尽快使用",
+      "finishedStandard": "鲜绿、草本香、颗粒细致",
+      "adjustableNotes": "坚果可替换，但需记录过敏原",
+      "seedNote": "测试冷制酱与过敏原字段",
+      "techniqueSeeds": [
+        "TECH-007"
+      ],
+      "standardSeeds": [
+        "STD-005",
+        "STD-006"
+      ],
+      "ingredientSeeds": [
+        "ING-005",
+        "ING-015"
+      ]
+    },
+    {
+      "seedId": "SAU-008",
+      "name": "油醋汁",
+      "englishName": "Vinaigrette",
+      "family": "冷制调味汁",
+      "usageNotes": "沙拉/蔬菜",
+      "mainIngredients": "橄榄油、葡萄酒醋、芥末、盐、胡椒",
+      "preparationSummary": "先溶解盐与芥末，再缓慢加入油并搅匀",
+      "keyParameters": "室温制作；使用前重新混匀",
+      "storageNotes": "按原料特性冷藏；使用前检查状态",
+      "finishedStandard": "酸油平衡、轻微乳化",
+      "adjustableNotes": "可调整醋油比例与香草",
+      "seedNote": "测试比例与临用前混合",
+      "techniqueSeeds": [
+        "TECH-001",
+        "TECH-007"
+      ],
+      "standardSeeds": [
+        "STD-005",
+        "STD-006"
+      ],
+      "ingredientSeeds": [
+        "ING-015",
+        "ING-017"
+      ]
+    },
+    {
+      "seedId": "SAU-009",
+      "name": "蘑菇奶油酱",
+      "englishName": "Sauce aux Champignons",
+      "family": "复合酱汁",
+      "usageNotes": "鸡肉/牛肉/意面",
+      "mainIngredients": "蘑菇、洋葱、白色高汤酱、淡奶油",
+      "preparationSummary": "炒香蘑菇与洋葱，加入高汤酱和奶油煮至浓稠",
+      "keyParameters": "充分加热；避免过度收干",
+      "storageNotes": "快速冷却后冷藏；复热至充分热透",
+      "finishedStandard": "菌香明显、奶油感适中",
+      "adjustableNotes": "可加入少量白葡萄酒提香",
+      "seedNote": "测试酱汁引用基础母酱",
+      "techniqueSeeds": [
+        "TECH-005",
+        "TECH-006"
+      ],
+      "standardSeeds": [
+        "STD-003",
+        "STD-004"
+      ],
+      "ingredientSeeds": [
+        "ING-007",
+        "ING-002"
+      ]
+    },
+    {
+      "seedId": "SAU-010",
+      "name": "番茄基础酱",
+      "englishName": "Sauce Tomate",
+      "family": "基础母酱",
+      "usageNotes": "意面/肉类/蔬菜",
+      "mainIngredients": "番茄、洋葱、大蒜、橄榄油、香草",
+      "preparationSummary": "炒香香味蔬菜，加入番茄慢煮并调整浓度",
+      "keyParameters": "小火慢煮；定期搅拌",
+      "storageNotes": "快速冷却后冷藏或分装冷冻",
+      "finishedStandard": "酸甜平衡、番茄风味清晰",
+      "adjustableNotes": "可用于普罗旺斯炖菜等",
+      "seedNote": "测试基础酱与菜谱关联",
+      "techniqueSeeds": [
+        "TECH-005",
+        "TECH-006"
+      ],
+      "standardSeeds": [
+        "STD-003",
+        "STD-004"
+      ],
+      "ingredientSeeds": [
+        "ING-010",
+        "ING-007",
+        "ING-015",
+        "ING-018"
+      ]
+    }
+  ],
+  "recipes": [
+    {
+      "seedId": "REC-001",
+      "name": "香煎三文鱼配白奶油黄油酱",
+      "englishName": "Pan-seared Salmon with Beurre Blanc",
+      "category": "DISH",
+      "servings": 2,
+      "yieldUnitCode": "portion",
+      "ingredientText": "三文鱼 ING-011 300g；黄油 ING-001 60g；柠檬 ING-009 0.5个",
+      "instructions": "制作步骤：鱼柳擦干并调味；热锅煎至目标熟度；制作白奶油黄油酱；装盘淋酱\n关键工艺：中高火煎制；酱汁离火乳化",
+      "allergenNotes": "鱼类；乳制品",
+      "sauceSeeds": [
+        "SAU-001"
+      ],
+      "techniqueSeeds": [
+        "TECH-001",
+        "TECH-004"
+      ],
+      "standardSeeds": [
+        "STD-001",
+        "STD-002",
+        "STD-006"
+      ],
+      "ingredientSeeds": [
+        "ING-011",
+        "ING-001",
+        "ING-009"
+      ],
+      "components": [
+        {
+          "ingredientSeedId": "ING-011",
+          "label": "三文鱼",
+          "quantity": 300.0,
+          "unitCode": "g"
+        },
+        {
+          "ingredientSeedId": "ING-001",
+          "label": "黄油",
+          "quantity": 60.0,
+          "unitCode": "g"
+        },
+        {
+          "ingredientSeedId": "ING-009",
+          "label": "柠檬",
+          "quantity": 0.5,
+          "unitCode": "piece"
+        }
+      ]
+    },
+    {
+      "seedId": "REC-002",
+      "name": "菲力牛排配半釉汁",
+      "englishName": "Filet Mignon with Demi-glace",
+      "category": "DISH",
+      "servings": 2,
+      "yieldUnitCode": "portion",
+      "ingredientText": "牛里脊 ING-013 360g；黄油 ING-001 20g；百里香 ING-018 2g；黑胡椒 ING-017 适量",
+      "instructions": "制作步骤：牛排回温并擦干；高温煎封；加入黄油与百里香淋油；静置；配半釉汁\n关键工艺：煎制后静置；按目标熟度控制中心温度",
+      "allergenNotes": "乳制品",
+      "sauceSeeds": [
+        "SAU-003"
+      ],
+      "techniqueSeeds": [
+        "TECH-004",
+        "TECH-008"
+      ],
+      "standardSeeds": [
+        "STD-001",
+        "STD-002",
+        "STD-006"
+      ],
+      "ingredientSeeds": [
+        "ING-013",
+        "ING-001",
+        "ING-018",
+        "ING-017"
+      ],
+      "components": [
+        {
+          "ingredientSeedId": "ING-013",
+          "label": "牛里脊",
+          "quantity": 360.0,
+          "unitCode": "g"
+        },
+        {
+          "ingredientSeedId": "ING-001",
+          "label": "黄油",
+          "quantity": 20.0,
+          "unitCode": "g"
+        },
+        {
+          "ingredientSeedId": "ING-018",
+          "label": "百里香",
+          "quantity": 2.0,
+          "unitCode": "g"
+        }
+      ]
+    },
+    {
+      "seedId": "REC-003",
+      "name": "法式奶油鸡",
+      "englishName": "Poulet à la Crème",
+      "category": "DISH",
+      "servings": 2,
+      "yieldUnitCode": "portion",
+      "ingredientText": "鸡胸肉 ING-012 300g；淡奶油 ING-002 120ml；黄油 ING-001 15g；黑胡椒 ING-017 适量",
+      "instructions": "制作步骤：鸡肉切块调味并煎上色；加入蘑菇奶油酱；小火煮至鸡肉熟透；调整浓度\n关键工艺：煎制后小火完成；鸡肉中心温度达到安全要求",
+      "allergenNotes": "乳制品",
+      "sauceSeeds": [
+        "SAU-009"
+      ],
+      "techniqueSeeds": [
+        "TECH-004",
+        "TECH-006"
+      ],
+      "standardSeeds": [
+        "STD-001",
+        "STD-003",
+        "STD-004"
+      ],
+      "ingredientSeeds": [
+        "ING-012",
+        "ING-002",
+        "ING-001",
+        "ING-017"
+      ],
+      "components": [
+        {
+          "ingredientSeedId": "ING-012",
+          "label": "鸡胸肉",
+          "quantity": 300.0,
+          "unitCode": "g"
+        },
+        {
+          "ingredientSeedId": "ING-002",
+          "label": "淡奶油",
+          "quantity": 120.0,
+          "unitCode": "ml"
+        },
+        {
+          "ingredientSeedId": "ING-001",
+          "label": "黄油",
+          "quantity": 15.0,
+          "unitCode": "g"
+        }
+      ]
+    },
+    {
+      "seedId": "REC-004",
+      "name": "普罗旺斯风味炖菜",
+      "englishName": "Ratatouille",
+      "category": "COMPONENT",
+      "servings": 4,
+      "yieldUnitCode": "portion",
+      "ingredientText": "番茄 ING-010 250g；胡萝卜 ING-006 100g；洋葱 ING-007 1个；百里香 ING-018 2g",
+      "instructions": "制作步骤：蔬菜切均匀；分批煸炒；加入番茄基础酱与香草；小火炖至软而不烂\n关键工艺：中小火炖煮；保持蔬菜形态",
+      "allergenNotes": null,
+      "sauceSeeds": [
+        "SAU-010"
+      ],
+      "techniqueSeeds": [
+        "TECH-005",
+        "TECH-006"
+      ],
+      "standardSeeds": [
+        "STD-003",
+        "STD-005"
+      ],
+      "ingredientSeeds": [
+        "ING-010",
+        "ING-006",
+        "ING-007",
+        "ING-018"
+      ],
+      "components": [
+        {
+          "ingredientSeedId": "ING-010",
+          "label": "番茄",
+          "quantity": 250.0,
+          "unitCode": "g"
+        },
+        {
+          "ingredientSeedId": "ING-006",
+          "label": "胡萝卜",
+          "quantity": 100.0,
+          "unitCode": "g"
+        },
+        {
+          "ingredientSeedId": "ING-007",
+          "label": "洋葱",
+          "quantity": 1.0,
+          "unitCode": "piece"
+        },
+        {
+          "ingredientSeedId": "ING-018",
+          "label": "百里香",
+          "quantity": 2.0,
+          "unitCode": "g"
+        }
+      ]
+    },
+    {
+      "seedId": "REC-005",
+      "name": "法式土豆泥",
+      "englishName": "Purée de Pommes de Terre",
+      "category": "COMPONENT",
+      "servings": 4,
+      "yieldUnitCode": "portion",
+      "ingredientText": "土豆 ING-008 600g；黄油 ING-001 80g；牛奶 ING-003 100ml；面粉 ING-016 0g",
+      "instructions": "制作步骤：土豆去皮切块煮熟；趁热压泥；分次加入温热黄油与牛奶；过筛调整细腻度\n关键工艺：土豆煮至完全软化；液体温热加入",
+      "allergenNotes": "乳制品",
+      "sauceSeeds": [],
+      "techniqueSeeds": [
+        "TECH-003",
+        "TECH-005"
+      ],
+      "standardSeeds": [
+        "STD-003",
+        "STD-004"
+      ],
+      "ingredientSeeds": [
+        "ING-008",
+        "ING-001",
+        "ING-003",
+        "ING-016"
+      ],
+      "components": [
+        {
+          "ingredientSeedId": "ING-008",
+          "label": "土豆",
+          "quantity": 600.0,
+          "unitCode": "g"
+        },
+        {
+          "ingredientSeedId": "ING-001",
+          "label": "黄油",
+          "quantity": 80.0,
+          "unitCode": "g"
+        },
+        {
+          "ingredientSeedId": "ING-003",
+          "label": "牛奶",
+          "quantity": 100.0,
+          "unitCode": "ml"
+        }
+      ]
+    },
+    {
+      "seedId": "REC-006",
+      "name": "番茄蔬菜浓汤",
+      "englishName": "Soupe de Tomate et Légumes",
+      "category": "DISH",
+      "servings": 4,
+      "yieldUnitCode": "portion",
+      "ingredientText": "番茄 ING-010 400g；胡萝卜 ING-006 100g；土豆 ING-008 100g；洋葱 ING-007 0.5个",
+      "instructions": "制作步骤：蔬菜切块并炒香；加入番茄酱与水/高汤；煮软后搅打；过滤并调味\n关键工艺：小火煮至蔬菜软化；搅打时注意热液体安全",
+      "allergenNotes": null,
+      "sauceSeeds": [
+        "SAU-010"
+      ],
+      "techniqueSeeds": [
+        "TECH-005",
+        "TECH-007"
+      ],
+      "standardSeeds": [
+        "STD-003",
+        "STD-005"
+      ],
+      "ingredientSeeds": [
+        "ING-010",
+        "ING-006",
+        "ING-008",
+        "ING-007"
+      ],
+      "components": [
+        {
+          "ingredientSeedId": "ING-010",
+          "label": "番茄",
+          "quantity": 400.0,
+          "unitCode": "g"
+        },
+        {
+          "ingredientSeedId": "ING-006",
+          "label": "胡萝卜",
+          "quantity": 100.0,
+          "unitCode": "g"
+        },
+        {
+          "ingredientSeedId": "ING-008",
+          "label": "土豆",
+          "quantity": 100.0,
+          "unitCode": "g"
+        },
+        {
+          "ingredientSeedId": "ING-007",
+          "label": "洋葱",
+          "quantity": 0.5,
+          "unitCode": "piece"
+        }
+      ]
+    },
+    {
+      "seedId": "REC-007",
+      "name": "法式欧姆蛋",
+      "englishName": "Omelette",
+      "category": "DISH",
+      "servings": 1,
+      "yieldUnitCode": "portion",
+      "ingredientText": "鸡蛋 ING-004 3枚；黄油 ING-001 10g；黑胡椒 ING-017 少量",
+      "instructions": "制作步骤：鸡蛋轻轻打散；低中温融化黄油；倒入蛋液并持续整理凝固边缘；折叠出锅\n关键工艺：低中温快速制作；保持内部柔嫩",
+      "allergenNotes": "蛋类；乳制品",
+      "sauceSeeds": [],
+      "techniqueSeeds": [
+        "TECH-002",
+        "TECH-004"
+      ],
+      "standardSeeds": [
+        "STD-001",
+        "STD-002"
+      ],
+      "ingredientSeeds": [
+        "ING-004",
+        "ING-001",
+        "ING-017"
+      ],
+      "components": [
+        {
+          "ingredientSeedId": "ING-004",
+          "label": "鸡蛋",
+          "quantity": 3.0,
+          "unitCode": "piece"
+        },
+        {
+          "ingredientSeedId": "ING-001",
+          "label": "黄油",
+          "quantity": 10.0,
+          "unitCode": "g"
+        }
+      ]
+    },
+    {
+      "seedId": "REC-008",
+      "name": "帕玛森柠檬沙拉",
+      "englishName": "Salade Parmesan Citron",
+      "category": "DISH",
+      "servings": 2,
+      "yieldUnitCode": "portion",
+      "ingredientText": "帕玛森 ING-005 30g；柠檬 ING-009 0.5个；橄榄油 ING-015 30ml；黑胡椒 ING-017 少量",
+      "instructions": "制作步骤：清洗并彻底沥干蔬菜；现调油醋汁；拌匀；刨入帕玛森并装盘\n关键工艺：冷制；上桌前拌合",
+      "allergenNotes": "乳制品",
+      "sauceSeeds": [
+        "SAU-008"
+      ],
+      "techniqueSeeds": [
+        "TECH-007"
+      ],
+      "standardSeeds": [
+        "STD-005",
+        "STD-006"
+      ],
+      "ingredientSeeds": [
+        "ING-005",
+        "ING-009",
+        "ING-015",
+        "ING-017"
+      ],
+      "components": [
+        {
+          "ingredientSeedId": "ING-005",
+          "label": "帕玛森",
+          "quantity": 30.0,
+          "unitCode": "g"
+        },
+        {
+          "ingredientSeedId": "ING-009",
+          "label": "柠檬",
+          "quantity": 0.5,
+          "unitCode": "piece"
+        },
+        {
+          "ingredientSeedId": "ING-015",
+          "label": "橄榄油",
+          "quantity": 30.0,
+          "unitCode": "ml"
+        }
+      ]
+    },
+    {
+      "seedId": "REC-009",
+      "name": "香煎虾配红酒黄油酱",
+      "englishName": "Prawns with Beurre Rouge",
+      "category": "DISH",
+      "servings": 2,
+      "yieldUnitCode": "portion",
+      "ingredientText": "虾仁 ING-014 240g；黄油 ING-001 40g；柠檬 ING-009 0.25个",
+      "instructions": "制作步骤：虾仁解冻沥干并擦干；快速煎熟；制作红酒黄油酱；组合装盘\n关键工艺：高温短时煎制；避免虾肉过熟",
+      "allergenNotes": "甲壳类；乳制品",
+      "sauceSeeds": [
+        "SAU-004"
+      ],
+      "techniqueSeeds": [
+        "TECH-001",
+        "TECH-004"
+      ],
+      "standardSeeds": [
+        "STD-001",
+        "STD-002",
+        "STD-006"
+      ],
+      "ingredientSeeds": [
+        "ING-014",
+        "ING-001",
+        "ING-009"
+      ],
+      "components": [
+        {
+          "ingredientSeedId": "ING-014",
+          "label": "虾仁",
+          "quantity": 240.0,
+          "unitCode": "g"
+        },
+        {
+          "ingredientSeedId": "ING-001",
+          "label": "黄油",
+          "quantity": 40.0,
+          "unitCode": "g"
+        },
+        {
+          "ingredientSeedId": "ING-009",
+          "label": "柠檬",
+          "quantity": 0.25,
+          "unitCode": "piece"
+        }
+      ]
+    },
+    {
+      "seedId": "REC-010",
+      "name": "青酱意面（基础配方）",
+      "englishName": "Pasta al Pesto",
+      "category": "DISH",
+      "servings": 2,
+      "yieldUnitCode": "portion",
+      "ingredientText": "橄榄油 ING-015 40ml；帕玛森 ING-005 30g；黑胡椒 ING-017 少量",
+      "instructions": "制作步骤：意面煮至 al dente；保留少量煮面水；离火与青酱拌合；按需调整乳化状态\n关键工艺：离火拌酱；避免青酱高温变色",
+      "allergenNotes": "乳制品；坚果（如使用松子）",
+      "sauceSeeds": [
+        "SAU-007"
+      ],
+      "techniqueSeeds": [
+        "TECH-007"
+      ],
+      "standardSeeds": [
+        "STD-005",
+        "STD-006"
+      ],
+      "ingredientSeeds": [
+        "ING-015",
+        "ING-005",
+        "ING-017"
+      ],
+      "components": [
+        {
+          "ingredientSeedId": "ING-015",
+          "label": "橄榄油",
+          "quantity": 40.0,
+          "unitCode": "ml"
+        },
+        {
+          "ingredientSeedId": "ING-005",
+          "label": "帕玛森",
+          "quantity": 30.0,
+          "unitCode": "g"
+        }
+      ]
+    }
+  ],
+  "references": [
+    {
+      "seedId": "TECH-001",
+      "kind": "TECHNIQUE",
+      "name": "乳化",
+      "englishName": "Emulsification",
+      "category": "酱汁技术",
+      "description": "定义：将油脂相与水相稳定分散，形成均匀质地\n操作要点：缓慢加入油脂并持续搅拌；控制温度与加入速度\n常见问题：油水分离、过热、一次加入过多油脂\n应用场景：白奶油黄油酱、荷兰酱、油醋汁\n难度：初级\n验证观察点：观察光泽、稠度与稳定性\n关联档案：SAU-001;SAU-002;SAU-004;SAU-008",
+      "seedNote": null,
+      "relatedSeeds": [
+        "SAU-001",
+        "SAU-002",
+        "SAU-004",
+        "SAU-008"
+      ]
+    },
+    {
+      "seedId": "TECH-002",
+      "kind": "TECHNIQUE",
+      "name": "隔水加热",
+      "englishName": "Bain-marie",
+      "category": "温度控制",
+      "description": "定义：通过热水间接、温和加热食材\n操作要点：水温稳定；容器底部不直接接触锅底；持续搅拌\n常见问题：水温过高导致蛋液凝固\n应用场景：荷兰酱、蛋类制作\n难度：初级\n验证观察点：记录温度与质地变化\n关联档案：SAU-002;REC-007",
+      "seedNote": null,
+      "relatedSeeds": [
+        "SAU-002",
+        "REC-007"
+      ]
+    },
+    {
+      "seedId": "TECH-003",
+      "kind": "TECHNIQUE",
+      "name": "制作 Roux",
+      "englishName": "Roux",
+      "category": "基础烹饪技术",
+      "description": "定义：以等量或近似比例油脂与面粉加热形成增稠基底\n操作要点：控制颜色阶段；面粉充分熟化；液体分次加入\n常见问题：结块、焦化、生粉味\n应用场景：Velouté、Béchamel、土豆泥配套酱汁\n难度：初级\n验证观察点：记录 roux 颜色与用途\n关联档案：SAU-005;SAU-006",
+      "seedNote": null,
+      "relatedSeeds": [
+        "SAU-005",
+        "SAU-006"
+      ]
+    },
+    {
+      "seedId": "TECH-004",
+      "kind": "TECHNIQUE",
+      "name": "煎制与淋油",
+      "englishName": "Searing & Basting",
+      "category": "热加工",
+      "description": "定义：利用高温形成表面褐变，并用热脂肪辅助均匀加热\n操作要点：食材表面擦干；锅体充分预热；避免拥挤；控制翻面\n常见问题：锅温不足、食材出水、过度煎制\n应用场景：牛排、三文鱼、虾、鸡肉\n难度：初级\n验证观察点：观察上色与中心熟度\n关联档案：REC-001;REC-002;REC-003;REC-009",
+      "seedNote": null,
+      "relatedSeeds": [
+        "REC-001",
+        "REC-002",
+        "REC-003",
+        "REC-009"
+      ]
+    },
+    {
+      "seedId": "TECH-005",
+      "kind": "TECHNIQUE",
+      "name": "高汤/酱汁浓缩",
+      "englishName": "Reduction",
+      "category": "浓缩技术",
+      "description": "定义：通过蒸发水分提升风味与浓度\n操作要点：控制沸腾强度；定期撇沫；后段加强观察\n常见问题：剧烈沸腾导致浑浊或焦底\n应用场景：半釉汁、基础母酱、汤品\n难度：中级\n验证观察点：记录浓缩前后重量或体积\n关联档案：SAU-003;SAU-005;SAU-010",
+      "seedNote": null,
+      "relatedSeeds": [
+        "SAU-003",
+        "SAU-005",
+        "SAU-010"
+      ]
+    },
+    {
+      "seedId": "TECH-006",
+      "kind": "TECHNIQUE",
+      "name": "小火炖煮",
+      "englishName": "Simmering",
+      "category": "湿热烹饪",
+      "description": "定义：在低于剧烈沸腾的状态下使食材熟化与融合\n操作要点：保持轻微气泡；锅盖按需要开合；定期检查底部\n常见问题：大火导致破碎、蒸发过快或粘底\n应用场景：番茄酱、炖菜、蘑菇奶油酱\n难度：初级\n验证观察点：记录时间、火力与最终质地\n关联档案：SAU-009;SAU-010;REC-004;REC-006",
+      "seedNote": null,
+      "relatedSeeds": [
+        "SAU-009",
+        "SAU-010",
+        "REC-004",
+        "REC-006"
+      ]
+    },
+    {
+      "seedId": "TECH-007",
+      "kind": "TECHNIQUE",
+      "name": "冷制调味与研磨",
+      "englishName": "Cold preparation",
+      "category": "冷加工",
+      "description": "定义：不经高温或仅轻微机械处理完成调味汁/酱料\n操作要点：原料低温、器具洁净；控制氧化；临用前调味\n常见问题：氧化变色、分层、交叉污染\n应用场景：青酱、油醋汁、冷沙拉\n难度：初级\n验证观察点：记录颜色、颗粒度与酸油比例\n关联档案：SAU-007;SAU-008;REC-008;REC-010",
+      "seedNote": null,
+      "relatedSeeds": [
+        "SAU-007",
+        "SAU-008",
+        "REC-008",
+        "REC-010"
+      ]
+    },
+    {
+      "seedId": "TECH-008",
+      "kind": "TECHNIQUE",
+      "name": "静置与余温熟化",
+      "englishName": "Resting",
+      "category": "熟度控制",
+      "description": "定义：离火后让肉类温度与汁液分布趋于稳定\n操作要点：放置于洁净区域；根据厚度调整静置时间\n常见问题：切得过早导致汁液大量流失\n应用场景：牛排、煎制肉类\n难度：初级\n验证观察点：记录重量、厚度、静置时间\n关联档案：REC-002",
+      "seedNote": null,
+      "relatedSeeds": [
+        "REC-002"
+      ]
+    },
+    {
+      "seedId": "TECH-009",
+      "kind": "TECHNIQUE",
+      "name": "过滤与澄清",
+      "englishName": "Straining",
+      "category": "质地控制",
+      "description": "定义：去除固体颗粒，使液体或酱汁质地均匀\n操作要点：选择合适滤网；避免强压造成浑浊\n常见问题：过滤不彻底或强压细渣\n应用场景：高汤、基础酱、浓缩汁\n难度：中级\n验证观察点：记录过滤前后得率\n关联档案：SAU-003;SAU-005;SAU-010",
+      "seedNote": null,
+      "relatedSeeds": [
+        "SAU-003",
+        "SAU-005",
+        "SAU-010"
+      ]
+    },
+    {
+      "seedId": "TECH-010",
+      "kind": "TECHNIQUE",
+      "name": "称量与配方缩放",
+      "englishName": "Scaling",
+      "category": "配方管理",
+      "description": "定义：按目标份数同比例换算配方原料\n操作要点：统一计量单位；换算后复核盐、酸、增稠剂等关键项\n常见问题：单位混用、四舍五入误差\n应用场景：所有菜谱与酱汁配方\n难度：初级\n验证观察点：用 1/2/4/8 人份进行验证\n关联档案：REC-001;REC-002;REC-003;REC-004;REC-005",
+      "seedNote": null,
+      "relatedSeeds": [
+        "REC-001",
+        "REC-002",
+        "REC-003",
+        "REC-004",
+        "REC-005"
+      ]
+    },
+    {
+      "seedId": "STD-001",
+      "kind": "PRODUCTION_STANDARD",
+      "name": "生熟分区操作标准",
+      "englishName": "Raw/Cooked Separation",
+      "category": "操作卫生",
+      "description": "目的：生食与即食/熟食使用独立区域、容器和器具\n执行要求：生肉水产操作后清洁消毒台面；熟食不得接触生食器具\n检查频率：每次切换品类时；每班检查\n适用区域/器具：工作台、砧板、刀具、容器\n标准级别：关键控制标准\n适用档案：全部涉及生肉/水产的菜谱\n备注：避免交叉污染",
+      "seedNote": null,
+      "relatedSeeds": []
+    },
+    {
+      "seedId": "STD-002",
+      "kind": "PRODUCTION_STANDARD",
+      "name": "食材称量与配方记录标准",
+      "englishName": "Weighing & Recipe Logging",
+      "category": "配方管理",
+      "description": "目的：所有配方按统一单位称量并记录实际用量\n执行要求：优先使用克/毫升；个/枚类记录数量与规格；不得只写适量作为核心用量\n检查频率：每次制作与配方修订时\n适用区域/器具：电子秤、量具、配方档案\n标准级别：基础标准\n适用档案：全部菜谱与酱汁\n备注：测试单位字段与配方缩放",
+      "seedNote": null,
+      "relatedSeeds": []
+    },
+    {
+      "seedId": "STD-003",
+      "kind": "PRODUCTION_STANDARD",
+      "name": "热加工过程记录标准",
+      "englishName": "Cooking Process Log",
+      "category": "过程控制",
+      "description": "目的：记录关键时间、温度、火力和成品状态\n执行要求：对长时炖煮、浓缩、复热等步骤记录开始/结束时间及关键温度\n检查频率：每批制作\n适用区域/器具：温度计、计时器、制作记录\n标准级别：基础标准\n适用档案：基础酱汁、汤品、炖菜\n备注：不在种子中虚构法规阈值",
+      "seedNote": null,
+      "relatedSeeds": []
+    },
+    {
+      "seedId": "STD-004",
+      "kind": "PRODUCTION_STANDARD",
+      "name": "冷却与冷藏交接标准",
+      "englishName": "Cooling & Chilled Handover",
+      "category": "食品安全",
+      "description": "目的：熟制食品按厨房食品安全制度快速冷却、加盖标识并冷藏\n执行要求：分装浅盘；记录制作时间、冷却时间、责任人和使用期限；按当地法规与门店 HACCP 计划执行\n检查频率：每批熟制食品入冷藏时\n适用区域/器具：浅盘、温度计、标签\n标准级别：关键控制标准\n适用档案：酱汁、熟肉、奶油类制品\n备注：温度/时限需由门店制度最终确认",
+      "seedNote": null,
+      "relatedSeeds": []
+    },
+    {
+      "seedId": "STD-005",
+      "kind": "PRODUCTION_STANDARD",
+      "name": "果蔬清洗与沥干标准",
+      "englishName": "Produce Washing",
+      "category": "原料处理",
+      "description": "目的：果蔬按用途清洗，充分沥干后再切配或冷藏\n执行要求：清洗区与生肉区分开；即食果蔬按门店流程消毒/冲洗；记录异常损耗\n检查频率：每批果蔬处理时\n适用区域/器具：清洗槽、滤篮、洁净容器\n标准级别：基础标准\n适用档案：果蔬食材与冷制菜品",
+      "seedNote": null,
+      "relatedSeeds": []
+    },
+    {
+      "seedId": "STD-006",
+      "kind": "PRODUCTION_STANDARD",
+      "name": "酱汁出品感官检查标准",
+      "englishName": "Sauce QC",
+      "category": "质量控制",
+      "description": "目的：出品前检查温度、颜色、香气、稠度、酸咸平衡与乳化状态\n执行要求：乳化酱不得明显油水分离；基础酱无焦糊味与生粉味；记录调整\n检查频率：每锅制作及每次出品前\n适用区域/器具：温度计、标准勺、感官记录\n标准级别：关键质量标准\n适用档案：全部酱汁",
+      "seedNote": null,
+      "relatedSeeds": []
+    },
+    {
+      "seedId": "STD-007",
+      "kind": "PRODUCTION_STANDARD",
+      "name": "过敏原标识与交接标准",
+      "englishName": "Allergen Control",
+      "category": "过敏原管理",
+      "description": "目的：记录食材及成品中的主要过敏原，防止交叉接触\n执行要求：核对供应商标签；更换器具并清洁工作面；无法确认时不得作无过敏原承诺\n检查频率：每次收货、备料、出品前\n适用区域/器具：标签、独立容器、清洁工具\n标准级别：关键控制标准\n适用档案：含乳、蛋、鱼、甲壳类、含麸质及坚果菜品\n备注：示例记录不替代供应商标签",
+      "seedNote": null,
+      "relatedSeeds": []
+    },
+    {
+      "seedId": "STD-008",
+      "kind": "PRODUCTION_STANDARD",
+      "name": "批次标签填写标准",
+      "englishName": "Batch Labelling",
+      "category": "追溯管理",
+      "description": "目的：自制半成品需标注名称、制作时间、批次、责任人及使用期限\n执行要求：标签信息清晰可读；无标签或信息不全不得投入使用\n检查频率：每批制作完成后\n适用区域/器具：标签纸、耐水笔\n标准级别：基础标准\n适用档案：所有自制酱汁与半成品",
+      "seedNote": null,
+      "relatedSeeds": []
+    },
+    {
+      "seedId": "STD-009",
+      "kind": "PRODUCTION_STANDARD",
+      "name": "设备与器具开工检查标准",
+      "englishName": "Pre-service Equipment Check",
+      "category": "设备管理",
+      "description": "目的：开工前检查冷藏、冷冻、炉具、温度计及关键器具状态\n执行要求：发现异常立即报告并隔离受影响食材；检查结果留档\n检查频率：每日开档前\n适用区域/器具：温度计、设备点检表\n标准级别：基础标准\n适用档案：全厨房",
+      "seedNote": null,
+      "relatedSeeds": []
+    },
+    {
+      "seedId": "STD-010",
+      "kind": "PRODUCTION_STANDARD",
+      "name": "配方变更审核标准",
+      "englishName": "Recipe Change Control",
+      "category": "档案管理",
+      "description": "目的：配方调整需记录版本、变更内容、原因、测试结果与批准人\n执行要求：不得覆盖丢失旧版本；涉及过敏原、成本或工艺变化时重新验证\n检查频率：每次配方变更时\n适用区域/器具：版本记录、试制记录\n标准级别：管理标准\n适用档案：全部酱汁与菜谱\n备注：测试档案版本与编辑历史",
+      "seedNote": null,
+      "relatedSeeds": []
+    },
+    {
+      "seedId": "STD-101",
+      "kind": "STORAGE_STANDARD",
+      "name": "冷藏食材储存标准",
+      "englishName": "Chilled Storage",
+      "category": "冷藏",
+      "description": "条件/温区：0–4℃（示例目标区间，最终按当地法规及设备制度确认）\n储存要求：密封、加盖、标识；生食与即食分层分区；先进先出\n检查频率：每日开档及收档检查；入库时记录\n适用对象：乳制品、肉类、水产及需冷藏果蔬\n记录要求：温度记录、批次标签\n适用食材：ING-001;ING-002;ING-003;ING-004;ING-011;ING-012;ING-013\n备注：测试储存条件字段",
+      "seedNote": null,
+      "relatedSeeds": [
+        "ING-001",
+        "ING-002",
+        "ING-003",
+        "ING-004",
+        "ING-011",
+        "ING-012",
+        "ING-013"
+      ]
+    },
+    {
+      "seedId": "STD-102",
+      "kind": "STORAGE_STANDARD",
+      "name": "冷冻食材储存标准",
+      "englishName": "Frozen Storage",
+      "category": "冷冻",
+      "description": "条件/温区：-18℃或以下（示例目标，按标签与当地要求确认）\n储存要求：密封防冻伤；标注品名、批次、入冻日期；避免反复解冻\n检查频率：每日检查设备；每次入库/出库记录\n适用对象：冷冻水产、肉类及分装半成品\n记录要求：温度记录、批次标签\n适用食材：ING-014",
+      "seedNote": null,
+      "relatedSeeds": [
+        "ING-014"
+      ]
+    },
+    {
+      "seedId": "STD-103",
+      "kind": "STORAGE_STANDARD",
+      "name": "干货储存标准",
+      "englishName": "Dry Goods Storage",
+      "category": "常温干燥",
+      "description": "条件/温区：阴凉、干燥、通风；按供应商标签要求\n储存要求：离地离墙；密封防潮防虫；开封后标注日期\n检查频率：每周检查；开封时检查\n适用对象：面粉、香料、干货\n记录要求：开封日期、供应商标签\n适用食材：ING-016;ING-017;ING-018",
+      "seedNote": null,
+      "relatedSeeds": [
+        "ING-016",
+        "ING-017",
+        "ING-018"
+      ]
+    },
+    {
+      "seedId": "STD-104",
+      "kind": "STORAGE_STANDARD",
+      "name": "食用油储存标准",
+      "englishName": "Oil Storage",
+      "category": "避光常温",
+      "description": "条件/温区：阴凉避光，远离热源；按供应商标签\n储存要求：保持原包装或食品级密封容器；避免水分与杂质进入\n检查频率：每次取用检查；每周检查库存\n适用对象：橄榄油及其他食用油\n记录要求：开封日期、感官检查\n适用食材：ING-015",
+      "seedNote": null,
+      "relatedSeeds": [
+        "ING-015"
+      ]
+    },
+    {
+      "seedId": "STD-105",
+      "kind": "STORAGE_STANDARD",
+      "name": "果蔬分类储存标准",
+      "englishName": "Produce Storage",
+      "category": "果蔬分区",
+      "description": "条件/温区：按品种、成熟度及供应商要求选择冷藏或阴凉储存\n储存要求：易释放乙烯与敏感品种分开；清洁干燥；破损品及时剔除\n检查频率：每日检查；收货时分拣\n适用对象：柠檬、番茄、胡萝卜、土豆、洋葱\n记录要求：收货日期、状态检查\n适用食材：ING-006;ING-007;ING-008;ING-009;ING-010",
+      "seedNote": null,
+      "relatedSeeds": [
+        "ING-006",
+        "ING-007",
+        "ING-008",
+        "ING-009",
+        "ING-010"
+      ]
+    },
+    {
+      "seedId": "STD-106",
+      "kind": "STORAGE_STANDARD",
+      "name": "熟制酱汁储存标准",
+      "englishName": "Cooked Sauce Storage",
+      "category": "熟制半成品",
+      "description": "条件/温区：按配方风险、冷却程序及当地食品安全要求确定\n储存要求：分装浅容器；快速冷却；密封、标识、冷藏；复热按门店验证流程执行\n检查频率：每批制作、冷却、复热时\n适用对象：温度记录、批次标签\n记录要求：制作时间、冷却记录、使用期限\n适用食材：Demi-glace、Velouté、Béchamel、番茄酱等\n备注：不在此处擅自设定统一保质期",
+      "seedNote": null,
+      "relatedSeeds": []
+    },
+    {
+      "seedId": "STD-107",
+      "kind": "STORAGE_STANDARD",
+      "name": "冷制酱汁储存标准",
+      "englishName": "Cold Sauce Storage",
+      "category": "冷制半成品",
+      "description": "条件/温区：按原料特性、配方风险及当地要求确定\n储存要求：使用洁净密封容器；冷藏；取用使用专用洁净器具；记录制作时间\n检查频率：每次制作与取用时\n适用对象：批次标签、洁净容器\n记录要求：制作时间、原料批次\n适用食材：青酱、油醋汁等",
+      "seedNote": null,
+      "relatedSeeds": []
+    },
+    {
+      "seedId": "STD-108",
+      "kind": "STORAGE_STANDARD",
+      "name": "生肉水产分区储存标准",
+      "englishName": "Raw Protein Segregation",
+      "category": "交叉污染控制",
+      "description": "条件/温区：按设备温区、品类风险和门店食品安全制度设置\n储存要求：生肉水产密封并置于指定区域；防止滴液污染其他食材；鱼类与肉类分区\n检查频率：收货入库、每日检查\n适用对象：独立容器、货架标识\n记录要求：供应商、批次、收货时间\n适用食材：牛肉、鸡肉、三文鱼、虾仁",
+      "seedNote": null,
+      "relatedSeeds": []
+    },
+    {
+      "seedId": "STD-109",
+      "kind": "STORAGE_STANDARD",
+      "name": "开封商品储存标准",
+      "englishName": "Opened Product Storage",
+      "category": "开封管理",
+      "description": "条件/温区：遵循产品标签及门店验证后的期限\n储存要求：保留原标签信息；另加开封日期、责任人；转装需使用食品级容器\n检查频率：每次开封时；每日检查\n适用对象：开封标签、密封容器\n记录要求：开封日期、使用期限\n适用食材：牛奶、淡奶油、芝士、罐装番茄等",
+      "seedNote": null,
+      "relatedSeeds": []
+    },
+    {
+      "seedId": "STD-110",
+      "kind": "STORAGE_STANDARD",
+      "name": "先进先出与临期检查标准",
+      "englishName": "FIFO & Expiry Review",
+      "category": "库存周转",
+      "description": "条件/温区：按批次日期与实际使用期限排序\n储存要求：先到期先使用；临期批次前置；过期或状态异常批次隔离并记录\n检查频率：每日开档检查；每次领用时\n适用对象：批次台账、临期清单\n记录要求：批次、到期日、处置记录\n适用食材：全部库存商品\n备注：测试批次关联与临期状态",
+      "seedNote": null,
+      "relatedSeeds": []
+    }
+  ],
+  "relations": [
+    {
+      "sourceSeedId": "SAU-001",
+      "targetSeedId": "TECH-001",
+      "relationLabel": "关联烹饪技术"
+    },
+    {
+      "sourceSeedId": "SAU-001",
+      "targetSeedId": "TECH-004",
+      "relationLabel": "关联烹饪技术"
+    },
+    {
+      "sourceSeedId": "SAU-001",
+      "targetSeedId": "STD-001",
+      "relationLabel": "关联制作标准"
+    },
+    {
+      "sourceSeedId": "SAU-001",
+      "targetSeedId": "STD-006",
+      "relationLabel": "关联制作标准"
+    },
+    {
+      "sourceSeedId": "SAU-001",
+      "targetSeedId": "ING-007",
+      "relationLabel": "主要原料"
+    },
+    {
+      "sourceSeedId": "SAU-001",
+      "targetSeedId": "ING-001",
+      "relationLabel": "主要原料"
+    },
+    {
+      "sourceSeedId": "SAU-002",
+      "targetSeedId": "TECH-001",
+      "relationLabel": "关联烹饪技术"
+    },
+    {
+      "sourceSeedId": "SAU-002",
+      "targetSeedId": "TECH-002",
+      "relationLabel": "关联烹饪技术"
+    },
+    {
+      "sourceSeedId": "SAU-002",
+      "targetSeedId": "STD-002",
+      "relationLabel": "关联制作标准"
+    },
+    {
+      "sourceSeedId": "SAU-002",
+      "targetSeedId": "STD-006",
+      "relationLabel": "关联制作标准"
+    },
+    {
+      "sourceSeedId": "SAU-002",
+      "targetSeedId": "ING-004",
+      "relationLabel": "主要原料"
+    },
+    {
+      "sourceSeedId": "SAU-002",
+      "targetSeedId": "ING-001",
+      "relationLabel": "主要原料"
+    },
+    {
+      "sourceSeedId": "SAU-002",
+      "targetSeedId": "ING-009",
+      "relationLabel": "主要原料"
+    },
+    {
+      "sourceSeedId": "SAU-003",
+      "targetSeedId": "TECH-005",
+      "relationLabel": "关联烹饪技术"
+    },
+    {
+      "sourceSeedId": "SAU-003",
+      "targetSeedId": "TECH-006",
+      "relationLabel": "关联烹饪技术"
+    },
+    {
+      "sourceSeedId": "SAU-003",
+      "targetSeedId": "STD-003",
+      "relationLabel": "关联制作标准"
+    },
+    {
+      "sourceSeedId": "SAU-003",
+      "targetSeedId": "STD-004",
+      "relationLabel": "关联制作标准"
+    },
+    {
+      "sourceSeedId": "SAU-004",
+      "targetSeedId": "TECH-001",
+      "relationLabel": "关联烹饪技术"
+    },
+    {
+      "sourceSeedId": "SAU-004",
+      "targetSeedId": "TECH-004",
+      "relationLabel": "关联烹饪技术"
+    },
+    {
+      "sourceSeedId": "SAU-004",
+      "targetSeedId": "STD-001",
+      "relationLabel": "关联制作标准"
+    },
+    {
+      "sourceSeedId": "SAU-004",
+      "targetSeedId": "STD-006",
+      "relationLabel": "关联制作标准"
+    },
+    {
+      "sourceSeedId": "SAU-004",
+      "targetSeedId": "ING-007",
+      "relationLabel": "主要原料"
+    },
+    {
+      "sourceSeedId": "SAU-004",
+      "targetSeedId": "ING-001",
+      "relationLabel": "主要原料"
+    },
+    {
+      "sourceSeedId": "SAU-005",
+      "targetSeedId": "TECH-003",
+      "relationLabel": "关联烹饪技术"
+    },
+    {
+      "sourceSeedId": "SAU-005",
+      "targetSeedId": "TECH-005",
+      "relationLabel": "关联烹饪技术"
+    },
+    {
+      "sourceSeedId": "SAU-005",
+      "targetSeedId": "STD-003",
+      "relationLabel": "关联制作标准"
+    },
+    {
+      "sourceSeedId": "SAU-005",
+      "targetSeedId": "STD-004",
+      "relationLabel": "关联制作标准"
+    },
+    {
+      "sourceSeedId": "SAU-005",
+      "targetSeedId": "ING-016",
+      "relationLabel": "主要原料"
+    },
+    {
+      "sourceSeedId": "SAU-006",
+      "targetSeedId": "TECH-003",
+      "relationLabel": "关联烹饪技术"
+    },
+    {
+      "sourceSeedId": "SAU-006",
+      "targetSeedId": "TECH-005",
+      "relationLabel": "关联烹饪技术"
+    },
+    {
+      "sourceSeedId": "SAU-006",
+      "targetSeedId": "STD-003",
+      "relationLabel": "关联制作标准"
+    },
+    {
+      "sourceSeedId": "SAU-006",
+      "targetSeedId": "STD-004",
+      "relationLabel": "关联制作标准"
+    },
+    {
+      "sourceSeedId": "SAU-006",
+      "targetSeedId": "ING-001",
+      "relationLabel": "主要原料"
+    },
+    {
+      "sourceSeedId": "SAU-006",
+      "targetSeedId": "ING-016",
+      "relationLabel": "主要原料"
+    },
+    {
+      "sourceSeedId": "SAU-006",
+      "targetSeedId": "ING-003",
+      "relationLabel": "主要原料"
+    },
+    {
+      "sourceSeedId": "SAU-006",
+      "targetSeedId": "ING-007",
+      "relationLabel": "主要原料"
+    },
+    {
+      "sourceSeedId": "SAU-007",
+      "targetSeedId": "TECH-007",
+      "relationLabel": "关联烹饪技术"
+    },
+    {
+      "sourceSeedId": "SAU-007",
+      "targetSeedId": "STD-005",
+      "relationLabel": "关联制作标准"
+    },
+    {
+      "sourceSeedId": "SAU-007",
+      "targetSeedId": "STD-006",
+      "relationLabel": "关联制作标准"
+    },
+    {
+      "sourceSeedId": "SAU-007",
+      "targetSeedId": "ING-005",
+      "relationLabel": "主要原料"
+    },
+    {
+      "sourceSeedId": "SAU-007",
+      "targetSeedId": "ING-015",
+      "relationLabel": "主要原料"
+    },
+    {
+      "sourceSeedId": "SAU-008",
+      "targetSeedId": "TECH-001",
+      "relationLabel": "关联烹饪技术"
+    },
+    {
+      "sourceSeedId": "SAU-008",
+      "targetSeedId": "TECH-007",
+      "relationLabel": "关联烹饪技术"
+    },
+    {
+      "sourceSeedId": "SAU-008",
+      "targetSeedId": "STD-005",
+      "relationLabel": "关联制作标准"
+    },
+    {
+      "sourceSeedId": "SAU-008",
+      "targetSeedId": "STD-006",
+      "relationLabel": "关联制作标准"
+    },
+    {
+      "sourceSeedId": "SAU-008",
+      "targetSeedId": "ING-015",
+      "relationLabel": "主要原料"
+    },
+    {
+      "sourceSeedId": "SAU-008",
+      "targetSeedId": "ING-017",
+      "relationLabel": "主要原料"
+    },
+    {
+      "sourceSeedId": "SAU-009",
+      "targetSeedId": "TECH-005",
+      "relationLabel": "关联烹饪技术"
+    },
+    {
+      "sourceSeedId": "SAU-009",
+      "targetSeedId": "TECH-006",
+      "relationLabel": "关联烹饪技术"
+    },
+    {
+      "sourceSeedId": "SAU-009",
+      "targetSeedId": "STD-003",
+      "relationLabel": "关联制作标准"
+    },
+    {
+      "sourceSeedId": "SAU-009",
+      "targetSeedId": "STD-004",
+      "relationLabel": "关联制作标准"
+    },
+    {
+      "sourceSeedId": "SAU-009",
+      "targetSeedId": "ING-007",
+      "relationLabel": "主要原料"
+    },
+    {
+      "sourceSeedId": "SAU-009",
+      "targetSeedId": "ING-002",
+      "relationLabel": "主要原料"
+    },
+    {
+      "sourceSeedId": "SAU-010",
+      "targetSeedId": "TECH-005",
+      "relationLabel": "关联烹饪技术"
+    },
+    {
+      "sourceSeedId": "SAU-010",
+      "targetSeedId": "TECH-006",
+      "relationLabel": "关联烹饪技术"
+    },
+    {
+      "sourceSeedId": "SAU-010",
+      "targetSeedId": "STD-003",
+      "relationLabel": "关联制作标准"
+    },
+    {
+      "sourceSeedId": "SAU-010",
+      "targetSeedId": "STD-004",
+      "relationLabel": "关联制作标准"
+    },
+    {
+      "sourceSeedId": "SAU-010",
+      "targetSeedId": "ING-010",
+      "relationLabel": "主要原料"
+    },
+    {
+      "sourceSeedId": "SAU-010",
+      "targetSeedId": "ING-007",
+      "relationLabel": "主要原料"
+    },
+    {
+      "sourceSeedId": "SAU-010",
+      "targetSeedId": "ING-015",
+      "relationLabel": "主要原料"
+    },
+    {
+      "sourceSeedId": "SAU-010",
+      "targetSeedId": "ING-018",
+      "relationLabel": "主要原料"
+    },
+    {
+      "sourceSeedId": "REC-001",
+      "targetSeedId": "SAU-001",
+      "relationLabel": "配酱汁"
+    },
+    {
+      "sourceSeedId": "REC-001",
+      "targetSeedId": "TECH-001",
+      "relationLabel": "烹饪技术"
+    },
+    {
+      "sourceSeedId": "REC-001",
+      "targetSeedId": "TECH-004",
+      "relationLabel": "烹饪技术"
+    },
+    {
+      "sourceSeedId": "REC-001",
+      "targetSeedId": "STD-001",
+      "relationLabel": "制作标准"
+    },
+    {
+      "sourceSeedId": "REC-001",
+      "targetSeedId": "STD-002",
+      "relationLabel": "制作标准"
+    },
+    {
+      "sourceSeedId": "REC-001",
+      "targetSeedId": "STD-006",
+      "relationLabel": "制作标准"
+    },
+    {
+      "sourceSeedId": "REC-001",
+      "targetSeedId": "ING-011",
+      "relationLabel": "食材"
+    },
+    {
+      "sourceSeedId": "REC-001",
+      "targetSeedId": "ING-001",
+      "relationLabel": "食材"
+    },
+    {
+      "sourceSeedId": "REC-001",
+      "targetSeedId": "ING-009",
+      "relationLabel": "食材"
+    },
+    {
+      "sourceSeedId": "REC-002",
+      "targetSeedId": "SAU-003",
+      "relationLabel": "配酱汁"
+    },
+    {
+      "sourceSeedId": "REC-002",
+      "targetSeedId": "TECH-004",
+      "relationLabel": "烹饪技术"
+    },
+    {
+      "sourceSeedId": "REC-002",
+      "targetSeedId": "TECH-008",
+      "relationLabel": "烹饪技术"
+    },
+    {
+      "sourceSeedId": "REC-002",
+      "targetSeedId": "STD-001",
+      "relationLabel": "制作标准"
+    },
+    {
+      "sourceSeedId": "REC-002",
+      "targetSeedId": "STD-002",
+      "relationLabel": "制作标准"
+    },
+    {
+      "sourceSeedId": "REC-002",
+      "targetSeedId": "STD-006",
+      "relationLabel": "制作标准"
+    },
+    {
+      "sourceSeedId": "REC-002",
+      "targetSeedId": "ING-013",
+      "relationLabel": "食材"
+    },
+    {
+      "sourceSeedId": "REC-002",
+      "targetSeedId": "ING-001",
+      "relationLabel": "食材"
+    },
+    {
+      "sourceSeedId": "REC-002",
+      "targetSeedId": "ING-018",
+      "relationLabel": "食材"
+    },
+    {
+      "sourceSeedId": "REC-002",
+      "targetSeedId": "ING-017",
+      "relationLabel": "食材"
+    },
+    {
+      "sourceSeedId": "REC-003",
+      "targetSeedId": "SAU-009",
+      "relationLabel": "配酱汁"
+    },
+    {
+      "sourceSeedId": "REC-003",
+      "targetSeedId": "TECH-004",
+      "relationLabel": "烹饪技术"
+    },
+    {
+      "sourceSeedId": "REC-003",
+      "targetSeedId": "TECH-006",
+      "relationLabel": "烹饪技术"
+    },
+    {
+      "sourceSeedId": "REC-003",
+      "targetSeedId": "STD-001",
+      "relationLabel": "制作标准"
+    },
+    {
+      "sourceSeedId": "REC-003",
+      "targetSeedId": "STD-003",
+      "relationLabel": "制作标准"
+    },
+    {
+      "sourceSeedId": "REC-003",
+      "targetSeedId": "STD-004",
+      "relationLabel": "制作标准"
+    },
+    {
+      "sourceSeedId": "REC-003",
+      "targetSeedId": "ING-012",
+      "relationLabel": "食材"
+    },
+    {
+      "sourceSeedId": "REC-003",
+      "targetSeedId": "ING-002",
+      "relationLabel": "食材"
+    },
+    {
+      "sourceSeedId": "REC-003",
+      "targetSeedId": "ING-001",
+      "relationLabel": "食材"
+    },
+    {
+      "sourceSeedId": "REC-003",
+      "targetSeedId": "ING-017",
+      "relationLabel": "食材"
+    },
+    {
+      "sourceSeedId": "REC-004",
+      "targetSeedId": "SAU-010",
+      "relationLabel": "配酱汁"
+    },
+    {
+      "sourceSeedId": "REC-004",
+      "targetSeedId": "TECH-005",
+      "relationLabel": "烹饪技术"
+    },
+    {
+      "sourceSeedId": "REC-004",
+      "targetSeedId": "TECH-006",
+      "relationLabel": "烹饪技术"
+    },
+    {
+      "sourceSeedId": "REC-004",
+      "targetSeedId": "STD-003",
+      "relationLabel": "制作标准"
+    },
+    {
+      "sourceSeedId": "REC-004",
+      "targetSeedId": "STD-005",
+      "relationLabel": "制作标准"
+    },
+    {
+      "sourceSeedId": "REC-004",
+      "targetSeedId": "ING-010",
+      "relationLabel": "食材"
+    },
+    {
+      "sourceSeedId": "REC-004",
+      "targetSeedId": "ING-006",
+      "relationLabel": "食材"
+    },
+    {
+      "sourceSeedId": "REC-004",
+      "targetSeedId": "ING-007",
+      "relationLabel": "食材"
+    },
+    {
+      "sourceSeedId": "REC-004",
+      "targetSeedId": "ING-018",
+      "relationLabel": "食材"
+    },
+    {
+      "sourceSeedId": "REC-005",
+      "targetSeedId": "TECH-003",
+      "relationLabel": "烹饪技术"
+    },
+    {
+      "sourceSeedId": "REC-005",
+      "targetSeedId": "TECH-005",
+      "relationLabel": "烹饪技术"
+    },
+    {
+      "sourceSeedId": "REC-005",
+      "targetSeedId": "STD-003",
+      "relationLabel": "制作标准"
+    },
+    {
+      "sourceSeedId": "REC-005",
+      "targetSeedId": "STD-004",
+      "relationLabel": "制作标准"
+    },
+    {
+      "sourceSeedId": "REC-005",
+      "targetSeedId": "ING-008",
+      "relationLabel": "食材"
+    },
+    {
+      "sourceSeedId": "REC-005",
+      "targetSeedId": "ING-001",
+      "relationLabel": "食材"
+    },
+    {
+      "sourceSeedId": "REC-005",
+      "targetSeedId": "ING-003",
+      "relationLabel": "食材"
+    },
+    {
+      "sourceSeedId": "REC-005",
+      "targetSeedId": "ING-016",
+      "relationLabel": "食材"
+    },
+    {
+      "sourceSeedId": "REC-006",
+      "targetSeedId": "SAU-010",
+      "relationLabel": "配酱汁"
+    },
+    {
+      "sourceSeedId": "REC-006",
+      "targetSeedId": "TECH-005",
+      "relationLabel": "烹饪技术"
+    },
+    {
+      "sourceSeedId": "REC-006",
+      "targetSeedId": "TECH-007",
+      "relationLabel": "烹饪技术"
+    },
+    {
+      "sourceSeedId": "REC-006",
+      "targetSeedId": "STD-003",
+      "relationLabel": "制作标准"
+    },
+    {
+      "sourceSeedId": "REC-006",
+      "targetSeedId": "STD-005",
+      "relationLabel": "制作标准"
+    },
+    {
+      "sourceSeedId": "REC-006",
+      "targetSeedId": "ING-010",
+      "relationLabel": "食材"
+    },
+    {
+      "sourceSeedId": "REC-006",
+      "targetSeedId": "ING-006",
+      "relationLabel": "食材"
+    },
+    {
+      "sourceSeedId": "REC-006",
+      "targetSeedId": "ING-008",
+      "relationLabel": "食材"
+    },
+    {
+      "sourceSeedId": "REC-006",
+      "targetSeedId": "ING-007",
+      "relationLabel": "食材"
+    },
+    {
+      "sourceSeedId": "REC-007",
+      "targetSeedId": "TECH-002",
+      "relationLabel": "烹饪技术"
+    },
+    {
+      "sourceSeedId": "REC-007",
+      "targetSeedId": "TECH-004",
+      "relationLabel": "烹饪技术"
+    },
+    {
+      "sourceSeedId": "REC-007",
+      "targetSeedId": "STD-001",
+      "relationLabel": "制作标准"
+    },
+    {
+      "sourceSeedId": "REC-007",
+      "targetSeedId": "STD-002",
+      "relationLabel": "制作标准"
+    },
+    {
+      "sourceSeedId": "REC-007",
+      "targetSeedId": "ING-004",
+      "relationLabel": "食材"
+    },
+    {
+      "sourceSeedId": "REC-007",
+      "targetSeedId": "ING-001",
+      "relationLabel": "食材"
+    },
+    {
+      "sourceSeedId": "REC-007",
+      "targetSeedId": "ING-017",
+      "relationLabel": "食材"
+    },
+    {
+      "sourceSeedId": "REC-008",
+      "targetSeedId": "SAU-008",
+      "relationLabel": "配酱汁"
+    },
+    {
+      "sourceSeedId": "REC-008",
+      "targetSeedId": "TECH-007",
+      "relationLabel": "烹饪技术"
+    },
+    {
+      "sourceSeedId": "REC-008",
+      "targetSeedId": "STD-005",
+      "relationLabel": "制作标准"
+    },
+    {
+      "sourceSeedId": "REC-008",
+      "targetSeedId": "STD-006",
+      "relationLabel": "制作标准"
+    },
+    {
+      "sourceSeedId": "REC-008",
+      "targetSeedId": "ING-005",
+      "relationLabel": "食材"
+    },
+    {
+      "sourceSeedId": "REC-008",
+      "targetSeedId": "ING-009",
+      "relationLabel": "食材"
+    },
+    {
+      "sourceSeedId": "REC-008",
+      "targetSeedId": "ING-015",
+      "relationLabel": "食材"
+    },
+    {
+      "sourceSeedId": "REC-008",
+      "targetSeedId": "ING-017",
+      "relationLabel": "食材"
+    },
+    {
+      "sourceSeedId": "REC-009",
+      "targetSeedId": "SAU-004",
+      "relationLabel": "配酱汁"
+    },
+    {
+      "sourceSeedId": "REC-009",
+      "targetSeedId": "TECH-001",
+      "relationLabel": "烹饪技术"
+    },
+    {
+      "sourceSeedId": "REC-009",
+      "targetSeedId": "TECH-004",
+      "relationLabel": "烹饪技术"
+    },
+    {
+      "sourceSeedId": "REC-009",
+      "targetSeedId": "STD-001",
+      "relationLabel": "制作标准"
+    },
+    {
+      "sourceSeedId": "REC-009",
+      "targetSeedId": "STD-002",
+      "relationLabel": "制作标准"
+    },
+    {
+      "sourceSeedId": "REC-009",
+      "targetSeedId": "STD-006",
+      "relationLabel": "制作标准"
+    },
+    {
+      "sourceSeedId": "REC-009",
+      "targetSeedId": "ING-014",
+      "relationLabel": "食材"
+    },
+    {
+      "sourceSeedId": "REC-009",
+      "targetSeedId": "ING-001",
+      "relationLabel": "食材"
+    },
+    {
+      "sourceSeedId": "REC-009",
+      "targetSeedId": "ING-009",
+      "relationLabel": "食材"
+    },
+    {
+      "sourceSeedId": "REC-010",
+      "targetSeedId": "SAU-007",
+      "relationLabel": "配酱汁"
+    },
+    {
+      "sourceSeedId": "REC-010",
+      "targetSeedId": "TECH-007",
+      "relationLabel": "烹饪技术"
+    },
+    {
+      "sourceSeedId": "REC-010",
+      "targetSeedId": "STD-005",
+      "relationLabel": "制作标准"
+    },
+    {
+      "sourceSeedId": "REC-010",
+      "targetSeedId": "STD-006",
+      "relationLabel": "制作标准"
+    },
+    {
+      "sourceSeedId": "REC-010",
+      "targetSeedId": "ING-015",
+      "relationLabel": "食材"
+    },
+    {
+      "sourceSeedId": "REC-010",
+      "targetSeedId": "ING-005",
+      "relationLabel": "食材"
+    },
+    {
+      "sourceSeedId": "REC-010",
+      "targetSeedId": "ING-017",
+      "relationLabel": "食材"
+    },
+    {
+      "sourceSeedId": "ING-001",
+      "targetSeedId": "SAU-001",
+      "relationLabel": "被引用"
+    },
+    {
+      "sourceSeedId": "ING-001",
+      "targetSeedId": "SAU-002",
+      "relationLabel": "被引用"
+    },
+    {
+      "sourceSeedId": "ING-001",
+      "targetSeedId": "SAU-004",
+      "relationLabel": "被引用"
+    },
+    {
+      "sourceSeedId": "ING-001",
+      "targetSeedId": "SAU-006",
+      "relationLabel": "被引用"
+    },
+    {
+      "sourceSeedId": "ING-001",
+      "targetSeedId": "STD-004",
+      "relationLabel": "储存标准"
+    },
+    {
+      "sourceSeedId": "ING-002",
+      "targetSeedId": "SAU-009",
+      "relationLabel": "被引用"
+    },
+    {
+      "sourceSeedId": "ING-002",
+      "targetSeedId": "REC-003",
+      "relationLabel": "被引用"
+    },
+    {
+      "sourceSeedId": "ING-002",
+      "targetSeedId": "STD-004",
+      "relationLabel": "储存标准"
+    },
+    {
+      "sourceSeedId": "ING-003",
+      "targetSeedId": "SAU-006",
+      "relationLabel": "被引用"
+    },
+    {
+      "sourceSeedId": "ING-003",
+      "targetSeedId": "REC-005",
+      "relationLabel": "被引用"
+    },
+    {
+      "sourceSeedId": "ING-003",
+      "targetSeedId": "STD-004",
+      "relationLabel": "储存标准"
+    },
+    {
+      "sourceSeedId": "ING-004",
+      "targetSeedId": "SAU-002",
+      "relationLabel": "被引用"
+    },
+    {
+      "sourceSeedId": "ING-004",
+      "targetSeedId": "REC-007",
+      "relationLabel": "被引用"
+    },
+    {
+      "sourceSeedId": "ING-004",
+      "targetSeedId": "STD-004",
+      "relationLabel": "储存标准"
+    },
+    {
+      "sourceSeedId": "ING-005",
+      "targetSeedId": "SAU-007",
+      "relationLabel": "被引用"
+    },
+    {
+      "sourceSeedId": "ING-005",
+      "targetSeedId": "REC-008",
+      "relationLabel": "被引用"
+    },
+    {
+      "sourceSeedId": "ING-005",
+      "targetSeedId": "STD-004",
+      "relationLabel": "储存标准"
+    },
+    {
+      "sourceSeedId": "ING-006",
+      "targetSeedId": "REC-004",
+      "relationLabel": "被引用"
+    },
+    {
+      "sourceSeedId": "ING-006",
+      "targetSeedId": "REC-006",
+      "relationLabel": "被引用"
+    },
+    {
+      "sourceSeedId": "ING-006",
+      "targetSeedId": "STD-005",
+      "relationLabel": "储存标准"
+    },
+    {
+      "sourceSeedId": "ING-007",
+      "targetSeedId": "SAU-003",
+      "relationLabel": "被引用"
+    },
+    {
+      "sourceSeedId": "ING-007",
+      "targetSeedId": "SAU-005",
+      "relationLabel": "被引用"
+    },
+    {
+      "sourceSeedId": "ING-007",
+      "targetSeedId": "SAU-006",
+      "relationLabel": "被引用"
+    },
+    {
+      "sourceSeedId": "ING-007",
+      "targetSeedId": "SAU-009",
+      "relationLabel": "被引用"
+    },
+    {
+      "sourceSeedId": "ING-007",
+      "targetSeedId": "SAU-010",
+      "relationLabel": "被引用"
+    },
+    {
+      "sourceSeedId": "ING-007",
+      "targetSeedId": "STD-005",
+      "relationLabel": "储存标准"
+    },
+    {
+      "sourceSeedId": "ING-008",
+      "targetSeedId": "REC-005",
+      "relationLabel": "被引用"
+    },
+    {
+      "sourceSeedId": "ING-008",
+      "targetSeedId": "REC-006",
+      "relationLabel": "被引用"
+    },
+    {
+      "sourceSeedId": "ING-008",
+      "targetSeedId": "STD-005",
+      "relationLabel": "储存标准"
+    },
+    {
+      "sourceSeedId": "ING-009",
+      "targetSeedId": "SAU-001",
+      "relationLabel": "被引用"
+    },
+    {
+      "sourceSeedId": "ING-009",
+      "targetSeedId": "SAU-002",
+      "relationLabel": "被引用"
+    },
+    {
+      "sourceSeedId": "ING-009",
+      "targetSeedId": "REC-001",
+      "relationLabel": "被引用"
+    },
+    {
+      "sourceSeedId": "ING-009",
+      "targetSeedId": "REC-008",
+      "relationLabel": "被引用"
+    },
+    {
+      "sourceSeedId": "ING-009",
+      "targetSeedId": "STD-005",
+      "relationLabel": "储存标准"
+    },
+    {
+      "sourceSeedId": "ING-010",
+      "targetSeedId": "SAU-010",
+      "relationLabel": "被引用"
+    },
+    {
+      "sourceSeedId": "ING-010",
+      "targetSeedId": "REC-004",
+      "relationLabel": "被引用"
+    },
+    {
+      "sourceSeedId": "ING-010",
+      "targetSeedId": "REC-006",
+      "relationLabel": "被引用"
+    },
+    {
+      "sourceSeedId": "ING-010",
+      "targetSeedId": "STD-005",
+      "relationLabel": "储存标准"
+    },
+    {
+      "sourceSeedId": "ING-011",
+      "targetSeedId": "REC-001",
+      "relationLabel": "被引用"
+    },
+    {
+      "sourceSeedId": "ING-011",
+      "targetSeedId": "STD-004",
+      "relationLabel": "储存标准"
+    },
+    {
+      "sourceSeedId": "ING-012",
+      "targetSeedId": "REC-003",
+      "relationLabel": "被引用"
+    },
+    {
+      "sourceSeedId": "ING-012",
+      "targetSeedId": "STD-004",
+      "relationLabel": "储存标准"
+    },
+    {
+      "sourceSeedId": "ING-013",
+      "targetSeedId": "REC-002",
+      "relationLabel": "被引用"
+    },
+    {
+      "sourceSeedId": "ING-013",
+      "targetSeedId": "STD-004",
+      "relationLabel": "储存标准"
+    },
+    {
+      "sourceSeedId": "ING-014",
+      "targetSeedId": "REC-009",
+      "relationLabel": "被引用"
+    },
+    {
+      "sourceSeedId": "ING-014",
+      "targetSeedId": "STD-004",
+      "relationLabel": "储存标准"
+    },
+    {
+      "sourceSeedId": "ING-015",
+      "targetSeedId": "SAU-007",
+      "relationLabel": "被引用"
+    },
+    {
+      "sourceSeedId": "ING-015",
+      "targetSeedId": "SAU-008",
+      "relationLabel": "被引用"
+    },
+    {
+      "sourceSeedId": "ING-015",
+      "targetSeedId": "SAU-010",
+      "relationLabel": "被引用"
+    },
+    {
+      "sourceSeedId": "ING-015",
+      "targetSeedId": "STD-005",
+      "relationLabel": "储存标准"
+    },
+    {
+      "sourceSeedId": "ING-016",
+      "targetSeedId": "SAU-005",
+      "relationLabel": "被引用"
+    },
+    {
+      "sourceSeedId": "ING-016",
+      "targetSeedId": "SAU-006",
+      "relationLabel": "被引用"
+    },
+    {
+      "sourceSeedId": "ING-016",
+      "targetSeedId": "REC-005",
+      "relationLabel": "被引用"
+    },
+    {
+      "sourceSeedId": "ING-016",
+      "targetSeedId": "STD-005",
+      "relationLabel": "储存标准"
+    },
+    {
+      "sourceSeedId": "ING-017",
+      "targetSeedId": "SAU-008",
+      "relationLabel": "被引用"
+    },
+    {
+      "sourceSeedId": "ING-017",
+      "targetSeedId": "REC-001",
+      "relationLabel": "被引用"
+    },
+    {
+      "sourceSeedId": "ING-017",
+      "targetSeedId": "REC-002",
+      "relationLabel": "被引用"
+    },
+    {
+      "sourceSeedId": "ING-017",
+      "targetSeedId": "REC-003",
+      "relationLabel": "被引用"
+    },
+    {
+      "sourceSeedId": "ING-017",
+      "targetSeedId": "STD-005",
+      "relationLabel": "储存标准"
+    },
+    {
+      "sourceSeedId": "ING-018",
+      "targetSeedId": "SAU-003",
+      "relationLabel": "被引用"
+    },
+    {
+      "sourceSeedId": "ING-018",
+      "targetSeedId": "SAU-010",
+      "relationLabel": "被引用"
+    },
+    {
+      "sourceSeedId": "ING-018",
+      "targetSeedId": "REC-002",
+      "relationLabel": "被引用"
+    },
+    {
+      "sourceSeedId": "ING-018",
+      "targetSeedId": "REC-004",
+      "relationLabel": "被引用"
+    },
+    {
+      "sourceSeedId": "ING-018",
+      "targetSeedId": "STD-005",
+      "relationLabel": "储存标准"
+    },
+    {
+      "sourceSeedId": "TECH-001",
+      "targetSeedId": "SAU-001",
+      "relationLabel": "关联档案"
+    },
+    {
+      "sourceSeedId": "TECH-001",
+      "targetSeedId": "SAU-002",
+      "relationLabel": "关联档案"
+    },
+    {
+      "sourceSeedId": "TECH-001",
+      "targetSeedId": "SAU-004",
+      "relationLabel": "关联档案"
+    },
+    {
+      "sourceSeedId": "TECH-001",
+      "targetSeedId": "SAU-008",
+      "relationLabel": "关联档案"
+    },
+    {
+      "sourceSeedId": "TECH-002",
+      "targetSeedId": "SAU-002",
+      "relationLabel": "关联档案"
+    },
+    {
+      "sourceSeedId": "TECH-002",
+      "targetSeedId": "REC-007",
+      "relationLabel": "关联档案"
+    },
+    {
+      "sourceSeedId": "TECH-003",
+      "targetSeedId": "SAU-005",
+      "relationLabel": "关联档案"
+    },
+    {
+      "sourceSeedId": "TECH-003",
+      "targetSeedId": "SAU-006",
+      "relationLabel": "关联档案"
+    },
+    {
+      "sourceSeedId": "TECH-004",
+      "targetSeedId": "REC-001",
+      "relationLabel": "关联档案"
+    },
+    {
+      "sourceSeedId": "TECH-004",
+      "targetSeedId": "REC-002",
+      "relationLabel": "关联档案"
+    },
+    {
+      "sourceSeedId": "TECH-004",
+      "targetSeedId": "REC-003",
+      "relationLabel": "关联档案"
+    },
+    {
+      "sourceSeedId": "TECH-004",
+      "targetSeedId": "REC-009",
+      "relationLabel": "关联档案"
+    },
+    {
+      "sourceSeedId": "TECH-005",
+      "targetSeedId": "SAU-003",
+      "relationLabel": "关联档案"
+    },
+    {
+      "sourceSeedId": "TECH-005",
+      "targetSeedId": "SAU-005",
+      "relationLabel": "关联档案"
+    },
+    {
+      "sourceSeedId": "TECH-005",
+      "targetSeedId": "SAU-010",
+      "relationLabel": "关联档案"
+    },
+    {
+      "sourceSeedId": "TECH-006",
+      "targetSeedId": "SAU-009",
+      "relationLabel": "关联档案"
+    },
+    {
+      "sourceSeedId": "TECH-006",
+      "targetSeedId": "SAU-010",
+      "relationLabel": "关联档案"
+    },
+    {
+      "sourceSeedId": "TECH-006",
+      "targetSeedId": "REC-004",
+      "relationLabel": "关联档案"
+    },
+    {
+      "sourceSeedId": "TECH-006",
+      "targetSeedId": "REC-006",
+      "relationLabel": "关联档案"
+    },
+    {
+      "sourceSeedId": "TECH-007",
+      "targetSeedId": "SAU-007",
+      "relationLabel": "关联档案"
+    },
+    {
+      "sourceSeedId": "TECH-007",
+      "targetSeedId": "SAU-008",
+      "relationLabel": "关联档案"
+    },
+    {
+      "sourceSeedId": "TECH-007",
+      "targetSeedId": "REC-008",
+      "relationLabel": "关联档案"
+    },
+    {
+      "sourceSeedId": "TECH-007",
+      "targetSeedId": "REC-010",
+      "relationLabel": "关联档案"
+    },
+    {
+      "sourceSeedId": "TECH-008",
+      "targetSeedId": "REC-002",
+      "relationLabel": "关联档案"
+    },
+    {
+      "sourceSeedId": "TECH-009",
+      "targetSeedId": "SAU-003",
+      "relationLabel": "关联档案"
+    },
+    {
+      "sourceSeedId": "TECH-009",
+      "targetSeedId": "SAU-005",
+      "relationLabel": "关联档案"
+    },
+    {
+      "sourceSeedId": "TECH-009",
+      "targetSeedId": "SAU-010",
+      "relationLabel": "关联档案"
+    },
+    {
+      "sourceSeedId": "TECH-010",
+      "targetSeedId": "REC-001",
+      "relationLabel": "关联档案"
+    },
+    {
+      "sourceSeedId": "TECH-010",
+      "targetSeedId": "REC-002",
+      "relationLabel": "关联档案"
+    },
+    {
+      "sourceSeedId": "TECH-010",
+      "targetSeedId": "REC-003",
+      "relationLabel": "关联档案"
+    },
+    {
+      "sourceSeedId": "TECH-010",
+      "targetSeedId": "REC-004",
+      "relationLabel": "关联档案"
+    },
+    {
+      "sourceSeedId": "TECH-010",
+      "targetSeedId": "REC-005",
+      "relationLabel": "关联档案"
+    },
+    {
+      "sourceSeedId": "STD-101",
+      "targetSeedId": "ING-001",
+      "relationLabel": "适用食材"
+    },
+    {
+      "sourceSeedId": "STD-101",
+      "targetSeedId": "ING-002",
+      "relationLabel": "适用食材"
+    },
+    {
+      "sourceSeedId": "STD-101",
+      "targetSeedId": "ING-003",
+      "relationLabel": "适用食材"
+    },
+    {
+      "sourceSeedId": "STD-101",
+      "targetSeedId": "ING-004",
+      "relationLabel": "适用食材"
+    },
+    {
+      "sourceSeedId": "STD-101",
+      "targetSeedId": "ING-011",
+      "relationLabel": "适用食材"
+    },
+    {
+      "sourceSeedId": "STD-101",
+      "targetSeedId": "ING-012",
+      "relationLabel": "适用食材"
+    },
+    {
+      "sourceSeedId": "STD-101",
+      "targetSeedId": "ING-013",
+      "relationLabel": "适用食材"
+    },
+    {
+      "sourceSeedId": "STD-102",
+      "targetSeedId": "ING-014",
+      "relationLabel": "适用食材"
+    },
+    {
+      "sourceSeedId": "STD-103",
+      "targetSeedId": "ING-016",
+      "relationLabel": "适用食材"
+    },
+    {
+      "sourceSeedId": "STD-103",
+      "targetSeedId": "ING-017",
+      "relationLabel": "适用食材"
+    },
+    {
+      "sourceSeedId": "STD-103",
+      "targetSeedId": "ING-018",
+      "relationLabel": "适用食材"
+    },
+    {
+      "sourceSeedId": "STD-104",
+      "targetSeedId": "ING-015",
+      "relationLabel": "适用食材"
+    },
+    {
+      "sourceSeedId": "STD-105",
+      "targetSeedId": "ING-006",
+      "relationLabel": "适用食材"
+    },
+    {
+      "sourceSeedId": "STD-105",
+      "targetSeedId": "ING-007",
+      "relationLabel": "适用食材"
+    },
+    {
+      "sourceSeedId": "STD-105",
+      "targetSeedId": "ING-008",
+      "relationLabel": "适用食材"
+    },
+    {
+      "sourceSeedId": "STD-105",
+      "targetSeedId": "ING-009",
+      "relationLabel": "适用食材"
+    },
+    {
+      "sourceSeedId": "STD-105",
+      "targetSeedId": "ING-010",
+      "relationLabel": "适用食材"
+    }
+  ]
+}

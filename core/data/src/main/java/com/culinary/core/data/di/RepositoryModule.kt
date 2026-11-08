@@ -3,12 +3,16 @@ package com.culinary.core.data.di
 import com.culinary.core.data.repository.CalculationRecordRepositoryImpl
 import com.culinary.core.data.repository.IngredientRepositoryImpl
 import com.culinary.core.data.repository.InventoryRepositoryImpl
+import com.culinary.core.data.repository.KitchenReferenceRepositoryImpl
+import com.culinary.core.data.repository.KitchenRelationRepositoryImpl
 import com.culinary.core.data.repository.RecipeRepositoryImpl
 import com.culinary.core.data.repository.SauceRepositoryImpl
 import com.culinary.core.data.repository.UnitRepositoryImpl
 import com.culinary.core.domain.repository.CalculationRecordRepository
 import com.culinary.core.domain.repository.IngredientRepository
 import com.culinary.core.domain.repository.InventoryRepository
+import com.culinary.core.domain.repository.KitchenReferenceRepository
+import com.culinary.core.domain.repository.KitchenRelationRepository
 import com.culinary.core.domain.repository.RecipeRepository
 import com.culinary.core.domain.repository.SauceRepository
 import com.culinary.core.domain.repository.UnitRepository
@@ -45,4 +49,12 @@ abstract class RepositoryModule {
     @Binds
     @Singleton
     abstract fun bindCalculationRecordRepository(impl: CalculationRecordRepositoryImpl): CalculationRecordRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindKitchenReferenceRepository(impl: KitchenReferenceRepositoryImpl): KitchenReferenceRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindKitchenRelationRepository(impl: KitchenRelationRepositoryImpl): KitchenRelationRepository
 }

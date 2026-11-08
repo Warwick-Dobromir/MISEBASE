@@ -66,4 +66,11 @@
     <string name="recipes_recipe_no_version">（无可引用版本）</string>
     <string name="recipes_optional_on">可选：是</string>
     <string name="recipes_optional_off">可选：否</string>
+    <string name="recipes_profile">档案说明</string>
+    <string name="recipes_english_name">英文名称</string>
+    <string name="recipes_allergen">过敏原提示</string>
+    <string name="recipes_ingredient_summary">食材及用量（原文）</string>
+    <string name="recipes_instructions">制作步骤</string>
+    <string name="recipes_relations">关联档案</string>
+    <string name="recipes_seed_badge">测试种子</string>
 </resources>

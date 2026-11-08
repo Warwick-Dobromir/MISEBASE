@@ -59,6 +59,18 @@ class IngredientEditorViewModel
                                     description =
                                         result.value.ingredient.description
                                             .orEmpty(),
+                                    englishName =
+                                        result.value.ingredient.englishName
+                                            .orEmpty(),
+                                    exampleProducts =
+                                        result.value.ingredient.exampleProducts
+                                            .orEmpty(),
+                                    storageNotes =
+                                        result.value.ingredient.storageNotes
+                                            .orEmpty(),
+                                    allergenNotes =
+                                        result.value.ingredient.allergenNotes
+                                            .orEmpty(),
                                     defaultUnit = result.value.defaultUnit ?: it.defaultUnit,
                                     isLoading = false,
                                 )
@@ -90,6 +102,22 @@ class IngredientEditorViewModel
             _uiState.update { it.copy(description = value) }
         }
 
+        fun onEnglishNameChange(value: String) {
+            _uiState.update { it.copy(englishName = value) }
+        }
+
+        fun onExampleProductsChange(value: String) {
+            _uiState.update { it.copy(exampleProducts = value) }
+        }
+
+        fun onStorageNotesChange(value: String) {
+            _uiState.update { it.copy(storageNotes = value) }
+        }
+
+        fun onAllergenNotesChange(value: String) {
+            _uiState.update { it.copy(allergenNotes = value) }
+        }
+
         fun onUnitChange(unit: UnitModel) {
             _uiState.update { it.copy(defaultUnit = unit) }
         }
@@ -115,6 +143,10 @@ class IngredientEditorViewModel
                             defaultUnitId = state.defaultUnit?.id,
                             category = state.category,
                             description = state.description,
+                            englishName = state.englishName,
+                            exampleProducts = state.exampleProducts,
+                            storageNotes = state.storageNotes,
+                            allergenNotes = state.allergenNotes,
                         ),
                     )
                 when (result) {

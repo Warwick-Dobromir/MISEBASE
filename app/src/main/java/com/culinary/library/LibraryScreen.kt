@@ -14,7 +14,7 @@ import com.culinary.core.designsystem.component.PageHeader
 import com.culinary.core.designsystem.theme.CulinarySpacing
 
 /**
- * 知识库聚合页外壳：顶部分段控件切换三个档案库，内容由 [content] 注入。
+ * 厨房内“烹饪资料”列表外壳：顶部分段控件切换三个档案库，内容由 [content] 注入。
  *
  * 只做容器，不合并 feature 代码；每个 Tab 仍渲染原 feature 的列表 Route。
  * 分段控件用香槟金下划线表达选中，不使用填充胶囊。
@@ -29,8 +29,8 @@ fun LibraryScreen(
     val tabs = LibraryTab.entries
     Column(modifier = modifier.fillMaxSize()) {
         PageHeader(
-            eyebrow = "LIBRARY",
-            title = stringResource(R.string.destination_library),
+            eyebrow = "CULINARY REFERENCES",
+            title = stringResource(R.string.kitchen_group_references),
         )
         CulinarySegmentedControl(
             options = tabs.map { stringResource(it.labelRes) },

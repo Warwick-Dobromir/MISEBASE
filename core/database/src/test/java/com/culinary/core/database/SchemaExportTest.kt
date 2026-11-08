@@ -8,8 +8,8 @@ import java.security.MessageDigest
 /**
  * 校验 Room 导出的 schema JSON。
  *
- * v1（31 表）是历史基线，文件字节不得变化；v2（33 表）在 MB-SC-001 中新增。
- * 迁移测试依赖 `2.json`，因此这里同时锁定版本号与表数。
+ * v1（31 表）、v2（33 表）、v3（34 表）是历史基线；v4 新增扩展字段与 kitchen_relation（35 表）。
+ * 迁移测试依赖各版本 JSON，因此这里同时锁定版本号与表数。
  */
 class SchemaExportTest {
     private val schemaDirectory =
@@ -37,10 +37,35 @@ class SchemaExportTest {
     }
 
     @Test
-    fun `registers exactly one forward migration from v1 to v2`() {
-        assertThat(CulinaryMigrations.ALL).hasLength(1)
+    fun `exports schema version 3 with thirty four tables`() {
+        val v3 = File(schemaDirectory, "3.json")
+
+        assertThat(v3.exists()).isTrue()
+        assertThat(v3.readText()).contains("\"version\": 3")
+        assertThat(v3.readText()).contains("\"tableName\": \"kitchen_reference\"")
+        assertThat(tableCount(v3)).isEqualTo(34)
+    }
+
+    @Test
+    fun `exports schema version 4 with thirty five tables`() {
+        val v4 = File(schemaDirectory, "4.json")
+
+        assertThat(v4.exists()).isTrue()
+        assertThat(v4.readText()).contains("\"version\": 4")
+        assertThat(v4.readText()).contains("\"tableName\": \"kitchen_relation\"")
+        assertThat(v4.readText()).contains("\"columnName\": \"seed_version\"")
+        assertThat(tableCount(v4)).isEqualTo(35)
+    }
+
+    @Test
+    fun `registers all forward migrations`() {
+        assertThat(CulinaryMigrations.ALL).hasLength(3)
         assertThat(CulinaryMigrations.MIGRATION_1_2.startVersion).isEqualTo(1)
         assertThat(CulinaryMigrations.MIGRATION_1_2.endVersion).isEqualTo(2)
+        assertThat(CulinaryMigrations.MIGRATION_2_3.startVersion).isEqualTo(2)
+        assertThat(CulinaryMigrations.MIGRATION_2_3.endVersion).isEqualTo(3)
+        assertThat(CulinaryMigrations.MIGRATION_3_4.startVersion).isEqualTo(3)
+        assertThat(CulinaryMigrations.MIGRATION_3_4.endVersion).isEqualTo(4)
     }
 
     private fun tableCount(file: File): Int = Regex("\"tableName\"").findAll(file.readText()).count()

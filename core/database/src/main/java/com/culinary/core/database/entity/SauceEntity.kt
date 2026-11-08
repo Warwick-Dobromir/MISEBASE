@@ -15,6 +15,7 @@ import com.culinary.core.database.model.EntityStatusDb
     indices = [
         Index(value = ["status"]),
         Index(value = ["family"]),
+        Index(value = ["seed_id"], unique = true),
     ],
 )
 data class SauceEntity(
@@ -37,6 +38,22 @@ data class SauceEntity(
     val storageNotes: String? = null,
     @ColumnInfo(name = "shelf_life_days")
     val shelfLifeDays: Int? = null,
+    @ColumnInfo(name = "english_name")
+    val englishName: String? = null,
+    @ColumnInfo(name = "main_ingredients")
+    val mainIngredients: String? = null,
+    @ColumnInfo(name = "preparation_summary")
+    val preparationSummary: String? = null,
+    @ColumnInfo(name = "key_parameters")
+    val keyParameters: String? = null,
+    @ColumnInfo(name = "adjustable_notes")
+    val adjustableNotes: String? = null,
+    @ColumnInfo(name = "seed_note")
+    val seedNote: String? = null,
+    @ColumnInfo(name = "seed_id")
+    val seedId: String? = null,
+    @ColumnInfo(name = "seed_version")
+    val seedVersion: String? = null,
     @ColumnInfo(name = "status")
     val status: EntityStatusDb = EntityStatusDb.ACTIVE,
     @ColumnInfo(name = "created_at")

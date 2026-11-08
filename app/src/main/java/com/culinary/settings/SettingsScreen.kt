@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
@@ -23,6 +24,9 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -87,10 +91,13 @@ fun SettingsRoute(
         onExportDiagnostics = { diagnosticsLauncher.launch("MISEBASE-diagnostics-${fileStamp()}.txt") },
         onShowLicenses = viewModel::showLicenses,
         onDismissLicenses = viewModel::dismissLicenses,
+        onReimportSeed = viewModel::reimportSeed,
+        onClearSeed = viewModel::clearSeed,
         modifier = modifier,
     )
 }
 
+@Suppress("LongMethod") // 设置页由多个独立分节组成，统一编排入口状态
 @Composable
 internal fun SettingsScreen(
     state: SettingsUiState,
@@ -102,8 +109,11 @@ internal fun SettingsScreen(
     onExportDiagnostics: () -> Unit,
     onShowLicenses: () -> Unit,
     onDismissLicenses: () -> Unit,
+    onReimportSeed: () -> Unit,
+    onClearSeed: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    var showSeedClearConfirm by remember { mutableStateOf(false) }
     Column(
         modifier =
             modifier
@@ -122,6 +132,11 @@ internal fun SettingsScreen(
                 state = state,
                 onRestoreClick = onRestoreClick,
                 onCancelRestore = onCancelRestore,
+            )
+            SeedSection(
+                state = state,
+                onReimport = onReimportSeed,
+                onClear = { showSeedClearConfirm = true },
             )
             DiagnosticsSection(state = state, onExportDiagnostics = onExportDiagnostics)
             AboutSection(state = state, onShowLicenses = onShowLicenses)
@@ -159,6 +174,21 @@ internal fun SettingsScreen(
 
     if (state.showLicenses) {
         LicenseDialog(onDismiss = onDismissLicenses)
+    }
+
+    if (showSeedClearConfirm) {
+        ConfirmDialog(
+            title = stringResource(R.string.settings_seed_clear_title),
+            message = stringResource(R.string.settings_seed_clear_body),
+            confirmLabel = stringResource(R.string.settings_seed_clear_confirm),
+            dismissLabel = stringResource(R.string.settings_cancel),
+            destructive = true,
+            onConfirm = {
+                showSeedClearConfirm = false
+                onClearSeed()
+            },
+            onDismiss = { showSeedClearConfirm = false },
+        )
     }
 }
 
@@ -266,6 +296,89 @@ private fun RestoreSection(
     }
     Text(
         text = stringResource(R.string.settings_restore_hint),
+        style = MaterialTheme.typography.labelSmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(top = CulinarySpacing.xs),
+    )
+}
+
+@Suppress("LongMethod") // 种子状态、两个操作与结果反馈保持在同一分节
+@Composable
+private fun SeedSection(
+    state: SettingsUiState,
+    onReimport: () -> Unit,
+    onClear: () -> Unit,
+) {
+    val status = state.seedStatus
+    val running = state.seedAction is SeedActionState.Running
+    SectionHeader(title = stringResource(R.string.settings_section_seed))
+    Text(
+        text = stringResource(R.string.settings_seed_body),
+        style = MaterialTheme.typography.bodyMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
+    Spacer(modifier = Modifier.height(CulinarySpacing.sm))
+    Text(
+        text =
+            when {
+                status?.isImported == true ->
+                    stringResource(
+                        R.string.settings_seed_counts,
+                        status.version.orEmpty(),
+                        status.counts.ingredients,
+                        status.counts.sauces,
+                        status.counts.recipes,
+                        status.counts.references,
+                    )
+
+                status?.disabled == true -> stringResource(R.string.settings_seed_cleared)
+                else -> stringResource(R.string.settings_seed_none)
+            },
+        style = MaterialTheme.typography.bodyLarge,
+        color = MaterialTheme.colorScheme.onSurface,
+    )
+    Spacer(modifier = Modifier.height(CulinarySpacing.sm))
+    Row(modifier = Modifier.fillMaxWidth()) {
+        CulinaryButton(
+            text = stringResource(R.string.settings_seed_reimport),
+            onClick = onReimport,
+            variant = CulinaryButtonVariant.Secondary,
+            enabled = !running,
+            modifier = Modifier.weight(1f),
+        )
+        Spacer(modifier = Modifier.width(CulinarySpacing.sm))
+        CulinaryButton(
+            text = stringResource(R.string.settings_seed_clear),
+            onClick = onClear,
+            variant = CulinaryButtonVariant.Danger,
+            enabled = !running && status?.isImported == true,
+            modifier = Modifier.weight(1f),
+        )
+    }
+    when (val action = state.seedAction) {
+        SeedActionState.Idle -> Unit
+        SeedActionState.Running -> RunningRow(text = stringResource(R.string.settings_seed_running))
+        is SeedActionState.Done ->
+            ResultPanel(
+                title = stringResource(R.string.settings_section_seed),
+                message =
+                    stringResource(
+                        if (action.imported) R.string.settings_seed_done_import else R.string.settings_seed_done_clear,
+                    ),
+                tone = StatusTone.Success,
+                modifier = Modifier.padding(top = CulinarySpacing.xs),
+            )
+
+        SeedActionState.Failed ->
+            ResultPanel(
+                title = stringResource(R.string.settings_section_seed),
+                message = stringResource(R.string.settings_seed_failed),
+                tone = StatusTone.Danger,
+                modifier = Modifier.padding(top = CulinarySpacing.xs),
+            )
+    }
+    Text(
+        text = stringResource(R.string.settings_seed_hint),
         style = MaterialTheme.typography.labelSmall,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
         modifier = Modifier.padding(top = CulinarySpacing.xs),

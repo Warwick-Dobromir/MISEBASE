@@ -73,6 +73,10 @@ class IngredientsUiTest {
                     onNameChange = {},
                     onCategoryChange = {},
                     onDescriptionChange = {},
+                    onEnglishNameChange = {},
+                    onExampleProductsChange = {},
+                    onStorageNotesChange = {},
+                    onAllergenNotesChange = {},
                     onOpenUnitPicker = {},
                     onSave = {},
                 )
@@ -118,6 +122,7 @@ class IngredientsUiTest {
                     detailState = IngredientDetailUiState(detail = detail, isLoading = false),
                     onEdit = {},
                     onArchive = {},
+                    onOpenRelation = { _, _ -> },
                 )
             }
         }

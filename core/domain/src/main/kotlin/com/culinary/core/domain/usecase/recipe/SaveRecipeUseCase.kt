@@ -17,6 +17,8 @@ data class SaveRecipeInput(
     val name: String,
     val category: RecipeCategory = RecipeCategory.DISH,
     val id: RecipeId? = null,
+    val englishName: String? = null,
+    val allergenNotes: String? = null,
 )
 
 /** 保存菜谱档案（不含版本内容）；编辑档案不改变已发布版本。 */
@@ -39,19 +41,29 @@ class SaveRecipeUseCase(
                     is Outcome.Success -> result.value
                 }
             }
-        val recipe =
-            Recipe(
+        val base =
+            existing ?: Recipe(
                 id = input.id ?: RecipeId(idGenerator.newId()),
                 name = name,
                 normalizedName = NameText.normalize(name),
                 category = input.category,
-                status = existing?.status ?: EntityStatus.ACTIVE,
+                status = EntityStatus.ACTIVE,
+            )
+        val recipe =
+            base.copy(
+                name = name,
+                normalizedName = NameText.normalize(name),
+                category = input.category,
+                englishName = input.englishName.blankToNull() ?: existing?.englishName,
+                allergenNotes = input.allergenNotes.blankToNull() ?: existing?.allergenNotes,
             )
         return transactionRunner.write { repository.save(recipe) }.flatMap { it }
     }
 
     private fun invalid(rule: String): Outcome<Nothing> =
         Outcome.failure(CulinaryError.Validation(field = "recipe.name", rule = rule))
+
+    private fun String?.blankToNull(): String? = this?.trim()?.takeIf { it.isNotEmpty() }
 
     private companion object {
         const val MAX_NAME_LENGTH = 120

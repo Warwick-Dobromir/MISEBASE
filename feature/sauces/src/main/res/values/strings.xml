@@ -50,4 +50,17 @@
     <string name="sauces_saved_hint">已保存，返回列表查看。</string>
     <string name="sauces_locked_component">只读保留</string>
     <string name="sauces_locked_components_hint">子菜谱 / 子酱汁组成行来自导入数据，本阶段只读保留；保存草稿会原样写回，不会丢失。</string>
+    <string name="sauces_profile">档案说明</string>
+    <string name="sauces_english_name">英文名称</string>
+    <string name="sauces_usage">适用方向</string>
+    <string name="sauces_finished_standard">成品标准</string>
+    <string name="sauces_texture">质地</string>
+    <string name="sauces_main_ingredients">主要原料</string>
+    <string name="sauces_preparation">制作概要</string>
+    <string name="sauces_key_parameters">关键工艺参数</string>
+    <string name="sauces_storage">保存建议</string>
+    <string name="sauces_adjustable">可调整项</string>
+    <string name="sauces_seed_note">测试备注</string>
+    <string name="sauces_relations">关联档案</string>
+    <string name="sauces_seed_badge">测试种子</string>
 </resources>

@@ -19,6 +19,10 @@ data class SaveIngredientInput(
     val defaultUnitId: UnitId? = null,
     val category: String? = null,
     val description: String? = null,
+    val englishName: String? = null,
+    val exampleProducts: String? = null,
+    val storageNotes: String? = null,
+    val allergenNotes: String? = null,
 )
 
 /**
@@ -36,16 +40,34 @@ class SaveIngredientUseCase(
         val error = validate(input)
         if (error != null) return Outcome.failure(error)
         val name = input.name.trim()
-
-        val ingredient =
-            Ingredient(
+        val existing =
+            if (input.id == null) {
+                null
+            } else {
+                when (val result = repository.get(input.id)) {
+                    is Outcome.Failure -> return result
+                    is Outcome.Success -> result.value
+                }
+            }
+        val base =
+            existing ?: Ingredient(
                 id = input.id ?: IngredientId(idGenerator.newId()),
                 name = name,
                 normalizedName = NameText.normalize(name),
                 defaultUnitId = input.defaultUnitId,
                 status = EntityStatus.ACTIVE,
+            )
+        val ingredient =
+            base.copy(
+                name = name,
+                normalizedName = NameText.normalize(name),
+                defaultUnitId = input.defaultUnitId,
                 category = input.category.blankToNull(),
                 description = input.description.blankToNull(),
+                englishName = input.englishName.blankToNull() ?: existing?.englishName,
+                exampleProducts = input.exampleProducts.blankToNull() ?: existing?.exampleProducts,
+                storageNotes = input.storageNotes.blankToNull() ?: existing?.storageNotes,
+                allergenNotes = input.allergenNotes.blankToNull() ?: existing?.allergenNotes,
             )
 
         return transactionRunner.write { repository.save(ingredient) }.flatMap { it }

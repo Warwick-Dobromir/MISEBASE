@@ -1,0 +1,34 @@
+KITCHEN-HOME delivery install / cold-start check
+Date: 2026-11-08 (Asia/Hong_Kong)
+Device: Android 16 / API 36.1 x86_64 emulator (sdk_gphone64_x86_64)
+Display: 1260x2800, 453dpi (approximate vivo S20), plus 1080x1920 @480dpi narrow/short screen test.
+
+APK:
+D:\MISEBASE\dist\KITCHEN-HOME-001\MISEBASE-1.0.0-kitchen-home-20261108-debug.apk
+Size: 39,116,272 bytes
+SHA-256: 4d1ad79ee5973fb417c167b2bf4f751c2ca2f245d2d8bd258a28228c6a754f00
+
+Install:
+adb install -r "...\MISEBASE-1.0.0-kitchen-home-20261108-debug.apk"
+=> Success
+
+Cold start:
+adb shell am force-stop com.culinary
+adb shell am start -W -n com.culinary/.MainActivity
+=> Status: ok
+=> LaunchState: COLD
+=> TotalTime: 2581
+=> WaitTime: 2593
+
+Package:
+com.culinary
+versionCode=1
+versionName=1.0.0
+minSdk=26
+targetSdk=36
+
+Signature:
+APK Signature Scheme v2 verified.
+
+Crash check:
+No FATAL EXCEPTION and no application ANR in final launch.

@@ -4,6 +4,7 @@ import com.culinary.core.common.CulinaryError
 import com.culinary.core.domain.model.ExpandedRecipe
 import com.culinary.core.domain.model.Ingredient
 import com.culinary.core.domain.model.IngredientId
+import com.culinary.core.domain.model.KitchenRelatedRecord
 import com.culinary.core.domain.model.RecipeCategory
 import com.culinary.core.domain.model.RecipeComponentKind
 import com.culinary.core.domain.model.RecipeDetail
@@ -40,6 +41,7 @@ data class RecipeDetailUiState(
     val expansionError: String? = null,
     val targetServings: String = "1",
     val error: String? = null,
+    val relations: List<KitchenRelatedRecord> = emptyList(),
 )
 
 /** 编辑器中的组成行；保留目标 id 以支持重新编辑与版本固定。 */
