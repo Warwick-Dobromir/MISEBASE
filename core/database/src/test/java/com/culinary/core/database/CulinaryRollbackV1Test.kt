@@ -67,7 +67,7 @@ class CulinaryRollbackV1Test {
                     ),
                     emptyList(),
                 )
-                assertThat(userVersion(migrated.openHelper.writableDatabase)).isEqualTo(4)
+                assertThat(userVersion(migrated.openHelper.writableDatabase)).isEqualTo(5)
             } finally {
                 migrated.close()
                 database = null
@@ -94,7 +94,7 @@ class CulinaryRollbackV1Test {
             val reopened = openV2()
             try {
                 val sqlite = reopened.openHelper.writableDatabase
-                assertThat(userVersion(sqlite)).isEqualTo(4)
+                assertThat(userVersion(sqlite)).isEqualTo(5)
                 assertThat(reopened.recipeVersionDao().findById(VERSION_ID)?.servings).isEqualTo(1)
                 assertThat(reopened.calculationRecordDao().count()).isEqualTo(0)
                 sqlite.query("PRAGMA foreign_key_check").use { cursor ->
@@ -111,7 +111,7 @@ class CulinaryRollbackV1Test {
 
             // 3) 没有降级迁移；不得声称支持原地降级。
             assertThat(CulinaryMigrations.ALL.map { migration -> migration.startVersion to migration.endVersion })
-                .containsExactly(1 to 2, 2 to 3, 3 to 4)
+                .containsExactly(1 to 2, 2 to 3, 3 to 4, 4 to 5)
         }
     }
 

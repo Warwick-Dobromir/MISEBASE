@@ -52,6 +52,18 @@ interface SauceVersionDao {
         qty: Double,
     )
 
+    @Query(
+        "UPDATE sauce_version SET yield_qty = :yieldQty, yield_unit_id = :yieldUnitId, " +
+            "instructions_md = :instructionsMd, steps_json = :stepsJson WHERE id = :id AND status = 'DRAFT'",
+    )
+    suspend fun updateDraft(
+        id: String,
+        yieldQty: Double,
+        yieldUnitId: String,
+        instructionsMd: String?,
+        stepsJson: String?,
+    )
+
     @Query("SELECT COUNT(*) FROM sauce_version")
     suspend fun count(): Int
 }

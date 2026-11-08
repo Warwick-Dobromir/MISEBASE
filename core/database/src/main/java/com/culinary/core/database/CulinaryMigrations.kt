@@ -11,6 +11,8 @@ import com.culinary.core.database.schema.CulinarySchemaExtras
  * v2 → v3：只新增 kitchen_reference（烹饪技术 / 制作标准 / 储存标准），
  * 不改既有表、不移动既有数据。
  * v3 → v4：补充六库档案扩展字段、测试种子标记与档案关系表；旧行全部保持 null。
+ * v4 → v5：酱汁编辑器所需的描述、难度、图注、步骤 JSON、原料名称覆盖与关系排序；
+ * 只增加可空列或带默认值的列，不移动/重写既有数据。
  */
 internal object CulinaryMigrations {
     val MIGRATION_1_2: Migration = MIGRATION_1_2_IMPL
@@ -19,7 +21,9 @@ internal object CulinaryMigrations {
 
     val MIGRATION_3_4: Migration = MIGRATION_3_4_IMPL
 
-    val ALL: Array<Migration> = arrayOf(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
+    val MIGRATION_4_5: Migration = MIGRATION_4_5_IMPL
+
+    val ALL: Array<Migration> = arrayOf(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
 }
 
 private val MIGRATION_1_2_IMPL =
@@ -62,6 +66,35 @@ private val MIGRATION_3_4_IMPL =
             CREATE_KITCHEN_RELATION_INDICES.forEach(db::execSQL)
         }
     }
+
+private val MIGRATION_4_5_IMPL =
+    object : Migration(4, 5) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            // v4 连接打开时也会重建运行时局部索引；迁移校验前先移除。
+            CulinarySchemaExtras.dropPartialIndexes(db)
+            SAUCE_V5_COLUMNS.forEach { db.execSQL("ALTER TABLE `sauce` ADD COLUMN $it") }
+            db.execSQL("ALTER TABLE `sauce_version` ADD COLUMN `steps_json` TEXT")
+            SAUCE_COMPONENT_V5_COLUMNS.forEach {
+                db.execSQL("ALTER TABLE `sauce_component` ADD COLUMN $it")
+            }
+            db.execSQL(
+                "ALTER TABLE `kitchen_relation` ADD COLUMN `sort_order` INTEGER NOT NULL DEFAULT 0",
+            )
+        }
+    }
+
+private val SAUCE_V5_COLUMNS =
+    listOf(
+        "`description` TEXT",
+        "`difficulty` TEXT",
+        "`hero_caption` TEXT",
+    )
+
+private val SAUCE_COMPONENT_V5_COLUMNS =
+    listOf(
+        "`label_override` TEXT",
+        "`label_override_en` TEXT",
+    )
 
 private val SAUCE_V4_COLUMNS =
     listOf(

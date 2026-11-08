@@ -18,6 +18,7 @@
     <string name="sauces_no_components">该版本还没有组成行。</string>
     <string name="sauces_optional">可选</string>
     <string name="sauces_versions">版本历史</string>
+    <string name="sauces_pending_draft">待发布草稿</string>
     <string name="sauces_current_badge">当前</string>
     <string name="sauces_status_draft">草稿</string>
     <string name="sauces_status_published">已发布</string>
@@ -63,4 +64,47 @@
     <string name="sauces_seed_note">测试备注</string>
     <string name="sauces_relations">关联档案</string>
     <string name="sauces_seed_badge">测试种子</string>
+
+    <!-- 酱汁档案编辑器 -->
+    <string name="sauces_save">保存</string>
+    <string name="sauces_editor_ingredients">原料配方</string>
+    <string name="sauces_editor_method">制作工艺</string>
+    <string name="sauces_editor_ingredient_name">原料名称</string>
+    <string name="sauces_editor_step_title">步骤标题</string>
+    <string name="sauces_editor_step_body">输入具体的操作描述……</string>
+    <string name="sauces_hero_title">成品图片</string>
+    <string name="sauces_hero_upload">上传成品参考图</string>
+    <string name="sauces_hero_caption_hint">成品参考 · 描述酱汁的色泽与质地……</string>
+    <string name="sauces_step_upload">上传步骤图</string>
+    <string name="sauces_application">适用范围</string>
+    <string name="sauces_application_hint">输入适合搭配的食材与菜品……</string>
+    <string name="sauces_relations_title">衍生关系</string>
+    <string name="sauces_relation_add">+ 关联衍生酱汁</string>
+    <string name="sauces_relation_empty">还没有关联衍生酱汁。</string>
+    <string name="sauces_relation_remove">解除关联</string>
+    <string name="sauces_relation_picker_title">关联衍生酱汁</string>
+    <string name="sauces_image_replace">替换</string>
+    <string name="sauces_image_delete">删除</string>
+    <string name="sauces_add_step">+ 添加新步骤</string>
+    <string name="sauces_remove_step">删除步骤</string>
+    <string name="sauces_method_empty">还没有制作步骤，点击下方添加。</string>
+    <string name="sauces_notes">研发备注</string>
+    <string name="sauces_notes_hint">记录个人调整、失败原因、风味变化及实际测试结果。</string>
+    <string name="sauces_notes_placeholder">记录本次研发的观察与结论……</string>
+    <string name="sauces_notes_add_text">+ 添加文字备注</string>
+    <string name="sauces_notes_add_photo">+ 上传研发照片</string>
+    <string name="sauces_difficulty_easy">简单</string>
+    <string name="sauces_difficulty_medium">中等</string>
+    <string name="sauces_difficulty_hard">困难</string>
+    <string name="sauces_difficulty_placeholder">选择难度</string>
+    <string name="sauces_last_updated">最后更新 · %1$s</string>
+    <string name="sauces_unsaved_date">尚未保存</string>
+    <string name="sauces_delete_archive">删除此酱汁档案</string>
+    <string name="sauces_delete_title">删除此酱汁档案？</string>
+    <string name="sauces_delete_message">档案将被归档，不再出现在新建引用中；历史版本、图片和关联关系保留。</string>
+    <string name="sauces_delete_confirm">归档档案</string>
+    <string name="sauces_discard_title">放弃未保存修改？</string>
+    <string name="sauces_discard_message">当前编辑内容尚未保存，离开后这些修改会丢失。</string>
+    <string name="sauces_discard_confirm">放弃修改</string>
+    <string name="sauces_continue_editing">继续编辑</string>
 </resources>

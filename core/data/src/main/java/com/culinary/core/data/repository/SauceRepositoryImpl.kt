@@ -99,9 +99,21 @@ class SauceRepositoryImpl
         override suspend fun saveDraft(version: SauceVersion): Outcome<SauceVersionId> =
             try {
                 val now = clock.now().toEpochMilli()
-                versionDao.insert(
-                    SauceMapper.toVersionEntity(version, publishedAt = null, createdAt = now),
-                )
+                val existing = versionDao.findById(version.id.value)
+                if (existing == null) {
+                    versionDao.insert(
+                        SauceMapper.toVersionEntity(version, publishedAt = null, createdAt = now),
+                    )
+                } else {
+                    versionDao.updateDraft(
+                        id = version.id.value,
+                        yieldQty = version.yield.amount,
+                        yieldUnitId = version.yield.unit.id.value,
+                        instructionsMd = version.instructions,
+                        stepsJson = version.stepsJson,
+                    )
+                    componentDao.deleteByVersion(version.id.value)
+                }
                 componentDao.insertAll(
                     version.components.map { component ->
                         SauceMapper.toComponentEntity(
@@ -148,6 +160,20 @@ class SauceRepositoryImpl
                 }
                 versionDao.setCurrent(version.id.value, true)
                 Outcome.success(version.id)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Throwable) {
+                Outcome.failure(DbErrorMapper.map(e))
+            }
+
+        override suspend fun archive(id: SauceId): Outcome<kotlin.Unit> =
+            try {
+                val changed = sauceDao.archive(id.value, clock.now().toEpochMilli())
+                if (changed == 0) {
+                    Outcome.failure(CulinaryError.NotFound(entity = "sauce", id = id.value))
+                } else {
+                    Outcome.success(kotlin.Unit)
+                }
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Throwable) {

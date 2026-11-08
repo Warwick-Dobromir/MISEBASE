@@ -31,9 +31,10 @@ class GetSauceDetailUseCase(
         val current =
             versions.firstOrNull { it.isCurrent }
                 ?: sauceRepository.findCurrentVersion(sauceId)
+        // 有草稿时组成行展示草稿内容；当前已发布版本仍由 currentVersion 单独展示。
         val shown =
-            current
-                ?: versions.firstOrNull { it.status == VersionStatus.DRAFT }
+            versions.firstOrNull { it.status == VersionStatus.DRAFT }
+                ?: current
                 ?: versions.firstOrNull()
         val lines =
             shown
@@ -42,7 +43,7 @@ class GetSauceDetailUseCase(
                 ?.map { component ->
                     SauceLineView(
                         lineNo = component.lineNo,
-                        label = labelFor(component.target),
+                        label = component.labelOverride ?: labelFor(component.target),
                         quantity = component.quantity,
                         isOptional = component.isOptional,
                     )

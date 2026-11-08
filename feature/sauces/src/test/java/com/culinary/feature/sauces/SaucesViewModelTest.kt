@@ -15,6 +15,9 @@ import com.culinary.core.domain.model.RecipeVersionId
 import com.culinary.core.domain.model.Sauce
 import com.culinary.core.domain.model.SauceComponent
 import com.culinary.core.domain.model.SauceId
+import com.culinary.core.domain.model.SauceImage
+import com.culinary.core.domain.model.SauceImageOwner
+import com.culinary.core.domain.model.SauceImageRole
 import com.culinary.core.domain.model.SauceVersion
 import com.culinary.core.domain.model.SauceVersionId
 import com.culinary.core.domain.model.UnitDimension
@@ -22,15 +25,19 @@ import com.culinary.core.domain.model.UnitId
 import com.culinary.core.domain.model.VersionStatus
 import com.culinary.core.domain.repository.IngredientRepository
 import com.culinary.core.domain.repository.KitchenRelationRepository
+import com.culinary.core.domain.repository.SauceImageRepository
 import com.culinary.core.domain.repository.SauceRepository
 import com.culinary.core.domain.repository.UnitRepository
 import com.culinary.core.domain.transaction.TransactionRunner
 import com.culinary.core.domain.usecase.ingredient.ListIngredientsUseCase
 import com.culinary.core.domain.usecase.kitchen.ObserveKitchenRelationsUseCase
+import com.culinary.core.domain.usecase.sauce.ArchiveSauceUseCase
 import com.culinary.core.domain.usecase.sauce.GetSauceDetailUseCase
 import com.culinary.core.domain.usecase.sauce.ListSaucesUseCase
 import com.culinary.core.domain.usecase.sauce.PublishSauceVersionUseCase
+import com.culinary.core.domain.usecase.sauce.SauceImageUseCase
 import com.culinary.core.domain.usecase.sauce.SaveSauceDraftUseCase
+import com.culinary.core.domain.usecase.sauce.SaveSauceRelationsUseCase
 import com.culinary.core.domain.usecase.sauce.SaveSauceUseCase
 import com.culinary.core.domain.usecase.unit.ListUnitsUseCase
 import com.google.common.truth.Truth.assertThat
@@ -63,6 +70,11 @@ class SaucesViewModelTest {
     private val saveDraft = SaveSauceDraftUseCase(sauces, ids, tx)
     private val publish = PublishSauceVersionUseCase(sauces, tx)
     private val detail = GetSauceDetailUseCase(sauces, ingredients)
+    private val relations = FakeKitchenRelationRepository()
+    private val images = FakeSauceImageRepository()
+    private val archiveSauce = ArchiveSauceUseCase(sauces, tx)
+    private val saveRelations = SaveSauceRelationsUseCase(relations)
+    private val imageUseCase = SauceImageUseCase(images)
 
     @Before
     fun setUp() {
@@ -115,13 +127,14 @@ class SaucesViewModelTest {
         }
 
     @Test
-    fun `editor creates a sauce and a draft version`() =
+    fun `editor creates a sauce and publishes its first version`() =
         runTest {
             ingredients.items += ingredient()
             val viewModel = editorViewModel(null)
 
             advanceUntilIdle()
             viewModel.onNameChange("  新酱汁 ")
+            viewModel.onEnglishNameChange("New Sauce")
             viewModel.onFamilyChange("乳化酱")
             viewModel.onYieldAmountChange("500")
             viewModel.addIngredient(ingredients.items.single())
@@ -131,7 +144,7 @@ class SaucesViewModelTest {
                     .key,
                 "120",
             )
-            viewModel.save(publish = false)
+            viewModel.save()
             advanceUntilIdle()
 
             val state = viewModel.uiState.value
@@ -139,9 +152,11 @@ class SaucesViewModelTest {
             assertThat(state.savedSauceId).isNotNull()
             val saved = sauces.saved.single()
             assertThat(saved.name).isEqualTo("新酱汁")
+            assertThat(saved.englishName).isEqualTo("New Sauce")
             assertThat(saved.family).isEqualTo("乳化酱")
             val version = sauces.versions.values.single()
-            assertThat(version.status).isEqualTo(VersionStatus.DRAFT)
+            assertThat(version.status).isEqualTo(VersionStatus.PUBLISHED)
+            assertThat(sauces.current[version.sauceId.value]).isEqualTo(version.id)
             assertThat(version.yield.amount).isWithin(1e-9).of(500.0)
             assertThat(
                 version.components
@@ -204,7 +219,8 @@ class SaucesViewModelTest {
                     sauceTarget,
                 ).inOrder()
 
-            viewModel.save(publish = false)
+            viewModel.onEnglishNameChange("Base Sauce")
+            viewModel.save()
             advanceUntilIdle()
 
             val latest = sauces.versions.values.maxByOrNull { it.versionNo }
@@ -226,8 +242,9 @@ class SaucesViewModelTest {
 
             advanceUntilIdle()
             viewModel.onNameChange("发布酱")
+            viewModel.onEnglishNameChange("Publish Sauce")
             viewModel.onYieldAmountChange("250")
-            viewModel.save(publish = true)
+            viewModel.save()
             advanceUntilIdle()
 
             val version = sauces.versions.values.single()
@@ -243,11 +260,12 @@ class SaucesViewModelTest {
 
             advanceUntilIdle()
             viewModel.onNameChange("  ")
+            viewModel.onEnglishNameChange("Blank")
             viewModel.onYieldAmountChange("100")
-            viewModel.save(publish = false)
+            viewModel.save()
             advanceUntilIdle()
 
-            assertThat(viewModel.uiState.value.error).isEqualTo("名称不能为空。")
+            assertThat(viewModel.uiState.value.error).isEqualTo("中文名称不能为空。")
             assertThat(sauces.saved).isEmpty()
         }
 
@@ -271,6 +289,73 @@ class SaucesViewModelTest {
             assertThat(viewModel.uiState.value.error).contains("CUL-CON-001")
         }
 
+    @Test
+    fun `editing a published sauce reuses the pending draft on subsequent saves`() =
+        runTest {
+            seedPublishedSauce()
+            val viewModel = editorViewModel(SAUCE_ID)
+            advanceUntilIdle()
+
+            viewModel.onEnglishNameChange("Base Sauce")
+            viewModel.onDescriptionChange("first draft")
+            viewModel.save()
+            advanceUntilIdle()
+            viewModel.onDescriptionChange("second draft")
+            viewModel.save()
+            advanceUntilIdle()
+
+            val drafts = sauces.versions.values.filter { it.status == VersionStatus.DRAFT }
+            assertThat(drafts).hasSize(1)
+            assertThat(sauces.versions.values).hasSize(2)
+        }
+
+    @Test
+    fun `editor persists ingredient name overrides and step order`() =
+        runTest {
+            ingredients.items += ingredient()
+            val viewModel = editorViewModel(null)
+            advanceUntilIdle()
+
+            viewModel.onNameChange("覆盖测试酱")
+            viewModel.onEnglishNameChange("Override Sauce")
+            viewModel.onYieldAmountChange("200")
+            viewModel.addIngredient(ingredients.items.single())
+            val lineKey =
+                viewModel.uiState.value.lines
+                    .single()
+                    .key
+            viewModel.onLineNameChange(lineKey, "黄油")
+            viewModel.onLineNameEnChange(lineKey, "Butter")
+            viewModel.onLineAmountChange(lineKey, "25")
+
+            viewModel.addStep()
+            val firstStep =
+                viewModel.uiState.value.steps
+                    .single()
+                    .key
+            viewModel.onStepTitleChange(firstStep, "First")
+            viewModel.onStepBodyChange(firstStep, "First body")
+            viewModel.addStep()
+            val secondStep =
+                viewModel.uiState.value.steps
+                    .last()
+                    .key
+            viewModel.onStepTitleChange(secondStep, "Second")
+            viewModel.onStepBodyChange(secondStep, "Second body")
+            viewModel.moveStep(1, 0)
+
+            viewModel.save()
+            advanceUntilIdle()
+
+            val version = sauces.versions.values.maxByOrNull { it.versionNo }
+            requireNotNull(version)
+            val component = version.components.single()
+            assertThat(component.labelOverride).isEqualTo("黄油")
+            assertThat(component.labelOverrideEn).isEqualTo("Butter")
+            val decoded = SauceStepCodec.decode(version.stepsJson, null) { "fallback" }
+            assertThat(decoded.map { it.title }).containsExactly("Second", "First").inOrder()
+        }
+
     private fun editorViewModel(sauceId: String?): SauceEditorViewModel =
         SauceEditorViewModel(
             savedStateHandle =
@@ -281,8 +366,13 @@ class SaucesViewModelTest {
             saveSauce = saveSauce,
             saveSauceDraft = saveDraft,
             publishSauceVersion = publish,
+            archiveSauce = archiveSauce,
             listUnits = ListUnitsUseCase(units),
             listIngredients = ListIngredientsUseCase(ingredients),
+            listSauces = ListSaucesUseCase(sauces),
+            observeRelations = ObserveKitchenRelationsUseCase(relations),
+            saveSauceRelations = saveRelations,
+            sauceImages = imageUseCase,
         )
 
     private suspend fun seedPublishedSauce() {
@@ -369,6 +459,15 @@ class SaucesViewModelTest {
             current[version.sauceId.value] = published.id
             return Outcome.success(published.id)
         }
+
+        override suspend fun archive(id: SauceId): Outcome<Unit> {
+            val existing =
+                saved.firstOrNull { it.id == id }
+                    ?: return Outcome.failure(CulinaryError.NotFound("sauce", id.value))
+            saved.remove(existing)
+            saved += existing.copy(status = EntityStatus.ARCHIVED)
+            return Outcome.success(Unit)
+        }
     }
 
     private class FakeIngredientRepository : IngredientRepository {
@@ -410,9 +509,78 @@ class SaucesViewModelTest {
     }
 }
 
+private class FakeKitchenRelationRepository : KitchenRelationRepository {
+    val relations = mutableListOf<KitchenRelatedRecord>()
+
+    override fun observeForRecord(recordId: String): Flow<List<KitchenRelatedRecord>> =
+        flowOf(relations.filter { it.sourceRecordId == recordId })
+
+    override suspend fun replaceRelations(
+        sourceRecordId: String,
+        sourceKind: com.culinary.core.domain.model.KitchenRecordKind,
+        targetKind: com.culinary.core.domain.model.KitchenRecordKind,
+        relations: List<com.culinary.core.domain.model.KitchenRelationDraft>,
+    ): Outcome<Unit> {
+        this.relations.removeAll { it.sourceRecordId == sourceRecordId && it.targetKind == targetKind }
+        this.relations +=
+            relations.map {
+                KitchenRelatedRecord(
+                    sourceRecordId = sourceRecordId,
+                    sourceKind = sourceKind,
+                    targetRecordId = it.targetRecordId,
+                    targetKind = it.targetKind,
+                    targetLabel = it.targetLabel,
+                    relationLabel = it.relationLabel,
+                    sortOrder = it.sortOrder,
+                )
+            }
+        return Outcome.success(Unit)
+    }
+}
+
+private class FakeSauceImageRepository : SauceImageRepository {
+    override suspend fun listForSauce(sauceId: String): List<SauceImage> = emptyList()
+
+    override suspend fun listForVersion(versionId: String): List<SauceImage> = emptyList()
+
+    override suspend fun add(
+        owner: SauceImageOwner,
+        ownerId: String,
+        role: SauceImageRole,
+        stepNo: Int?,
+        bytes: ByteArray,
+        mimeType: String,
+    ): Outcome<SauceImage> =
+        Outcome.success(
+            SauceImage(
+                id = "image-$ownerId-${role.name}-${stepNo ?: 0}",
+                owner = owner,
+                ownerId = ownerId,
+                role = role,
+                stepNo = stepNo,
+                relativePath = "images/test",
+                mimeType = mimeType,
+                byteSize = bytes.size.toLong(),
+            ),
+        )
+
+    override suspend fun delete(imageId: String): Outcome<Unit> = Outcome.success(Unit)
+
+    override suspend fun read(imageId: String): ByteArray? = null
+
+    override suspend fun updateStepNumbers(images: List<Pair<String, Int>>): Outcome<Unit> = Outcome.success(Unit)
+}
+
 private fun emptyRelations(): ObserveKitchenRelationsUseCase =
     ObserveKitchenRelationsUseCase(
         object : KitchenRelationRepository {
             override fun observeForRecord(recordId: String): Flow<List<KitchenRelatedRecord>> = flowOf(emptyList())
+
+            override suspend fun replaceRelations(
+                sourceRecordId: String,
+                sourceKind: com.culinary.core.domain.model.KitchenRecordKind,
+                targetKind: com.culinary.core.domain.model.KitchenRecordKind,
+                relations: List<com.culinary.core.domain.model.KitchenRelationDraft>,
+            ): Outcome<Unit> = Outcome.success(Unit)
         },
     )

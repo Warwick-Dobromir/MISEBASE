@@ -104,6 +104,7 @@ fun CulinaryNavHost(
     val isHome = currentRoute == HOME_ROUTE
     val isKitchen = currentRoute == LIBRARY_ROUTE
     val isKitchenArchive = currentRoute == LIBRARY_TAB_ROUTE
+    val isSauceEditor = currentRoute == SaucesRoutes.EDIT
     val showBottomBar = topLevel != null
 
     // 冷启动（新进程）一律回到首页；同一进程内的旋转/重建仍保留用户当前路由。
@@ -116,8 +117,8 @@ fun CulinaryNavHost(
     Scaffold(
         modifier = modifier.fillMaxSize(),
         topBar = {
-            // 首页与厨房首页自带品牌区；资料库页显示“返回 + 厨房”。
-            if (!isHome && !isKitchen) {
+            // 首页与厨房首页自带品牌区；酱汁编辑器自带“返回 / 取消 / 保存”顶栏。
+            if (!isHome && !isKitchen && !isSauceEditor) {
                 Column {
                     AppTopBar(
                         topLevel = topLevel,
@@ -410,7 +411,12 @@ private fun NavGraphBuilder.sauceGraph(navController: NavHostController) {
         )
     }
     composable(SaucesRoutes.EDIT) {
-        SauceEditorRoute(onSaved = { navController.popBackStack() })
+        SauceEditorRoute(
+            onSaved = { navController.popBackStack() },
+            onCancelled = { navController.popBackStack() },
+            onOpenSauce = { sauceId -> navController.navigate(SaucesRoutes.detail(sauceId)) },
+            onArchived = { navController.popBackStack() },
+        )
     }
 }
 

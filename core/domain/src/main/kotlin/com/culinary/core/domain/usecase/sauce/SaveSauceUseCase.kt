@@ -6,6 +6,7 @@ import com.culinary.core.common.Outcome
 import com.culinary.core.common.flatMap
 import com.culinary.core.domain.model.EntityStatus
 import com.culinary.core.domain.model.Sauce
+import com.culinary.core.domain.model.SauceDifficulty
 import com.culinary.core.domain.model.SauceId
 import com.culinary.core.domain.repository.SauceRepository
 import com.culinary.core.domain.rule.common.NameText
@@ -18,6 +19,9 @@ data class SaveSauceInput(
     val family: String? = null,
     val usageNotes: String? = null,
     val englishName: String? = null,
+    val description: String? = null,
+    val difficulty: SauceDifficulty? = null,
+    val heroCaption: String? = null,
     val mainIngredients: String? = null,
     val preparationSummary: String? = null,
     val keyParameters: String? = null,
@@ -65,6 +69,9 @@ class SaveSauceUseCase(
                 family = input.family.blankToNull(),
                 usageNotes = input.usageNotes.blankToNull() ?: existing?.usageNotes,
                 englishName = input.englishName.blankToNull() ?: existing?.englishName,
+                description = input.description.blankToNull(),
+                difficulty = input.difficulty,
+                heroCaption = input.heroCaption.blankToNull(),
                 mainIngredients = input.mainIngredients.blankToNull() ?: existing?.mainIngredients,
                 preparationSummary = input.preparationSummary.blankToNull() ?: existing?.preparationSummary,
                 keyParameters = input.keyParameters.blankToNull() ?: existing?.keyParameters,

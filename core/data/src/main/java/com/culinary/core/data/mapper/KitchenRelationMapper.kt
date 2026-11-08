@@ -16,6 +16,7 @@ object KitchenRelationMapper {
             targetKind = targetKind,
             targetLabel = entity.targetLabel,
             relationLabel = entity.relationLabel,
+            sortOrder = entity.sortOrder,
         )
     }
 

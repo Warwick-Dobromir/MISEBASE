@@ -23,7 +23,7 @@ import javax.inject.Provider
 /**
  * 启动协调：全新库、持久化 v4 库、v1→v4 迁移、版本过高与损坏六条路径。
  *
- * 回归重点：`EXPECTED_SCHEMA_VERSION` 必须与 `CulinaryDatabase` 的 v4 对齐；否则
+ * 回归重点：`EXPECTED_SCHEMA_VERSION` 必须与 `CulinaryDatabase` 的 v5 对齐；否则
  * 已持久化的 v4 库在第二次启动时会被误判为 `Incompatible`。
  */
 @RunWith(RobolectricTestRunner::class)
@@ -64,7 +64,7 @@ class StartupCoordinatorTest {
             val state = coordinator().start()
 
             assertThat(state).isEqualTo(StartupState.Ready)
-            assertThat(requireNotNull(database).openHelper.writableDatabase.version).isEqualTo(4)
+            assertThat(requireNotNull(database).openHelper.writableDatabase.version).isEqualTo(5)
         }
 
     @Test
@@ -81,7 +81,7 @@ class StartupCoordinatorTest {
             SQLiteDatabase
                 .openDatabase(context.getDatabasePath(DATABASE_NAME).path, null, SQLiteDatabase.OPEN_READONLY)
                 .use { sqlite ->
-                    assertThat(sqlite.version).isEqualTo(4)
+                    assertThat(sqlite.version).isEqualTo(5)
                     assertThat(columnNames(sqlite, "recipe_version")).contains("servings")
                     assertThat(tableNames(sqlite)).contains("kitchen_reference")
                     assertThat(tableNames(sqlite)).contains("kitchen_relation")
@@ -95,7 +95,7 @@ class StartupCoordinatorTest {
             val file = context.getDatabasePath(DATABASE_NAME)
             file.parentFile?.mkdirs()
             SQLiteDatabase.openOrCreateDatabase(file, null).use { sqlite ->
-                sqlite.version = 5
+                sqlite.version = 6
             }
             val coordinator = coordinator()
 
@@ -103,8 +103,8 @@ class StartupCoordinatorTest {
 
             assertThat(state).isInstanceOf(StartupState.Incompatible::class.java)
             val incompatible = state as StartupState.Incompatible
-            assertThat(incompatible.databaseVersion).isEqualTo(5)
-            assertThat(incompatible.appSchemaVersion).isEqualTo(4)
+            assertThat(incompatible.databaseVersion).isEqualTo(6)
+            assertThat(incompatible.appSchemaVersion).isEqualTo(5)
         }
 
     @Test

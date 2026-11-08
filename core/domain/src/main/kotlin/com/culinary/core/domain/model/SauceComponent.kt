@@ -11,6 +11,8 @@ data class SauceComponent(
     val target: ComponentTarget,
     val quantity: Quantity,
     val isOptional: Boolean = false,
+    val labelOverride: String? = null,
+    val labelOverrideEn: String? = null,
 ) {
     init {
         require(lineNo > 0) { "sauce component lineNo must be > 0, was $lineNo" }

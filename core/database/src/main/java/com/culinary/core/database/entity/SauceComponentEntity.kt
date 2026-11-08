@@ -88,6 +88,10 @@ data class SauceComponentEntity(
     val quantity: Double,
     @ColumnInfo(name = "unit_id")
     val unitId: String,
+    @ColumnInfo(name = "label_override")
+    val labelOverride: String? = null,
+    @ColumnInfo(name = "label_override_en")
+    val labelOverrideEn: String? = null,
     @ColumnInfo(name = "preparation_note")
     val preparationNote: String? = null,
     @ColumnInfo(name = "is_optional")

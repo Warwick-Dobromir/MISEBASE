@@ -58,14 +58,27 @@ class SchemaExportTest {
     }
 
     @Test
+    fun `exports schema version 5 with the editor columns`() {
+        val v5 = File(schemaDirectory, "5.json")
+
+        assertThat(v5.exists()).isTrue()
+        assertThat(v5.readText()).contains("\"version\": 5")
+        assertThat(v5.readText()).contains("\"columnName\": \"steps_json\"")
+        assertThat(v5.readText()).contains("\"columnName\": \"difficulty\"")
+        assertThat(tableCount(v5)).isEqualTo(35)
+    }
+
+    @Test
     fun `registers all forward migrations`() {
-        assertThat(CulinaryMigrations.ALL).hasLength(3)
+        assertThat(CulinaryMigrations.ALL).hasLength(4)
         assertThat(CulinaryMigrations.MIGRATION_1_2.startVersion).isEqualTo(1)
         assertThat(CulinaryMigrations.MIGRATION_1_2.endVersion).isEqualTo(2)
         assertThat(CulinaryMigrations.MIGRATION_2_3.startVersion).isEqualTo(2)
         assertThat(CulinaryMigrations.MIGRATION_2_3.endVersion).isEqualTo(3)
         assertThat(CulinaryMigrations.MIGRATION_3_4.startVersion).isEqualTo(3)
         assertThat(CulinaryMigrations.MIGRATION_3_4.endVersion).isEqualTo(4)
+        assertThat(CulinaryMigrations.MIGRATION_4_5.startVersion).isEqualTo(4)
+        assertThat(CulinaryMigrations.MIGRATION_4_5.endVersion).isEqualTo(5)
     }
 
     private fun tableCount(file: File): Int = Regex("\"tableName\"").findAll(file.readText()).count()

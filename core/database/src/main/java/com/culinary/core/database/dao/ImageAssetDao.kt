@@ -29,6 +29,12 @@ interface ImageAssetDao {
         at: Long,
     )
 
+    @Query("UPDATE image_asset SET step_no = :stepNo WHERE id = :id")
+    suspend fun updateStepNo(
+        id: String,
+        stepNo: Int?,
+    )
+
     @Query("SELECT COUNT(*) FROM image_asset")
     suspend fun count(): Int
 }

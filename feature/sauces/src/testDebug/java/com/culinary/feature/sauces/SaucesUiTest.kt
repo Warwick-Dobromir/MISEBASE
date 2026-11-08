@@ -1,16 +1,13 @@
 package com.culinary.feature.sauces
 
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performScrollTo
 import com.culinary.core.designsystem.theme.CulinaryTheme
-import com.culinary.core.domain.model.ComponentTarget
 import com.culinary.core.domain.model.EntityStatus
-import com.culinary.core.domain.model.IngredientId
 import com.culinary.core.domain.model.Quantity
-import com.culinary.core.domain.model.RecipeId
-import com.culinary.core.domain.model.RecipeVersionId
 import com.culinary.core.domain.model.Sauce
 import com.culinary.core.domain.model.SauceDetail
 import com.culinary.core.domain.model.SauceId
@@ -106,64 +103,78 @@ class SaucesUiTest {
             }
         }
 
-        compose.onNodeWithText("黄油").assertIsDisplayed()
-        compose.onNodeWithText("可选").assertIsDisplayed()
-        compose.onNodeWithText("发布 v2").assertIsDisplayed()
+        compose.onNodeWithText("基础酱").assertIsDisplayed()
+        compose.onNodeWithText("待发布草稿").assertIsDisplayed()
     }
 
     @Test
-    fun `editor marks imported recipe and sauce rows as read only`() {
+    fun `editor shows the nine-section archive layout and top actions`() {
         compose.setContent {
             CulinaryTheme {
-                SauceEditorScreen(
-                    state =
-                        SauceEditorUiState(
-                            name = "复合酱",
-                            yieldAmount = "500",
-                            yieldUnit = gram(),
-                            isLoading = false,
-                            lines =
-                                listOf(
-                                    SauceLineEditor(
-                                        key = "line-1",
-                                        target = ComponentTarget.Ingredient(IngredientId("flour")),
-                                        name = "低筋面粉",
-                                        amount = "100",
-                                        unit = gram(),
-                                    ),
-                                    SauceLineEditor(
-                                        key = "line-2",
-                                        target =
-                                            ComponentTarget.Recipe(
-                                                RecipeId("recipe-base"),
-                                                RecipeVersionId("recipe-v1"),
-                                            ),
-                                        name = "基础面糊（子菜谱 v1）",
-                                        amount = "50",
-                                        unit = gram(),
-                                    ),
-                                ),
-                        ),
-                    onNameChange = {},
-                    onFamilyChange = {},
-                    onYieldAmountChange = {},
-                    onOpenUnitPicker = {},
-                    onAddIngredient = {},
-                    onLineAmountChange = { _, _ -> },
-                    onToggleOptional = {},
-                    onRemoveLine = {},
-                    onSaveDraft = {},
-                    onSaveAndPublish = {},
-                    onDismissError = {},
+                EditorUnderTest(
+                    SauceEditorUiState(
+                        name = "白黄油酱",
+                        englishName = "Beurre Blanc",
+                        family = "CLASSIC FRENCH SAUCE",
+                        yieldAmount = "250",
+                        yieldUnit = gram(),
+                        isLoading = false,
+                    ),
                 )
             }
         }
 
-        compose
-            .onNodeWithText("子菜谱 / 子酱汁组成行来自导入数据，本阶段只读保留；保存草稿会原样写回，不会丢失。")
-            .performScrollTo()
-            .assertIsDisplayed()
-        compose.onNodeWithText("只读保留").assertExists()
+        compose.onNodeWithText("保存").assertIsDisplayed()
+        compose.onNodeWithText("取消").assertIsDisplayed()
+        listOf("原料配方", "制作工艺", "适用范围", "衍生关系", "研发备注")
+            .forEach { label ->
+                compose.onNodeWithText(label).performScrollTo().assertIsDisplayed()
+            }
+    }
+
+    @Composable
+    private fun EditorUnderTest(state: SauceEditorUiState) {
+        SauceEditorScreen(
+            state = state,
+            onSaved = {},
+            onCancelled = {},
+            onArchive = {},
+            onOpenSauce = {},
+            onDismissError = {},
+            onFamilyChange = {},
+            onEnglishNameChange = {},
+            onNameChange = {},
+            onDescriptionChange = {},
+            onYieldAmountChange = {},
+            onYieldUnitChange = {},
+            onDifficultyChange = {},
+            onHeroPicked = {},
+            onHeroClear = {},
+            onHeroCaptionChange = {},
+            onLineNameChange = { _, _ -> },
+            onLineNameEnChange = { _, _ -> },
+            onLineAmountChange = { _, _ -> },
+            onLineUnitChange = { _, _ -> },
+            onToggleOptional = {},
+            onRemoveLine = {},
+            onMoveLine = { _, _ -> },
+            onAddIngredient = {},
+            onStepTitleChange = { _, _ -> },
+            onStepBodyChange = { _, _ -> },
+            onStepImage = { _, _ -> },
+            onClearStepImage = {},
+            onRemoveStep = {},
+            onMoveStep = { _, _ -> },
+            onAddStep = {},
+            onApplicationChange = {},
+            onAddRelation = {},
+            onRemoveRelation = {},
+            onMoveRelation = { _, _ -> },
+            onNotesChange = {},
+            onAddTextNote = {},
+            onNoteImage = {},
+            onRemoveNoteImage = {},
+        )
     }
 
     private fun sauce(

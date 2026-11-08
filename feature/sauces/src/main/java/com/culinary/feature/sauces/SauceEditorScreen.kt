@@ -1,25 +1,24 @@
 package com.culinary.feature.sauces
 
+import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.isImeVisible
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Icon
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -29,98 +28,189 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.culinary.core.designsystem.component.CulinaryButton
-import com.culinary.core.designsystem.component.CulinaryButtonVariant
+import com.culinary.core.designsystem.component.ConfirmDialog
+import com.culinary.core.designsystem.component.CulinaryIconButton
 import com.culinary.core.designsystem.component.CulinaryRule
-import com.culinary.core.designsystem.component.CulinaryTextButton
-import com.culinary.core.designsystem.component.CulinaryTextField
 import com.culinary.core.designsystem.component.ErrorBanner
 import com.culinary.core.designsystem.component.LoadingRows
-import com.culinary.core.designsystem.component.PageHeader
-import com.culinary.core.designsystem.component.QuantityText
-import com.culinary.core.designsystem.component.SectionHeader
-import com.culinary.core.designsystem.component.StatusBadge
-import com.culinary.core.designsystem.component.StatusTone
 import com.culinary.core.designsystem.icon.CulinaryIcons
 import com.culinary.core.designsystem.theme.CulinarySpacing
-import com.culinary.core.domain.model.Ingredient
+import com.culinary.core.domain.model.PendingSauceImage
+import com.culinary.core.domain.model.Sauce
+import com.culinary.core.domain.model.SauceDifficulty
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 
-/** 酱汁编辑器路由：新建或编辑草稿版本，可保存草稿或保存并发布。 */
+/** 酱汁编辑器路由：新建与编辑共用同一页。 */
 @Composable
 fun SauceEditorRoute(
     onSaved: () -> Unit,
+    onCancelled: () -> Unit = {},
+    onOpenSauce: (String) -> Unit = {},
+    onArchived: () -> Unit = onCancelled,
     modifier: Modifier = Modifier,
     viewModel: SauceEditorViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
-    var showUnitPicker by remember { mutableStateOf(false) }
-    var showIngredientPicker by remember { mutableStateOf(false) }
     val saved = state.savedSauceId
+    val archived = state.archived
 
     LaunchedEffect(saved) {
         if (saved != null) onSaved()
     }
+    LaunchedEffect(archived) {
+        if (archived) onArchived()
+    }
 
     SauceEditorScreen(
         state = state,
-        onNameChange = viewModel::onNameChange,
+        onSaved = viewModel::save,
+        onCancelled = onCancelled,
+        onArchive = viewModel::archive,
+        onOpenSauce = onOpenSauce,
+        onDismissError = viewModel::clearError,
         onFamilyChange = viewModel::onFamilyChange,
+        onEnglishNameChange = viewModel::onEnglishNameChange,
+        onNameChange = viewModel::onNameChange,
+        onDescriptionChange = viewModel::onDescriptionChange,
         onYieldAmountChange = viewModel::onYieldAmountChange,
-        onOpenUnitPicker = { showUnitPicker = true },
-        onAddIngredient = { showIngredientPicker = true },
+        onYieldUnitChange = viewModel::onYieldUnitChange,
+        onDifficultyChange = viewModel::onDifficultyChange,
+        onHeroPicked = viewModel::setHeroImage,
+        onHeroClear = viewModel::clearHeroImage,
+        onHeroCaptionChange = viewModel::onHeroCaptionChange,
+        onLineNameChange = viewModel::onLineNameChange,
+        onLineNameEnChange = viewModel::onLineNameEnChange,
         onLineAmountChange = viewModel::onLineAmountChange,
+        onLineUnitChange = viewModel::onLineUnitChange,
         onToggleOptional = viewModel::toggleOptional,
         onRemoveLine = viewModel::removeLine,
-        onSaveDraft = { viewModel.save(publish = false) },
-        onSaveAndPublish = { viewModel.save(publish = true) },
-        onDismissError = viewModel::clearError,
+        onMoveLine = viewModel::moveLine,
+        onAddIngredient = viewModel::addIngredient,
+        onStepTitleChange = viewModel::onStepTitleChange,
+        onStepBodyChange = viewModel::onStepBodyChange,
+        onStepImage = viewModel::setStepImage,
+        onClearStepImage = viewModel::clearStepImage,
+        onRemoveStep = viewModel::removeStep,
+        onMoveStep = viewModel::moveStep,
+        onAddStep = viewModel::addStep,
+        onApplicationChange = viewModel::onApplicationChange,
+        onAddRelation = viewModel::addRelation,
+        onRemoveRelation = viewModel::removeRelation,
+        onMoveRelation = viewModel::moveRelation,
+        onNotesChange = viewModel::onNotesChange,
+        onAddTextNote = viewModel::addTextNote,
+        onNoteImage = viewModel::addNoteImage,
+        onRemoveNoteImage = viewModel::removeNoteImageAt,
         modifier = modifier,
     )
-
-    if (showUnitPicker) {
-        UnitPickerDialog(
-            units = state.units,
-            selectedId = state.yieldUnit?.id?.value,
-            onSelect = {
-                viewModel.onYieldUnitChange(it)
-                showUnitPicker = false
-            },
-            onDismiss = { showUnitPicker = false },
-        )
-    }
-    if (showIngredientPicker) {
-        IngredientPickerDialog(
-            ingredients = state.ingredients,
-            onSelect = {
-                viewModel.addIngredient(it)
-                showIngredientPicker = false
-            },
-            onDismiss = { showIngredientPicker = false },
-        )
-    }
 }
 
+@Suppress("LongMethod", "LongParameterList") // 编辑器九个分节的统一事件入口
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 internal fun SauceEditorScreen(
     state: SauceEditorUiState,
-    onNameChange: (String) -> Unit,
+    onSaved: () -> Unit,
+    onCancelled: () -> Unit,
+    onArchive: () -> Unit,
+    onOpenSauce: (String) -> Unit,
+    onDismissError: () -> Unit,
     onFamilyChange: (String) -> Unit,
+    onEnglishNameChange: (String) -> Unit,
+    onNameChange: (String) -> Unit,
+    onDescriptionChange: (String) -> Unit,
     onYieldAmountChange: (String) -> Unit,
-    onOpenUnitPicker: () -> Unit,
-    onAddIngredient: () -> Unit,
+    onYieldUnitChange: (com.culinary.core.domain.model.Unit) -> Unit,
+    onDifficultyChange: (SauceDifficulty) -> Unit,
+    onHeroPicked: (PendingSauceImage) -> Unit,
+    onHeroClear: () -> Unit,
+    onHeroCaptionChange: (String) -> Unit,
+    onLineNameChange: (String, String) -> Unit,
+    onLineNameEnChange: (String, String) -> Unit,
     onLineAmountChange: (String, String) -> Unit,
+    onLineUnitChange: (String, com.culinary.core.domain.model.Unit) -> Unit,
     onToggleOptional: (String) -> Unit,
     onRemoveLine: (String) -> Unit,
-    onSaveDraft: () -> Unit,
-    onSaveAndPublish: () -> Unit,
-    onDismissError: () -> Unit,
+    onMoveLine: (Int, Int) -> Unit,
+    onAddIngredient: (com.culinary.core.domain.model.Ingredient) -> Unit,
+    onStepTitleChange: (String, String) -> Unit,
+    onStepBodyChange: (String, String) -> Unit,
+    onStepImage: (String, PendingSauceImage) -> Unit,
+    onClearStepImage: (String) -> Unit,
+    onRemoveStep: (String) -> Unit,
+    onMoveStep: (Int, Int) -> Unit,
+    onAddStep: () -> Unit,
+    onApplicationChange: (String) -> Unit,
+    onAddRelation: (Sauce) -> Unit,
+    onRemoveRelation: (String) -> Unit,
+    onMoveRelation: (Int, Int) -> Unit,
+    onNotesChange: (String) -> Unit,
+    onAddTextNote: () -> Unit,
+    onNoteImage: (PendingSauceImage) -> Unit,
+    onRemoveNoteImage: (Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Column(modifier = modifier.fillMaxSize()) {
+    var showDiscard by remember { mutableStateOf(false) }
+    var showDelete by remember { mutableStateOf(false) }
+    var showYieldUnitPicker by remember { mutableStateOf(false) }
+    var lineUnitKey by remember { mutableStateOf<String?>(null) }
+
+    val actions =
+        SauceEditorActions(
+            onFamilyChange = onFamilyChange,
+            onEnglishNameChange = onEnglishNameChange,
+            onNameChange = onNameChange,
+            onDescriptionChange = onDescriptionChange,
+            onYieldAmountChange = onYieldAmountChange,
+            onOpenYieldUnit = { showYieldUnitPicker = true },
+            onDifficultyChange = onDifficultyChange,
+            onHeroPicked = onHeroPicked,
+            onHeroClear = onHeroClear,
+            onHeroCaptionChange = onHeroCaptionChange,
+            onLineNameChange = onLineNameChange,
+            onLineNameEnChange = onLineNameEnChange,
+            onLineAmountChange = onLineAmountChange,
+            onOpenLineUnit = { key -> lineUnitKey = key },
+            onToggleOptional = onToggleOptional,
+            onRemoveLine = onRemoveLine,
+            onMoveLine = onMoveLine,
+            onAddIngredient = onAddIngredient,
+            onStepTitleChange = onStepTitleChange,
+            onStepBodyChange = onStepBodyChange,
+            onStepImage = onStepImage,
+            onClearStepImage = onClearStepImage,
+            onRemoveStep = onRemoveStep,
+            onMoveStep = onMoveStep,
+            onAddStep = onAddStep,
+            onApplicationChange = onApplicationChange,
+            onAddRelation = onAddRelation,
+            onRemoveRelation = onRemoveRelation,
+            onMoveRelation = onMoveRelation,
+            onOpenSauce = onOpenSauce,
+            onNotesChange = onNotesChange,
+            onAddTextNote = onAddTextNote,
+            onNoteImage = onNoteImage,
+            onRemoveNoteImage = onRemoveNoteImage,
+        )
+
+    val imeVisible = WindowInsets.isImeVisible
+    BackHandler(enabled = state.isDirty && !imeVisible) { showDiscard = true }
+    BackHandler(enabled = !state.isDirty && !imeVisible) { onCancelled() }
+
+    Column(modifier = modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
+        SauceEditorTopBar(
+            isSaving = state.isSaving,
+            canSave = !state.isLoading && (state.isDirty || state.isNew),
+            onBack = { if (state.isDirty) showDiscard = true else onCancelled() },
+            onCancel = { if (state.isDirty) showDiscard = true else onCancelled() },
+            onSave = onSaved,
+        )
         state.error?.let { message ->
             ErrorBanner(
                 message = message,
@@ -131,263 +221,132 @@ internal fun SauceEditorScreen(
         if (state.isLoading) {
             LoadingRows()
         } else {
-            EditorForm(
-                state = state,
-                onNameChange = onNameChange,
-                onFamilyChange = onFamilyChange,
-                onYieldAmountChange = onYieldAmountChange,
-                onOpenUnitPicker = onOpenUnitPicker,
-                onAddIngredient = onAddIngredient,
-                onLineAmountChange = onLineAmountChange,
-                onToggleOptional = onToggleOptional,
-                onRemoveLine = onRemoveLine,
-                onSaveDraft = onSaveDraft,
-                onSaveAndPublish = onSaveAndPublish,
-            )
+            Column(
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .verticalScroll(rememberScrollState())
+                        .padding(horizontal = CulinarySpacing.pageHorizontal),
+            ) {
+                SauceHeaderSection(state, actions)
+                SauceHeroSection(state, actions)
+                SauceIngredientsSection(state, actions)
+                SauceMethodSection(state, actions)
+                SauceApplicationSection(state, actions)
+                SauceRelationsSection(state, actions)
+                SauceNotesSection(state, actions)
+                SauceFooter(
+                    state = state,
+                    onDelete = { showDelete = true },
+                )
+                Spacer(modifier = Modifier.height(CulinarySpacing.spacious))
+            }
         }
     }
-}
 
-@Composable
-private fun EditorForm(
-    state: SauceEditorUiState,
-    onNameChange: (String) -> Unit,
-    onFamilyChange: (String) -> Unit,
-    onYieldAmountChange: (String) -> Unit,
-    onOpenUnitPicker: () -> Unit,
-    onAddIngredient: () -> Unit,
-    onLineAmountChange: (String, String) -> Unit,
-    onToggleOptional: (String) -> Unit,
-    onRemoveLine: (String) -> Unit,
-    onSaveDraft: () -> Unit,
-    onSaveAndPublish: () -> Unit,
-) {
-    Column(
-        modifier =
-            Modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(bottom = CulinarySpacing.xl),
-    ) {
-        EditorIntro(state = state)
-        Column(modifier = Modifier.padding(horizontal = CulinarySpacing.pageHorizontal)) {
-            EditorBasics(
-                state = state,
-                onNameChange = onNameChange,
-                onFamilyChange = onFamilyChange,
-            )
-            EditorYield(
-                state = state,
-                onYieldAmountChange = onYieldAmountChange,
-                onOpenUnitPicker = onOpenUnitPicker,
-            )
-            EditorComponents(
-                state = state,
-                onAddIngredient = onAddIngredient,
-                onLineAmountChange = onLineAmountChange,
-                onToggleOptional = onToggleOptional,
-                onRemoveLine = onRemoveLine,
-            )
-            EditorFooter(
-                isSaving = state.isSaving,
-                onSaveDraft = onSaveDraft,
-                onSaveAndPublish = onSaveAndPublish,
-            )
-        }
-    }
-}
-
-@Composable
-private fun EditorIntro(state: SauceEditorUiState) {
-    PageHeader(
-        eyebrow = "SAUCE",
-        title =
-            if (state.isNew) {
-                stringResource(R.string.sauces_editor_new_title)
-            } else {
-                stringResource(R.string.sauces_editor_edit_title, state.editingVersionNo ?: 1)
+    if (showDiscard) {
+        ConfirmDialog(
+            title = stringResource(R.string.sauces_discard_title),
+            message = stringResource(R.string.sauces_discard_message),
+            confirmLabel = stringResource(R.string.sauces_discard_confirm),
+            dismissLabel = stringResource(R.string.sauces_continue_editing),
+            onConfirm = {
+                showDiscard = false
+                onCancelled()
             },
-        supporting = if (state.hasPublishedVersion) stringResource(R.string.sauces_editor_published_hint) else null,
-    )
-}
-
-@Composable
-private fun EditorBasics(
-    state: SauceEditorUiState,
-    onNameChange: (String) -> Unit,
-    onFamilyChange: (String) -> Unit,
-) {
-    CulinaryTextField(
-        value = state.name,
-        onValueChange = onNameChange,
-        label = { Text(text = stringResource(R.string.sauces_name_label)) },
-        singleLine = true,
-    )
-    Spacer(modifier = Modifier.height(CulinarySpacing.field))
-    CulinaryTextField(
-        value = state.family,
-        onValueChange = onFamilyChange,
-        label = { Text(text = stringResource(R.string.sauces_family_label)) },
-        singleLine = true,
-    )
-}
-
-@Composable
-private fun EditorYield(
-    state: SauceEditorUiState,
-    onYieldAmountChange: (String) -> Unit,
-    onOpenUnitPicker: () -> Unit,
-) {
-    SectionHeader(title = stringResource(R.string.sauces_yield))
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        CulinaryTextField(
-            value = state.yieldAmount,
-            onValueChange = onYieldAmountChange,
-            label = { Text(text = stringResource(R.string.sauces_yield_amount)) },
-            singleLine = true,
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-            fillWidth = false,
-            modifier = Modifier.weight(1f),
+            onDismiss = { showDiscard = false },
+            destructive = true,
         )
-        Spacer(modifier = Modifier.width(CulinarySpacing.sm))
-        CulinaryButton(
-            text = state.yieldUnit?.symbol ?: "—",
-            onClick = onOpenUnitPicker,
-            variant = CulinaryButtonVariant.Secondary,
-            icon = CulinaryIcons.ChevronDown,
+    }
+    if (showDelete) {
+        ConfirmDialog(
+            title = stringResource(R.string.sauces_delete_title),
+            message = stringResource(R.string.sauces_delete_message),
+            confirmLabel = stringResource(R.string.sauces_delete_confirm),
+            dismissLabel = stringResource(R.string.sauces_cancel),
+            onConfirm = {
+                showDelete = false
+                onArchive()
+            },
+            onDismiss = { showDelete = false },
+            destructive = true,
+        )
+    }
+    if (showYieldUnitPicker) {
+        SauceUnitPickerDialog(
+            units = state.units,
+            selectedId = state.yieldUnit?.id?.value,
+            onSelect = {
+                onYieldUnitChange(it)
+                showYieldUnitPicker = false
+            },
+            onDismiss = { showYieldUnitPicker = false },
+        )
+    }
+    lineUnitKey?.let { key ->
+        val line = state.lines.firstOrNull { it.key == key }
+        SauceUnitPickerDialog(
+            units = state.units,
+            selectedId = line?.unit?.id?.value,
+            onSelect = {
+                onLineUnitChange(key, it)
+                lineUnitKey = null
+            },
+            onDismiss = { lineUnitKey = null },
         )
     }
 }
 
 @Composable
-private fun EditorComponents(
-    state: SauceEditorUiState,
-    onAddIngredient: () -> Unit,
-    onLineAmountChange: (String, String) -> Unit,
-    onToggleOptional: (String) -> Unit,
-    onRemoveLine: (String) -> Unit,
-) {
-    SectionHeader(title = stringResource(R.string.sauces_components, state.lines.size))
-    if (state.lines.any { it.isReadOnly }) {
-        Text(
-            text = stringResource(R.string.sauces_locked_components_hint),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(bottom = CulinarySpacing.sm),
-        )
-    }
-    state.lines.forEach { line ->
-        SauceLineRowEditor(
-            line = line,
-            onAmountChange = { value -> onLineAmountChange(line.key, value) },
-            onToggleOptional = { onToggleOptional(line.key) },
-            onRemove = { onRemoveLine(line.key) },
-        )
-    }
-    if (state.lines.isEmpty()) {
-        Text(
-            text = stringResource(R.string.sauces_no_components),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-    }
-    CulinaryButton(
-        text = stringResource(R.string.sauces_add_ingredient),
-        onClick = onAddIngredient,
-        variant = CulinaryButtonVariant.Secondary,
-        icon = CulinaryIcons.Add,
-        modifier = Modifier.padding(top = CulinarySpacing.xs),
-    )
-}
-
-@Composable
-private fun EditorFooter(
+private fun SauceEditorTopBar(
     isSaving: Boolean,
-    onSaveDraft: () -> Unit,
-    onSaveAndPublish: () -> Unit,
+    canSave: Boolean,
+    onBack: () -> Unit,
+    onCancel: () -> Unit,
+    onSave: () -> Unit,
 ) {
-    Row(
-        modifier = Modifier.fillMaxWidth().padding(top = CulinarySpacing.block),
-        horizontalArrangement = Arrangement.spacedBy(CulinarySpacing.sm),
-    ) {
-        CulinaryButton(
-            text = stringResource(R.string.sauces_save_draft),
-            onClick = onSaveDraft,
-            variant = CulinaryButtonVariant.Secondary,
-            enabled = !isSaving,
-            modifier = Modifier.weight(1f),
-        )
-        CulinaryButton(
-            text = stringResource(R.string.sauces_save_publish),
-            onClick = onSaveAndPublish,
-            enabled = !isSaving,
-            loading = isSaving,
-            modifier = Modifier.weight(1f),
-        )
-    }
-}
-
-@Suppress("LongMethod") // 行编辑器的只读/可编辑两态共享同一行布局。
-@Composable
-private fun SauceLineRowEditor(
-    line: SauceLineEditor,
-    onAmountChange: (String) -> Unit,
-    onToggleOptional: () -> Unit,
-    onRemove: () -> Unit,
-) {
-    Column(modifier = Modifier.fillMaxWidth().padding(vertical = CulinarySpacing.sm)) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = line.name,
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurface,
+    Column(modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.background)) {
+        Row(
+            modifier = Modifier.fillMaxWidth().height(56.dp).padding(horizontal = CulinarySpacing.xs),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            CulinaryIconButton(
+                icon = CulinaryIcons.Back,
+                contentDescription = stringResource(R.string.sauces_cancel),
+                onClick = onBack,
+            )
+            Text(
+                text = stringResource(R.string.sauces_cancel),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier =
+                    Modifier
+                        .clickable(onClick = onCancel)
+                        .padding(horizontal = CulinarySpacing.xs, vertical = CulinarySpacing.sm),
+            )
+            Spacer(modifier = Modifier.weight(1f))
+            if (isSaving) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(18.dp),
+                    strokeWidth = 2.dp,
+                    color = MaterialTheme.colorScheme.secondary,
                 )
-                Text(
-                    text = line.kindLabel,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-            if (line.isReadOnly) {
-                QuantityText(
-                    amount = line.amount,
-                    unit = line.unit.symbol,
-                    modifier = Modifier.padding(end = CulinarySpacing.xs),
-                )
-                StatusBadge(
-                    text = stringResource(R.string.sauces_locked_component),
-                    tone = StatusTone.Neutral,
-                )
+                Spacer(modifier = Modifier.size(CulinarySpacing.sm))
             } else {
-                CulinaryTextField(
-                    value = line.amount,
-                    onValueChange = onAmountChange,
-                    label = { Text(text = stringResource(R.string.sauces_amount)) },
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                    trailingIcon = { Text(text = line.unit.symbol) },
-                    fillWidth = false,
-                    modifier = Modifier.width(132.dp),
-                )
-                CulinaryTextButton(
-                    text = stringResource(R.string.sauces_remove_line),
-                    onClick = onRemove,
-                )
-            }
-        }
-        if (!line.isReadOnly) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                StatusBadge(
-                    text =
-                        stringResource(
-                            if (line.isOptional) R.string.sauces_optional_on else R.string.sauces_optional_off,
-                        ),
-                    tone = if (line.isOptional) StatusTone.Warning else StatusTone.Neutral,
-                )
-                CulinaryTextButton(
-                    text = stringResource(R.string.sauces_optional),
-                    onClick = onToggleOptional,
+                Text(
+                    text = stringResource(R.string.sauces_save),
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold,
+                    color =
+                        if (canSave) {
+                            MaterialTheme.colorScheme.onSurface
+                        } else {
+                            MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
+                        },
+                    modifier =
+                        Modifier
+                            .clickable(enabled = canSave, onClick = onSave)
+                            .padding(horizontal = CulinarySpacing.sm, vertical = CulinarySpacing.sm),
                 )
             }
         }
@@ -396,111 +355,83 @@ private fun SauceLineRowEditor(
 }
 
 @Composable
-private fun UnitPickerDialog(
-    units: List<com.culinary.core.domain.model.Unit>,
-    selectedId: String?,
-    onSelect: (com.culinary.core.domain.model.Unit) -> Unit,
-    onDismiss: () -> Unit,
+private fun SauceFooter(
+    state: SauceEditorUiState,
+    onDelete: () -> Unit,
 ) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        shape = MaterialTheme.shapes.large,
-        containerColor = MaterialTheme.colorScheme.surface,
-        title = {
+    Column(modifier = Modifier.fillMaxWidth().padding(top = CulinarySpacing.xl)) {
+        CulinaryRule()
+        Spacer(modifier = Modifier.height(CulinarySpacing.md))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
             Text(
-                text = stringResource(R.string.sauces_unit_picker_title),
-                style = MaterialTheme.typography.headlineSmall,
-            )
-        },
-        text = {
-            Column(modifier = Modifier.heightIn(max = 360.dp).verticalScroll(rememberScrollState())) {
-                units.forEach { unit ->
-                    Row(
-                        modifier =
-                            Modifier
-                                .fillMaxWidth()
-                                .clickable { onSelect(unit) }
-                                .padding(vertical = CulinarySpacing.sm),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Text(
-                            text = "${unit.name}（${unit.symbol}）",
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onSurface,
-                            modifier = Modifier.weight(1f),
+                text =
+                    if (state.updatedAtEpochMillis == null) {
+                        stringResource(R.string.sauces_unsaved_date)
+                    } else {
+                        stringResource(
+                            R.string.sauces_last_updated,
+                            formatUpdatedAt(state.updatedAtEpochMillis),
                         )
-                        if (unit.id.value == selectedId) {
-                            Icon(
-                                imageVector = CulinaryIcons.Check,
-                                contentDescription = null,
-                                modifier = Modifier.size(20.dp),
-                                tint = MaterialTheme.colorScheme.secondary,
-                            )
-                        }
-                    }
-                    CulinaryRule()
-                }
-            }
-        },
-        confirmButton = {
-            TextButton(onClick = onDismiss) {
+                    },
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.weight(1f),
+            )
+            if (state.sauceId != null) {
                 Text(
-                    text = stringResource(R.string.sauces_cancel),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    text = stringResource(R.string.sauces_delete_archive),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error.copy(alpha = 0.72f),
+                    modifier = Modifier.clickable(onClick = onDelete).padding(4.dp),
                 )
             }
-        },
-    )
+        }
+    }
 }
 
-@Composable
-private fun IngredientPickerDialog(
-    ingredients: List<Ingredient>,
-    onSelect: (Ingredient) -> Unit,
-    onDismiss: () -> Unit,
-) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        shape = MaterialTheme.shapes.large,
-        containerColor = MaterialTheme.colorScheme.surface,
-        title = {
-            Text(
-                text = stringResource(R.string.sauces_ingredient_picker_title),
-                style = MaterialTheme.typography.headlineSmall,
-            )
-        },
-        text = {
-            if (ingredients.isEmpty()) {
-                Text(text = stringResource(R.string.sauces_picker_empty))
-            } else {
-                Column(modifier = Modifier.heightIn(max = 420.dp).verticalScroll(rememberScrollState())) {
-                    ingredients.forEach { ingredient ->
-                        Row(
-                            modifier =
-                                Modifier
-                                    .fillMaxWidth()
-                                    .clickable { onSelect(ingredient) }
-                                    .padding(vertical = CulinarySpacing.sm),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Text(
-                                text = ingredient.name,
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = MaterialTheme.colorScheme.onSurface,
-                            )
-                        }
-                        CulinaryRule()
-                    }
-                }
-            }
-        },
-        confirmButton = {
-            TextButton(onClick = onDismiss) {
-                Text(
-                    text = stringResource(R.string.sauces_cancel),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-        },
-    )
-}
+private fun formatUpdatedAt(epochMillis: Long): String =
+    Instant
+        .ofEpochMilli(epochMillis)
+        .atZone(ZoneId.systemDefault())
+        .format(DateTimeFormatter.ofPattern("yyyy.MM.dd HH:mm"))
+
+/** 九个分节共用的编辑器事件集合；保持状态与 UI 解耦。 */
+internal data class SauceEditorActions(
+    val onFamilyChange: (String) -> Unit,
+    val onEnglishNameChange: (String) -> Unit,
+    val onNameChange: (String) -> Unit,
+    val onDescriptionChange: (String) -> Unit,
+    val onYieldAmountChange: (String) -> Unit,
+    val onOpenYieldUnit: () -> Unit,
+    val onDifficultyChange: (SauceDifficulty) -> Unit,
+    val onHeroPicked: (PendingSauceImage) -> Unit,
+    val onHeroClear: () -> Unit,
+    val onHeroCaptionChange: (String) -> Unit,
+    val onLineNameChange: (String, String) -> Unit,
+    val onLineNameEnChange: (String, String) -> Unit,
+    val onLineAmountChange: (String, String) -> Unit,
+    val onOpenLineUnit: (String) -> Unit,
+    val onToggleOptional: (String) -> Unit,
+    val onRemoveLine: (String) -> Unit,
+    val onMoveLine: (Int, Int) -> Unit,
+    val onAddIngredient: (com.culinary.core.domain.model.Ingredient) -> Unit,
+    val onStepTitleChange: (String, String) -> Unit,
+    val onStepBodyChange: (String, String) -> Unit,
+    val onStepImage: (String, PendingSauceImage) -> Unit,
+    val onClearStepImage: (String) -> Unit,
+    val onRemoveStep: (String) -> Unit,
+    val onMoveStep: (Int, Int) -> Unit,
+    val onAddStep: () -> Unit,
+    val onApplicationChange: (String) -> Unit,
+    val onAddRelation: (Sauce) -> Unit,
+    val onRemoveRelation: (String) -> Unit,
+    val onMoveRelation: (Int, Int) -> Unit,
+    val onOpenSauce: (String) -> Unit,
+    val onNotesChange: (String) -> Unit,
+    val onAddTextNote: () -> Unit,
+    val onNoteImage: (PendingSauceImage) -> Unit,
+    val onRemoveNoteImage: (Int) -> Unit,
+)

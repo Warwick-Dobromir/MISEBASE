@@ -40,6 +40,12 @@ data class SauceEntity(
     val shelfLifeDays: Int? = null,
     @ColumnInfo(name = "english_name")
     val englishName: String? = null,
+    @ColumnInfo(name = "description")
+    val description: String? = null,
+    @ColumnInfo(name = "difficulty")
+    val difficulty: String? = null,
+    @ColumnInfo(name = "hero_caption")
+    val heroCaption: String? = null,
     @ColumnInfo(name = "main_ingredients")
     val mainIngredients: String? = null,
     @ColumnInfo(name = "preparation_summary")

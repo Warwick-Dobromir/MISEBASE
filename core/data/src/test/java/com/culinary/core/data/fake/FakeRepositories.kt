@@ -255,6 +255,15 @@ class InMemorySauceRepository : SauceRepository {
         return Outcome.success(published.id)
     }
 
+    override suspend fun archive(id: SauceId): Outcome<Unit> {
+        val existing =
+            sauces.firstOrNull { it.id == id }
+                ?: return Outcome.failure(CulinaryError.NotFound(entity = "sauce", id = id.value))
+        sauces.remove(existing)
+        sauces += existing.copy(status = EntityStatus.ARCHIVED)
+        return Outcome.success(Unit)
+    }
+
     fun addSauce(sauce: Sauce) {
         sauces += sauce
     }

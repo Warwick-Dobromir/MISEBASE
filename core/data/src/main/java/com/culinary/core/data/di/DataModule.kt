@@ -9,6 +9,8 @@ import com.culinary.core.common.IdGenerator
 import com.culinary.core.common.SystemClock
 import com.culinary.core.common.UuidV4Generator
 import com.culinary.core.data.backup.WriteBarrier
+import com.culinary.core.data.file.ImageFileStorage
+import com.culinary.core.data.file.LocalImageStorage
 import com.culinary.core.data.logging.TimberAppLogger
 import com.culinary.core.database.CulinaryDatabase
 import com.culinary.core.database.DatabaseFactory
@@ -53,6 +55,12 @@ object DataModule {
         @WriteExecutor writeExecutor: ExecutorService,
         @ReadExecutor readExecutor: ExecutorService,
     ): CulinaryDatabase = DatabaseFactory.create(context, writeExecutor, readExecutor)
+
+    @Provides
+    @Singleton
+    fun provideImageFileStorage(
+        @ApplicationContext context: Context,
+    ): ImageFileStorage = LocalImageStorage(context.filesDir)
 
     @Provides
     @Singleton

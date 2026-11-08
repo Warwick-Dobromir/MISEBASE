@@ -2,6 +2,7 @@ package com.culinary.core.data.di
 
 import com.culinary.core.database.CulinaryDatabase
 import com.culinary.core.database.dao.AppMetadataDao
+import com.culinary.core.database.dao.ImageAssetDao
 import com.culinary.core.database.dao.IngredientUnitConversionDao
 import com.culinary.core.database.dao.KitchenReferenceDao
 import com.culinary.core.database.dao.KitchenRelationDao
@@ -18,6 +19,7 @@ import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
 
 /** 三大档案库所需的 DAO 装配；与基础 DAO 分开，避免单模块函数过多。 */
+@Suppress("TooManyFunctions") // 档案 DAO 的唯一装配点；拆模块不会减少 DAO 数量
 @Module
 @InstallIn(SingletonComponent::class)
 object ArchiveDaoModule {
@@ -61,4 +63,8 @@ object ArchiveDaoModule {
     @Provides
     @Singleton
     fun provideAppMetadataDao(database: CulinaryDatabase): AppMetadataDao = database.appMetadataDao()
+
+    @Provides
+    @Singleton
+    fun provideImageAssetDao(database: CulinaryDatabase): ImageAssetDao = database.imageAssetDao()
 }

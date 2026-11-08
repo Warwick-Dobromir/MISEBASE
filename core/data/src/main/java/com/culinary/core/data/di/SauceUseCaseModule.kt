@@ -3,13 +3,17 @@ package com.culinary.core.data.di
 import com.culinary.core.common.IdGenerator
 import com.culinary.core.domain.repository.IngredientRepository
 import com.culinary.core.domain.repository.RecipeRepository
+import com.culinary.core.domain.repository.SauceImageRepository
 import com.culinary.core.domain.repository.SauceRepository
 import com.culinary.core.domain.repository.UnitRepository
 import com.culinary.core.domain.transaction.TransactionRunner
+import com.culinary.core.domain.usecase.sauce.ArchiveSauceUseCase
 import com.culinary.core.domain.usecase.sauce.GetSauceDetailUseCase
 import com.culinary.core.domain.usecase.sauce.ListSaucesUseCase
 import com.culinary.core.domain.usecase.sauce.PublishSauceVersionUseCase
+import com.culinary.core.domain.usecase.sauce.SauceImageUseCase
 import com.culinary.core.domain.usecase.sauce.SaveSauceDraftUseCase
+import com.culinary.core.domain.usecase.sauce.SaveSauceRelationsUseCase
 import com.culinary.core.domain.usecase.sauce.SaveSauceUseCase
 import com.culinary.core.domain.usecase.unit.ListUnitsUseCase
 import dagger.Module
@@ -60,4 +64,21 @@ object SauceUseCaseModule {
         repository: SauceRepository,
         transactionRunner: TransactionRunner,
     ): PublishSauceVersionUseCase = PublishSauceVersionUseCase(repository, transactionRunner)
+
+    @Provides
+    @Singleton
+    fun provideArchiveSauceUseCase(
+        repository: SauceRepository,
+        transactionRunner: TransactionRunner,
+    ): ArchiveSauceUseCase = ArchiveSauceUseCase(repository, transactionRunner)
+
+    @Provides
+    @Singleton
+    fun provideSauceImageUseCase(repository: SauceImageRepository): SauceImageUseCase = SauceImageUseCase(repository)
+
+    @Provides
+    @Singleton
+    fun provideSaveSauceRelationsUseCase(
+        repository: com.culinary.core.domain.repository.KitchenRelationRepository,
+    ): SaveSauceRelationsUseCase = SaveSauceRelationsUseCase(repository)
 }

@@ -65,7 +65,7 @@ class QuiescedDatabaseSnapshotterTest {
 
             assertThat(result).isInstanceOf(Outcome.Success::class.java)
             val snapshot = (result as Outcome.Success).value
-            assertThat(snapshot.schemaVersion).isEqualTo(4)
+            assertThat(snapshot.schemaVersion).isEqualTo(5)
             assertThat(snapshot.journalMode).isEqualTo("wal")
             assertThat(snapshot.file.exists()).isTrue()
             assertThat(countIn(snapshot.file)).isEqualTo(3)

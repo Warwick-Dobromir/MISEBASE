@@ -58,6 +58,8 @@ data class SauceVersionEntity(
     val yieldUnitId: String,
     @ColumnInfo(name = "instructions_md")
     val instructionsMd: String? = null,
+    @ColumnInfo(name = "steps_json")
+    val stepsJson: String? = null,
     @ColumnInfo(name = "change_note")
     val changeNote: String? = null,
     @ColumnInfo(name = "based_on_version_id")

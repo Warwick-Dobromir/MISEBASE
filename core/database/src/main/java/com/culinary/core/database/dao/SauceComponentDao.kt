@@ -17,6 +17,9 @@ interface SauceComponentDao {
     @Query("SELECT * FROM sauce_component WHERE sauce_version_id = :versionId ORDER BY line_no")
     suspend fun listByVersion(versionId: String): List<SauceComponentEntity>
 
+    @Query("DELETE FROM sauce_component WHERE sauce_version_id = :versionId")
+    suspend fun deleteByVersion(versionId: String)
+
     @Query("SELECT COUNT(*) FROM sauce_component")
     suspend fun count(): Int
 }

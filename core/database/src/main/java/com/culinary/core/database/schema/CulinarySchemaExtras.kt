@@ -288,6 +288,7 @@ internal object CulinarySchemaExtras {
         OR NEW.created_at < 0
         OR NEW.updated_at < 0
         OR (NEW.shelf_life_days IS NOT NULL AND NEW.shelf_life_days < 0)
+        OR (NEW.difficulty IS NOT NULL AND NEW.difficulty NOT IN ('EASY', 'MEDIUM', 'HARD'))
     """
 
     private const val RECIPE_PREDICATE = """

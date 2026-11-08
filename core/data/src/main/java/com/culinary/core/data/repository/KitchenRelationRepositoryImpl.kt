@@ -1,5 +1,8 @@
 package com.culinary.core.data.repository
 
+import com.culinary.core.common.Clock
+import com.culinary.core.common.IdGenerator
+import com.culinary.core.common.Outcome
 import com.culinary.core.data.mapper.KitchenRelationMapper
 import com.culinary.core.database.dao.IngredientDao
 import com.culinary.core.database.dao.KitchenReferenceDao
@@ -9,7 +12,9 @@ import com.culinary.core.database.dao.SauceDao
 import com.culinary.core.database.entity.KitchenRelationEntity
 import com.culinary.core.domain.model.KitchenRecordKind
 import com.culinary.core.domain.model.KitchenRelatedRecord
+import com.culinary.core.domain.model.KitchenRelationDraft
 import com.culinary.core.domain.repository.KitchenRelationRepository
+import com.culinary.core.domain.transaction.TransactionRunner
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
@@ -23,10 +28,43 @@ class KitchenRelationRepositoryImpl
         private val ingredientDao: IngredientDao,
         private val recipeDao: RecipeDao,
         private val referenceDao: KitchenReferenceDao,
+        private val transactionRunner: TransactionRunner,
+        private val idGenerator: IdGenerator,
+        private val clock: Clock,
     ) : KitchenRelationRepository {
         override fun observeForRecord(recordId: String): Flow<List<KitchenRelatedRecord>> =
             dao.observeBySource(recordId).map { entities ->
                 entities.mapNotNull { entity -> resolve(entity) }
+            }
+
+        override suspend fun replaceRelations(
+            sourceRecordId: String,
+            sourceKind: KitchenRecordKind,
+            targetKind: KitchenRecordKind,
+            relations: List<KitchenRelationDraft>,
+        ): Outcome<Unit> =
+            transactionRunner.write {
+                dao.deleteBySourceAndTargetKind(sourceRecordId, targetKind.name)
+                val now = clock.now().toEpochMilli()
+                dao.insertAll(
+                    relations
+                        .distinctBy { it.targetRecordId }
+                        .mapIndexed { index, relation ->
+                            KitchenRelationEntity(
+                                id = idGenerator.newId(),
+                                sourceRecordId = sourceRecordId,
+                                sourceKind = sourceKind.name,
+                                targetRecordId = relation.targetRecordId,
+                                targetKind = targetKind.name,
+                                targetLabel = relation.targetLabel,
+                                relationLabel = relation.relationLabel,
+                                sortOrder = index,
+                                seedVersion = null,
+                                createdAt = now,
+                            )
+                        },
+                )
+                Outcome.success(Unit)
             }
 
         private suspend fun resolve(entity: KitchenRelationEntity): KitchenRelatedRecord? {

@@ -27,22 +27,40 @@ data class SauceDraftLineInput(
     val amount: Double,
     val unit: Unit,
     val isOptional: Boolean = false,
+    val labelOverride: String? = null,
+    val labelOverrideEn: String? = null,
 ) {
     constructor(
         ingredientId: IngredientId,
         amount: Double,
         unit: Unit,
         isOptional: Boolean = false,
-    ) : this(ComponentTarget.Ingredient(ingredientId), amount, unit, isOptional)
+        labelOverride: String? = null,
+        labelOverrideEn: String? = null,
+    ) : this(
+        ComponentTarget.Ingredient(ingredientId),
+        amount,
+        unit,
+        isOptional,
+        labelOverride,
+        labelOverrideEn,
+    )
 }
 
-/** 保存酱汁草稿版本的输入。 */
+/**
+ * 保存酱汁草稿版本的输入。
+ *
+ * [versionId] 非空表示更新同一份未发布草稿；为空表示创建新草稿。
+ * 已发布版本不会被覆盖（D-006）。
+ */
 data class SaveSauceDraftInput(
     val sauceId: SauceId,
     val yieldAmount: Double,
     val yieldUnit: Unit,
     val components: List<SauceDraftLineInput>,
     val instructions: String? = null,
+    val stepsJson: String? = null,
+    val versionId: SauceVersionId? = null,
 )
 
 /**
@@ -55,6 +73,7 @@ class SaveSauceDraftUseCase(
     private val idGenerator: IdGenerator,
     private val transactionRunner: TransactionRunner,
 ) {
+    @Suppress("ReturnCount") // 逐项校验并返回首个错误，便于 UI 定位字段
     suspend operator fun invoke(input: SaveSauceDraftInput): Outcome<SauceVersionId> {
         if (!input.yieldAmount.isFinite() || input.yieldAmount <= 0.0) {
             return invalid("sauce.yield", "must be a finite positive number")
@@ -72,19 +91,35 @@ class SaveSauceDraftUseCase(
                     target = line.target,
                     quantity = Quantity(line.amount, line.unit),
                     isOptional = line.isOptional,
+                    labelOverride = line.labelOverride?.trim()?.takeIf { it.isNotEmpty() },
+                    labelOverrideEn = line.labelOverrideEn?.trim()?.takeIf { it.isNotEmpty() },
                 )
             }
+        val existing =
+            input.versionId?.let { versionId ->
+                when (val result = repository.getVersion(versionId)) {
+                    is Outcome.Failure -> return result
+                    is Outcome.Success -> result.value
+                }
+            }
+        if (existing != null && existing.status != VersionStatus.DRAFT) {
+            return invalid("sauce.version", "only draft versions can be edited")
+        }
+        if (existing != null && existing.sauceId != input.sauceId) {
+            return invalid("sauce.version", "draft belongs to another sauce")
+        }
         return transactionRunner
             .write {
                 val version =
                     SauceVersion(
-                        id = SauceVersionId(idGenerator.newId()),
+                        id = existing?.id ?: SauceVersionId(idGenerator.newId()),
                         sauceId = input.sauceId,
-                        versionNo = repository.nextVersionNo(input.sauceId),
+                        versionNo = existing?.versionNo ?: repository.nextVersionNo(input.sauceId),
                         status = VersionStatus.DRAFT,
                         yield = Quantity(input.yieldAmount, input.yieldUnit),
                         components = components,
                         instructions = input.instructions?.trim()?.takeIf { it.isNotEmpty() },
+                        stepsJson = input.stepsJson?.trim()?.takeIf { it.isNotEmpty() },
                     )
                 repository.saveDraft(version)
             }.flatMap { it }

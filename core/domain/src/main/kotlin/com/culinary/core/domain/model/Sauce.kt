@@ -6,6 +6,12 @@ package com.culinary.core.domain.model
  * 酱汁与菜谱对称：档案本身不承载配方内容，内容由不可变的 [SauceVersion] 表达。
  * 归档只影响新建引用，不改变既有版本与历史结果（D-020）。
  */
+enum class SauceDifficulty {
+    EASY,
+    MEDIUM,
+    HARD,
+}
+
 data class Sauce(
     val id: SauceId,
     val name: String,
@@ -18,6 +24,10 @@ data class Sauce(
     val storageNotes: String? = null,
     val shelfLifeDays: Int? = null,
     val englishName: String? = null,
+    val description: String? = null,
+    val difficulty: SauceDifficulty? = null,
+    val heroCaption: String? = null,
+    val updatedAtEpochMillis: Long? = null,
     val mainIngredients: String? = null,
     val preparationSummary: String? = null,
     val keyParameters: String? = null,

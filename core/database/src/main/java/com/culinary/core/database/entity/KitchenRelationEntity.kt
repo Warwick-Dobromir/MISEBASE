@@ -35,6 +35,8 @@ data class KitchenRelationEntity(
     val targetLabel: String,
     @ColumnInfo(name = "relation_label")
     val relationLabel: String,
+    @ColumnInfo(name = "sort_order")
+    val sortOrder: Int = 0,
     @ColumnInfo(name = "seed_version")
     val seedVersion: String? = null,
     @ColumnInfo(name = "created_at")

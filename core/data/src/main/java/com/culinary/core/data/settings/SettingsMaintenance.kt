@@ -134,7 +134,7 @@ class SettingsMaintenance
                         val prechecked =
                             RestorePrecheck(
                                 currentSchemaVersion = currentSchemaVersion(),
-                                testedMigrationSources = setOf(2, 3),
+                                testedMigrationSources = setOf(2, 3, 4),
                             ).check(manifest)
                     ) {
                         is Outcome.Success -> prechecked.value

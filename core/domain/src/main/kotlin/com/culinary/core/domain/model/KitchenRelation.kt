@@ -18,4 +18,14 @@ data class KitchenRelatedRecord(
     val targetKind: KitchenRecordKind,
     val targetLabel: String,
     val relationLabel: String,
+    val sortOrder: Int = 0,
+)
+
+/** 编辑器提交的一条手工关系；[sortOrder] 决定显示顺序。 */
+data class KitchenRelationDraft(
+    val targetRecordId: String,
+    val targetKind: KitchenRecordKind,
+    val targetLabel: String,
+    val relationLabel: String,
+    val sortOrder: Int,
 )

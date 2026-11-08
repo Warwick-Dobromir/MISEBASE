@@ -79,11 +79,12 @@ import com.culinary.core.database.entity.SupplierEntity
 import com.culinary.core.database.entity.UnitEntity
 
 /**
- * CULINARY 数据库（schema v4）。
+ * CULINARY 数据库（schema v5）。
  *
  * `exportSchema = true`：每个版本必须提交 `schemas/` JSON，迁移测试依赖它。
  * v2 新增计算记录与 recipe_version.servings；v3 新增 kitchen_reference；
- * v4 补充六库档案的扩展展示字段、测试种子标记和厨房关系表。
+ * v4 补充六库档案的扩展展示字段、测试种子标记和厨房关系表；
+ * v5 增加酱汁编辑器的描述/难度/图注、步骤 JSON、原料名称覆盖与关系排序。
  */
 @Database(
     entities = [
@@ -123,7 +124,7 @@ import com.culinary.core.database.entity.UnitEntity
         KitchenReferenceEntity::class,
         KitchenRelationEntity::class,
     ],
-    version = 4,
+    version = 5,
     exportSchema = true,
 )
 @TypeConverters(

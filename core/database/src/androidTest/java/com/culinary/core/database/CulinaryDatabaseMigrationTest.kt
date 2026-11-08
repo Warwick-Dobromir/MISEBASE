@@ -100,15 +100,16 @@ class CulinaryDatabaseMigrationTest {
     }
 
     @Test
-    fun migratesV3ToV4AndCreatesRelationAndSeedColumns() {
+    fun migratesV3ToV5AndCreatesRelationAndSeedColumns() {
         helper.createDatabase(DATABASE_NAME, 3).close()
 
         val migrated =
             helper.runMigrationsAndValidate(
                 DATABASE_NAME,
-                4,
+                5,
                 true,
                 CulinaryMigrations.MIGRATION_3_4,
+                CulinaryMigrations.MIGRATION_4_5,
             )
         migrated.use { db ->
             val version =
@@ -116,12 +117,40 @@ class CulinaryDatabaseMigrationTest {
                     cursor.moveToFirst()
                     cursor.getInt(0)
                 }
-            assertEquals(4, version)
+            assertEquals(5, version)
             db
                 .query("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'kitchen_relation'")
                 .use { cursor -> assertTrue(cursor.moveToFirst()) }
             assertTrue(columnInfo(db, "sauce", "english_name").notNull.not())
             assertTrue(columnInfo(db, "ingredient", "example_products").notNull.not())
+            assertTrue(columnInfo(db, "sauce", "difficulty").notNull.not())
+            assertTrue(columnInfo(db, "sauce_version", "steps_json").notNull.not())
+            assertIntegrity(db)
+        }
+    }
+
+    @Test
+    fun migratesV4ToV5AndAddsEditorColumns() {
+        helper.createDatabase(DATABASE_NAME, 4).close()
+
+        val migrated =
+            helper.runMigrationsAndValidate(
+                DATABASE_NAME,
+                5,
+                true,
+                CulinaryMigrations.MIGRATION_4_5,
+            )
+        migrated.use { db ->
+            val version =
+                db.query("PRAGMA user_version").use { cursor ->
+                    cursor.moveToFirst()
+                    cursor.getInt(0)
+                }
+            assertEquals(5, version)
+            assertTrue(columnInfo(db, "sauce", "description").notNull.not())
+            assertTrue(columnInfo(db, "sauce", "hero_caption").notNull.not())
+            assertTrue(columnInfo(db, "sauce_component", "label_override").notNull.not())
+            assertEquals("0", columnInfo(db, "kitchen_relation", "sort_order").defaultValue)
             assertIntegrity(db)
         }
     }

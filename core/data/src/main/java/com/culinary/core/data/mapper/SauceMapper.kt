@@ -18,6 +18,7 @@ import com.culinary.core.domain.model.RecipeId
 import com.culinary.core.domain.model.RecipeVersionId
 import com.culinary.core.domain.model.Sauce
 import com.culinary.core.domain.model.SauceComponent
+import com.culinary.core.domain.model.SauceDifficulty
 import com.culinary.core.domain.model.SauceId
 import com.culinary.core.domain.model.SauceVersion
 import com.culinary.core.domain.model.SauceVersionId
@@ -48,6 +49,10 @@ object SauceMapper {
             storageNotes = entity.storageNotes,
             shelfLifeDays = entity.shelfLifeDays,
             englishName = entity.englishName,
+            description = entity.description,
+            difficulty = entity.difficulty?.let { SauceDifficulty.valueOf(it) },
+            heroCaption = entity.heroCaption,
+            updatedAtEpochMillis = entity.updatedAt,
             mainIngredients = entity.mainIngredients,
             preparationSummary = entity.preparationSummary,
             keyParameters = entity.keyParameters,
@@ -74,6 +79,9 @@ object SauceMapper {
             storageNotes = sauce.storageNotes,
             shelfLifeDays = sauce.shelfLifeDays,
             englishName = sauce.englishName,
+            description = sauce.description,
+            difficulty = sauce.difficulty?.name,
+            heroCaption = sauce.heroCaption,
             mainIngredients = sauce.mainIngredients,
             preparationSummary = sauce.preparationSummary,
             keyParameters = sauce.keyParameters,
@@ -109,6 +117,7 @@ object SauceMapper {
             yieldQty = version.yield.amount,
             yieldUnitId = version.yield.unit.id.value,
             instructionsMd = version.instructions,
+            stepsJson = version.stepsJson,
             isCurrent = version.isCurrent,
             createdAt = createdAt,
             publishedAt = publishedAt,
@@ -138,6 +147,8 @@ object SauceMapper {
                     target = target,
                     quantity = Quantity(component.quantity, unit),
                     isOptional = component.isOptional,
+                    labelOverride = component.labelOverride,
+                    labelOverrideEn = component.labelOverrideEn,
                 )
         }
         return Outcome.success(
@@ -155,6 +166,7 @@ object SauceMapper {
                 components = mapped,
                 isCurrent = version.isCurrent,
                 instructions = version.instructionsMd,
+                stepsJson = version.stepsJson,
             ),
         )
     }
@@ -174,6 +186,8 @@ object SauceMapper {
                 quantity = component.quantity.amount,
                 unitId = component.quantity.unit.id.value,
                 isOptional = component.isOptional,
+                labelOverride = component.labelOverride,
+                labelOverrideEn = component.labelOverrideEn,
                 sortOrder = component.lineNo,
                 createdAt = createdAt,
             )

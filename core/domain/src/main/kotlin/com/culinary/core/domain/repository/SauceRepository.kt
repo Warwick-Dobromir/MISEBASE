@@ -37,4 +37,7 @@ interface SauceRepository {
      * 已发布的行只允许状态/当前指针变化；内容字段由数据库触发器保护。
      */
     suspend fun savePublished(version: SauceVersion): Outcome<SauceVersionId>
+
+    /** 归档档案；不物理删除，历史版本与引用关系保持。 */
+    suspend fun archive(id: SauceId): Outcome<kotlin.Unit>
 }

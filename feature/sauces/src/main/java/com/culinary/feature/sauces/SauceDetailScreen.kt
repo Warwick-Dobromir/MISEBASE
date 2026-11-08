@@ -128,6 +128,7 @@ internal fun SauceDetailContent(
         item {
             Column(modifier = Modifier.padding(horizontal = CulinarySpacing.pageHorizontal)) {
                 CurrentVersionSection(detail)
+                DraftVersionSection(latestDraft)
                 DetailActions(
                     detail = detail,
                     latestDraft = latestDraft,
@@ -257,6 +258,42 @@ private fun CurrentVersionSection(detail: SauceDetail) {
                 unit = current.yield.unit.symbol,
             )
         }
+    }
+}
+
+@Composable
+private fun DraftVersionSection(draft: SauceVersion?) {
+    if (draft == null) return
+    SectionHeader(title = stringResource(R.string.sauces_pending_draft))
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = "v${draft.versionNo}",
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onSurface,
+        )
+        StatusBadge(
+            text = stringResource(R.string.sauces_status_draft),
+            tone = StatusTone.Warning,
+            modifier = Modifier.padding(start = CulinarySpacing.xs),
+        )
+        Spacer(modifier = Modifier.weight(1f))
+        QuantityText(
+            amount = formatAmount(draft.yield.amount),
+            unit = draft.yield.unit.symbol,
+        )
+    }
+    draft.instructions?.lineSequence()?.firstOrNull { it.isNotBlank() }?.let { firstLine ->
+        Text(
+            text = firstLine,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 2,
+            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+            modifier = Modifier.padding(top = CulinarySpacing.xxs),
+        )
     }
 }
 
