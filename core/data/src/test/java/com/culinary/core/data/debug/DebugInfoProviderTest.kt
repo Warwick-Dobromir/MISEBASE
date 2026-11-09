@@ -53,7 +53,7 @@ class DebugInfoProviderTest {
 
             assertThat(result).isInstanceOf(Outcome.Success::class.java)
             val items = (result as Outcome.Success).value.associate { it.label to it.value }
-            assertThat(items["user_version"]).isEqualTo("6")
+            assertThat(items["user_version"]).isEqualTo("7")
             assertThat(items["数据库路径"]).contains(DATABASE_NAME)
             assertThat(items["崩溃日志数"]).isEqualTo("2")
             assertThat(items["journal_mode"]).isNotEmpty()

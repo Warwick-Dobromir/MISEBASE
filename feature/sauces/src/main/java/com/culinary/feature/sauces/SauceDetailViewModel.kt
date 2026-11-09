@@ -5,8 +5,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.culinary.core.common.Outcome
 import com.culinary.core.domain.model.KitchenRecordKind
+import com.culinary.core.domain.model.KitchenStepCodec
 import com.culinary.core.domain.model.SauceId
 import com.culinary.core.domain.model.SauceVersionId
+import com.culinary.core.domain.model.VersionStatus
 import com.culinary.core.domain.usecase.archive.GetArchiveCategoryForRecordUseCase
 import com.culinary.core.domain.usecase.kitchen.ObserveKitchenRelationsUseCase
 import com.culinary.core.domain.usecase.sauce.GetSauceDetailUseCase
@@ -62,11 +64,45 @@ class SauceDetailViewModel
                                     ?.firstOrNull { it.role.name == "PRIMARY" }
                                     ?.let { image -> sauceImages.read(image.id) }
                             }.getOrNull()
+                        val version =
+                            result.value.versions
+                                .firstOrNull { it.status == VersionStatus.DRAFT }
+                                ?: result.value.currentVersion
+                                ?: result.value.versions.firstOrNull()
+                        var stepKey = 0
+                        val steps =
+                            runCatching {
+                                KitchenStepCodec.decode(version?.stepsJson, version?.instructions) {
+                                    "step-${stepKey++}"
+                                }
+                            }.getOrDefault(emptyList())
+                        val versionImages =
+                            version
+                                ?.let { shown ->
+                                    runCatching { sauceImages?.listForVersion(shown.id.value) }.getOrNull()
+                                }.orEmpty()
+                        val stepImages =
+                            versionImages
+                                .mapNotNull { asset ->
+                                    val stepNo = asset.stepNo?.takeIf { it > 0 } ?: return@mapNotNull null
+                                    val bytes = runCatching { sauceImages?.read(asset.id) }.getOrNull()
+                                    if (bytes == null) null else stepNo to bytes
+                                }.toMap()
+                        val noteImages =
+                            runCatching {
+                                sauceImages
+                                    ?.listForSauce(sauceId.value)
+                                    ?.filter { it.role.name == "REFERENCE" }
+                                    ?.mapNotNull { asset -> sauceImages?.read(asset.id) }
+                            }.getOrNull().orEmpty()
                         _uiState.update {
                             it.copy(
                                 detail = result.value,
                                 categoryPath = category?.path.orEmpty(),
                                 imageBytes = image,
+                                steps = steps,
+                                stepImages = stepImages,
+                                noteImages = noteImages,
                                 isLoading = false,
                                 isPublishing = false,
                             )

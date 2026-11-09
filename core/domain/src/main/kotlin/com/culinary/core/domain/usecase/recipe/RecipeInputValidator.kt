@@ -43,6 +43,7 @@ internal object RecipeInputValidator {
             components = components,
             servings = input.servings,
             instructions = input.instructions?.trim()?.takeIf { it.isNotEmpty() },
+            stepsJson = input.stepsJson?.takeIf { it.isNotBlank() },
         )
 
     private fun invalid(

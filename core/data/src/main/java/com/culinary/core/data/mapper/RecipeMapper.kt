@@ -60,6 +60,7 @@ object RecipeMapper {
             difficulty = entity.difficulty,
             allergenNotes = entity.allergenNotes,
             ingredientSummary = entity.description,
+            updatedAtEpochMillis = entity.updatedAt,
             seedNote = entity.seedNote,
             seedId = entity.seedId,
             seedVersion = entity.seedVersion,
@@ -122,6 +123,7 @@ object RecipeMapper {
             yieldUnitId = version.yield.unit.id.value,
             servings = version.servings,
             instructionsMd = version.instructions,
+            stepsJson = version.stepsJson,
             isCurrent = version.isCurrent,
             createdAt = createdAt,
             publishedAt = publishedAt,
@@ -173,6 +175,7 @@ object RecipeMapper {
                 servings = version.servings,
                 isCurrent = version.isCurrent,
                 instructions = version.instructionsMd,
+                stepsJson = version.stepsJson,
             ),
         )
     }

@@ -4,6 +4,7 @@ import com.culinary.core.common.CulinaryError
 import com.culinary.core.domain.model.ExpandedRecipe
 import com.culinary.core.domain.model.Ingredient
 import com.culinary.core.domain.model.IngredientId
+import com.culinary.core.domain.model.KitchenStep
 import com.culinary.core.domain.model.KitchenRelatedRecord
 import com.culinary.core.domain.model.RecipeCategory
 import com.culinary.core.domain.model.RecipeComponentKind
@@ -44,6 +45,12 @@ data class RecipeDetailUiState(
     val targetServings: String = "1",
     val error: String? = null,
     val relations: List<KitchenRelatedRecord> = emptyList(),
+    /** 当前版本的结构化步骤（含每步时间）。 */
+    val steps: List<KitchenStep> = emptyList(),
+    /** 步骤序号（1 起）→ 步骤图片。 */
+    val stepImages: Map<Int, ByteArray> = emptyMap(),
+    /** 研发照片。 */
+    val noteImages: List<ByteArray> = emptyList(),
 )
 
 /** 编辑器中的组成行；保留目标 id 以支持重新编辑与版本固定。 */
@@ -63,6 +70,15 @@ data class RecipeLineEditor(
     val sauceVersionNo: Int? = null,
 )
 
+/** 制作步骤的编辑状态（与酱汁同构：编号 / 标题 / 说明 / 时间）。 */
+data class RecipeStepEditor(
+    val key: String,
+    val title: String = "",
+    val body: String = "",
+    /** 步骤时间（秒）；0 表示没有有效计时。 */
+    val timeSeconds: Int = 0,
+)
+
 /** 菜谱编辑器状态。 */
 data class RecipeEditorUiState(
     val recipeId: String? = null,
@@ -76,6 +92,7 @@ data class RecipeEditorUiState(
     val recipeOptions: List<RecipeOption> = emptyList(),
     val sauceOptions: List<SauceOption> = emptyList(),
     val lines: List<RecipeLineEditor> = emptyList(),
+    val steps: List<RecipeStepEditor> = emptyList(),
     val isLoading: Boolean = true,
     val isSaving: Boolean = false,
     val error: String? = null,

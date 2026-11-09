@@ -238,6 +238,8 @@ class SauceUseCasesTest {
         override suspend fun nextVersionNo(sauceId: SauceId): Int =
             (versions.values.filter { it.sauceId == sauceId }.maxOfOrNull { it.versionNo } ?: 0) + 1
 
+        override suspend fun archive(id: SauceId): Outcome<Unit> = Outcome.success(Unit)
+
         override suspend fun save(sauce: Sauce): Outcome<SauceId> {
             saved.removeAll { it.id == sauce.id }
             saved += sauce

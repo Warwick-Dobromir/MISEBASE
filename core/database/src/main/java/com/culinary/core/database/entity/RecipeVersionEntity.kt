@@ -56,6 +56,9 @@ data class RecipeVersionEntity(
     val yieldUnitId: String,
     @ColumnInfo(name = "instructions_md")
     val instructionsMd: String? = null,
+    /** 结构化制作步骤（含每步时间）；v1 历史数据为空，读取时回退 [instructionsMd]。 */
+    @ColumnInfo(name = "steps_json")
+    val stepsJson: String? = null,
     @ColumnInfo(name = "change_note")
     val changeNote: String? = null,
     @ColumnInfo(name = "based_on_version_id")

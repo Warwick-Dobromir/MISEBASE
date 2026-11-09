@@ -15,6 +15,8 @@ data class Recipe(
     val difficulty: String? = null,
     val allergenNotes: String? = null,
     val ingredientSummary: String? = null,
+    /** 档案最后更新时间（页脚显示；来自 recipe.updated_at）。 */
+    val updatedAtEpochMillis: Long? = null,
     val seedNote: String? = null,
     val seedId: String? = null,
     val seedVersion: String? = null,

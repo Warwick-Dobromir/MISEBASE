@@ -46,4 +46,5 @@ data class RecipeVersionInput(
     val servings: Int,
     val components: List<RecipeLineInput>,
     val instructions: String? = null,
+    val stepsJson: String? = null,
 )

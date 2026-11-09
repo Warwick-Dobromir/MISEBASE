@@ -16,6 +16,8 @@ data class RecipeVersion(
     val servings: Int = 1,
     val isCurrent: Boolean = false,
     val instructions: String? = null,
+    /** 结构化步骤 JSON（含每步时间）；图片仍由 image_asset.step_no 关联。 */
+    val stepsJson: String? = null,
 ) {
     init {
         require(versionNo > 0) { "versionNo must be > 0, was $versionNo" }

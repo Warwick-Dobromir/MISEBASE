@@ -83,7 +83,7 @@ class BackupRestoreV4Test {
 
             val restored = openRestored()
             val sqlite = restored.openHelper.writableDatabase
-            assertThat(userVersion(sqlite)).isEqualTo(6)
+            assertThat(userVersion(sqlite)).isEqualTo(7)
             assertThat(restored.recipeVersionDao().findById(VERSION_ID)?.servings).isEqualTo(3)
 
             val record = requireNotNull(restored.calculationRecordDao().findById(CALC_ID))

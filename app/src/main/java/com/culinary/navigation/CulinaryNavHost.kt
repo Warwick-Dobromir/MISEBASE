@@ -22,6 +22,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
@@ -32,6 +33,9 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.culinary.R
+import com.culinary.cooking.CookingModeRoute
+import com.culinary.cooking.CookingRoute
+import com.culinary.cooking.CookingSource
 import com.culinary.core.data.kitchen.KitchenArchiveEntry
 import com.culinary.core.data.kitchen.KitchenArchiveKind
 import com.culinary.core.data.kitchen.KitchenReferenceType
@@ -106,6 +110,8 @@ fun CulinaryNavHost(
     val isKitchen = currentRoute == LIBRARY_ROUTE
     val isKitchenArchive = currentRoute == LIBRARY_TAB_ROUTE
     val isSauceEditor = currentRoute == SaucesRoutes.EDIT
+    val isCooking = currentRoute == CookingRoute.ROUTE
+    val ownsTopBar = currentRoute == SaucesRoutes.DETAIL || currentRoute == RecipesRoutes.DETAIL
     val showBottomBar = topLevel != null
     val detailContext =
         when (currentRoute) {
@@ -135,7 +141,7 @@ fun CulinaryNavHost(
         modifier = modifier.fillMaxSize(),
         topBar = {
             // 首页、厨房首页、六库目录与酱汁编辑器都自带品牌/操作顶栏。
-            if (!isHome && !isKitchen && !isKitchenArchive && !isSauceEditor) {
+            if (!isHome && !isKitchen && !isKitchenArchive && !isSauceEditor && !isCooking && !ownsTopBar) {
                 Column {
                     AppTopBar(
                         topLevel = topLevel,
@@ -241,6 +247,7 @@ private fun AppNavGraph(
         sauceGraph(navController)
         ingredientGraph(navController)
         recipeGraph(navController)
+        cookingGraph(navController)
         inventoryGraph(navController)
         scanGraph(navController)
         settingsGraph()
@@ -421,10 +428,19 @@ private fun NavGraphBuilder.sauceGraph(navController: NavHostController) {
             onAddSauce = { navController.navigate(SaucesRoutes.edit(null)) },
         )
     }
-    composable(SaucesRoutes.DETAIL) {
+    composable(SaucesRoutes.DETAIL) { entry ->
+        val returnedStep by entry.savedStateHandle
+            .getStateFlow<Int?>(DETAIL_RETURN_STEP_KEY, null)
+            .collectAsStateWithLifecycle()
         SauceDetailRoute(
             onEdit = { sauceId -> navController.navigate(SaucesRoutes.edit(sauceId)) },
             onOpenRelation = navController::openKitchenRelated,
+            onBack = { navController.popBackStack() },
+            onStartTimer = { stepNo ->
+                val sauceId = entry.arguments?.getString(SaucesRoutes.ARG_SAUCE_ID).orEmpty()
+                navController.navigate(CookingRoute.route(CookingSource.SAUCE, sauceId, stepNo))
+            },
+            scrollToStep = returnedStep,
         )
     }
     composable(SaucesRoutes.EDIT) {
@@ -463,14 +479,45 @@ private fun NavGraphBuilder.recipeGraph(navController: NavHostController) {
             onAddRecipe = { navController.navigate(RecipesRoutes.edit(null)) },
         )
     }
-    composable(RecipesRoutes.DETAIL) {
+    composable(RecipesRoutes.DETAIL) { entry ->
+        val returnedStep by entry.savedStateHandle
+            .getStateFlow<Int?>(DETAIL_RETURN_STEP_KEY, null)
+            .collectAsStateWithLifecycle()
         RecipeDetailRoute(
             onEdit = { id -> navController.navigate(RecipesRoutes.edit(id)) },
             onOpenRelation = navController::openKitchenRelated,
+            onBack = { navController.popBackStack() },
+            onStartTimer = { stepNo ->
+                val recipeId = entry.arguments?.getString(RecipesRoutes.ARG_RECIPE_ID).orEmpty()
+                navController.navigate(CookingRoute.route(CookingSource.RECIPE, recipeId, stepNo))
+            },
+            scrollToStep = returnedStep,
         )
     }
     composable(RecipesRoutes.EDIT) {
         RecipeEditorRoute(onSaved = { navController.popBackStack() })
+    }
+}
+
+/** 统一制作模式：从详情页的步骤进入，退出时把步骤序号带回详情页定位。 */
+private fun NavGraphBuilder.cookingGraph(navController: NavHostController) {
+    composable(
+        route = CookingRoute.ROUTE,
+        arguments =
+            listOf(
+                navArgument(CookingRoute.KIND_ARG) { type = NavType.StringType },
+                navArgument(CookingRoute.ID_ARG) { type = NavType.StringType },
+                navArgument(CookingRoute.STEP_ARG) { type = NavType.IntType },
+            ),
+    ) {
+        CookingModeRoute(
+            onExit = { stepNo ->
+                navController.previousBackStackEntry
+                    ?.savedStateHandle
+                    ?.set(DETAIL_RETURN_STEP_KEY, stepNo)
+                navController.popBackStack()
+            },
+        )
     }
 }
 
@@ -576,6 +623,9 @@ private fun NavHostController.resetToHomeIfRestored() {
 }
 
 /** 进程级一次性标记；进程被杀后自然重置。 */
+/** 制作模式返回详情页时携带的原始步骤序号（1 起）。 */
+private const val DETAIL_RETURN_STEP_KEY: String = "detailReturnStep"
+
 private object NavigationProcessState {
     private var started = false
 

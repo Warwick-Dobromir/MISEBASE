@@ -351,6 +351,8 @@ class RequirementPlanUseCasesTest {
         override suspend fun saveDraft(version: SauceVersion): Outcome<SauceVersionId> = Outcome.success(version.id)
 
         override suspend fun savePublished(version: SauceVersion): Outcome<SauceVersionId> = Outcome.success(version.id)
+
+        override suspend fun archive(id: SauceId): Outcome<kotlin.Unit> = Outcome.success(kotlin.Unit)
     }
 
     private class FakeIngredientRepository : IngredientRepository {

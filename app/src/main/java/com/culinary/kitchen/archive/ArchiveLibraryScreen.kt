@@ -6,6 +6,7 @@ import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -36,6 +37,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.culinary.R
 import com.culinary.core.data.kitchen.KitchenArchiveCategory
 import com.culinary.core.data.kitchen.KitchenArchiveEntry
+import com.culinary.core.designsystem.component.CulinaryButton
 import com.culinary.core.designsystem.component.CulinaryIconButton
 import com.culinary.core.designsystem.component.CulinaryRule
 import com.culinary.core.designsystem.component.CulinarySearchField
@@ -192,6 +194,7 @@ internal fun ArchiveLibraryScreen(
                         currentCategory?.let { category -> categoryPath(category, categories) }.orEmpty(),
                     childCount = children.size,
                     directCount = directEntries.size,
+                    onAdd = if (!showingSearch && currentCategoryId == null) onAdd else null,
                     onBack = {
                         if (currentCategory == null) onBack() else currentCategoryId = currentCategory.parentId
                     },
@@ -244,7 +247,7 @@ internal fun ArchiveLibraryScreen(
                         icon = CulinaryIcons.Library,
                         title = stringResource(R.string.kitchen_directory_empty_title),
                         description = stringResource(R.string.kitchen_directory_empty_body),
-                        actionLabel = section.newLabel(),
+                        actionLabel = stringResource(section.newLabelRes),
                         onAction = onAdd,
                     )
                 }
@@ -303,6 +306,7 @@ private fun ArchiveContextHeader(
     categoryPath: List<String>,
     childCount: Int,
     directCount: Int,
+    onAdd: (() -> Unit)?,
     onBack: () -> Unit,
 ) {
     Column(modifier = Modifier.padding(horizontal = CulinarySpacing.pageHorizontal)) {
@@ -324,13 +328,26 @@ private fun ArchiveContextHeader(
             )
         }
         Spacer(modifier = Modifier.height(CulinarySpacing.xs))
-        Text(
-            text = currentCategory?.name ?: section.title(),
-            style = MaterialTheme.typography.headlineMedium,
-            color = MaterialTheme.colorScheme.onSurface,
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis,
-        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = currentCategory?.name ?: section.title(),
+                style = MaterialTheme.typography.headlineMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f),
+            )
+            onAdd?.let { action ->
+                CulinaryButton(
+                    text = stringResource(section.newLabelRes),
+                    onClick = action,
+                    icon = CulinaryIcons.Add,
+                )
+            }
+        }
         if (categoryPath.isNotEmpty()) {
             Text(
                 text = categoryPath.joinToString(" / "),
@@ -580,13 +597,3 @@ private fun categoryPath(
     }
     return path
 }
-
-private fun KitchenArchiveSection.newLabel(): String =
-    when (this) {
-        KitchenArchiveSection.SAUCES -> "新建酱汁"
-        KitchenArchiveSection.INGREDIENTS -> "新建食材"
-        KitchenArchiveSection.RECIPES -> "新建菜谱"
-        KitchenArchiveSection.TECHNIQUES -> "新建技术"
-        KitchenArchiveSection.PRODUCTION_STANDARDS -> "新建制作标准"
-        KitchenArchiveSection.STORAGE_STANDARDS -> "新建储存标准"
-    }

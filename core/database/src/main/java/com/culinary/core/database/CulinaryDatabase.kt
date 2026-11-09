@@ -85,13 +85,14 @@ import com.culinary.core.database.entity.SupplierEntity
 import com.culinary.core.database.entity.UnitEntity
 
 /**
- * CULINARY 数据库（schema v6）。
+ * CULINARY 数据库（schema v7）。
  *
  * `exportSchema = true`：每个版本必须提交 `schemas/` JSON，迁移测试依赖它。
  * v2 新增计算记录与 recipe_version.servings；v3 新增 kitchen_reference；
  * v4 补充六库档案的扩展展示字段、测试种子标记和厨房关系表；
  * v5 增加酱汁编辑器的描述/难度/图注、步骤 JSON、原料名称覆盖与关系排序；
- * v6 新增六库分类树/档案分类归属与参考资料专业内容行。
+ * v6 新增六库分类树/档案分类归属与参考资料专业内容行；
+ * v7 新增 recipe_version.steps_json（菜谱步骤标题/说明/时间，与酱汁同构）。
  */
 @Suppress("TooManyFunctions")
 @Database(
@@ -135,7 +136,7 @@ import com.culinary.core.database.entity.UnitEntity
         ArchiveCategoryEntity::class,
         ArchiveCategoryAssignmentEntity::class,
     ],
-    version = 6,
+    version = 7,
     exportSchema = true,
 )
 @TypeConverters(

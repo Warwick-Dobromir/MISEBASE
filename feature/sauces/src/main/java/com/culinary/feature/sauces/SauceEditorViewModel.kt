@@ -395,6 +395,13 @@ class SauceEditorViewModel
             state.copy(steps = state.steps.map { if (it.key == key) it.copy(title = value) else it })
         }
 
+        fun onStepTimeChange(
+            key: String,
+            seconds: Int,
+        ) = mutate { state ->
+            state.copy(steps = state.steps.map { if (it.key == key) it.copy(timeSeconds = seconds) else it })
+        }
+
         fun onStepBodyChange(
             key: String,
             value: String,

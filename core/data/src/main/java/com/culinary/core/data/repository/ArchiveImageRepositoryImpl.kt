@@ -29,6 +29,7 @@ class ArchiveImageRepositoryImpl
                         ownerId = entity.ownerId,
                         role = entity.role.name,
                         sortOrder = entity.sortOrder,
+                        stepNo = entity.stepNo,
                     )
                 }
             }
@@ -43,5 +44,7 @@ class ArchiveImageRepositoryImpl
                 ArchiveImageOwner.INGREDIENT -> ImageOwnerTypeDb.INGREDIENT
                 ArchiveImageOwner.RECIPE -> ImageOwnerTypeDb.RECIPE
                 ArchiveImageOwner.RECIPE_VERSION -> ImageOwnerTypeDb.RECIPE_VERSION
+                ArchiveImageOwner.SAUCE -> ImageOwnerTypeDb.SAUCE
+                ArchiveImageOwner.SAUCE_VERSION -> ImageOwnerTypeDb.SAUCE_VERSION
             }
     }

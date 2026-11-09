@@ -104,7 +104,7 @@ class SaucesUiTest {
         }
 
         compose.onNodeWithText("基础酱").assertIsDisplayed()
-        compose.onNodeWithText("待发布草稿").assertIsDisplayed()
+        compose.onNodeWithText("待发布草稿").performScrollTo().assertIsDisplayed()
     }
 
     @Test

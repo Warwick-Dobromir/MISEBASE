@@ -64,7 +64,7 @@ class StartupCoordinatorTest {
             val state = coordinator().start()
 
             assertThat(state).isEqualTo(StartupState.Ready)
-            assertThat(requireNotNull(database).openHelper.writableDatabase.version).isEqualTo(6)
+            assertThat(requireNotNull(database).openHelper.writableDatabase.version).isEqualTo(7)
         }
 
     @Test
@@ -81,7 +81,7 @@ class StartupCoordinatorTest {
             SQLiteDatabase
                 .openDatabase(context.getDatabasePath(DATABASE_NAME).path, null, SQLiteDatabase.OPEN_READONLY)
                 .use { sqlite ->
-                    assertThat(sqlite.version).isEqualTo(6)
+                    assertThat(sqlite.version).isEqualTo(7)
                     assertThat(columnNames(sqlite, "recipe_version")).contains("servings")
                     assertThat(tableNames(sqlite)).contains("kitchen_reference")
                     assertThat(tableNames(sqlite)).contains("kitchen_relation")
@@ -95,7 +95,7 @@ class StartupCoordinatorTest {
             val file = context.getDatabasePath(DATABASE_NAME)
             file.parentFile?.mkdirs()
             SQLiteDatabase.openOrCreateDatabase(file, null).use { sqlite ->
-                sqlite.version = 7
+                sqlite.version = 8
             }
             val coordinator = coordinator()
 
@@ -103,8 +103,8 @@ class StartupCoordinatorTest {
 
             assertThat(state).isInstanceOf(StartupState.Incompatible::class.java)
             val incompatible = state as StartupState.Incompatible
-            assertThat(incompatible.databaseVersion).isEqualTo(7)
-            assertThat(incompatible.appSchemaVersion).isEqualTo(6)
+            assertThat(incompatible.databaseVersion).isEqualTo(8)
+            assertThat(incompatible.appSchemaVersion).isEqualTo(7)
         }
 
     @Test

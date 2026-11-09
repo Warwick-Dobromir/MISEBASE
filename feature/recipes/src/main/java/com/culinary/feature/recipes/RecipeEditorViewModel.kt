@@ -5,6 +5,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.culinary.core.common.Outcome
 import com.culinary.core.domain.model.Ingredient
+import com.culinary.core.domain.model.KitchenStep
+import com.culinary.core.domain.model.KitchenStepCodec
 import com.culinary.core.domain.model.RecipeCategory
 import com.culinary.core.domain.model.RecipeComponentKind
 import com.culinary.core.domain.model.RecipeDetail
@@ -62,6 +64,7 @@ class RecipeEditorViewModel
         val uiState: StateFlow<RecipeEditorUiState> = _uiState.asStateFlow()
 
         private var lineKey = 0
+        private var stepKey = 0
 
         init {
             load()
@@ -101,7 +104,17 @@ class RecipeEditorViewModel
         }
 
         private fun applyDetail(detail: RecipeDetail) {
-            val version = detail.currentVersion ?: detail.versions.firstOrNull()
+            val version =
+                detail.versions.firstOrNull {
+                    it.status == com.culinary.core.domain.model.VersionStatus.DRAFT
+                } ?: detail.currentVersion ?: detail.versions.firstOrNull()
+            var decodedKeys = 0
+            val steps =
+                runCatching {
+                    KitchenStepCodec.decode(version?.stepsJson, version?.instructions) {
+                        "step-${decodedKeys++}"
+                    }
+                }.getOrDefault(emptyList())
             val lines =
                 detail.components.mapNotNull { component ->
                     val unit = component.quantity.unit
@@ -134,6 +147,15 @@ class RecipeEditorViewModel
                     yieldUnit = version?.yield?.unit ?: it.units.firstOrNull(),
                     servings = (version?.servings ?: detail.baseServings).toString(),
                     lines = lines,
+                    steps =
+                        steps.map { step ->
+                            RecipeStepEditor(
+                                key = "step-${stepKey++}",
+                                title = step.title,
+                                body = step.body,
+                                timeSeconds = step.timeSeconds,
+                            )
+                        },
                     isLoading = false,
                     editingVersionNo = (detail.versions.maxOfOrNull { v -> v.versionNo } ?: 0) + 1,
                     hasPublishedVersion = detail.hasPublishedVersion,
@@ -244,6 +266,43 @@ class RecipeEditorViewModel
             _uiState.update { state -> state.copy(lines = state.lines.filterNot { it.key == key }) }
         }
 
+        fun addStep() {
+            _uiState.update { state ->
+                state.copy(steps = state.steps + RecipeStepEditor(key = "step-${stepKey++}"))
+            }
+        }
+
+        fun onStepTitleChange(
+            key: String,
+            value: String,
+        ) {
+            _uiState.update { state ->
+                state.copy(steps = state.steps.map { if (it.key == key) it.copy(title = value) else it })
+            }
+        }
+
+        fun onStepBodyChange(
+            key: String,
+            value: String,
+        ) {
+            _uiState.update { state ->
+                state.copy(steps = state.steps.map { if (it.key == key) it.copy(body = value) else it })
+            }
+        }
+
+        fun onStepTimeChange(
+            key: String,
+            seconds: Int,
+        ) {
+            _uiState.update { state ->
+                state.copy(steps = state.steps.map { if (it.key == key) it.copy(timeSeconds = seconds) else it })
+            }
+        }
+
+        fun removeStep(key: String) {
+            _uiState.update { state -> state.copy(steps = state.steps.filterNot { it.key == key }) }
+        }
+
         fun clearError() {
             _uiState.update { it.copy(error = null) }
         }
@@ -316,6 +375,7 @@ class RecipeEditorViewModel
                 yieldUnit = state.yieldUnit ?: requireNotNull(state.units.firstOrNull()),
                 servings = state.servings.toInt(),
                 lines = lines,
+                steps = state.steps,
             )
         }
 
@@ -371,6 +431,7 @@ class RecipeEditorViewModel
         private fun formatAmount(value: Double): String =
             if (value % 1.0 == 0.0) value.toLong().toString() else value.toString()
 
+
         private data class Submission(
             val recipeId: RecipeId?,
             val name: String,
@@ -379,6 +440,7 @@ class RecipeEditorViewModel
             val yieldUnit: UnitModel,
             val servings: Int,
             val lines: List<RecipeLineInput>,
+            val steps: List<RecipeStepEditor>,
         ) {
             fun toVersionInput(recipeId: RecipeId): RecipeVersionInput =
                 RecipeVersionInput(
@@ -387,6 +449,14 @@ class RecipeEditorViewModel
                     yieldUnit = yieldUnit,
                     servings = servings,
                     components = lines,
+                    instructions =
+                        KitchenStepCodec.toInstructions(
+                            steps.map { KitchenStep(it.key, it.title, it.body, it.timeSeconds) },
+                        ),
+                    stepsJson =
+                        KitchenStepCodec.encode(
+                            steps.map { KitchenStep(it.key, it.title, it.body, it.timeSeconds) },
+                        ),
                 )
         }
     }

@@ -25,9 +25,17 @@ internal object CulinaryMigrations {
     val MIGRATION_4_5: Migration = MIGRATION_4_5_IMPL
 
     val MIGRATION_5_6: Migration = MIGRATION_5_6_IMPL
+    val MIGRATION_6_7: Migration = MIGRATION_6_7_IMPL
 
     val ALL: Array<Migration> =
-        arrayOf(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6)
+        arrayOf(
+            MIGRATION_1_2,
+            MIGRATION_2_3,
+            MIGRATION_3_4,
+            MIGRATION_4_5,
+            MIGRATION_5_6,
+            MIGRATION_6_7,
+        )
 }
 
 private val MIGRATION_1_2_IMPL =
@@ -97,6 +105,18 @@ private val MIGRATION_5_6_IMPL =
             CREATE_ARCHIVE_CATEGORY_INDICES.forEach(db::execSQL)
             CREATE_ARCHIVE_CATEGORY_ASSIGNMENT_INDICES.forEach(db::execSQL)
             CREATE_KITCHEN_REFERENCE_CONTENT_INDICES.forEach(db::execSQL)
+        }
+    }
+
+/**
+ * v7：菜谱步骤结构化。只加可空列，不重建表、不改既有数据；
+ * 读取端在 `steps_json` 为空时回退 `instructions_md`，历史菜谱步骤不丢失。
+ */
+private val MIGRATION_6_7_IMPL =
+    object : Migration(6, 7) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            CulinarySchemaExtras.dropPartialIndexes(db)
+            db.execSQL("ALTER TABLE `recipe_version` ADD COLUMN `steps_json` TEXT")
         }
     }
 

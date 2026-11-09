@@ -33,6 +33,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.culinary.core.designsystem.component.CulinaryRule
 import com.culinary.core.designsystem.component.CulinaryTextButton
+import com.culinary.core.designsystem.component.KitchenTimeField
 import com.culinary.core.designsystem.icon.CulinaryIcons
 import com.culinary.core.designsystem.theme.CulinarySpacing
 import com.culinary.core.designsystem.theme.CulinaryTextStyles
@@ -424,6 +425,7 @@ internal fun SauceMethodSection(
             imageBytes = step.pendingImage?.bytes ?: step.image?.let { state.imageBytes[it.id] },
             onTitleChange = { actions.onStepTitleChange(step.key, it) },
             onBodyChange = { actions.onStepBodyChange(step.key, it) },
+            onTimeChange = { actions.onStepTimeChange(step.key, it) },
             onImagePicked = { actions.onStepImage(step.key, it) },
             onClearImage = { actions.onClearStepImage(step.key) },
             onRemove = { actions.onRemoveStep(step.key) },
@@ -452,6 +454,7 @@ private fun SauceStepRow(
     imageBytes: ByteArray?,
     onTitleChange: (String) -> Unit,
     onBodyChange: (String) -> Unit,
+    onTimeChange: (Int) -> Unit,
     onImagePicked: (com.culinary.core.domain.model.PendingSauceImage) -> Unit,
     onClearImage: () -> Unit,
     onRemove: () -> Unit,
@@ -502,6 +505,10 @@ private fun SauceStepRow(
             singleLine = false,
             minLines = 3,
             modifier = Modifier.fillMaxWidth(),
+        )
+        KitchenTimeField(
+            seconds = step.timeSeconds,
+            onSecondsChange = onTimeChange,
         )
         Spacer(modifier = Modifier.height(CulinarySpacing.sm))
     }

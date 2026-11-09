@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.culinary.core.common.Outcome
 import com.culinary.core.domain.model.ArchiveImageOwner
 import com.culinary.core.domain.model.KitchenRecordKind
+import com.culinary.core.domain.model.KitchenStepCodec
 import com.culinary.core.domain.model.RecipeDetail
 import com.culinary.core.domain.model.RecipeId
 import com.culinary.core.domain.model.RecipeVersionId
@@ -64,11 +65,35 @@ class RecipeDetailViewModel
                             runCatching {
                                 archiveImages.primary(ArchiveImageOwner.RECIPE, recipeId.value)
                             }.getOrNull()
+                        val version =
+                            detail.versions.firstOrNull {
+                                it.status == com.culinary.core.domain.model.VersionStatus.DRAFT
+                            } ?: detail.currentVersion ?: detail.versions.firstOrNull()
+                        var stepKey = 0
+                        val steps =
+                            runCatching {
+                                KitchenStepCodec.decode(version?.stepsJson, version?.instructions) {
+                                    "step-${stepKey++}"
+                                }
+                            }.getOrDefault(emptyList())
+                        val stepImages =
+                            version
+                                ?.let { shown ->
+                                    runCatching {
+                                        archiveImages.stepImages(
+                                            ArchiveImageOwner.RECIPE_VERSION,
+                                            shown.id.value,
+                                        )
+                                    }.getOrNull()
+                                }.orEmpty()
                         _uiState.update {
                             it.copy(
                                 detail = detail,
                                 categoryPath = category?.path.orEmpty(),
                                 imageBytes = image,
+                                steps = steps,
+                                stepImages = stepImages,
+                                noteImages = emptyList(),
                                 isLoading = false,
                                 isPublishing = false,
                                 targetServings = detail.baseServings.toString(),

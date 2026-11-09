@@ -168,6 +168,8 @@ class TransactionBoundaryTest {
         }
 
         override suspend fun savePublished(version: SauceVersion): Outcome<SauceVersionId> = Outcome.success(version.id)
+
+        override suspend fun archive(id: SauceId): Outcome<Unit> = Outcome.success(Unit)
     }
 
     private class FakeRecipeRepository : RecipeRepository {

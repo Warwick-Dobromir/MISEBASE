@@ -5,6 +5,7 @@ import com.culinary.core.domain.model.ArchiveCategory
 import com.culinary.core.domain.model.ComponentTarget
 import com.culinary.core.domain.model.Ingredient
 import com.culinary.core.domain.model.KitchenRelatedRecord
+import com.culinary.core.domain.model.KitchenStep
 import com.culinary.core.domain.model.PendingSauceImage
 import com.culinary.core.domain.model.Sauce
 import com.culinary.core.domain.model.SauceDetail
@@ -28,6 +29,12 @@ data class SauceDetailUiState(
     val isPublishing: Boolean = false,
     val error: String? = null,
     val relations: List<KitchenRelatedRecord> = emptyList(),
+    /** 当前展示版本的制作步骤（含每步时间）。 */
+    val steps: List<KitchenStep> = emptyList(),
+    /** 步骤序号（1 起）→ 步骤图片。 */
+    val stepImages: Map<Int, ByteArray> = emptyMap(),
+    /** 研发照片（REFERENCE 图片）。 */
+    val noteImages: List<ByteArray> = emptyList(),
 )
 
 /** 编辑器中的组成行；名称覆盖只作用于当前酱汁配方。 */
@@ -66,6 +73,8 @@ data class SauceStepEditor(
     val body: String = "",
     val image: SauceImage? = null,
     val pendingImage: PendingSauceImage? = null,
+    /** 步骤时间（秒）；0 表示没有有效计时，仍保留步骤本身。 */
+    val timeSeconds: Int = 0,
 )
 
 /** 衍生酱汁关系（只存当前 UI 状态；保存时统一写入关系表）。 */

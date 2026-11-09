@@ -46,10 +46,11 @@ android {
     defaultConfig {
         // 包名锁定 com.culinary（MB-S6-001 §2），禁止修改。
         applicationId = "com.culinary"
-        // 原发布为 1.0.0 (1)；1.0.1 厨房首页、1.0.2 六库统一、1.0.3 种子数据；
-        // 本次 1.0.5 (6) 为六库分类/目录/详情与 schema v6，签名与包名保持不变。
-        versionCode = 6
-        versionName = "1.0.5"
+        // 原发布为 1.0.0 (1)；1.0.1 厨房首页、1.0.2 六库统一、1.0.3 种子数据、
+        // 1.0.4 酱汁编辑器、1.0.5 六库分类/目录/详情（schema v6）；
+        // 本次 1.0.6 (7)：菜谱/酱汁档案详情统一改版 + 步骤时间 + 统一制作模式（schema v7）。
+        versionCode = 7
+        versionName = "1.0.6"
     }
 
     testOptions {

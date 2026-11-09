@@ -143,12 +143,12 @@
     <string name="kitchen_library_loading">正在读取档案…</string>
     <string name="kitchen_library_load_error">资料库读取失败，请稍后重试。</string>
     <string name="kitchen_archive_subtitle">%1$s档案</string>
-    <string name="kitchen_library_new_sauce">＋ 新建酱汁</string>
-    <string name="kitchen_library_new_ingredient">＋ 新建食材</string>
-    <string name="kitchen_library_new_recipe">＋ 新建菜谱</string>
-    <string name="kitchen_library_new_technique">＋ 新建烹饪技术</string>
-    <string name="kitchen_library_new_production_standard">＋ 新建制作标准</string>
-    <string name="kitchen_library_new_storage_standard">＋ 新建储存标准</string>
+    <string name="kitchen_library_new_sauce">新建酱汁</string>
+    <string name="kitchen_library_new_ingredient">新建食材</string>
+    <string name="kitchen_library_new_recipe">新建菜谱</string>
+    <string name="kitchen_library_new_technique">新建烹饪技术</string>
+    <string name="kitchen_library_new_production_standard">新建制作标准</string>
+    <string name="kitchen_library_new_storage_standard">新建储存标准</string>
 
     <string name="kitchen_library_title_sauces">酱汁库</string>
     <string name="kitchen_library_subtitle_sauces" translatable="false">SAUCE COLLECTION</string>
@@ -302,4 +302,25 @@
     <string name="kitchen_directory_test_section">测试分类 · 仅供验收，可清理</string>
     <string name="kitchen_directory_page_count">显示 %1$d / %2$d 项</string>
     <string name="kitchen_directory_load_more">加载更多 ↓</string>
+
+    <!-- 统一制作模式（菜谱 / 酱汁共用） -->
+    <string name="cooking_mode">制作模式</string>
+    <string name="cooking_loading">正在读取制作步骤…</string>
+    <string name="cooking_progress">制作进度</string>
+    <string name="cooking_remaining">本阶段剩余时间</string>
+    <string name="cooking_start">开始计时</string>
+    <string name="cooking_pause">暂停计时</string>
+    <string name="cooking_previous">上一阶段</string>
+    <string name="cooking_next">下一阶段</string>
+    <string name="cooking_next_step">下一阶段：%1$s</string>
+    <string name="cooking_current_operation">当前阶段操作</string>
+    <string name="cooking_no_time_note">此步骤没有操作时间，确认后继续。</string>
+    <string name="cooking_no_time_title">此步骤没有操作时间</string>
+    <string name="cooking_no_time_body">请按照以下流程操作。</string>
+    <string name="cooking_confirm">确认 →</string>
+    <string name="cooking_time_up">计时时间已结束</string>
+    <string name="cooking_all_done">所有计时阶段均已完成</string>
+    <string name="cooking_last_stage">最后完成阶段</string>
+    <string name="cooking_finished_hint">当前制作流程已结束，请返回档案查看完整制作步骤。</string>
+    <string name="cooking_return">请返回</string>
 </resources>
