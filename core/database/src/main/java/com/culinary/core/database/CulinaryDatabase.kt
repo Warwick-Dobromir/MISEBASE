@@ -92,7 +92,8 @@ import com.culinary.core.database.entity.UnitEntity
  * v4 补充六库档案的扩展展示字段、测试种子标记和厨房关系表；
  * v5 增加酱汁编辑器的描述/难度/图注、步骤 JSON、原料名称覆盖与关系排序；
  * v6 新增六库分类树/档案分类归属与参考资料专业内容行；
- * v7 新增 recipe_version.steps_json（菜谱步骤标题/说明/时间，与酱汁同构）。
+ * v7 新增 recipe_version.steps_json（菜谱步骤标题/说明/时间，与酱汁同构）；
+ * v8 新增 sauce_version/recipe_version 的最小制作范围数值与单位（可空，历史数据保持 null）。
  */
 @Suppress("TooManyFunctions")
 @Database(
@@ -136,7 +137,7 @@ import com.culinary.core.database.entity.UnitEntity
         ArchiveCategoryEntity::class,
         ArchiveCategoryAssignmentEntity::class,
     ],
-    version = 7,
+    version = 8,
     exportSchema = true,
 )
 @TypeConverters(

@@ -31,10 +31,10 @@ class GetSauceDetailUseCase(
         val current =
             versions.firstOrNull { it.isCurrent }
                 ?: sauceRepository.findCurrentVersion(sauceId)
-        // 有草稿时组成行展示草稿内容；当前已发布版本仍由 currentVersion 单独展示。
+        // 展示页默认读取正式发布版本；待发布草稿只通过状态提示和发布入口展示。
         val shown =
-            versions.firstOrNull { it.status == VersionStatus.DRAFT }
-                ?: current
+            current
+                ?: versions.firstOrNull { it.status == VersionStatus.DRAFT }
                 ?: versions.firstOrNull()
         val lines =
             shown

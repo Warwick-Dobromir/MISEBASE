@@ -14,6 +14,7 @@ import com.culinary.core.database.schema.CulinarySchemaExtras
  * v4 → v5：酱汁编辑器所需的描述、难度、图注、步骤 JSON、原料名称覆盖与关系排序；
  * 只增加可空列或带默认值的列，不移动/重写既有数据。
  * v5 → v6：六库分类树/档案分类归属与参考资料专业内容行；新增表，不改旧表数据。
+ * v7 → v8：酱汁/菜谱版本增加最小制作范围数值与单位；只加可空列，历史数据保持 null。
  */
 internal object CulinaryMigrations {
     val MIGRATION_1_2: Migration = MIGRATION_1_2_IMPL
@@ -26,6 +27,7 @@ internal object CulinaryMigrations {
 
     val MIGRATION_5_6: Migration = MIGRATION_5_6_IMPL
     val MIGRATION_6_7: Migration = MIGRATION_6_7_IMPL
+    val MIGRATION_7_8: Migration = MIGRATION_7_8_IMPL
 
     val ALL: Array<Migration> =
         arrayOf(
@@ -35,6 +37,7 @@ internal object CulinaryMigrations {
             MIGRATION_4_5,
             MIGRATION_5_6,
             MIGRATION_6_7,
+            MIGRATION_7_8,
         )
 }
 
@@ -117,6 +120,22 @@ private val MIGRATION_6_7_IMPL =
         override fun migrate(db: SupportSQLiteDatabase) {
             CulinarySchemaExtras.dropPartialIndexes(db)
             db.execSQL("ALTER TABLE `recipe_version` ADD COLUMN `steps_json` TEXT")
+        }
+    }
+
+/**
+ * v8：最小制作范围。只加可空列，不重建表、不改既有产量/难度/步骤数据；
+ * 旧版本两列保持 null，UI 显示为未设置。
+ */
+private val MIGRATION_7_8_IMPL =
+    object : Migration(7, 8) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            CulinarySchemaExtras.dropPartialIndexes(db)
+            db.execSQL("ALTER TABLE `sauce_version` ADD COLUMN `min_range_qty` REAL")
+            db.execSQL("ALTER TABLE `sauce_version` ADD COLUMN `min_range_unit_id` TEXT")
+            db.execSQL("ALTER TABLE `recipe_version` ADD COLUMN `min_range_qty` REAL")
+            db.execSQL("ALTER TABLE `recipe_version` ADD COLUMN `min_range_unit_id` TEXT")
+            db.execSQL("ALTER TABLE `recipe` ADD COLUMN `notes` TEXT")
         }
     }
 

@@ -111,6 +111,8 @@ class RecipeRepositoryImpl
                     id = version.id.value,
                     yieldQty = version.yield.amount,
                     yieldUnitId = version.yield.unit.id.value,
+                    minRangeQty = version.minRange?.amount,
+                    minRangeUnitId = version.minRange?.unit?.id?.value,
                     servings = version.servings,
                     instructionsMd = version.instructions,
                     stepsJson = version.stepsJson,
@@ -198,16 +200,22 @@ class RecipeRepositoryImpl
 
         private suspend fun loadVersion(version: RecipeVersionEntity): Outcome<RecipeVersion> {
             val components = componentDao.listByVersion(version.id)
-            val units = loadUnits(version.yieldUnitId, components.map { it.unitId }.toSet())
+            val units =
+                loadUnits(
+                    yieldUnitId = version.yieldUnitId,
+                    componentUnitIds = components.map { it.unitId }.toSet(),
+                    minRangeUnitId = version.minRangeUnitId,
+                )
             return RecipeMapper.toDomain(version, components, units)
         }
 
         private suspend fun loadUnits(
             yieldUnitId: String,
             componentUnitIds: Set<String>,
+            minRangeUnitId: String?,
         ): Map<String, Unit> {
             val units = mutableMapOf<String, Unit>()
-            (componentUnitIds + yieldUnitId).forEach { unitId ->
+            (componentUnitIds + yieldUnitId + listOfNotNull(minRangeUnitId)).forEach { unitId ->
                 unitDao.findById(unitId)?.let { units[unitId] = UnitMapper.toDomain(it) }
             }
             return units

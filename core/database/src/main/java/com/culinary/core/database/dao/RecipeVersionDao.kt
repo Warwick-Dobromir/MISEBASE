@@ -55,13 +55,16 @@ interface RecipeVersionDao {
     /** 只更新未发布草稿的内容；状态与当前指针由发布流程单独维护。 */
     @Query(
         "UPDATE recipe_version SET " +
-            "yield_qty = :yieldQty, yield_unit_id = :yieldUnitId, servings = :servings, " +
+            "yield_qty = :yieldQty, yield_unit_id = :yieldUnitId, " +
+            "min_range_qty = :minRangeQty, min_range_unit_id = :minRangeUnitId, servings = :servings, " +
             "instructions_md = :instructionsMd, steps_json = :stepsJson WHERE id = :id",
     )
     suspend fun updateDraft(
         id: String,
         yieldQty: Double,
         yieldUnitId: String,
+        minRangeQty: Double?,
+        minRangeUnitId: String?,
         servings: Int,
         instructionsMd: String?,
         stepsJson: String?,

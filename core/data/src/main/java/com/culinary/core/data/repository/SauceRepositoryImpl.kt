@@ -109,6 +109,8 @@ class SauceRepositoryImpl
                         id = version.id.value,
                         yieldQty = version.yield.amount,
                         yieldUnitId = version.yield.unit.id.value,
+                        minRangeQty = version.minRange?.amount,
+                        minRangeUnitId = version.minRange?.unit?.id?.value,
                         instructionsMd = version.instructions,
                         stepsJson = version.stepsJson,
                     )
@@ -182,16 +184,22 @@ class SauceRepositoryImpl
 
         private suspend fun loadVersion(entity: SauceVersionEntity): Outcome<SauceVersion> {
             val components = componentDao.listByVersion(entity.id)
-            val units = loadUnits(entity.yieldUnitId, components.map { it.unitId }.toSet())
+            val units =
+                loadUnits(
+                    yieldUnitId = entity.yieldUnitId,
+                    componentUnitIds = components.map { it.unitId }.toSet(),
+                    minRangeUnitId = entity.minRangeUnitId,
+                )
             return SauceMapper.toDomain(entity, components, units)
         }
 
         private suspend fun loadUnits(
             yieldUnitId: String,
             componentUnitIds: Set<String>,
+            minRangeUnitId: String?,
         ): Map<String, Unit> {
             val units = mutableMapOf<String, Unit>()
-            (componentUnitIds + yieldUnitId).forEach { unitId ->
+            (componentUnitIds + yieldUnitId + listOfNotNull(minRangeUnitId)).forEach { unitId ->
                 unitDao.findById(unitId)?.let { units[unitId] = UnitMapper.toDomain(it) }
             }
             return units

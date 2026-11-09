@@ -116,6 +116,8 @@ object SauceMapper {
                 },
             yieldQty = version.yield.amount,
             yieldUnitId = version.yield.unit.id.value,
+            minRangeQty = version.minRange?.amount,
+            minRangeUnitId = version.minRange?.unit?.id?.value,
             instructionsMd = version.instructions,
             stepsJson = version.stepsJson,
             isCurrent = version.isCurrent,
@@ -131,6 +133,22 @@ object SauceMapper {
         val yieldUnit =
             units[version.yieldUnitId]
                 ?: return Outcome.failure(CulinaryError.NotFound(entity = "unit", id = version.yieldUnitId))
+        val minRangeQty = version.minRangeQty
+        val minRangeUnitId = version.minRangeUnitId
+        val minRange =
+            when {
+                minRangeQty == null && minRangeUnitId == null -> null
+                minRangeQty == null || minRangeUnitId == null ->
+                    return Outcome.failure(CulinaryError.NotFound(entity = "unit", id = "min_range"))
+                else -> {
+                    val unit =
+                        units[minRangeUnitId]
+                            ?: return Outcome.failure(
+                                CulinaryError.NotFound(entity = "unit", id = minRangeUnitId),
+                            )
+                    Quantity(minRangeQty, unit)
+                }
+            }
         val mapped = mutableListOf<SauceComponent>()
         for (component in components) {
             val unit =
@@ -167,6 +185,7 @@ object SauceMapper {
                 isCurrent = version.isCurrent,
                 instructions = version.instructionsMd,
                 stepsJson = version.stepsJson,
+                minRange = minRange,
             ),
         )
     }

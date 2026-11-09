@@ -104,7 +104,7 @@ class SaucesUiTest {
         }
 
         compose.onNodeWithText("基础酱").assertIsDisplayed()
-        compose.onNodeWithText("待发布草稿").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("待发布修改").performScrollTo().assertIsDisplayed()
     }
 
     @Test
@@ -126,8 +126,7 @@ class SaucesUiTest {
 
         compose.onNodeWithText("保存").assertIsDisplayed()
         compose.onNodeWithText("取消").assertIsDisplayed()
-        compose.onNodeWithText("MIN. CAPACITY").performScrollTo().assertIsDisplayed()
-        compose.onNodeWithText("选择最小制作容量").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("MIN. RANGE", substring = true).performScrollTo().assertIsDisplayed()
         listOf("原料配方", "制作工艺", "适用范围", "衍生关系", "研发备注")
             .forEach { label ->
                 compose.onNodeWithText(label).performScrollTo().assertIsDisplayed()
@@ -149,7 +148,6 @@ class SaucesUiTest {
             onDescriptionChange = {},
             onYieldAmountChange = {},
             onYieldUnitChange = {},
-            onDifficultyChange = {},
             onHeroPicked = {},
             onHeroClear = {},
             onHeroCaptionChange = {},

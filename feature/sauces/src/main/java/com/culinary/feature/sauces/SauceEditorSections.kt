@@ -31,9 +31,10 @@ import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.culinary.core.designsystem.component.ArchiveYieldRangeFields
 import com.culinary.core.designsystem.component.CulinaryRule
 import com.culinary.core.designsystem.component.CulinaryTextButton
-import com.culinary.core.designsystem.component.KitchenTimeField
+import com.culinary.core.designsystem.component.KitchenTimeSegmentsField
 import com.culinary.core.designsystem.icon.CulinaryIcons
 import com.culinary.core.designsystem.theme.CulinarySpacing
 import com.culinary.core.designsystem.theme.CulinaryTextStyles
@@ -51,7 +52,7 @@ internal fun SauceHeaderSection(
             text =
                 pathCategories
                     .joinToString(" / ") { it.name }
-                    .ifBlank { "CLASSIFICATION / 分类归属" },
+                    .ifBlank { "SAUCE · 酱汁档案" },
             style = CulinaryTextStyles.eyebrow,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -82,41 +83,16 @@ internal fun SauceHeaderSection(
         Spacer(modifier = Modifier.height(CulinarySpacing.lg))
         SauceClassificationSelector(state = state, actions = actions)
         Spacer(modifier = Modifier.height(CulinarySpacing.lg))
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(CulinarySpacing.md),
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                MetaLabel(text = "YIELD")
-                Row(verticalAlignment = Alignment.Bottom) {
-                    EditorInlineField(
-                        value = state.yieldAmount,
-                        onValueChange = actions.onYieldAmountChange,
-                        placeholder = "0",
-                        textStyle = CulinaryTextStyles.numeralS,
-                        keyboardType = androidx.compose.ui.text.input.KeyboardType.Decimal,
-                        modifier = Modifier.weight(1f),
-                    )
-                    Text(
-                        text = state.yieldUnit?.symbol ?: "—",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier =
-                            Modifier
-                                .clickable(onClick = actions.onOpenYieldUnit)
-                                .padding(start = 2.dp, bottom = 2.dp),
-                    )
-                }
-            }
-            Column(modifier = Modifier.weight(1f)) {
-                MetaLabel(text = "MIN. CAPACITY")
-                DifficultyField(
-                    value = state.difficulty,
-                    onChange = actions.onDifficultyChange,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-            }
-        }
+        ArchiveYieldRangeFields(
+            yieldAmount = state.yieldAmount,
+            yieldUnit = state.yieldUnit?.symbol.orEmpty(),
+            minRangeAmount = state.minRangeAmount,
+            minRangeUnit = state.minRangeUnit?.symbol.orEmpty(),
+            onYieldAmountChange = actions.onYieldAmountChange,
+            onYieldUnitClick = actions.onOpenYieldUnit,
+            onMinRangeAmountChange = actions.onMinRangeAmountChange,
+            onMinRangeUnitClick = actions.onOpenMinRangeUnit,
+        )
     }
 }
 
@@ -272,13 +248,11 @@ internal fun SauceIngredientsSection(
     actions: SauceEditorActions,
 ) {
     var showPicker by remember { mutableStateOf(false) }
-    val subtitle =
-        "基础配方 · 约 ${state.yieldAmount.ifBlank { "0" }} ${state.yieldUnit?.symbol.orEmpty()}".trim()
     SauceSectionHeader(
         index = "01",
         english = "INGREDIENTS",
         title = stringResource(R.string.sauces_editor_ingredients),
-        subtitle = subtitle,
+        subtitle = "基础配方",
     )
     state.lines.forEachIndexed { index, line ->
         SauceIngredientRow(
@@ -294,7 +268,7 @@ internal fun SauceIngredientsSection(
     }
     if (state.lines.isEmpty()) {
         Text(
-            text = stringResource(R.string.sauces_no_components),
+            text = "暂未添加食材",
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(vertical = CulinarySpacing.sm),
@@ -506,9 +480,10 @@ private fun SauceStepRow(
             minLines = 3,
             modifier = Modifier.fillMaxWidth(),
         )
-        KitchenTimeField(
+        KitchenTimeSegmentsField(
             seconds = step.timeSeconds,
             onSecondsChange = onTimeChange,
+            modifier = Modifier.padding(top = CulinarySpacing.xs),
         )
         Spacer(modifier = Modifier.height(CulinarySpacing.sm))
     }

@@ -18,7 +18,7 @@
     <string name="sauces_no_components">该版本还没有组成行。</string>
     <string name="sauces_optional">可选</string>
     <string name="sauces_versions">版本历史</string>
-    <string name="sauces_pending_draft">待发布草稿</string>
+    <string name="sauces_pending_draft">待发布修改</string>
     <string name="sauces_current_badge">当前</string>
     <string name="sauces_status_draft">草稿</string>
     <string name="sauces_status_published">已发布</string>
@@ -42,7 +42,7 @@
     <string name="sauces_picker_empty">没有可选项</string>
     <string name="sauces_cancel">取消</string>
     <string name="sauces_editor_new_title">新建酱汁</string>
-    <string name="sauces_editor_edit_title">编辑酱汁 · 新版本 v%1$d</string>
+    <string name="sauces_editor_edit_title">编辑酱汁</string>
     <string name="sauces_editor_published_hint">已发布版本不可修改；保存会创建新版本。</string>
     <string name="sauces_saved">已保存</string>
     <string name="sauces_add_line_first">先添加至少一行组成，或保存空草稿。</string>

@@ -1,4 +1,4 @@
-﻿package com.culinary.core.database
+package com.culinary.core.database
 
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
@@ -81,8 +81,30 @@ class SchemaExportTest {
     }
 
     @Test
+    fun `exports schema version 7 with recipe steps json`() {
+        val v7 = File(schemaDirectory, "7.json")
+
+        assertThat(v7.exists()).isTrue()
+        assertThat(v7.readText()).contains("\"version\": 7")
+        assertThat(v7.readText()).contains("\"columnName\": \"steps_json\"")
+        assertThat(tableCount(v7)).isEqualTo(38)
+    }
+
+    @Test
+    fun `exports schema version 8 with min range and recipe notes`() {
+        val v8 = File(schemaDirectory, "8.json")
+
+        assertThat(v8.exists()).isTrue()
+        assertThat(v8.readText()).contains("\"version\": 8")
+        assertThat(v8.readText()).contains("\"columnName\": \"min_range_qty\"")
+        assertThat(v8.readText()).contains("\"columnName\": \"min_range_unit_id\"")
+        assertThat(v8.readText()).contains("\"columnName\": \"notes\"")
+        assertThat(tableCount(v8)).isEqualTo(38)
+    }
+
+    @Test
     fun `registers all forward migrations`() {
-        assertThat(CulinaryMigrations.ALL).hasLength(5)
+        assertThat(CulinaryMigrations.ALL).hasLength(7)
         assertThat(CulinaryMigrations.MIGRATION_1_2.startVersion).isEqualTo(1)
         assertThat(CulinaryMigrations.MIGRATION_1_2.endVersion).isEqualTo(2)
         assertThat(CulinaryMigrations.MIGRATION_2_3.startVersion).isEqualTo(2)
@@ -93,6 +115,10 @@ class SchemaExportTest {
         assertThat(CulinaryMigrations.MIGRATION_4_5.endVersion).isEqualTo(5)
         assertThat(CulinaryMigrations.MIGRATION_5_6.startVersion).isEqualTo(5)
         assertThat(CulinaryMigrations.MIGRATION_5_6.endVersion).isEqualTo(6)
+        assertThat(CulinaryMigrations.MIGRATION_6_7.startVersion).isEqualTo(6)
+        assertThat(CulinaryMigrations.MIGRATION_6_7.endVersion).isEqualTo(7)
+        assertThat(CulinaryMigrations.MIGRATION_7_8.startVersion).isEqualTo(7)
+        assertThat(CulinaryMigrations.MIGRATION_7_8.endVersion).isEqualTo(8)
     }
 
     private fun tableCount(file: File): Int = Regex("\"tableName\"").findAll(file.readText()).count()

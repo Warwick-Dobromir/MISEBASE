@@ -18,11 +18,20 @@ data class RecipeVersion(
     val instructions: String? = null,
     /** 结构化步骤 JSON（含每步时间）；图片仍由 image_asset.step_no 关联。 */
     val stepsJson: String? = null,
+    /** 最小制作范围；与默认产量同维度且不得大于默认产量。v8 起可空。 */
+    val minRange: Quantity? = null,
 ) {
     init {
         require(versionNo > 0) { "versionNo must be > 0, was $versionNo" }
         require(servings > 0) { "recipe servings must be > 0, was $servings" }
         require(yield.amount > 0.0) { "recipe yield must be > 0, was ${yield.amount}" }
+        require(minRange == null || minRange.amount > 0.0) { "recipe minRange must be > 0" }
+        require(minRange == null || minRange.isSameDimensionAs(yield)) {
+            "recipe minRange must use the same dimension as yield"
+        }
+        require(minRange == null || minRange.isAtMost(yield)) {
+            "recipe minRange must not exceed yield"
+        }
         require(components.map { it.lineNo }.toSet().size == components.size) {
             "recipe version ${id.value} contains duplicate component lineNo"
         }

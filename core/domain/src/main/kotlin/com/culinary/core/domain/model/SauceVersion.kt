@@ -16,10 +16,19 @@ data class SauceVersion(
     val isCurrent: Boolean = false,
     val instructions: String? = null,
     val stepsJson: String? = null,
+    /** 最小制作范围；与默认产量同维度且不得大于默认产量。v8 起可空。 */
+    val minRange: Quantity? = null,
 ) {
     init {
         require(versionNo > 0) { "sauce versionNo must be > 0, was $versionNo" }
         require(yield.amount > 0.0) { "sauce yield must be > 0, was ${yield.amount}" }
+        require(minRange == null || minRange.amount > 0.0) { "sauce minRange must be > 0" }
+        require(minRange == null || minRange.isSameDimensionAs(yield)) {
+            "sauce minRange must use the same dimension as yield"
+        }
+        require(minRange == null || minRange.isAtMost(yield)) {
+            "sauce minRange must not exceed yield"
+        }
         require(components.map { it.lineNo }.toSet().size == components.size) {
             "sauce version ${id.value} contains duplicate component lineNo"
         }

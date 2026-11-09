@@ -61,6 +61,9 @@ data class SaveSauceDraftInput(
     val instructions: String? = null,
     val stepsJson: String? = null,
     val versionId: SauceVersionId? = null,
+    /** 最小制作范围；为空表示未设置。数值与单位必须成对出现。 */
+    val minRangeAmount: Double? = null,
+    val minRangeUnit: Unit? = null,
 )
 
 /**
@@ -78,6 +81,20 @@ class SaveSauceDraftUseCase(
         if (!input.yieldAmount.isFinite() || input.yieldAmount <= 0.0) {
             return invalid("sauce.yield", "must be a finite positive number")
         }
+        val minRange =
+            when {
+                input.minRangeAmount == null && input.minRangeUnit == null -> null
+                input.minRangeAmount == null || input.minRangeUnit == null ->
+                    return invalid("sauce.minRange", "amount and unit must be provided together")
+                !input.minRangeAmount.isFinite() || input.minRangeAmount <= 0.0 ->
+                    return invalid("sauce.minRange", "must be a finite positive number")
+                !input.minRangeUnit.isSameDimensionAs(input.yieldUnit) ->
+                    return invalid("sauce.minRange", "must use the same dimension as yield")
+                input.minRangeAmount * input.minRangeUnit.baseFactor >
+                    input.yieldAmount * input.yieldUnit.baseFactor ->
+                    return invalid("sauce.minRange", "must not exceed yield")
+                else -> Quantity(input.minRangeAmount, input.minRangeUnit)
+            }
         input.components.forEachIndexed { index, line ->
             if (!line.amount.isFinite() || line.amount <= 0.0) {
                 return invalid("sauce.component[$index].quantity", "must be a finite positive number")
@@ -118,6 +135,7 @@ class SaveSauceDraftUseCase(
                         status = VersionStatus.DRAFT,
                         yield = Quantity(input.yieldAmount, input.yieldUnit),
                         components = components,
+                        minRange = minRange,
                         instructions = input.instructions?.trim()?.takeIf { it.isNotEmpty() },
                         stepsJson = input.stepsJson?.trim()?.takeIf { it.isNotEmpty() },
                     )

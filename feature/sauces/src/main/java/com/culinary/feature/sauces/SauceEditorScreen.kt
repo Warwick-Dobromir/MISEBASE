@@ -32,6 +32,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.culinary.core.designsystem.component.ArchiveEditorTopBar
 import com.culinary.core.designsystem.component.ConfirmDialog
 import com.culinary.core.designsystem.component.CulinaryIconButton
 import com.culinary.core.designsystem.component.CulinaryRule
@@ -81,7 +82,8 @@ fun SauceEditorRoute(
         onDescriptionChange = viewModel::onDescriptionChange,
         onYieldAmountChange = viewModel::onYieldAmountChange,
         onYieldUnitChange = viewModel::onYieldUnitChange,
-        onDifficultyChange = viewModel::onDifficultyChange,
+        onMinRangeAmountChange = viewModel::onMinRangeAmountChange,
+        onMinRangeUnitChange = viewModel::onMinRangeUnitChange,
         onHeroPicked = viewModel::setHeroImage,
         onHeroClear = viewModel::clearHeroImage,
         onHeroCaptionChange = viewModel::onHeroCaptionChange,
@@ -130,7 +132,8 @@ internal fun SauceEditorScreen(
     onDescriptionChange: (String) -> Unit,
     onYieldAmountChange: (String) -> Unit,
     onYieldUnitChange: (com.culinary.core.domain.model.Unit) -> Unit,
-    onDifficultyChange: (SauceDifficulty) -> Unit,
+    onMinRangeAmountChange: (String) -> Unit = {},
+    onMinRangeUnitChange: (com.culinary.core.domain.model.Unit) -> Unit = {},
     onHeroPicked: (PendingSauceImage) -> Unit,
     onHeroClear: () -> Unit,
     onHeroCaptionChange: (String) -> Unit,
@@ -163,6 +166,7 @@ internal fun SauceEditorScreen(
     var showDiscard by remember { mutableStateOf(false) }
     var showDelete by remember { mutableStateOf(false) }
     var showYieldUnitPicker by remember { mutableStateOf(false) }
+    var showMinRangeUnitPicker by remember { mutableStateOf(false) }
     var lineUnitKey by remember { mutableStateOf<String?>(null) }
 
     val actions =
@@ -174,7 +178,8 @@ internal fun SauceEditorScreen(
             onDescriptionChange = onDescriptionChange,
             onYieldAmountChange = onYieldAmountChange,
             onOpenYieldUnit = { showYieldUnitPicker = true },
-            onDifficultyChange = onDifficultyChange,
+            onMinRangeAmountChange = onMinRangeAmountChange,
+            onOpenMinRangeUnit = { showMinRangeUnitPicker = true },
             onHeroPicked = onHeroPicked,
             onHeroClear = onHeroClear,
             onHeroCaptionChange = onHeroCaptionChange,
@@ -210,7 +215,13 @@ internal fun SauceEditorScreen(
     BackHandler(enabled = !state.isDirty && !imeVisible) { onCancelled() }
 
     Column(modifier = modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
-        SauceEditorTopBar(
+        ArchiveEditorTopBar(
+            title =
+                if (state.isNew) {
+                    stringResource(R.string.sauces_editor_new_title)
+                } else {
+                    stringResource(R.string.sauces_editor_edit_title)
+                },
             isSaving = state.isSaving,
             canSave = !state.isLoading && (state.isDirty || state.isNew),
             onBack = { if (state.isDirty) showDiscard = true else onCancelled() },
@@ -289,6 +300,17 @@ internal fun SauceEditorScreen(
             onDismiss = { showYieldUnitPicker = false },
         )
     }
+    if (showMinRangeUnitPicker) {
+        SauceUnitPickerDialog(
+            units = state.units,
+            selectedId = state.minRangeUnit?.id?.value,
+            onSelect = {
+                onMinRangeUnitChange(it)
+                showMinRangeUnitPicker = false
+            },
+            onDismiss = { showMinRangeUnitPicker = false },
+        )
+    }
     lineUnitKey?.let { key ->
         val line = state.lines.firstOrNull { it.key == key }
         SauceUnitPickerDialog(
@@ -300,63 +322,6 @@ internal fun SauceEditorScreen(
             },
             onDismiss = { lineUnitKey = null },
         )
-    }
-}
-
-@Composable
-private fun SauceEditorTopBar(
-    isSaving: Boolean,
-    canSave: Boolean,
-    onBack: () -> Unit,
-    onCancel: () -> Unit,
-    onSave: () -> Unit,
-) {
-    Column(modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.background)) {
-        Row(
-            modifier = Modifier.fillMaxWidth().height(56.dp).padding(horizontal = CulinarySpacing.xs),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            CulinaryIconButton(
-                icon = CulinaryIcons.Back,
-                contentDescription = stringResource(R.string.sauces_cancel),
-                onClick = onBack,
-            )
-            Text(
-                text = stringResource(R.string.sauces_cancel),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier =
-                    Modifier
-                        .clickable(onClick = onCancel)
-                        .padding(horizontal = CulinarySpacing.xs, vertical = CulinarySpacing.sm),
-            )
-            Spacer(modifier = Modifier.weight(1f))
-            if (isSaving) {
-                CircularProgressIndicator(
-                    modifier = Modifier.size(18.dp),
-                    strokeWidth = 2.dp,
-                    color = MaterialTheme.colorScheme.secondary,
-                )
-                Spacer(modifier = Modifier.size(CulinarySpacing.sm))
-            } else {
-                Text(
-                    text = stringResource(R.string.sauces_save),
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.SemiBold,
-                    color =
-                        if (canSave) {
-                            MaterialTheme.colorScheme.onSurface
-                        } else {
-                            MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
-                        },
-                    modifier =
-                        Modifier
-                            .clickable(enabled = canSave, onClick = onSave)
-                            .padding(horizontal = CulinarySpacing.sm, vertical = CulinarySpacing.sm),
-                )
-            }
-        }
-        CulinaryRule()
     }
 }
 
@@ -413,7 +378,8 @@ internal data class SauceEditorActions(
     val onDescriptionChange: (String) -> Unit,
     val onYieldAmountChange: (String) -> Unit,
     val onOpenYieldUnit: () -> Unit,
-    val onDifficultyChange: (SauceDifficulty) -> Unit,
+    val onMinRangeAmountChange: (String) -> Unit,
+    val onOpenMinRangeUnit: () -> Unit,
     val onHeroPicked: (PendingSauceImage) -> Unit,
     val onHeroClear: () -> Unit,
     val onHeroCaptionChange: (String) -> Unit,

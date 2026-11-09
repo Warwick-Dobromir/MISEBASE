@@ -95,6 +95,9 @@ data class SauceEditorUiState(
     val difficulty: SauceDifficulty? = null,
     val yieldAmount: String = "",
     val yieldUnit: UnitModel? = null,
+    /** 最小制作范围；与默认产量成对保存。 */
+    val minRangeAmount: String = "",
+    val minRangeUnit: UnitModel? = null,
     val units: List<UnitModel> = emptyList(),
     val ingredients: List<Ingredient> = emptyList(),
     val categories: List<ArchiveCategory> = emptyList(),
@@ -151,6 +154,7 @@ object SauceErrorMessages {
             error.field == "sauce.name" && error.rule.contains("blank") -> "中文名称不能为空。"
             error.field == "sauce.name" -> "名称过长，请控制在 120 个字符以内。"
             error.field == "sauce.yield" -> "标准产量必须是大于 0 的数字。"
+            error.field == "sauce.minRange" -> "最小制作范围不合法：必须与默认产量同维度且不得大于默认产量。"
             error.field == "sauce.version" -> "草稿状态已变化，请重新打开编辑。"
             error.field == "sauce.image" -> "图片不符合要求，请重新选择。"
             error.field.startsWith("sauce.component") -> "原料数量必须是大于 0 的数字。"

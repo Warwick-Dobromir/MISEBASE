@@ -7,6 +7,7 @@ import com.culinary.core.data.repository.IngredientRepositoryImpl
 import com.culinary.core.data.repository.InventoryRepositoryImpl
 import com.culinary.core.data.repository.KitchenReferenceRepositoryImpl
 import com.culinary.core.data.repository.KitchenRelationRepositoryImpl
+import com.culinary.core.data.repository.RecipeImageRepositoryImpl
 import com.culinary.core.data.repository.RecipeRepositoryImpl
 import com.culinary.core.data.repository.SauceImageRepositoryImpl
 import com.culinary.core.data.repository.SauceRepositoryImpl
@@ -18,6 +19,7 @@ import com.culinary.core.domain.repository.IngredientRepository
 import com.culinary.core.domain.repository.InventoryRepository
 import com.culinary.core.domain.repository.KitchenReferenceRepository
 import com.culinary.core.domain.repository.KitchenRelationRepository
+import com.culinary.core.domain.repository.RecipeImageRepository
 import com.culinary.core.domain.repository.RecipeRepository
 import com.culinary.core.domain.repository.SauceImageRepository
 import com.culinary.core.domain.repository.SauceRepository
@@ -67,6 +69,10 @@ abstract class RepositoryModule {
     @Binds
     @Singleton
     abstract fun bindSauceImageRepository(impl: SauceImageRepositoryImpl): SauceImageRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindRecipeImageRepository(impl: RecipeImageRepositoryImpl): RecipeImageRepository
 
     @Binds
     @Singleton

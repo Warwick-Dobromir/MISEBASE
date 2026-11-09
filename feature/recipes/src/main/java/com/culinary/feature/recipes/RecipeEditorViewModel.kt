@@ -4,6 +4,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.culinary.core.common.Outcome
+import com.culinary.core.domain.model.ArchiveLibrary
 import com.culinary.core.domain.model.Ingredient
 import com.culinary.core.domain.model.KitchenStep
 import com.culinary.core.domain.model.KitchenStepCodec
@@ -12,16 +13,28 @@ import com.culinary.core.domain.model.RecipeComponentKind
 import com.culinary.core.domain.model.RecipeDetail
 import com.culinary.core.domain.model.RecipeId
 import com.culinary.core.domain.model.RecipeVersionId
+import com.culinary.core.domain.usecase.archive.AssignArchiveCategoryUseCase
+import com.culinary.core.domain.usecase.archive.GetArchiveCategoryForRecordUseCase
+import com.culinary.core.domain.usecase.archive.ListArchiveCategoriesUseCase
 import com.culinary.core.domain.usecase.ingredient.ListIngredientsUseCase
 import com.culinary.core.domain.usecase.recipe.GetRecipeDetailUseCase
 import com.culinary.core.domain.usecase.recipe.ListRecipeOptionsUseCase
+import com.culinary.core.domain.model.KitchenRecordKind
+import com.culinary.core.domain.model.KitchenRelationDraft
+import com.culinary.core.domain.model.PendingRecipeImage
+import com.culinary.core.domain.model.RecipeImage
+import com.culinary.core.domain.model.RecipeImageOwner
+import com.culinary.core.domain.model.RecipeImageRole
+import com.culinary.core.domain.usecase.kitchen.ObserveKitchenRelationsUseCase
 import com.culinary.core.domain.usecase.recipe.PublishStoredRecipeVersionUseCase
 import com.culinary.core.domain.usecase.recipe.RecipeLineInput
 import com.culinary.core.domain.usecase.recipe.RecipeLineTarget
+import com.culinary.core.domain.usecase.recipe.RecipeImageUseCase
 import com.culinary.core.domain.usecase.recipe.RecipeOption
 import com.culinary.core.domain.usecase.recipe.RecipeVersionInput
 import com.culinary.core.domain.usecase.recipe.SaveRecipeDraftUseCase
 import com.culinary.core.domain.usecase.recipe.SaveRecipeInput
+import com.culinary.core.domain.usecase.recipe.SaveRecipeRelationsUseCase
 import com.culinary.core.domain.usecase.recipe.SaveRecipeUseCase
 import com.culinary.core.domain.usecase.sauce.ListSauceOptionsUseCase
 import com.culinary.core.domain.usecase.sauce.SauceOption
@@ -52,6 +65,13 @@ class RecipeEditorViewModel
         private val saveRecipe: SaveRecipeUseCase,
         private val saveRecipeDraft: SaveRecipeDraftUseCase,
         private val publishStoredRecipeVersion: PublishStoredRecipeVersionUseCase,
+        private val observeRelations: ObserveKitchenRelationsUseCase,
+        private val saveRecipeRelations: SaveRecipeRelationsUseCase,
+        private val recipeImages: RecipeImageUseCase,
+        private val listArchiveCategories: ListArchiveCategoriesUseCase = ListArchiveCategoriesUseCase(),
+        private val getArchiveCategoryForRecord: GetArchiveCategoryForRecordUseCase =
+            GetArchiveCategoryForRecordUseCase(),
+        private val assignArchiveCategory: AssignArchiveCategoryUseCase = AssignArchiveCategoryUseCase(),
         private val listUnits: ListUnitsUseCase,
         private val listIngredients: ListIngredientsUseCase,
         private val listRecipeOptions: ListRecipeOptionsUseCase,
@@ -70,6 +90,24 @@ class RecipeEditorViewModel
 
         init {
             load()
+            if (routeId != null) {
+                viewModelScope.launch {
+                    observeRelations(routeId).collect { records ->
+                        val relations =
+                            records
+                                .filter { it.targetKind == KitchenRecordKind.SAUCE || it.targetKind == KitchenRecordKind.RECIPE }
+                                .map { relation ->
+                                    RecipeRelationEditor(
+                                        targetKind = relation.targetKind,
+                                        targetId = relation.targetRecordId,
+                                        name = relation.targetLabel,
+                                        relationLabel = relation.relationLabel,
+                                    )
+                                }
+                        _uiState.update { it.copy(relations = relations) }
+                    }
+                }
+            }
         }
 
         private fun load() {
@@ -79,18 +117,25 @@ class RecipeEditorViewModel
                 val ingredients = runCatching { listIngredients().first() }.getOrDefault(emptyList())
                 val options = runCatching { listRecipeOptions() }.getOrDefault(emptyList())
                 val sauceOptions = runCatching { listSauceOptions() }.getOrDefault(emptyList())
+                val categories =
+                    runCatching { listArchiveCategories(ArchiveLibrary.RECIPE).first() }
+                        .getOrDefault(emptyList())
                 _uiState.update {
                     it.copy(
                         units = units,
                         ingredients = ingredients,
                         recipeOptions = options,
                         sauceOptions = sauceOptions,
+                        categories = categories,
                         yieldUnit = it.yieldUnit ?: units.firstOrNull(),
                     )
                 }
                 if (routeId != null) {
                     when (val result = getRecipeDetail(RecipeId(routeId))) {
-                        is Outcome.Success -> applyDetail(result.value)
+                        is Outcome.Success -> {
+                            applyDetail(result.value)
+                            loadImages(result.value)
+                        }
                         is Outcome.Failure ->
                             _uiState.update {
                                 it.copy(
@@ -105,9 +150,12 @@ class RecipeEditorViewModel
             }
         }
 
-        private fun applyDetail(detail: RecipeDetail) {
-            val version = detail.displayVersion
+        private suspend fun applyDetail(detail: RecipeDetail) {
             val draft = detail.versions.firstOrNull { it.status == com.culinary.core.domain.model.VersionStatus.DRAFT }
+            val version = draft ?: detail.currentVersion ?: detail.versions.firstOrNull()
+            val assignedCategory =
+                runCatching { getArchiveCategoryForRecord(KitchenRecordKind.RECIPE, detail.recipe.id.value) }
+                    .getOrNull()
             var decodedKeys = 0
             val steps =
                 runCatching {
@@ -145,6 +193,7 @@ class RecipeEditorViewModel
                     prepMinutes = detail.recipe.prepMinutes?.toString().orEmpty(),
                     cookMinutes = detail.recipe.cookMinutes?.toString().orEmpty(),
                     allergenNotes = detail.recipe.allergenNotes.orEmpty(),
+                    notes = detail.recipe.notes.orEmpty(),
                     seedNote = detail.recipe.seedNote.orEmpty(),
                     yieldAmount =
                         version
@@ -153,6 +202,13 @@ class RecipeEditorViewModel
                             ?.let(::formatAmount)
                             .orEmpty(),
                     yieldUnit = version?.yield?.unit ?: it.units.firstOrNull(),
+                    minRangeAmount =
+                        version
+                            ?.minRange
+                            ?.amount
+                            ?.let(::formatAmount)
+                            .orEmpty(),
+                    minRangeUnit = version?.minRange?.unit ?: version?.yield?.unit ?: it.units.firstOrNull(),
                     servings = (version?.servings ?: detail.baseServings).toString(),
                     lines = lines,
                     steps =
@@ -165,12 +221,49 @@ class RecipeEditorViewModel
                             )
                         },
                     isLoading = false,
+                    archiveCategoryId = assignedCategory?.id,
                     editingVersionNo = draft?.versionNo ?: ((detail.versions.maxOfOrNull { v -> v.versionNo } ?: 0) + 1),
                     editingDraftId = draft?.id?.value,
                     hasPublishedVersion = detail.hasPublishedVersion,
                     updatedAtEpochMillis = detail.recipe.updatedAtEpochMillis,
                     isDirty = false,
                     versionDirty = false,
+                )
+            }
+        }
+
+        private suspend fun loadImages(detail: RecipeDetail) {
+            val recipeId = detail.recipe.id.value
+            val version =
+                detail.versions.firstOrNull { it.status == com.culinary.core.domain.model.VersionStatus.DRAFT }
+                    ?: detail.currentVersion
+                    ?: detail.versions.firstOrNull()
+            val recipeImageList = runCatching { recipeImages.listForRecipe(recipeId) }.getOrDefault(emptyList())
+            val versionImages =
+                version
+                    ?.let { shown ->
+                        runCatching { recipeImages.listForVersion(shown.id.value) }.getOrDefault(emptyList())
+                    }.orEmpty()
+            val all = recipeImageList + versionImages
+            val bytes =
+                all.mapNotNull { image ->
+                    runCatching { recipeImages.read(image.id) }.getOrNull()?.let { image.id to it }
+                }.toMap()
+            val hero = recipeImageList.firstOrNull { it.role == RecipeImageRole.PRIMARY }
+            val notes = recipeImageList.filter { it.role == RecipeImageRole.REFERENCE }
+            val imagesByStep =
+                versionImages
+                    .filter { it.role == RecipeImageRole.PROCESS && it.stepNo != null }
+                    .associateBy { it.stepNo ?: 0 }
+            _uiState.update { state ->
+                state.copy(
+                    heroImage = hero,
+                    noteImages = notes,
+                    imageBytes = bytes,
+                    steps =
+                        state.steps.mapIndexed { index, step ->
+                            step.copy(image = imagesByStep[index + 1])
+                        },
                 )
             }
         }
@@ -209,9 +302,111 @@ class RecipeEditorViewModel
 
         fun onAllergenNotesChange(value: String) = mutateArchive { it.copy(allergenNotes = value) }
 
+        fun onNotesChange(value: String) = mutateArchive { it.copy(notes = value) }
+
+        fun onArchiveCategorySelect(categoryId: String) = mutateArchive { it.copy(archiveCategoryId = categoryId) }
+
+        fun addSauceRelation(option: SauceOption) {
+            mutateArchive { state ->
+                if (state.relations.any { it.targetKind == KitchenRecordKind.SAUCE && it.targetId == option.sauce.id.value }) {
+                    state
+                } else {
+                    state.copy(
+                        relations =
+                            state.relations +
+                                RecipeRelationEditor(
+                                    targetKind = KitchenRecordKind.SAUCE,
+                                    targetId = option.sauce.id.value,
+                                    name = option.sauce.name,
+                                    relationLabel = "关联酱汁",
+                                ),
+                    )
+                }
+            }
+        }
+
+        fun addRecipeRelation(option: RecipeOption) {
+            mutateArchive { state ->
+                if (state.relations.any { it.targetKind == KitchenRecordKind.RECIPE && it.targetId == option.recipe.id.value }) {
+                    state
+                } else {
+                    state.copy(
+                        relations =
+                            state.relations +
+                                RecipeRelationEditor(
+                                    targetKind = KitchenRecordKind.RECIPE,
+                                    targetId = option.recipe.id.value,
+                                    name = option.recipe.name,
+                                    relationLabel = "关联菜谱",
+                                ),
+                    )
+                }
+            }
+        }
+
+        fun removeRelation(targetId: String) {
+            mutateArchive { state -> state.copy(relations = state.relations.filterNot { it.targetId == targetId }) }
+        }
+
+        fun setHeroImage(image: PendingRecipeImage) {
+            mutateArchive { it.copy(heroImagePending = image) }
+        }
+
+        fun clearHeroImage() {
+            mutateArchive { state ->
+                val removed = state.heroImage?.let { state.removedImageIds + it.id } ?: state.removedImageIds
+                state.copy(heroImage = null, heroImagePending = null, removedImageIds = removed)
+            }
+        }
+
+        fun setStepImage(
+            key: String,
+            image: PendingRecipeImage,
+        ) {
+            mutateVersion { state ->
+                state.copy(steps = state.steps.map { if (it.key == key) it.copy(pendingImage = image) else it })
+            }
+        }
+
+        fun clearStepImage(key: String) {
+            mutateVersion { state ->
+                val step = state.steps.firstOrNull { it.key == key }
+                val removed = step?.image?.let { state.removedImageIds + it.id } ?: state.removedImageIds
+                state.copy(
+                    steps = state.steps.map { if (it.key == key) it.copy(image = null, pendingImage = null) else it },
+                    removedImageIds = removed,
+                )
+            }
+        }
+
+        fun addNoteImage(image: PendingRecipeImage) {
+            mutateArchive { it.copy(noteImagesPending = it.noteImagesPending + image) }
+        }
+
+        fun removeNoteImageAt(index: Int) {
+            mutateArchive { state ->
+                if (index < state.noteImages.size) {
+                    val existing = state.noteImages[index]
+                    state.copy(
+                        noteImages = state.noteImages.filterIndexed { i, _ -> i != index },
+                        removedImageIds = state.removedImageIds + existing.id,
+                    )
+                } else {
+                    val pendingIndex = index - state.noteImages.size
+                    state.copy(
+                        noteImagesPending = state.noteImagesPending.filterIndexed { i, _ -> i != pendingIndex },
+                    )
+                }
+            }
+        }
+
         fun onYieldAmountChange(value: String) = mutateVersion { it.copy(yieldAmount = value) }
 
         fun onYieldUnitChange(unit: UnitModel) = mutateVersion { it.copy(yieldUnit = unit) }
+
+        fun onMinRangeAmountChange(value: String) = mutateVersion { it.copy(minRangeAmount = value) }
+
+        fun onMinRangeUnitChange(unit: UnitModel) = mutateVersion { it.copy(minRangeUnit = unit) }
 
         fun onServingsChange(value: String) = mutateVersion { it.copy(servings = value) }
 
@@ -339,6 +534,12 @@ class RecipeEditorViewModel
             _uiState.update { it.copy(error = null) }
         }
 
+        /** 统一保存：新档案自动发布首版；已有正式版本只保存待发布修改。 */
+        fun save() {
+            val state = _uiState.value
+            save(publish = state.isNew || !state.hasPublishedVersion)
+        }
+
         fun save(publish: Boolean) {
             val submission = buildSubmission() ?: return
             viewModelScope.launch { persist(submission, publish) }
@@ -365,18 +566,25 @@ class RecipeEditorViewModel
                                 cookMinutes = submission.cookMinutes,
                                 minimumCapacity = submission.minimumCapacity,
                                 allergenNotes = submission.allergenNotes,
+                                notes = submission.notes,
                             ),
                         )
                 ) {
                     is Outcome.Success -> saved.value
                     is Outcome.Failure -> return fail(saved.error)
                 }
+            if (!persistCategory(recipeId)) return
+            if (!persistRelations(recipeId, state.relations)) return
             val needsVersion =
                 state.isNew ||
                     publish ||
                     state.versionDirty ||
                     (!state.hasPublishedVersion && state.editingDraftId == null)
             if (!needsVersion) {
+                when (val imageResult = persistImages(state, recipeId.value, null)) {
+                    is Outcome.Failure -> return fail(imageResult.error)
+                    is Outcome.Success -> Unit
+                }
                 _uiState.update {
                     it.copy(
                         isSaving = false,
@@ -397,6 +605,10 @@ class RecipeEditorViewModel
                     is Outcome.Success -> saved.value
                     is Outcome.Failure -> return fail(saved.error)
                 }
+            when (val imageResult = persistImages(state, recipeId.value, versionId.value)) {
+                is Outcome.Failure -> return fail(imageResult.error)
+                is Outcome.Success -> Unit
+            }
             var hasPublished = state.hasPublishedVersion
             if (publish) {
                 when (val result = publishStoredRecipeVersion(versionId)) {
@@ -418,6 +630,140 @@ class RecipeEditorViewModel
             }
         }
 
+        @Suppress("LongMethod", "CyclomaticComplexMethod", "ReturnCount")
+        private suspend fun persistImages(
+            state: RecipeEditorUiState,
+            recipeId: String,
+            versionId: String?,
+        ): Outcome<Unit> {
+            state.removedImageIds.forEach { imageId ->
+                when (val result = recipeImages.delete(imageId)) {
+                    is Outcome.Failure -> return result
+                    is Outcome.Success -> Unit
+                }
+            }
+            state.heroImagePending?.let { pending ->
+                state.heroImage?.let { old ->
+                    when (val result = recipeImages.delete(old.id)) {
+                        is Outcome.Failure -> return result
+                        is Outcome.Success -> Unit
+                    }
+                }
+                when (
+                    val result =
+                        recipeImages.add(
+                            owner = RecipeImageOwner.RECIPE,
+                            ownerId = recipeId,
+                            role = RecipeImageRole.PRIMARY,
+                            stepNo = null,
+                            bytes = pending.bytes,
+                            mimeType = pending.mimeType,
+                        )
+                ) {
+                    is Outcome.Failure -> return result
+                    is Outcome.Success -> Unit
+                }
+            }
+            state.noteImagesPending.forEach { pending ->
+                when (
+                    val result =
+                        recipeImages.add(
+                            owner = RecipeImageOwner.RECIPE,
+                            ownerId = recipeId,
+                            role = RecipeImageRole.REFERENCE,
+                            stepNo = null,
+                            bytes = pending.bytes,
+                            mimeType = pending.mimeType,
+                        )
+                ) {
+                    is Outcome.Failure -> return result
+                    is Outcome.Success -> Unit
+                }
+            }
+            if (versionId == null) {
+                if (state.steps.any { it.pendingImage != null }) {
+                    return Outcome.failure(
+                        com.culinary.core.common.CulinaryError.Validation(
+                            field = "recipe.version",
+                            rule = "step image requires a recipe version",
+                        ),
+                    )
+                }
+                return Outcome.success(Unit)
+            }
+            val stepNumberUpdates = mutableListOf<Pair<String, Int>>()
+            state.steps.forEachIndexed { index, step ->
+                val pending = step.pendingImage
+                if (pending != null) {
+                    step.image?.let { old ->
+                        when (val result = recipeImages.delete(old.id)) {
+                            is Outcome.Failure -> return result
+                            is Outcome.Success -> Unit
+                        }
+                    }
+                    when (
+                        val result =
+                            recipeImages.add(
+                                owner = RecipeImageOwner.RECIPE_VERSION,
+                                ownerId = versionId,
+                                role = RecipeImageRole.PROCESS,
+                                stepNo = index + 1,
+                                bytes = pending.bytes,
+                                mimeType = pending.mimeType,
+                            )
+                    ) {
+                        is Outcome.Failure -> return result
+                        is Outcome.Success -> Unit
+                    }
+                } else if (step.image != null && step.image.stepNo != index + 1) {
+                    stepNumberUpdates += step.image.id to (index + 1)
+                }
+            }
+            if (stepNumberUpdates.isNotEmpty()) {
+                when (val result = recipeImages.updateStepNumbers(stepNumberUpdates)) {
+                    is Outcome.Failure -> return result
+                    is Outcome.Success -> Unit
+                }
+            }
+            return Outcome.success(Unit)
+        }
+
+        private suspend fun persistCategory(recipeId: RecipeId): Boolean {
+            val categoryId = _uiState.value.archiveCategoryId ?: return true
+            return when (val result = assignArchiveCategory(KitchenRecordKind.RECIPE, recipeId.value, categoryId)) {
+                is Outcome.Success -> true
+                is Outcome.Failure -> {
+                    fail(result.error)
+                    false
+                }
+            }
+        }
+
+        private suspend fun persistRelations(
+            recipeId: RecipeId,
+            relations: List<RecipeRelationEditor>,
+        ): Boolean {
+            val drafts =
+                relations.mapIndexed { index, relation ->
+                    KitchenRelationDraft(
+                        targetRecordId = relation.targetId,
+                        targetKind = relation.targetKind,
+                        targetLabel = relation.name,
+                        relationLabel = relation.relationLabel,
+                        sortOrder = index,
+                    )
+                }
+            val sauces = drafts.filter { it.targetKind == KitchenRecordKind.SAUCE }
+            val recipes = drafts.filter { it.targetKind == KitchenRecordKind.RECIPE }
+            return when (val result = saveRecipeRelations(recipeId.value, sauces, recipes)) {
+                is Outcome.Success -> true
+                is Outcome.Failure -> {
+                    fail(result.error)
+                    false
+                }
+            }
+        }
+
         private fun fail(error: com.culinary.core.common.CulinaryError) {
             _uiState.update { it.copy(isSaving = false, error = RecipeErrorMessages.describe(error)) }
         }
@@ -425,14 +771,34 @@ class RecipeEditorViewModel
         @Suppress("ReturnCount") // 逐项校验并返回首个可定位字段错误
         private fun buildSubmission(): Submission? {
             val state = _uiState.value
+            val yieldAmount = state.yieldAmount.toDoubleOrNull()
+            val yieldUnit = state.yieldUnit ?: state.units.firstOrNull()
+            val minAmount =
+                state.minRangeAmount.trim().takeIf { it.isNotEmpty() }?.toDoubleOrNull()
+            val minUnit = state.minRangeUnit ?: yieldUnit
             val message =
                 when {
                     state.name.trim().isEmpty() -> "名称不能为空。"
-                    state.yieldAmount.toDoubleOrNull()?.takeIf { it.isFinite() && it > 0.0 } == null ->
+                    yieldAmount == null || !yieldAmount.isFinite() || yieldAmount <= 0.0 ->
                         "标准产量必须是大于 0 的数字。"
                     state.servings.toIntOrNull()?.takeIf { it > 0 } == null ->
                         "基准份数必须是大于 0 的整数。"
-                    state.yieldUnit == null && state.units.isEmpty() -> "缺少可用单位，无法保存。"
+                    yieldUnit == null -> "缺少可用单位，无法保存。"
+                    state.minRangeAmount.isNotBlank() &&
+                        (minAmount == null || !minAmount.isFinite() || minAmount <= 0.0) ->
+                        "最小制作范围必须是大于 0 的数字。"
+                    minAmount != null && minUnit == null -> "请选择最小制作范围单位。"
+                    minAmount != null &&
+                        minUnit != null &&
+                        yieldUnit != null &&
+                        !minUnit.isSameDimensionAs(yieldUnit) ->
+                        "最小制作范围必须与默认产量使用同一计量维度。"
+                    minAmount != null &&
+                        minUnit != null &&
+                        yieldUnit != null &&
+                        yieldAmount != null &&
+                        minAmount * minUnit.baseFactor > yieldAmount * yieldUnit.baseFactor ->
+                        "最小制作范围不能大于默认产量。"
                     else -> null
                 }
             if (message != null) {
@@ -455,8 +821,11 @@ class RecipeEditorViewModel
                 prepMinutes = prepMinutes.takeIf { it >= 0 },
                 cookMinutes = cookMinutes.takeIf { it >= 0 },
                 allergenNotes = state.allergenNotes,
-                yieldAmount = state.yieldAmount.toDouble(),
-                yieldUnit = state.yieldUnit ?: requireNotNull(state.units.firstOrNull()),
+                notes = state.notes,
+                yieldAmount = requireNotNull(yieldAmount),
+                yieldUnit = requireNotNull(yieldUnit),
+                minRangeAmount = minAmount,
+                minRangeUnit = minAmount?.let { minUnit },
                 servings = state.servings.toInt(),
                 lines = lines,
                 steps = state.steps,
@@ -539,8 +908,11 @@ class RecipeEditorViewModel
             val prepMinutes: Int?,
             val cookMinutes: Int?,
             val allergenNotes: String,
+            val notes: String,
             val yieldAmount: Double,
             val yieldUnit: UnitModel,
+            val minRangeAmount: Double?,
+            val minRangeUnit: UnitModel?,
             val servings: Int,
             val lines: List<RecipeLineInput>,
             val steps: List<RecipeStepEditor>,
@@ -564,6 +936,8 @@ class RecipeEditorViewModel
                             steps.map { KitchenStep(it.key, it.title, it.body, it.timeSeconds) },
                         ),
                     versionId = versionId,
+                    minRangeAmount = minRangeAmount,
+                    minRangeUnit = minRangeUnit,
                 )
         }
 

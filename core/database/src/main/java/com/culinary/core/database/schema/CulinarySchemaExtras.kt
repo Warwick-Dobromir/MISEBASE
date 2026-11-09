@@ -63,12 +63,26 @@ internal object CulinarySchemaExtras {
         installChecks(db, "backup_record", BACKUP_PREDICATE)
         installChecks(db, "app_metadata", APP_METADATA_PREDICATE)
 
-        installPublishedImmutability(db, "sauce_version", "sauce_id")
+        installPublishedImmutability(
+            db = db,
+            table = "sauce_version",
+            ownerColumn = "sauce_id",
+            extraContentChanges =
+                listOf(
+                    "NEW.min_range_qty IS NOT OLD.min_range_qty",
+                    "NEW.min_range_unit_id IS NOT OLD.min_range_unit_id",
+                ),
+        )
         installPublishedImmutability(
             db = db,
             table = "recipe_version",
             ownerColumn = "recipe_id",
-            extraContentChanges = listOf("NEW.servings <> OLD.servings"),
+            extraContentChanges =
+                listOf(
+                    "NEW.servings <> OLD.servings",
+                    "NEW.min_range_qty IS NOT OLD.min_range_qty",
+                    "NEW.min_range_unit_id IS NOT OLD.min_range_unit_id",
+                ),
         )
         installAppendOnly(db, "inventory_ledger")
         installAppendOnly(db, "production_plan_snapshot")
@@ -313,6 +327,9 @@ internal object CulinarySchemaExtras {
         OR NEW.version_no < 1
         OR NEW.is_current NOT IN (0, 1)
         OR (NEW.published_at IS NOT NULL AND NEW.published_at < 0)
+        OR (NEW.min_range_qty IS NOT NULL AND NEW.min_range_qty <= 0)
+        OR (NEW.min_range_qty IS NULL) <> (NEW.min_range_unit_id IS NULL)
+        OR NEW.min_range_unit_id = ''
     """
 
     /** 在共享版本约束上追加 v2 的 servings > 0；仅用于 recipe_version。 */
@@ -323,6 +340,9 @@ internal object CulinarySchemaExtras {
         OR NEW.is_current NOT IN (0, 1)
         OR (NEW.published_at IS NOT NULL AND NEW.published_at < 0)
         OR NEW.servings < 1
+        OR (NEW.min_range_qty IS NOT NULL AND NEW.min_range_qty <= 0)
+        OR (NEW.min_range_qty IS NULL) <> (NEW.min_range_unit_id IS NULL)
+        OR NEW.min_range_unit_id = ''
     """
 
     private const val CALCULATION_RECORD_PREDICATE = """

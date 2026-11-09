@@ -119,8 +119,8 @@ class RecipesUiTest {
             }
         }
 
-        compose.onAllNodesWithText("低筋面粉").onFirst().assertIsDisplayed()
-        compose.onNodeWithText("MIN. CAPACITY").assertIsDisplayed()
+        compose.onNodeWithText("MIN. RANGE").assertIsDisplayed()
+        compose.onAllNodesWithText("低筋面粉").onFirst().performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("可选").performScrollTo().assertIsDisplayed()
         compose.onAllNodesWithText("展开").onFirst().assertExists()
     }
@@ -142,7 +142,7 @@ class RecipesUiTest {
                     onNameChange = {},
                     onOpenCategoryPicker = {},
                     onYieldAmountChange = {},
-                    onOpenUnitPicker = {},
+                    onOpenYieldUnit = {},
                     onServingsChange = {},
                     onAddIngredient = {},
                     onAddRecipe = {},
@@ -150,19 +150,18 @@ class RecipesUiTest {
                     onLineAmountChange = { _, _ -> },
                     onToggleOptional = {},
                     onRemoveLine = {},
-                    onSaveDraft = {},
-                    onSaveAndPublish = {},
                 )
             }
         }
 
-        compose.onNodeWithText("最小制作容量", substring = true).performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("最小制作范围", substring = true).performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("基准份数").performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("适用范围").performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("添加食材").performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("添加子菜谱").performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("添加酱汁").performScrollTo().assertIsDisplayed()
-        compose.onNodeWithText("保存并发布").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("关联档案").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("研发备注").performScrollTo().assertIsDisplayed()
     }
 
     private fun recipe(): Recipe =

@@ -54,6 +54,11 @@ data class RecipeVersionEntity(
     val yieldQty: Double,
     @ColumnInfo(name = "yield_unit_id")
     val yieldUnitId: String,
+    /** 最小制作范围；v8 起可空，历史版本保持 null。 */
+    @ColumnInfo(name = "min_range_qty")
+    val minRangeQty: Double? = null,
+    @ColumnInfo(name = "min_range_unit_id")
+    val minRangeUnitId: String? = null,
     @ColumnInfo(name = "instructions_md")
     val instructionsMd: String? = null,
     /** 结构化制作步骤（含每步时间）；v1 历史数据为空，读取时回退 [instructionsMd]。 */

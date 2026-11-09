@@ -54,12 +54,15 @@ interface SauceVersionDao {
 
     @Query(
         "UPDATE sauce_version SET yield_qty = :yieldQty, yield_unit_id = :yieldUnitId, " +
+            "min_range_qty = :minRangeQty, min_range_unit_id = :minRangeUnitId, " +
             "instructions_md = :instructionsMd, steps_json = :stepsJson WHERE id = :id AND status = 'DRAFT'",
     )
     suspend fun updateDraft(
         id: String,
         yieldQty: Double,
         yieldUnitId: String,
+        minRangeQty: Double?,
+        minRangeUnitId: String?,
         instructionsMd: String?,
         stepsJson: String?,
     )

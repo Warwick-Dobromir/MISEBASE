@@ -65,9 +65,9 @@ class SauceDetailViewModel
                                     ?.let { image -> sauceImages.read(image.id) }
                             }.getOrNull()
                         val version =
-                            result.value.versions
-                                .firstOrNull { it.status == VersionStatus.DRAFT }
-                                ?: result.value.currentVersion
+                            result.value.currentVersion
+                                ?: result.value.versions
+                                    .firstOrNull { it.status == VersionStatus.DRAFT }
                                 ?: result.value.versions.firstOrNull()
                         var stepKey = 0
                         val steps =

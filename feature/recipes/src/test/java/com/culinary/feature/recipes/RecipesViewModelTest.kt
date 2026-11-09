@@ -15,6 +15,7 @@ import com.culinary.core.domain.model.Recipe
 import com.culinary.core.domain.model.RecipeCategory
 import com.culinary.core.domain.model.RecipeComponent
 import com.culinary.core.domain.model.RecipeId
+import com.culinary.core.domain.model.RecipeImage
 import com.culinary.core.domain.model.RecipeVersion
 import com.culinary.core.domain.model.RecipeVersionId
 import com.culinary.core.domain.model.Sauce
@@ -26,6 +27,7 @@ import com.culinary.core.domain.model.UnitId
 import com.culinary.core.domain.model.VersionStatus
 import com.culinary.core.domain.repository.IngredientRepository
 import com.culinary.core.domain.repository.KitchenRelationRepository
+import com.culinary.core.domain.repository.RecipeImageRepository
 import com.culinary.core.domain.repository.RecipeRepository
 import com.culinary.core.domain.repository.SauceRepository
 import com.culinary.core.domain.repository.UnitRepository
@@ -37,8 +39,10 @@ import com.culinary.core.domain.usecase.recipe.GetRecipeDetailUseCase
 import com.culinary.core.domain.usecase.recipe.ListRecipeOptionsUseCase
 import com.culinary.core.domain.usecase.recipe.ListRecipesUseCase
 import com.culinary.core.domain.usecase.recipe.PublishStoredRecipeVersionUseCase
+import com.culinary.core.domain.usecase.recipe.RecipeImageUseCase
 import com.culinary.core.domain.usecase.recipe.RecipeOption
 import com.culinary.core.domain.usecase.recipe.SaveRecipeDraftUseCase
+import com.culinary.core.domain.usecase.recipe.SaveRecipeRelationsUseCase
 import com.culinary.core.domain.usecase.recipe.SaveRecipeUseCase
 import com.culinary.core.domain.usecase.sauce.ListSauceOptionsUseCase
 import com.culinary.core.domain.usecase.sauce.SauceOption
@@ -124,7 +128,7 @@ class RecipesViewModelTest {
         }
 
     @Test
-    fun `detail prefers the editable draft over the published version`() =
+    fun `detail keeps the published version while a draft exists`() =
         runTest {
             seedRecipeWithVersion(servings = 2)
             val published = recipes.versions.getValue(RecipeVersionId(VERSION_ID))
@@ -151,10 +155,11 @@ class RecipesViewModelTest {
             advanceUntilIdle()
 
             val detail = viewModel.uiState.value.detail
-            assertThat(detail?.displayVersion?.id).isEqualTo(draft.id)
+            assertThat(detail?.displayVersion?.id).isEqualTo(published.id)
             assertThat(detail?.currentVersion?.id).isEqualTo(published.id)
-            assertThat(detail?.baseServings).isEqualTo(4)
-            assertThat(detail?.components?.single()?.quantity?.amount).isWithin(1e-9).of(200.0)
+            assertThat(detail?.hasDraftVersion).isTrue()
+            assertThat(detail?.baseServings).isEqualTo(2)
+            assertThat(detail?.components?.single()?.quantity?.amount).isWithin(1e-9).of(100.0)
         }
 
     @Test
@@ -264,6 +269,38 @@ class RecipesViewModelTest {
             assertThat(version.status).isEqualTo(VersionStatus.DRAFT)
             assertThat(version.servings).isEqualTo(4)
             assertThat(version.components.single().isOptional).isTrue()
+        }
+
+    @Test
+    fun `editor stores min range on the draft`() =
+        runTest {
+            seedRecipeWithVersion(servings = 2)
+            val viewModel = editorViewModel(RECIPE_ID)
+            advanceUntilIdle()
+            viewModel.onMinRangeAmountChange("500")
+            viewModel.onMinRangeUnitChange(gram())
+            viewModel.save(publish = false)
+            advanceUntilIdle()
+
+            assertThat(viewModel.uiState.value.error).isNull()
+            val draft = recipes.versions.values.single { it.status == VersionStatus.DRAFT }
+            assertThat(draft.minRange?.amount).isEqualTo(500.0)
+        }
+
+    @Test
+    fun `editor save publishes the first recipe version`() =
+        runTest {
+            val viewModel = editorViewModel(null)
+            advanceUntilIdle()
+            viewModel.onNameChange("首版菜谱")
+            viewModel.onYieldAmountChange("1")
+            viewModel.save()
+            advanceUntilIdle()
+
+            assertThat(viewModel.uiState.value.error).isNull()
+            val version = recipes.versions.values.single()
+            assertThat(version.status).isEqualTo(VersionStatus.PUBLISHED)
+            assertThat(recipes.current[version.recipeId.value]).isEqualTo(version.id)
         }
 
     @Test
@@ -410,6 +447,9 @@ class RecipesViewModelTest {
             saveRecipe = saveRecipe,
             saveRecipeDraft = saveDraft,
             publishStoredRecipeVersion = publishStored,
+            observeRelations = emptyRelations(),
+            saveRecipeRelations = SaveRecipeRelationsUseCase(emptyRelationRepository()),
+            recipeImages = RecipeImageUseCase(EmptyRecipeImageRepository),
             listUnits = ListUnitsUseCase(units),
             listIngredients = ListIngredientsUseCase(ingredients),
             listRecipeOptions = ListRecipeOptionsUseCase(recipes),
@@ -614,18 +654,40 @@ class RecipesViewModelTest {
     }
 }
 
-private fun emptyRelations(): ObserveKitchenRelationsUseCase =
-    ObserveKitchenRelationsUseCase(
-        object : KitchenRelationRepository {
-            override fun observeForRecord(recordId: String): Flow<List<KitchenRelatedRecord>> = flowOf(emptyList())
+private fun emptyRelationRepository(): KitchenRelationRepository =
+    object : KitchenRelationRepository {
+        override fun observeForRecord(recordId: String): Flow<List<KitchenRelatedRecord>> = flowOf(emptyList())
 
-            override suspend fun replaceRelations(
-                sourceRecordId: String,
-                sourceKind: com.culinary.core.domain.model.KitchenRecordKind,
-                targetKind: com.culinary.core.domain.model.KitchenRecordKind,
-                relations: List<com.culinary.core.domain.model.KitchenRelationDraft>,
-            ): com.culinary.core.common.Outcome<Unit> =
-                com.culinary.core.common.Outcome
-                    .success(Unit)
-        },
-    )
+        override suspend fun replaceRelations(
+            sourceRecordId: String,
+            sourceKind: com.culinary.core.domain.model.KitchenRecordKind,
+            targetKind: com.culinary.core.domain.model.KitchenRecordKind,
+            relations: List<com.culinary.core.domain.model.KitchenRelationDraft>,
+        ): com.culinary.core.common.Outcome<Unit> =
+            com.culinary.core.common.Outcome
+                .success(Unit)
+    }
+
+private fun emptyRelations(): ObserveKitchenRelationsUseCase =
+    ObserveKitchenRelationsUseCase(emptyRelationRepository())
+
+private object EmptyRecipeImageRepository : RecipeImageRepository {
+    override suspend fun listForRecipe(recipeId: String): List<RecipeImage> = emptyList()
+
+    override suspend fun listForVersion(versionId: String): List<RecipeImage> = emptyList()
+
+    override suspend fun add(
+        owner: com.culinary.core.domain.model.RecipeImageOwner,
+        ownerId: String,
+        role: com.culinary.core.domain.model.RecipeImageRole,
+        stepNo: Int?,
+        bytes: ByteArray,
+        mimeType: String,
+    ): Outcome<RecipeImage> = Outcome.failure(CulinaryError.NotFound("image", "test"))
+
+    override suspend fun delete(imageId: String): Outcome<Unit> = Outcome.success(Unit)
+
+    override suspend fun read(imageId: String): ByteArray? = null
+
+    override suspend fun updateStepNumbers(images: List<Pair<String, Int>>): Outcome<Unit> = Outcome.success(Unit)
+}

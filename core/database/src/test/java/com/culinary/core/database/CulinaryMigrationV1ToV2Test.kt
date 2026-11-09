@@ -1,4 +1,4 @@
-﻿package com.culinary.core.database
+package com.culinary.core.database
 
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteException
@@ -47,7 +47,7 @@ class CulinaryMigrationV1ToV2Test {
             val opened = openV2()
             val sqlite = opened.openHelper.writableDatabase
 
-            assertThat(userVersion(sqlite)).isEqualTo(6)
+            assertThat(userVersion(sqlite)).isEqualTo(8)
             assertThat(countTables(sqlite)).isEqualTo(38)
             assertThat(tableExists(sqlite, "kitchen_reference")).isTrue()
             assertThat(tableExists(sqlite, "kitchen_relation")).isTrue()

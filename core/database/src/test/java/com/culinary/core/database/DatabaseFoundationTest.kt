@@ -1,4 +1,4 @@
-﻿package com.culinary.core.database
+package com.culinary.core.database
 
 import android.database.sqlite.SQLiteException
 import androidx.room.Room
@@ -59,14 +59,14 @@ class DatabaseFoundationTest {
     }
 
     @Test
-    fun `creates the schema at version 5`() {
+    fun `creates the schema at version 8`() {
         val version =
             database.openHelper.writableDatabase.query("PRAGMA user_version").use { cursor ->
                 cursor.moveToFirst()
                 cursor.getInt(0)
             }
 
-        assertThat(version).isEqualTo(6)
+        assertThat(version).isEqualTo(8)
     }
 
     @Test

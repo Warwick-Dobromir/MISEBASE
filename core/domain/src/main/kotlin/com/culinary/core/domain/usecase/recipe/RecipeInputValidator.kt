@@ -19,6 +19,18 @@ internal object RecipeInputValidator {
         if (input.servings <= 0) {
             return invalid("recipe.servings", "must be > 0")
         }
+        when {
+            input.minRangeAmount == null && input.minRangeUnit == null -> Unit
+            input.minRangeAmount == null || input.minRangeUnit == null ->
+                return invalid("recipe.minRange", "amount and unit must be provided together")
+            !input.minRangeAmount.isFinite() || input.minRangeAmount <= 0.0 ->
+                return invalid("recipe.minRange", "must be a finite positive number")
+            !input.minRangeUnit.isSameDimensionAs(input.yieldUnit) ->
+                return invalid("recipe.minRange", "must use the same dimension as yield")
+            input.minRangeAmount * input.minRangeUnit.baseFactor >
+                input.yieldAmount * input.yieldUnit.baseFactor ->
+                return invalid("recipe.minRange", "must not exceed yield")
+        }
         input.components.forEachIndexed { index, line ->
             if (!line.amount.isFinite() || line.amount <= 0.0) {
                 return invalid("recipe.component[$index].quantity", "must be a finite positive number")
@@ -44,6 +56,10 @@ internal object RecipeInputValidator {
             servings = input.servings,
             instructions = input.instructions?.trim()?.takeIf { it.isNotEmpty() },
             stepsJson = input.stepsJson?.takeIf { it.isNotBlank() },
+            minRange =
+                input.minRangeAmount?.let { amount ->
+                    input.minRangeUnit?.let { unit -> Quantity(amount, unit) }
+                },
         )
 
     private fun invalid(

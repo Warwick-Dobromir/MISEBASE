@@ -173,6 +173,39 @@ class RecipeUseCasesTest {
         }
 
     @Test
+    fun `draft stores min range and rejects a value above yield`() =
+        runBlocking<Unit> {
+            val (parentId, _) = seedRecipes()
+            val saved =
+                saveDraft(
+                    RecipeVersionInput(
+                        recipeId = parentId,
+                        yieldAmount = 1000.0,
+                        yieldUnit = gram(),
+                        servings = 2,
+                        components = emptyList(),
+                        minRangeAmount = 500.0,
+                        minRangeUnit = gram(),
+                    ),
+                ) as Outcome.Success
+            assertThat(recipes.versions.getValue(saved.value).minRange?.amount).isEqualTo(500.0)
+
+            val rejected =
+                saveDraft(
+                    RecipeVersionInput(
+                        recipeId = parentId,
+                        yieldAmount = 1000.0,
+                        yieldUnit = gram(),
+                        servings = 2,
+                        components = emptyList(),
+                        minRangeAmount = 1500.0,
+                        minRangeUnit = gram(),
+                    ),
+                )
+            assertThat(rejected).isInstanceOf(Outcome.Failure::class.java)
+        }
+
+    @Test
     fun `publishing rejects a cycle across sub recipes`() =
         runBlocking<Unit> {
             val (parentId, childId) = seedRecipes()

@@ -27,11 +27,10 @@ class GetRecipeDetailUseCase(
         val current =
             versions.firstOrNull { it.isCurrent }
                 ?: recipeRepository.getCurrentVersion(recipeId)
-        // 编辑已发布菜谱时优先展示可编辑草稿，保存后用户能立即看到修改；
-        // currentVersion 仍保持"当前发布版本"的指针语义，不被草稿替换。
+        // 展示页默认读取正式发布版本；待发布草稿只通过状态提示和发布入口展示。
         val shown =
-            versions.firstOrNull { it.status == VersionStatus.DRAFT }
-                ?: current
+            current
+                ?: versions.firstOrNull { it.status == VersionStatus.DRAFT }
                 ?: versions.firstOrNull()
         val components =
             shown

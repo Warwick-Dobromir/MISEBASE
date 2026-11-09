@@ -13,4 +13,13 @@ data class Quantity(
         require(amount.isFinite()) { "quantity amount must be finite, was $amount" }
         require(amount >= 0.0) { "quantity amount must be >= 0, was $amount" }
     }
+
+    /** 两个数量是否可直接比较（同一计量维度）。 */
+    fun isSameDimensionAs(other: Quantity): Boolean = unit.isSameDimensionAs(other.unit)
+
+    /** 同一维度下比较基准量；调用方必须先确认 [isSameDimensionAs]。 */
+    fun isAtMost(other: Quantity): Boolean {
+        require(isSameDimensionAs(other)) { "quantities must share the same dimension" }
+        return amount * unit.baseFactor <= other.amount * other.unit.baseFactor
+    }
 }

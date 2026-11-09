@@ -42,6 +42,9 @@ data class RecipeEntity(
     val englishName: String? = null,
     @ColumnInfo(name = "allergen_notes")
     val allergenNotes: String? = null,
+    /** 研发备注；v8 起新增，历史数据保持 null。 */
+    @ColumnInfo(name = "notes")
+    val notes: String? = null,
     @ColumnInfo(name = "seed_note")
     val seedNote: String? = null,
     @ColumnInfo(name = "seed_id")

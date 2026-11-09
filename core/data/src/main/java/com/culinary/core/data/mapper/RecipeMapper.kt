@@ -60,6 +60,7 @@ object RecipeMapper {
             difficulty = entity.difficulty,
             allergenNotes = entity.allergenNotes,
             ingredientSummary = entity.description,
+            notes = entity.notes,
             updatedAtEpochMillis = entity.updatedAt,
             seedNote = entity.seedNote,
             seedId = entity.seedId,
@@ -96,6 +97,7 @@ object RecipeMapper {
             cookMinutes = recipe.cookMinutes,
             difficulty = recipe.difficulty,
             allergenNotes = recipe.allergenNotes,
+            notes = recipe.notes,
             seedNote = recipe.seedNote,
             seedId = recipe.seedId,
             seedVersion = recipe.seedVersion,
@@ -121,6 +123,8 @@ object RecipeMapper {
                 },
             yieldQty = version.yield.amount,
             yieldUnitId = version.yield.unit.id.value,
+            minRangeQty = version.minRange?.amount,
+            minRangeUnitId = version.minRange?.unit?.id?.value,
             servings = version.servings,
             instructionsMd = version.instructions,
             stepsJson = version.stepsJson,
@@ -139,6 +143,22 @@ object RecipeMapper {
                 ?: return Outcome.failure(
                     CulinaryError.NotFound(entity = "unit", id = version.yieldUnitId),
                 )
+        val minRangeQty = version.minRangeQty
+        val minRangeUnitId = version.minRangeUnitId
+        val minRange =
+            when {
+                minRangeQty == null && minRangeUnitId == null -> null
+                minRangeQty == null || minRangeUnitId == null ->
+                    return Outcome.failure(CulinaryError.NotFound(entity = "unit", id = "min_range"))
+                else -> {
+                    val unit =
+                        units[minRangeUnitId]
+                            ?: return Outcome.failure(
+                                CulinaryError.NotFound(entity = "unit", id = minRangeUnitId),
+                            )
+                    Quantity(minRangeQty, unit)
+                }
+            }
         val mapped = mutableListOf<RecipeComponent>()
         for (component in components) {
             val unit =
@@ -176,6 +196,7 @@ object RecipeMapper {
                 isCurrent = version.isCurrent,
                 instructions = version.instructionsMd,
                 stepsJson = version.stepsJson,
+                minRange = minRange,
             ),
         )
     }

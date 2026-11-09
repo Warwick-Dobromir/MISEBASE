@@ -45,6 +45,7 @@
     <string name="recipes_kind_sauce">子酱汁 v%1$d</string>
     <string name="recipes_editor_new_title">新建菜谱</string>
     <string name="recipes_editor_edit_title">编辑菜谱 · 草稿 v%1$d</string>
+    <string name="recipes_editor_edit_title_short">编辑菜谱</string>
     <string name="recipes_editor_published_hint">已发布版本保持只读；本次修改保存为可继续编辑的草稿。</string>
     <string name="recipes_editor_new_hint">新菜谱默认保存为可编辑草稿，不会自动锁定。</string>
     <string name="recipes_name_label">名称</string>

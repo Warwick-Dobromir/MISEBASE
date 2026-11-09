@@ -2,6 +2,8 @@ package com.culinary.core.data.di
 
 import com.culinary.core.common.IdGenerator
 import com.culinary.core.domain.repository.IngredientRepository
+import com.culinary.core.domain.repository.KitchenRelationRepository
+import com.culinary.core.domain.repository.RecipeImageRepository
 import com.culinary.core.domain.repository.RecipeRepository
 import com.culinary.core.domain.repository.SauceRepository
 import com.culinary.core.domain.transaction.TransactionRunner
@@ -11,7 +13,9 @@ import com.culinary.core.domain.usecase.recipe.ListRecipeOptionsUseCase
 import com.culinary.core.domain.usecase.recipe.ListRecipesUseCase
 import com.culinary.core.domain.usecase.recipe.PublishRecipeDraftUseCase
 import com.culinary.core.domain.usecase.recipe.PublishStoredRecipeVersionUseCase
+import com.culinary.core.domain.usecase.recipe.RecipeImageUseCase
 import com.culinary.core.domain.usecase.recipe.SaveRecipeDraftUseCase
+import com.culinary.core.domain.usecase.recipe.SaveRecipeRelationsUseCase
 import com.culinary.core.domain.usecase.recipe.SaveRecipeUseCase
 import com.culinary.core.domain.usecase.sauce.ListSauceOptionsUseCase
 import dagger.Module
@@ -76,6 +80,16 @@ object RecipeUseCaseModule {
         repository: RecipeRepository,
         transactionRunner: TransactionRunner,
     ): PublishStoredRecipeVersionUseCase = PublishStoredRecipeVersionUseCase(repository, transactionRunner)
+
+    @Provides
+    @Singleton
+    fun provideRecipeImageUseCase(repository: RecipeImageRepository): RecipeImageUseCase =
+        RecipeImageUseCase(repository)
+
+    @Provides
+    @Singleton
+    fun provideSaveRecipeRelationsUseCase(repository: KitchenRelationRepository): SaveRecipeRelationsUseCase =
+        SaveRecipeRelationsUseCase(repository)
 
     @Provides
     @Singleton

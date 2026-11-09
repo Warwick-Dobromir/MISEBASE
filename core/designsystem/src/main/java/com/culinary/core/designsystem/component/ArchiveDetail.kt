@@ -162,6 +162,127 @@ fun ArchiveDetailHeading(
     }
 }
 
+/**
+ * 默认产量 / 最小制作范围双列组件。
+ *
+ * 左右列等宽，数值与单位横向排列且不换行；两列都必须由真实数据填充。
+ */
+@Composable
+fun ArchiveYieldRange(
+    yieldAmount: String,
+    yieldUnit: String,
+    minRangeAmount: String,
+    minRangeUnit: String,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(CulinarySpacing.md),
+    ) {
+        ArchiveMeasureValue(
+            englishLabel = "YIELD",
+            chineseLabel = "默认产量",
+            amount = yieldAmount,
+            unit = yieldUnit,
+            modifier = Modifier.weight(1f),
+        )
+        ArchiveMeasureValue(
+            englishLabel = "MIN. RANGE",
+            chineseLabel = "最小制作范围",
+            amount = minRangeAmount,
+            unit = minRangeUnit,
+            modifier = Modifier.weight(1f),
+        )
+    }
+}
+
+@Composable
+private fun ArchiveMeasureValue(
+    englishLabel: String,
+    chineseLabel: String,
+    amount: String,
+    unit: String,
+    modifier: Modifier = Modifier,
+) {
+    Column(modifier = modifier) {
+        Text(
+            text = englishLabel.uppercase(),
+            style = CulinaryTextStyles.eyebrow,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Text(
+            text = chineseLabel,
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Spacer(modifier = Modifier.height(CulinarySpacing.xxs))
+        Row(verticalAlignment = Alignment.Bottom) {
+            Text(
+                text = amount.ifBlank { "—" },
+                style = CulinaryTextStyles.numeralS,
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 1,
+            )
+            if (unit.isNotBlank()) {
+                Text(
+                    text = " " + unit,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                )
+            }
+        }
+    }
+}
+
+/** 版本历史中的一行。 */
+data class ArchiveVersionItem(
+    val versionNo: Int,
+    val statusLabel: String,
+    val dateLabel: String?,
+    val isCurrent: Boolean,
+)
+
+/** 档案版本历史：显示正式版本与历史版本，不提供删除。 */
+@Composable
+fun ArchiveVersionHistory(
+    versions: List<ArchiveVersionItem>,
+    modifier: Modifier = Modifier,
+) {
+    if (versions.isEmpty()) return
+    Column(modifier = modifier.fillMaxWidth()) {
+        ArchiveModuleHeader(number = "06", english = "VERSIONS", chinese = "版本历史")
+        versions.forEach { version ->
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(vertical = CulinarySpacing.xs),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = "v" + version.versionNo.toString().padStart(2, '0'),
+                    style = CulinaryTextStyles.numeralS,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.width(48.dp),
+                )
+                Text(
+                    text = version.statusLabel + if (version.isCurrent) " · 当前" else "",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.weight(1f),
+                )
+                version.dateLabel?.let { date ->
+                    Text(
+                        text = date,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+            CulinaryRule()
+        }
+        Spacer(modifier = Modifier.height(CulinarySpacing.xl))
+    }
+}
+
 /** 三列基础信息项：标签在上、值在下，列宽 1:1:1。 */
 data class ArchiveMetaItem(
     val label: String,
@@ -361,7 +482,7 @@ fun ArchiveProcedureStep(
     onStartTimer: (() -> Unit)?,
     modifier: Modifier = Modifier,
     titleEn: String? = null,
-    stepTimeLabel: String = "步骤时间",
+    stepTimeLabel: String = "制作时间",
 ) {
     Column(modifier = modifier.fillMaxWidth()) {
         Row(verticalAlignment = Alignment.Top) {
@@ -414,7 +535,7 @@ fun ArchiveProcedureStep(
                     modifier = Modifier.weight(1f),
                 )
                 Text(
-                    text = KitchenTime.format(timeSeconds),
+                    text = KitchenTime.formatSpaced(timeSeconds),
                     style = CulinaryTextStyles.numeralS,
                     color = MaterialTheme.colorScheme.onSurface,
                 )
@@ -565,10 +686,19 @@ fun ArchiveDetailFooter(
     updatedLabel: String,
     modifier: Modifier = Modifier,
     brand: String = "MISEBASE",
+    versionLabel: String? = null,
 ) {
     Column(modifier = modifier.fillMaxWidth()) {
         CulinaryRule()
         Spacer(modifier = Modifier.height(CulinarySpacing.md))
+        versionLabel?.takeIf { it.isNotBlank() }?.let { label ->
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            Spacer(modifier = Modifier.height(CulinarySpacing.xxs))
+        }
         Text(
             text = updatedLabel,
             style = MaterialTheme.typography.labelSmall,

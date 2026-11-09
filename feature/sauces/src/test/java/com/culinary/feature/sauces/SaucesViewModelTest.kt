@@ -137,6 +137,8 @@ class SaucesViewModelTest {
             viewModel.onEnglishNameChange("New Sauce")
             viewModel.onFamilyChange("乳化酱")
             viewModel.onYieldAmountChange("500")
+            viewModel.onMinRangeAmountChange("250")
+            viewModel.onMinRangeUnitChange(gram())
             viewModel.addIngredient(ingredients.items.single())
             viewModel.onLineAmountChange(
                 viewModel.uiState.value.lines
@@ -158,6 +160,7 @@ class SaucesViewModelTest {
             assertThat(version.status).isEqualTo(VersionStatus.PUBLISHED)
             assertThat(sauces.current[version.sauceId.value]).isEqualTo(version.id)
             assertThat(version.yield.amount).isWithin(1e-9).of(500.0)
+            assertThat(version.minRange?.amount).isWithin(1e-9).of(250.0)
             assertThat(
                 version.components
                     .single()

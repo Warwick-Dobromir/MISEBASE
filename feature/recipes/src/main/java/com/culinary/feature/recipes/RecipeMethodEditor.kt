@@ -16,35 +16,40 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.culinary.core.designsystem.component.ArchiveEditorImageBox
+import com.culinary.core.designsystem.component.ArchiveEditorInlineField
+import com.culinary.core.designsystem.component.ArchiveEditorSectionHeader
 import com.culinary.core.designsystem.component.CulinaryRule
-import com.culinary.core.designsystem.component.CulinaryTextField
 import com.culinary.core.designsystem.component.CulinaryTextButton
-import com.culinary.core.designsystem.component.KitchenTimeField
-import com.culinary.core.designsystem.component.SectionHeader
+import com.culinary.core.designsystem.component.KitchenTimeSegmentsField
 import com.culinary.core.designsystem.icon.CulinaryIcons
 import com.culinary.core.designsystem.theme.CulinarySpacing
 import com.culinary.core.designsystem.theme.CulinaryTextStyles
+import com.culinary.core.domain.model.PendingRecipeImage
 
 /**
- * 菜谱编辑器的制作步骤区（任务书第五阶段）。
+ * 菜谱编辑器的制作步骤区：编号、标题、说明、三段式制作时间。
  *
- * 与酱汁编辑器同构：编号、标题、说明、步骤时间；时间统一保存为总秒数。
- * 只增加时间字段，不改变菜谱原有业务字段与保存流程。
+ * 与酱汁编辑器同构；无时间的步骤保留步骤本身，只不显示计时入口。
  */
 @Composable
 internal fun RecipeMethodEditor(
     state: RecipeEditorUiState,
+    stepImageBytes: Map<String, ByteArray?>,
     onAddStep: () -> Unit,
     onStepTitleChange: (String, String) -> Unit,
     onStepBodyChange: (String, String) -> Unit,
     onStepTimeChange: (String, Int) -> Unit,
+    onStepImage: (String, PendingRecipeImage) -> Unit,
+    onClearStepImage: (String) -> Unit,
     onRemoveStep: (String) -> Unit,
 ) {
     Column(modifier = Modifier.fillMaxWidth()) {
-        SectionHeader(
+        ArchiveEditorSectionHeader(
+            index = "02",
+            english = "METHOD",
             title = "制作工艺",
-            eyebrow = "02 / METHOD",
-            subtitle = "${state.steps.size} 步 · 可设置每步时间",
+            subtitle = "${state.steps.size} 步 · 每步可独立设置制作时间",
         )
         state.steps.forEachIndexed { index, step ->
             CulinaryRule()
@@ -58,11 +63,11 @@ internal fun RecipeMethodEditor(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 Spacer(modifier = Modifier.width(CulinarySpacing.xs))
-                CulinaryTextField(
+                ArchiveEditorInlineField(
                     value = step.title,
                     onValueChange = { onStepTitleChange(step.key, it) },
-                    label = { Text(text = "步骤标题") },
-                    singleLine = true,
+                    placeholder = "步骤标题",
+                    textStyle = MaterialTheme.typography.bodyLarge,
                     modifier = Modifier.weight(1f),
                 )
                 Spacer(modifier = Modifier.width(CulinarySpacing.xs))
@@ -78,26 +83,52 @@ internal fun RecipeMethodEditor(
                 )
             }
             Spacer(modifier = Modifier.height(CulinarySpacing.xs))
-            CulinaryTextField(
+            ArchiveEditorInlineField(
                 value = step.body,
                 onValueChange = { onStepBodyChange(step.key, it) },
-                label = { Text(text = "步骤说明") },
+                placeholder = "步骤说明",
                 singleLine = false,
+                minLines = 3,
                 modifier = Modifier.fillMaxWidth(),
             )
-            KitchenTimeField(
+            KitchenTimeSegmentsField(
                 seconds = step.timeSeconds,
                 onSecondsChange = { onStepTimeChange(step.key, it) },
+                modifier = Modifier.padding(top = CulinarySpacing.sm),
+            )
+            StepImageEditor(
+                step = step,
+                bytes = stepImageBytes[step.key],
+                onPicked = { onStepImage(step.key, it) },
+                onClear = { onClearStepImage(step.key) },
             )
             Spacer(modifier = Modifier.height(CulinarySpacing.sm))
         }
         if (state.steps.isEmpty()) {
             Text(
-                text = "还没有制作步骤；可添加任意数量。",
+                text = "暂未添加制作步骤",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
-        CulinaryTextButton(text = "添加步骤", onClick = onAddStep)
+        CulinaryTextButton(text = "+ 添加步骤", onClick = onAddStep)
     }
+}
+
+@Composable
+private fun StepImageEditor(
+    step: RecipeStepEditor,
+    bytes: ByteArray?,
+    onPicked: (PendingRecipeImage) -> Unit,
+    onClear: () -> Unit,
+) {
+    val pick = rememberRecipeImagePicker(onPicked)
+    Spacer(modifier = Modifier.height(CulinarySpacing.xs))
+    ArchiveEditorImageBox(
+        imageBytes = bytes,
+        onPick = pick,
+        onClear = if (step.image != null || step.pendingImage != null) onClear else null,
+        emptyLabel = "上传步骤图片",
+        aspectRatio = 16f / 10f,
+    )
 }

@@ -206,6 +206,13 @@ class SauceEditorViewModel
                             ?.let(::formatAmount)
                             .orEmpty(),
                     yieldUnit = version?.yield?.unit ?: it.yieldUnit,
+                    minRangeAmount =
+                        version
+                            ?.minRange
+                            ?.amount
+                            ?.let(::formatAmount)
+                            .orEmpty(),
+                    minRangeUnit = version?.minRange?.unit ?: version?.yield?.unit ?: it.yieldUnit,
                     lines = lines,
                     steps = steps,
                     application = detail.sauce.usageNotes.orEmpty(),
@@ -288,6 +295,10 @@ class SauceEditorViewModel
         fun onYieldAmountChange(value: String) = mutate { it.copy(yieldAmount = value) }
 
         fun onYieldUnitChange(unit: UnitModel) = mutate { it.copy(yieldUnit = unit) }
+
+        fun onMinRangeAmountChange(value: String) = mutate { it.copy(minRangeAmount = value) }
+
+        fun onMinRangeUnitChange(unit: UnitModel) = mutate { it.copy(minRangeUnit = unit) }
 
         fun onApplicationChange(value: String) = mutate { it.copy(application = value) }
 
@@ -531,12 +542,28 @@ class SauceEditorViewModel
             val englishName = state.englishName.trim()
             val amount = state.yieldAmount.toDoubleOrNull()
             val unit = state.yieldUnit ?: state.units.firstOrNull()
+            val minAmount = state.minRangeAmount.trim().takeIf { it.isNotEmpty() }?.toDoubleOrNull()
+            val minUnit = state.minRangeUnit ?: unit
             val message =
                 when {
                     name.isEmpty() -> "中文名称不能为空。"
                     englishName.isEmpty() -> "英文名称不能为空。"
                     amount == null || !amount.isFinite() || amount <= 0.0 -> "标准产量必须是大于 0 的数字。"
                     unit == null -> "缺少可用单位，无法保存。"
+                    state.minRangeAmount.isNotBlank() &&
+                        (minAmount == null || !minAmount.isFinite() || minAmount <= 0.0) ->
+                        "最小制作范围必须是大于 0 的数字。"
+                    minAmount != null && minUnit == null -> "请选择最小制作范围单位。"
+                    minAmount != null &&
+                        minUnit != null &&
+                        unit != null &&
+                        !minUnit.isSameDimensionAs(unit) ->
+                        "最小制作范围必须与默认产量使用同一计量维度。"
+                    minAmount != null &&
+                        minUnit != null &&
+                        unit != null &&
+                        minAmount * minUnit.baseFactor > amount * unit.baseFactor ->
+                        "最小制作范围不能大于默认产量。"
                     else -> null
                 }
             if (message != null) {
@@ -604,6 +631,8 @@ class SauceEditorViewModel
                                     instructions = SauceStepCodec.toInstructions(state.steps),
                                     stepsJson = SauceStepCodec.encode(state.steps),
                                     versionId = state.editingDraftId?.let { SauceVersionId(it) },
+                                    minRangeAmount = minAmount,
+                                    minRangeUnit = minAmount?.let { minUnit },
                                 ),
                             )
                     ) {

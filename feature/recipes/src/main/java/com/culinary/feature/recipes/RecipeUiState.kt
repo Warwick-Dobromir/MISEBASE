@@ -1,15 +1,19 @@
 package com.culinary.feature.recipes
 
 import com.culinary.core.common.CulinaryError
+import com.culinary.core.domain.model.ArchiveCategory
 import com.culinary.core.domain.model.ExpandedRecipe
 import com.culinary.core.domain.model.Ingredient
 import com.culinary.core.domain.model.IngredientId
+import com.culinary.core.domain.model.KitchenRecordKind
 import com.culinary.core.domain.model.KitchenStep
 import com.culinary.core.domain.model.KitchenRelatedRecord
 import com.culinary.core.domain.model.RecipeCategory
 import com.culinary.core.domain.model.RecipeComponentKind
 import com.culinary.core.domain.model.RecipeDetail
 import com.culinary.core.domain.model.RecipeId
+import com.culinary.core.domain.model.RecipeImage
+import com.culinary.core.domain.model.PendingRecipeImage
 import com.culinary.core.domain.model.RecipeVersionId
 import com.culinary.core.domain.model.SauceId
 import com.culinary.core.domain.model.SauceVersionId
@@ -70,6 +74,14 @@ data class RecipeLineEditor(
     val sauceVersionNo: Int? = null,
 )
 
+/** 菜谱关联档案编辑行；只存目标档案 ID，不复制名称作为伪关联。 */
+data class RecipeRelationEditor(
+    val targetKind: KitchenRecordKind,
+    val targetId: String,
+    val name: String,
+    val relationLabel: String = "关联档案",
+)
+
 /** 制作步骤的编辑状态（与酱汁同构：编号 / 标题 / 说明 / 时间）。 */
 data class RecipeStepEditor(
     val key: String,
@@ -77,6 +89,8 @@ data class RecipeStepEditor(
     val body: String = "",
     /** 步骤时间（秒）；0 表示没有有效计时。 */
     val timeSeconds: Int = 0,
+    val image: RecipeImage? = null,
+    val pendingImage: PendingRecipeImage? = null,
 )
 
 /** 菜谱编辑器状态。 */
@@ -92,9 +106,12 @@ data class RecipeEditorUiState(
     val prepMinutes: String = "",
     val cookMinutes: String = "",
     val allergenNotes: String = "",
+    val notes: String = "",
     val seedNote: String = "",
     val yieldAmount: String = "",
     val yieldUnit: UnitModel? = null,
+    val minRangeAmount: String = "",
+    val minRangeUnit: UnitModel? = null,
     val servings: String = "1",
     val units: List<UnitModel> = emptyList(),
     val ingredients: List<Ingredient> = emptyList(),
@@ -102,6 +119,15 @@ data class RecipeEditorUiState(
     val sauceOptions: List<SauceOption> = emptyList(),
     val lines: List<RecipeLineEditor> = emptyList(),
     val steps: List<RecipeStepEditor> = emptyList(),
+    val relations: List<RecipeRelationEditor> = emptyList(),
+    val categories: List<ArchiveCategory> = emptyList(),
+    val archiveCategoryId: String? = null,
+    val heroImage: RecipeImage? = null,
+    val heroImagePending: PendingRecipeImage? = null,
+    val noteImages: List<RecipeImage> = emptyList(),
+    val noteImagesPending: List<PendingRecipeImage> = emptyList(),
+    val imageBytes: Map<String, ByteArray> = emptyMap(),
+    val removedImageIds: Set<String> = emptySet(),
     val isLoading: Boolean = true,
     val isSaving: Boolean = false,
     val error: String? = null,

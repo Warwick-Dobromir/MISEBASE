@@ -114,9 +114,11 @@ class CookingViewModel
                 is Outcome.Success -> {
                     val detail = result.value
                     val version =
-                        detail.versions.firstOrNull {
-                            it.status == com.culinary.core.domain.model.VersionStatus.DRAFT
-                        } ?: detail.currentVersion ?: detail.versions.firstOrNull()
+                        detail.currentVersion
+                            ?: detail.versions.firstOrNull {
+                                it.status == com.culinary.core.domain.model.VersionStatus.DRAFT
+                            }
+                            ?: detail.versions.firstOrNull()
                     val steps = decodeSteps(version?.stepsJson, version?.instructions)
                     val images =
                         version
@@ -140,9 +142,11 @@ class CookingViewModel
                 is Outcome.Success -> {
                     val detail = result.value
                     val version =
-                        detail.versions.firstOrNull {
-                            it.status == com.culinary.core.domain.model.VersionStatus.DRAFT
-                        } ?: detail.currentVersion ?: detail.versions.firstOrNull()
+                        detail.currentVersion
+                            ?: detail.versions.firstOrNull {
+                                it.status == com.culinary.core.domain.model.VersionStatus.DRAFT
+                            }
+                            ?: detail.versions.firstOrNull()
                     val steps = decodeSteps(version?.stepsJson, version?.instructions)
                     val images =
                         version

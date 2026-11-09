@@ -35,14 +35,15 @@ import com.culinary.core.designsystem.component.ArchiveDetailBar
 import com.culinary.core.designsystem.component.ArchiveDetailFooter
 import com.culinary.core.designsystem.component.ArchiveDetailHeading
 import com.culinary.core.designsystem.component.ArchiveIngredientRow
-import com.culinary.core.designsystem.component.ArchiveMetaGrid
-import com.culinary.core.designsystem.component.ArchiveMetaItem
 import com.culinary.core.designsystem.component.ArchiveModuleHeader
 import com.culinary.core.designsystem.component.ArchiveNoteImages
 import com.culinary.core.designsystem.component.ArchiveProcedureStep
 import com.culinary.core.designsystem.component.ArchiveProse
 import com.culinary.core.designsystem.component.ArchiveRelatedRow
+import com.culinary.core.designsystem.component.ArchiveVersionHistory
+import com.culinary.core.designsystem.component.ArchiveVersionItem
 import com.culinary.core.designsystem.component.ArchiveWideImage
+import com.culinary.core.designsystem.component.ArchiveYieldRange
 import com.culinary.core.designsystem.component.CulinaryButton
 import com.culinary.core.designsystem.component.CulinaryButtonVariant
 import com.culinary.core.designsystem.component.CulinaryLinkText
@@ -163,7 +164,7 @@ internal fun RecipeDetailContent(
 ) {
     val recipe = detail.recipe
     val latestDraft = detail.versions.firstOrNull { it.status == VersionStatus.DRAFT }
-    val shown = detail.displayVersion ?: latestDraft ?: detail.currentVersion ?: detail.versions.firstOrNull()
+    val shown = detail.currentVersion ?: latestDraft ?: detail.displayVersion ?: detail.versions.firstOrNull()
     val scrollState = rememberScrollState()
     val density = LocalDensity.current
     var stepTopPx by remember { mutableIntStateOf(-1) }
@@ -196,13 +197,11 @@ internal fun RecipeDetailContent(
                 chineseTitle = recipe.name,
                 description = recipe.description,
             )
-            ArchiveMetaGrid(
-                items =
-                    listOf(
-                        ArchiveMetaItem("CATEGORY", categoryLabel(recipe, state.categoryPath)),
-                        ArchiveMetaItem("YIELD", yieldLabel(shown)),
-                        ArchiveMetaItem("MIN. CAPACITY", recipeMinimumCapacityLabel(recipe.difficulty)),
-                    ),
+            ArchiveYieldRange(
+                yieldAmount = measureAmount(shown?.yield?.amount),
+                yieldUnit = shown?.yield?.unit?.symbol.orEmpty(),
+                minRangeAmount = measureAmount(shown?.minRange?.amount),
+                minRangeUnit = shown?.minRange?.unit?.symbol.orEmpty(),
             )
             Spacer(modifier = Modifier.height(CulinarySpacing.lg))
             state.imageBytes?.let { bytes ->
@@ -213,20 +212,21 @@ internal fun RecipeDetailContent(
                 number = "01",
                 english = "INGREDIENTS",
                 chinese = "原料配方",
-                subtitle = yieldSubtitle(shown),
+                subtitle = "基础配方",
             )
-            detail.components.forEachIndexed { index, component ->
-                ComponentLine(component)
-                if (index < detail.components.lastIndex) {
-                    CulinaryRule()
-                }
-            }
             if (detail.components.isEmpty()) {
                 Text(
-                    text = "本档案还没有配方组成。",
+                    text = "暂未添加食材",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
+            } else {
+                detail.components.forEachIndexed { index, component ->
+                    ComponentLine(component)
+                    if (index < detail.components.lastIndex) {
+                        CulinaryRule()
+                    }
+                }
             }
             ExpansionBlock(
                 state = state,
@@ -235,8 +235,14 @@ internal fun RecipeDetailContent(
             )
             Spacer(modifier = Modifier.height(CulinarySpacing.xl))
 
-            if (state.steps.isNotEmpty()) {
-                ArchiveModuleHeader(number = "02", english = "METHOD", chinese = "制作工艺")
+            ArchiveModuleHeader(number = "02", english = "METHOD", chinese = "制作工艺")
+            if (state.steps.isEmpty()) {
+                Text(
+                    text = "暂未添加制作步骤",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            } else {
                 state.steps.forEachIndexed { index, step ->
                     val stepNo = index + 1
                     Column(
@@ -279,8 +285,14 @@ internal fun RecipeDetailContent(
                         ?.takeIf { it.isNotBlank() && it != recipe.description }
                         ?.let { "原料摘要" to it },
                 )
-            if (application.isNotEmpty()) {
-                ArchiveModuleHeader(number = "03", english = "APPLICATION", chinese = "适用范围")
+            ArchiveModuleHeader(number = "03", english = "APPLICATION", chinese = "适用范围")
+            if (application.isEmpty()) {
+                Text(
+                    text = "暂未填写适用范围",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            } else {
                 application.forEach { (label, value) ->
                     Text(
                         text = label,
@@ -290,11 +302,17 @@ internal fun RecipeDetailContent(
                     ArchiveProse(value)
                     Spacer(modifier = Modifier.height(CulinarySpacing.sm))
                 }
-                Spacer(modifier = Modifier.height(CulinarySpacing.lg))
             }
+            Spacer(modifier = Modifier.height(CulinarySpacing.lg))
 
-            if (state.relations.isNotEmpty()) {
-                ArchiveModuleHeader(number = "04", english = "RELATED", chinese = "关联档案")
+            ArchiveModuleHeader(number = "04", english = "RELATED RECORDS", chinese = "关联档案")
+            if (state.relations.isEmpty()) {
+                Text(
+                    text = "暂未添加关联档案",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            } else {
                 state.relations.forEach { relation ->
                     ArchiveRelatedRow(
                         title = relation.targetLabel,
@@ -303,27 +321,34 @@ internal fun RecipeDetailContent(
                         onClick = { onOpenRelation(relation.targetKind, relation.targetRecordId) },
                     )
                 }
-                Spacer(modifier = Modifier.height(CulinarySpacing.xl))
             }
+            Spacer(modifier = Modifier.height(CulinarySpacing.xl))
 
-            if (recipe.seedNote?.isNotBlank() == true || state.noteImages.isNotEmpty()) {
-                ArchiveModuleHeader(number = "05", english = "NOTES", chinese = "研发备注")
-                recipe.seedNote?.takeIf { it.isNotBlank() }?.let { note ->
+            ArchiveModuleHeader(number = "05", english = "NOTES", chinese = "研发备注")
+            val noteText = recipe.notes?.takeIf { it.isNotBlank() } ?: recipe.seedNote?.takeIf { it.isNotBlank() }
+            if (noteText == null && state.noteImages.isEmpty()) {
+                Text(
+                    text = "暂未添加研发备注",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            } else {
+                noteText?.let { note ->
                     ArchiveProse(note)
                     Spacer(modifier = Modifier.height(CulinarySpacing.sm))
                 }
                 if (state.noteImages.isNotEmpty()) {
                     ArchiveNoteImages(images = state.noteImages)
                 }
-                Spacer(modifier = Modifier.height(CulinarySpacing.xl))
             }
+            Spacer(modifier = Modifier.height(CulinarySpacing.xl))
 
             if (latestDraft != null) {
                 CulinaryRule()
                 Spacer(modifier = Modifier.height(CulinarySpacing.sm))
                 Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     Text(
-                        text = stringResource(R.string.recipes_status_draft),
+                        text = "待发布修改 v" + latestDraft.versionNo,
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.weight(1f),
@@ -341,10 +366,33 @@ internal fun RecipeDetailContent(
                 Spacer(modifier = Modifier.height(CulinarySpacing.lg))
             }
 
+            val draftLabel = stringResource(R.string.recipes_status_draft)
+            val publishedLabel = stringResource(R.string.recipes_status_published)
+            val supersededLabel = stringResource(R.string.recipes_status_superseded)
+            ArchiveVersionHistory(
+                versions =
+                    detail.versions
+                        .sortedByDescending { it.versionNo }
+                        .map { version ->
+                            ArchiveVersionItem(
+                                versionNo = version.versionNo,
+                                statusLabel =
+                                    when (version.status) {
+                                        VersionStatus.DRAFT -> draftLabel
+                                        VersionStatus.PUBLISHED -> publishedLabel
+                                        VersionStatus.SUPERSEDED -> supersededLabel
+                                    },
+                                dateLabel = null,
+                                isCurrent = version.isCurrent,
+                            )
+                        },
+            )
+
             ArchiveDetailFooter(
                 updatedLabel =
                     "最后更新 " +
                         (formatArchiveTimestamp(recipe.updatedAtEpochMillis) ?: "—"),
+                versionLabel = shown?.let { "正式版本 v" + it.versionNo },
             )
         }
     }
@@ -379,7 +427,7 @@ private fun ExpansionBlock(
     var open by remember { androidx.compose.runtime.mutableStateOf(state.expanded != null) }
     Spacer(modifier = Modifier.height(CulinarySpacing.sm))
     CulinaryLinkText(
-        text = if (open) "收起展开" else "按份数展开配方",
+        text = if (open) "收起配方" else "按份数展开配方",
         onClick = { open = !open },
     )
     if (!open) return
@@ -489,15 +537,8 @@ private fun categoryLabel(
     categoryPath: List<String>,
 ): String = categoryPath.lastOrNull() ?: recipeCategoryLabel(recipe.category)
 
-private fun yieldLabel(version: RecipeVersion?): String =
-    version?.let {
-        formatRecipeAmount(it.yield.amount) + " " + it.yield.unit.symbol
-    } ?: "—"
-
-private fun yieldSubtitle(version: RecipeVersion?): String =
-    version?.let {
-        "基础配方 · 对应产量 " + formatRecipeAmount(it.yield.amount) + " " + it.yield.unit.symbol
-    } ?: "基础配方"
+private fun measureAmount(value: Double?): String =
+    value?.let(::formatRecipeAmount) ?: "—"
 
 private fun formatRecipeAmount(value: Double): String =
     if (value % 1.0 == 0.0) value.toLong().toString() else value.toString()

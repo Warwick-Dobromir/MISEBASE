@@ -49,4 +49,7 @@ data class RecipeVersionInput(
     val stepsJson: String? = null,
     /** 非空表示更新同一份未发布草稿；为空表示创建新草稿。 */
     val versionId: RecipeVersionId? = null,
+    /** 最小制作范围；为空表示未设置。数值与单位必须成对出现。 */
+    val minRangeAmount: Double? = null,
+    val minRangeUnit: Unit? = null,
 )

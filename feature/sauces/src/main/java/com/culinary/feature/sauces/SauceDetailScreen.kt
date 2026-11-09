@@ -32,14 +32,15 @@ import com.culinary.core.designsystem.component.ArchiveDetailBar
 import com.culinary.core.designsystem.component.ArchiveDetailFooter
 import com.culinary.core.designsystem.component.ArchiveDetailHeading
 import com.culinary.core.designsystem.component.ArchiveIngredientRow
-import com.culinary.core.designsystem.component.ArchiveMetaGrid
-import com.culinary.core.designsystem.component.ArchiveMetaItem
 import com.culinary.core.designsystem.component.ArchiveModuleHeader
 import com.culinary.core.designsystem.component.ArchiveNoteImages
 import com.culinary.core.designsystem.component.ArchiveProcedureStep
 import com.culinary.core.designsystem.component.ArchiveProse
 import com.culinary.core.designsystem.component.ArchiveRelatedRow
+import com.culinary.core.designsystem.component.ArchiveVersionHistory
+import com.culinary.core.designsystem.component.ArchiveVersionItem
 import com.culinary.core.designsystem.component.ArchiveWideImage
+import com.culinary.core.designsystem.component.ArchiveYieldRange
 import com.culinary.core.designsystem.component.CulinaryLinkText
 import com.culinary.core.designsystem.component.CulinaryRule
 import com.culinary.core.designsystem.component.ErrorBanner
@@ -51,7 +52,6 @@ import com.culinary.core.domain.model.KitchenRelatedRecord
 import com.culinary.core.domain.model.KitchenStep
 import com.culinary.core.domain.model.Sauce
 import com.culinary.core.domain.model.SauceDetail
-import com.culinary.core.domain.model.SauceDifficulty
 import com.culinary.core.domain.model.SauceLineView
 import com.culinary.core.domain.model.SauceVersion
 import com.culinary.core.domain.model.SauceVersionId
@@ -163,7 +163,7 @@ internal fun SauceDetailContent(
 ) {
     val sauce = detail.sauce
     val latestDraft = detail.versions.firstOrNull { it.status == com.culinary.core.domain.model.VersionStatus.DRAFT }
-    val shown = latestDraft ?: detail.currentVersion ?: detail.versions.firstOrNull()
+    val shown = detail.currentVersion ?: latestDraft ?: detail.versions.firstOrNull()
     val scrollState = rememberScrollState()
     val density = LocalDensity.current
     var stepTopPx by remember { mutableIntStateOf(-1) }
@@ -196,37 +196,47 @@ internal fun SauceDetailContent(
                 chineseTitle = sauce.name,
                 description = sauce.description ?: sauce.usageNotes,
             )
-            ArchiveMetaGrid(
-                items =
-                    listOf(
-                        ArchiveMetaItem("CATEGORY", categoryLabel(sauce, categoryPath)),
-                        ArchiveMetaItem("YIELD", yieldLabel(shown)),
-                        ArchiveMetaItem("MIN. CAPACITY", difficultyLabel(sauce.difficulty)),
-                    ),
+            ArchiveYieldRange(
+                yieldAmount = measureAmount(shown?.yield?.amount),
+                yieldUnit = shown?.yield?.unit?.symbol.orEmpty(),
+                minRangeAmount = measureAmount(shown?.minRange?.amount),
+                minRangeUnit = shown?.minRange?.unit?.symbol.orEmpty(),
             )
             Spacer(modifier = Modifier.height(CulinarySpacing.lg))
             imageBytes?.let { bytes ->
                 ArchiveWideImage(bytes = bytes, caption = sauce.heroCaption)
             }
 
-            if (detail.lines.isNotEmpty()) {
-                ArchiveModuleHeader(
-                    number = "01",
-                    english = "INGREDIENTS",
-                    chinese = "原料配方",
-                    subtitle = yieldSubtitle(shown),
+            ArchiveModuleHeader(
+                number = "01",
+                english = "INGREDIENTS",
+                chinese = "原料配方",
+                subtitle = "基础配方",
+            )
+            if (detail.lines.isEmpty()) {
+                Text(
+                    text = "暂未添加食材",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
+            } else {
                 detail.lines.forEachIndexed { index, line ->
                     IngredientLine(line)
                     if (index < detail.lines.lastIndex) {
                         CulinaryRule()
                     }
                 }
-                Spacer(modifier = Modifier.height(CulinarySpacing.xl))
             }
+            Spacer(modifier = Modifier.height(CulinarySpacing.xl))
 
-            if (steps.isNotEmpty()) {
-                ArchiveModuleHeader(number = "02", english = "METHOD", chinese = "制作工艺")
+            ArchiveModuleHeader(number = "02", english = "METHOD", chinese = "制作工艺")
+            if (steps.isEmpty()) {
+                Text(
+                    text = "暂未添加制作步骤",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            } else {
                 steps.forEachIndexed { index, step ->
                     val stepNo = index + 1
                     Column(
@@ -256,18 +266,31 @@ internal fun SauceDetailContent(
                         CulinaryRule()
                     }
                 }
-                Spacer(modifier = Modifier.height(CulinarySpacing.xl))
             }
+            Spacer(modifier = Modifier.height(CulinarySpacing.xl))
 
-            sauce.usageNotes?.takeIf { it.isNotBlank() }?.let { text ->
-                ArchiveModuleHeader(number = "03", english = "APPLICATION", chinese = "适用范围")
-                ArchiveProse(text)
-                Spacer(modifier = Modifier.height(CulinarySpacing.xl))
+            ArchiveModuleHeader(number = "03", english = "APPLICATION", chinese = "适用范围")
+            val application = sauce.usageNotes?.takeIf { it.isNotBlank() }
+            if (application == null) {
+                Text(
+                    text = "暂未填写适用范围",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            } else {
+                ArchiveProse(application)
             }
+            Spacer(modifier = Modifier.height(CulinarySpacing.xl))
 
             val relationItems = relations.filter { it.targetKind == KitchenRecordKind.SAUCE }
-            if (relationItems.isNotEmpty()) {
-                ArchiveModuleHeader(number = "04", english = "RELATED", chinese = "关联档案")
+            ArchiveModuleHeader(number = "04", english = "RELATED SAUCES", chinese = "衍生关系")
+            if (relationItems.isEmpty()) {
+                Text(
+                    text = "暂未添加衍生关系",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            } else {
                 relationItems.forEach { relation ->
                     ArchiveRelatedRow(
                         title = relation.targetLabel,
@@ -276,8 +299,8 @@ internal fun SauceDetailContent(
                         onClick = { onOpenRelation(relation.targetKind, relation.targetRecordId) },
                     )
                 }
-                Spacer(modifier = Modifier.height(CulinarySpacing.xl))
             }
+            Spacer(modifier = Modifier.height(CulinarySpacing.xl))
 
             val noteFields =
                 listOfNotNull(
@@ -290,8 +313,14 @@ internal fun SauceDetailContent(
                     sauce.adjustableNotes?.let { "调整记录" to it },
                     sauce.seedNote?.let { "测试记录" to it },
                 )
-            if (noteFields.isNotEmpty() || noteImages.isNotEmpty()) {
-                ArchiveModuleHeader(number = "05", english = "NOTES", chinese = "研发备注")
+            ArchiveModuleHeader(number = "05", english = "NOTES", chinese = "研发备注")
+            if (noteFields.isEmpty() && noteImages.isEmpty()) {
+                Text(
+                    text = "暂未添加研发备注",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            } else {
                 noteFields.forEach { (label, value) ->
                     Text(
                         text = label,
@@ -305,8 +334,8 @@ internal fun SauceDetailContent(
                     ArchiveNoteImages(images = noteImages)
                     Spacer(modifier = Modifier.height(CulinarySpacing.sm))
                 }
-                Spacer(modifier = Modifier.height(CulinarySpacing.xl))
             }
+            Spacer(modifier = Modifier.height(CulinarySpacing.xl))
 
             if (latestDraft != null) {
                 CulinaryRule()
@@ -337,10 +366,33 @@ internal fun SauceDetailContent(
                 Spacer(modifier = Modifier.height(CulinarySpacing.lg))
             }
 
+            val draftLabel = stringResource(R.string.sauces_status_draft)
+            val publishedLabel = stringResource(R.string.sauces_status_published)
+            val supersededLabel = stringResource(R.string.sauces_status_superseded)
+            ArchiveVersionHistory(
+                versions =
+                    detail.versions
+                        .sortedByDescending { it.versionNo }
+                        .map { version ->
+                            ArchiveVersionItem(
+                                versionNo = version.versionNo,
+                                statusLabel =
+                                    when (version.status) {
+                                        com.culinary.core.domain.model.VersionStatus.DRAFT -> draftLabel
+                                        com.culinary.core.domain.model.VersionStatus.PUBLISHED -> publishedLabel
+                                        com.culinary.core.domain.model.VersionStatus.SUPERSEDED -> supersededLabel
+                                    },
+                                dateLabel = null,
+                                isCurrent = version.isCurrent,
+                            )
+                        },
+            )
+
             ArchiveDetailFooter(
                 updatedLabel =
                     "最后更新 " +
                         (formatArchiveTimestamp(sauce.updatedAtEpochMillis) ?: "—"),
+                versionLabel = shown?.let { "正式版本 v" + it.versionNo },
             )
         }
     }
@@ -377,23 +429,8 @@ private fun categoryLabel(
         else -> "未分类"
     }
 
-private fun yieldLabel(version: SauceVersion?): String =
-    version?.let {
-        formatAmount(it.yield.amount) + " " + it.yield.unit.symbol
-    } ?: "—"
-
-private fun yieldSubtitle(version: SauceVersion?): String =
-    version?.let {
-        "基础配方 · 对应产量 " + formatAmount(it.yield.amount) + " " + it.yield.unit.symbol
-    } ?: "基础配方"
-
-private fun difficultyLabel(difficulty: SauceDifficulty?): String =
-    when (difficulty) {
-        SauceDifficulty.EASY -> "简单"
-        SauceDifficulty.MEDIUM -> "中等"
-        SauceDifficulty.HARD -> "困难"
-        null -> "—"
-    }
+private fun measureAmount(value: Double?): String =
+    value?.let(::formatAmount) ?: "—"
 
 private fun formatAmount(value: Double): String {
     if (value % 1.0 == 0.0) return value.toLong().toString()

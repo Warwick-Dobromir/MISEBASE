@@ -30,6 +30,7 @@ data class SaveRecipeInput(
     /** 对应既有 `recipe.difficulty` 列；仅字段展示名改为"最小制作容量"。 */
     val minimumCapacity: String? = null,
     val allergenNotes: String? = null,
+    val notes: String? = null,
 )
 
 /** 保存菜谱档案（不含版本内容）；编辑档案不改变已发布版本。 */
@@ -72,6 +73,7 @@ class SaveRecipeUseCase(
                 cookMinutes = input.cookMinutes ?: existing?.cookMinutes,
                 difficulty = merge(input.minimumCapacity, existing?.difficulty),
                 allergenNotes = merge(input.allergenNotes, existing?.allergenNotes),
+                notes = merge(input.notes, existing?.notes),
             )
         return transactionRunner.write { repository.save(recipe) }.flatMap { it }
     }

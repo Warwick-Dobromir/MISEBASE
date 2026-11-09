@@ -40,6 +40,21 @@ object KitchenTime {
         return String.format(Locale.ROOT, "%02d/%02d/%02d", safe / 3600, safe % 3600 / 60, safe % 60)
     }
 
+    /** 档案步骤时间展示：`HH / MM / SS`（三段之间保留空格）。 */
+    fun formatSpaced(seconds: Int): String {
+        val safe = seconds.coerceIn(0, MAX_SECONDS)
+        return String.format(Locale.ROOT, "%02d / %02d / %02d", safe / 3600, safe % 3600 / 60, safe % 60)
+    }
+
+    /** 三段数值 → 总秒数；分、秒钳制在 0..59。 */
+    fun secondsOfParts(
+        hours: Int,
+        minutes: Int,
+        seconds: Int,
+    ): Int =
+        (hours.coerceIn(0, 99) * 3600 + minutes.coerceIn(0, 59) * 60 + seconds.coerceIn(0, 59))
+            .coerceIn(0, MAX_SECONDS)
+
     /** 预设时间的可读描述：`30分钟`、`1小时30分钟`、`45秒`。 */
     fun describe(seconds: Int): String {
         val safe = seconds.coerceAtLeast(0)

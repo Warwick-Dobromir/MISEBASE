@@ -1,4 +1,4 @@
-﻿package com.culinary.core.data.backup
+package com.culinary.core.data.backup
 
 import android.database.sqlite.SQLiteDatabase
 import androidx.room.Room
@@ -65,7 +65,7 @@ class QuiescedDatabaseSnapshotterTest {
 
             assertThat(result).isInstanceOf(Outcome.Success::class.java)
             val snapshot = (result as Outcome.Success).value
-            assertThat(snapshot.schemaVersion).isEqualTo(7)
+            assertThat(snapshot.schemaVersion).isEqualTo(8)
             assertThat(snapshot.journalMode).isEqualTo("wal")
             assertThat(snapshot.file.exists()).isTrue()
             assertThat(countIn(snapshot.file)).isEqualTo(3)
