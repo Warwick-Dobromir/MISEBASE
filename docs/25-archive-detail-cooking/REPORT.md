@@ -279,6 +279,7 @@ v6 → v7：ALTER TABLE `recipe_version` ADD COLUMN `steps_json` TEXT
 - `evidence/01-sauce-library-new-button.png` / `evidence/09-category-level2-no-add.png`
 - `evidence/03-cooking-mode.png` / `04-no-time-dialog.png` / `05-cooking-finished.png` / `06-return-position.png`
 - `evidence/08-recipe-editor-step-time.png`
+- `evidence/11-new-sauce-route.png`（新建按钮 → 新建酱汁页面）
 
 ---
 
@@ -318,6 +319,7 @@ v6 → v7：ALTER TABLE `recipe_version` ADD COLUMN `steps_json` TEXT
 | 全新安装 1.0.6 | 通过 |
 | 厨房首页无新建按钮、六库入口 | 通过 |
 | 酱汁库一级页显示"新建酱汁" | 通过 |
+| 点击"新建酱汁"进入新建页面（原有流程） | 通过 |
 | 二级分类页不重复显示新建入口 | 通过 |
 | 酱汁详情：标题层级 / 三列信息 / 模块编号 / 步骤 / 步骤时间 / 启动计时 / 页脚 | 通过 |
 | 无原料 / 无步骤时模块合理隐藏 | 通过（荷兰酱无组成行，01 模块不显示空占位） |
