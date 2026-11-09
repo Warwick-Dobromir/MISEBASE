@@ -287,8 +287,8 @@ v6 → v7：ALTER TABLE `recipe_version` ADD COLUMN `steps_json` TEXT
 - 构建命令：`.\gradlew.bat :app:assembleRelease`
 - 结果：**BUILD SUCCESSFUL**（`:app:lintVitalRelease` 通过；R8 + 资源压缩启用）
 - 签名：沿用 `local.properties` 中的原有 release keystore（未更换签名、未改包名 `com.culinary`）
-- APK：`dist/MISEBASE-1.0.6-archive-detail-cooking-20261109-release.apk`（24,738,593 字节）
-- SHA-256：`0a14e60fb88e34d1e4190cda01b88a741e0463b3f7448124be1736326e569ee0`
+- APK：`dist/MISEBASE-1.0.6-archive-detail-cooking-20261109-release.apk`（24738586 字节）
+- SHA-256：`0f5fdd1606f62570a0e9d269b28cff279704c84d79ee9abb9e94e9c78e923348`
 
 ---
 
