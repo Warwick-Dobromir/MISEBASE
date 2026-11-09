@@ -67,6 +67,7 @@ fun CookingModeRoute(
         onAdjust = viewModel::adjust,
         onNext = viewModel::next,
         onPrevious = viewModel::previous,
+        onAdvanceCompleted = viewModel::advanceAfterCompletion,
         onConfirmBlocking = viewModel::confirmBlockingStep,
         modifier = modifier,
     )
@@ -80,6 +81,7 @@ internal fun CookingModeScreen(
     onAdjust: (Int) -> Unit,
     onNext: () -> Unit,
     onPrevious: () -> Unit,
+    onAdvanceCompleted: () -> Unit,
     onConfirmBlocking: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -119,6 +121,7 @@ internal fun CookingModeScreen(
                     onAdjust = onAdjust,
                     onNext = onNext,
                     onPrevious = onPrevious,
+                    onAdvanceCompleted = onAdvanceCompleted,
                 )
         }
     }
@@ -181,6 +184,7 @@ private fun ActiveBody(
     onAdjust: (Int) -> Unit,
     onNext: () -> Unit,
     onPrevious: () -> Unit,
+    onAdvanceCompleted: () -> Unit,
 ) {
     val current = state.current ?: return
     val next = state.plan.getOrNull(state.index + 1)
@@ -252,6 +256,7 @@ private fun ActiveBody(
                 state = state,
                 onToggleTimer = onToggleTimer,
                 onAdjust = onAdjust,
+                onAdvanceCompleted = onAdvanceCompleted,
             )
         } else {
             Text(
@@ -331,6 +336,7 @@ private fun TimerBlock(
     state: CookingUiState,
     onToggleTimer: () -> Unit,
     onAdjust: (Int) -> Unit,
+    onAdvanceCompleted: () -> Unit,
 ) {
     Spacer(modifier = Modifier.height(CulinarySpacing.lg))
     Text(
@@ -354,13 +360,42 @@ private fun TimerBlock(
         textAlign = TextAlign.Center,
         modifier = Modifier.fillMaxWidth(),
     )
+    if (state.currentCompleted) {
+        Spacer(modifier = Modifier.height(CulinarySpacing.sm))
+        Text(
+            text = stringResource(R.string.cooking_step_completed),
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.secondary,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.fillMaxWidth(),
+        )
+        Spacer(modifier = Modifier.height(CulinarySpacing.xs))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.Center,
+        ) {
+            CulinaryLinkText(
+                text = stringResource(R.string.cooking_proceed_next),
+                onClick = onAdvanceCompleted,
+            )
+        }
+        Spacer(modifier = Modifier.height(CulinarySpacing.xs))
+        return
+    }
+    Text(
+        text = stringResource(R.string.cooking_adjust_hint),
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        textAlign = TextAlign.Center,
+        modifier = Modifier.fillMaxWidth(),
+    )
     Spacer(modifier = Modifier.height(CulinarySpacing.sm))
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        RoundControl(text = "−", onClick = { onAdjust(-60) })
+        RoundControl(text = "−", onClick = { onAdjust(-1) })
         Spacer(modifier = Modifier.width(CulinarySpacing.lg))
         RoundControl(
             text = if (state.isRunning) "❚❚" else "▶",
@@ -368,7 +403,7 @@ private fun TimerBlock(
             emphasized = true,
         )
         Spacer(modifier = Modifier.width(CulinarySpacing.lg))
-        RoundControl(text = "+", onClick = { onAdjust(60) })
+        RoundControl(text = "+", onClick = { onAdjust(1) })
     }
     Spacer(modifier = Modifier.height(CulinarySpacing.xs))
     Text(

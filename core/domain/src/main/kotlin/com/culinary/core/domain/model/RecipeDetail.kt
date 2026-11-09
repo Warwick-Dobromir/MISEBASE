@@ -11,6 +11,12 @@ data class RecipeDetail(
     val versions: List<RecipeVersion>,
     val components: List<RecipeComponentView>,
     val baseServings: Int,
+    /**
+     * 详情页当前展示的版本：有草稿时优先草稿，否则当前发布版本。
+     *
+     * 与 [currentVersion] 分开，避免"编辑已发布菜谱"时详情仍只显示旧发布内容。
+     */
+    val displayVersion: RecipeVersion? = currentVersion,
 ) {
     val hasPublishedVersion: Boolean get() = versions.any { it.isPublished }
     val hasDraftVersion: Boolean get() = versions.any { it.status == VersionStatus.DRAFT }

@@ -36,7 +36,6 @@ import com.culinary.core.domain.usecase.recipe.ExpandRecipeUseCase
 import com.culinary.core.domain.usecase.recipe.GetRecipeDetailUseCase
 import com.culinary.core.domain.usecase.recipe.ListRecipeOptionsUseCase
 import com.culinary.core.domain.usecase.recipe.ListRecipesUseCase
-import com.culinary.core.domain.usecase.recipe.PublishRecipeDraftUseCase
 import com.culinary.core.domain.usecase.recipe.PublishStoredRecipeVersionUseCase
 import com.culinary.core.domain.usecase.recipe.RecipeOption
 import com.culinary.core.domain.usecase.recipe.SaveRecipeDraftUseCase
@@ -75,7 +74,6 @@ class RecipesViewModelTest {
     private val expand = ExpandRecipeUseCase(recipes, ingredients)
     private val saveRecipe = SaveRecipeUseCase(recipes, ids, tx)
     private val saveDraft = SaveRecipeDraftUseCase(recipes, ids, tx)
-    private val publishDraft = PublishRecipeDraftUseCase(recipes, ids, tx)
     private val publishStored = PublishStoredRecipeVersionUseCase(recipes, tx)
 
     @Before
@@ -123,6 +121,93 @@ class RecipesViewModelTest {
                     ?.quantity
                     ?.amount,
             ).isWithin(1e-9).of(100.0)
+        }
+
+    @Test
+    fun `detail prefers the editable draft over the published version`() =
+        runTest {
+            seedRecipeWithVersion(servings = 2)
+            val published = recipes.versions.getValue(RecipeVersionId(VERSION_ID))
+            val draft =
+                published.copy(
+                    id = RecipeVersionId("recipe-v2-draft"),
+                    versionNo = 2,
+                    status = VersionStatus.DRAFT,
+                    isCurrent = false,
+                    yield = Quantity(2000.0, gram()),
+                    servings = 4,
+                    components =
+                        listOf(
+                            RecipeComponent(
+                                lineNo = 1,
+                                target = ComponentTarget.Ingredient(IngredientId(INGREDIENT_ID)),
+                                quantity = Quantity(200.0, gram()),
+                            ),
+                        ),
+                )
+            recipes.versions[draft.id] = draft
+            val viewModel = detailViewModel()
+
+            advanceUntilIdle()
+
+            val detail = viewModel.uiState.value.detail
+            assertThat(detail?.displayVersion?.id).isEqualTo(draft.id)
+            assertThat(detail?.currentVersion?.id).isEqualTo(published.id)
+            assertThat(detail?.baseServings).isEqualTo(4)
+            assertThat(detail?.components?.single()?.quantity?.amount).isWithin(1e-9).of(200.0)
+        }
+
+    @Test
+    fun `editing a published recipe saves a draft and keeps the published pointer`() =
+        runTest {
+            seedRecipeWithVersion(servings = 2)
+            val publishedId = recipes.current.getValue(RECIPE_ID)
+            val viewModel = editorViewModel(RECIPE_ID)
+            advanceUntilIdle()
+
+            viewModel.onDescriptionChange("调整后的说明")
+            viewModel.onYieldAmountChange("1500")
+            viewModel.save(publish = false)
+            advanceUntilIdle()
+
+            assertThat(viewModel.uiState.value.error).isNull()
+            assertThat(viewModel.uiState.value.hasPublishedVersion).isTrue()
+            val draft =
+                recipes.versions.values
+                    .single { it.status == VersionStatus.DRAFT }
+            assertThat(viewModel.uiState.value.editingDraftId).isEqualTo(draft.id.value)
+            assertThat(recipes.current.getValue(RECIPE_ID)).isEqualTo(publishedId)
+            assertThat(recipes.recipes.single().description).isEqualTo("调整后的说明")
+
+            val countAfterFirstSave = recipes.versions.size
+            viewModel.onDescriptionChange("再次修改说明")
+            viewModel.save(publish = false)
+            advanceUntilIdle()
+
+            assertThat(recipes.versions).hasSize(countAfterFirstSave)
+            assertThat(recipes.versions.getValue(draft.id).status).isEqualTo(VersionStatus.DRAFT)
+            assertThat(recipes.current.getValue(RECIPE_ID)).isEqualTo(publishedId)
+        }
+
+    @Test
+    fun `editing a draft updates the same version instead of creating duplicates`() =
+        runTest {
+            seedRecipeWithVersion(servings = 2)
+            val viewModel = editorViewModel(RECIPE_ID)
+            advanceUntilIdle()
+
+            viewModel.onYieldAmountChange("1500")
+            viewModel.save(publish = false)
+            advanceUntilIdle()
+            val draftId = viewModel.uiState.value.editingDraftId
+
+            viewModel.onYieldAmountChange("1800")
+            viewModel.save(publish = false)
+            advanceUntilIdle()
+
+            assertThat(viewModel.uiState.value.editingDraftId).isEqualTo(draftId)
+            assertThat(recipes.versions.values.count { it.status == VersionStatus.DRAFT }).isEqualTo(1)
+            assertThat(recipes.versions.getValue(RecipeVersionId(draftId!!)).yield.amount).isEqualTo(1800.0)
         }
 
     @Test
@@ -179,6 +264,25 @@ class RecipesViewModelTest {
             assertThat(version.status).isEqualTo(VersionStatus.DRAFT)
             assertThat(version.servings).isEqualTo(4)
             assertThat(version.components.single().isOptional).isTrue()
+        }
+
+    @Test
+    fun `editor creates a new recipe as an editable draft by default`() =
+        runTest {
+            val viewModel = editorViewModel(null)
+            advanceUntilIdle()
+            viewModel.onNameChange("新菜")
+            viewModel.onYieldAmountChange("1")
+            viewModel.onMinimumCapacityChange("EASY")
+            viewModel.save(publish = false)
+            advanceUntilIdle()
+
+            assertThat(viewModel.uiState.value.error).isNull()
+            assertThat(viewModel.uiState.value.savedRecipeId).isNotNull()
+            assertThat(recipes.recipes.single().difficulty).isEqualTo("EASY")
+            assertThat(recipes.versions.values.single().status).isEqualTo(VersionStatus.DRAFT)
+            assertThat(recipes.current).isEmpty()
+            assertThat(recipeMinimumCapacityLabel("EASY")).isEqualTo("简单")
         }
 
     @Test
@@ -305,7 +409,7 @@ class RecipesViewModelTest {
             getRecipeDetail = getDetail,
             saveRecipe = saveRecipe,
             saveRecipeDraft = saveDraft,
-            publishRecipeDraft = publishDraft,
+            publishStoredRecipeVersion = publishStored,
             listUnits = ListUnitsUseCase(units),
             listIngredients = ListIngredientsUseCase(ingredients),
             listRecipeOptions = ListRecipeOptionsUseCase(recipes),

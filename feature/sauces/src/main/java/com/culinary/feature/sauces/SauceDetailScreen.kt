@@ -201,7 +201,7 @@ internal fun SauceDetailContent(
                     listOf(
                         ArchiveMetaItem("CATEGORY", categoryLabel(sauce, categoryPath)),
                         ArchiveMetaItem("YIELD", yieldLabel(shown)),
-                        ArchiveMetaItem("DIFFICULTY", difficultyLabel(sauce.difficulty)),
+                        ArchiveMetaItem("MIN. CAPACITY", difficultyLabel(sauce.difficulty)),
                     ),
             )
             Spacer(modifier = Modifier.height(CulinarySpacing.lg))

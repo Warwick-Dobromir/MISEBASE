@@ -47,4 +47,6 @@ data class RecipeVersionInput(
     val components: List<RecipeLineInput>,
     val instructions: String? = null,
     val stepsJson: String? = null,
+    /** 非空表示更新同一份未发布草稿；为空表示创建新草稿。 */
+    val versionId: RecipeVersionId? = null,
 )

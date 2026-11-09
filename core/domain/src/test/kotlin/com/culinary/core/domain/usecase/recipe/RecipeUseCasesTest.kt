@@ -107,6 +107,72 @@ class RecipeUseCasesTest {
         }
 
     @Test
+    fun `saving an existing draft updates the same version and number`() =
+        runBlocking<Unit> {
+            val (parentId, _) = seedRecipes()
+            val first =
+                saveDraft(
+                    RecipeVersionInput(
+                        recipeId = parentId,
+                        yieldAmount = 500.0,
+                        yieldUnit = gram(),
+                        servings = 2,
+                        components = emptyList(),
+                    ),
+                ) as Outcome.Success
+            val second =
+                saveDraft(
+                    RecipeVersionInput(
+                        recipeId = parentId,
+                        yieldAmount = 750.0,
+                        yieldUnit = gram(),
+                        servings = 3,
+                        components = emptyList(),
+                        versionId = first.value,
+                    ),
+                ) as Outcome.Success
+
+            assertThat(second.value).isEqualTo(first.value)
+            assertThat(recipes.versions).hasSize(1)
+            val saved = recipes.versions.getValue(second.value)
+            assertThat(saved.versionNo).isEqualTo(1)
+            assertThat(saved.yield.amount).isEqualTo(750.0)
+            assertThat(saved.servings).isEqualTo(3)
+        }
+
+    @Test
+    fun `saving a published version id is rejected instead of overwriting it`() =
+        runBlocking<Unit> {
+            val (parentId, _) = seedRecipes()
+            val published = RecipeVersionId(PARENT_VERSION)
+            recipes.versions[published] =
+                RecipeVersion(
+                    id = published,
+                    recipeId = parentId,
+                    versionNo = 1,
+                    status = VersionStatus.PUBLISHED,
+                    yield = Quantity(500.0, gram()),
+                    servings = 2,
+                    components = emptyList(),
+                )
+
+            val result =
+                saveDraft(
+                    RecipeVersionInput(
+                        recipeId = parentId,
+                        yieldAmount = 750.0,
+                        yieldUnit = gram(),
+                        servings = 3,
+                        components = emptyList(),
+                        versionId = published,
+                    ),
+                )
+
+            assertThat(result).isInstanceOf(Outcome.Failure::class.java)
+            assertThat(recipes.versions.getValue(published).yield.amount).isEqualTo(500.0)
+        }
+
+    @Test
     fun `publishing rejects a cycle across sub recipes`() =
         runBlocking<Unit> {
             val (parentId, childId) = seedRecipes()

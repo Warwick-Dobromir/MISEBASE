@@ -310,6 +310,9 @@
     <string name="cooking_remaining">本阶段剩余时间</string>
     <string name="cooking_start">开始计时</string>
     <string name="cooking_pause">暂停计时</string>
+    <string name="cooking_adjust_hint">每次调整 1 秒</string>
+    <string name="cooking_step_completed">此步已完成</string>
+    <string name="cooking_proceed_next">此步已完成，请进入下一步</string>
     <string name="cooking_previous">上一阶段</string>
     <string name="cooking_next">下一阶段</string>
     <string name="cooking_next_step">下一阶段：%1$s</string>

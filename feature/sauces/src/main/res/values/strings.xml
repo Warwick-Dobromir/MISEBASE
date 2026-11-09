@@ -96,7 +96,8 @@
     <string name="sauces_difficulty_easy">简单</string>
     <string name="sauces_difficulty_medium">中等</string>
     <string name="sauces_difficulty_hard">困难</string>
-    <string name="sauces_difficulty_placeholder">选择难度</string>
+    <string name="sauces_difficulty_placeholder">选择最小制作容量</string>
+    <string name="sauces_minimum_capacity">最小制作容量</string>
     <string name="sauces_last_updated">最后更新 · %1$s</string>
     <string name="sauces_unsaved_date">尚未保存</string>
     <string name="sauces_delete_archive">删除此酱汁档案</string>

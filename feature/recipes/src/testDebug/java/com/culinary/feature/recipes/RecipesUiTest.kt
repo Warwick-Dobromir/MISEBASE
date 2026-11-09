@@ -120,6 +120,7 @@ class RecipesUiTest {
         }
 
         compose.onAllNodesWithText("低筋面粉").onFirst().assertIsDisplayed()
+        compose.onNodeWithText("MIN. CAPACITY").assertIsDisplayed()
         compose.onNodeWithText("可选").performScrollTo().assertIsDisplayed()
         compose.onAllNodesWithText("展开").onFirst().assertExists()
     }
@@ -155,7 +156,9 @@ class RecipesUiTest {
             }
         }
 
-        compose.onNodeWithText("基准份数").assertIsDisplayed()
+        compose.onNodeWithText("最小制作容量", substring = true).performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("基准份数").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("适用范围").performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("添加食材").performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("添加子菜谱").performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("添加酱汁").performScrollTo().assertIsDisplayed()

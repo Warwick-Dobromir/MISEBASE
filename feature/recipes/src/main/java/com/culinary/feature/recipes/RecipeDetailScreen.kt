@@ -38,6 +38,7 @@ import com.culinary.core.designsystem.component.ArchiveIngredientRow
 import com.culinary.core.designsystem.component.ArchiveMetaGrid
 import com.culinary.core.designsystem.component.ArchiveMetaItem
 import com.culinary.core.designsystem.component.ArchiveModuleHeader
+import com.culinary.core.designsystem.component.ArchiveNoteImages
 import com.culinary.core.designsystem.component.ArchiveProcedureStep
 import com.culinary.core.designsystem.component.ArchiveProse
 import com.culinary.core.designsystem.component.ArchiveRelatedRow
@@ -162,7 +163,7 @@ internal fun RecipeDetailContent(
 ) {
     val recipe = detail.recipe
     val latestDraft = detail.versions.firstOrNull { it.status == VersionStatus.DRAFT }
-    val shown = latestDraft ?: detail.currentVersion ?: detail.versions.firstOrNull()
+    val shown = detail.displayVersion ?: latestDraft ?: detail.currentVersion ?: detail.versions.firstOrNull()
     val scrollState = rememberScrollState()
     val density = LocalDensity.current
     var stepTopPx by remember { mutableIntStateOf(-1) }
@@ -200,7 +201,7 @@ internal fun RecipeDetailContent(
                     listOf(
                         ArchiveMetaItem("CATEGORY", categoryLabel(recipe, state.categoryPath)),
                         ArchiveMetaItem("YIELD", yieldLabel(shown)),
-                        ArchiveMetaItem("DIFFICULTY", recipe.difficulty?.takeIf { it.isNotBlank() } ?: "—"),
+                        ArchiveMetaItem("MIN. CAPACITY", recipeMinimumCapacityLabel(recipe.difficulty)),
                     ),
             )
             Spacer(modifier = Modifier.height(CulinarySpacing.lg))
@@ -305,9 +306,15 @@ internal fun RecipeDetailContent(
                 Spacer(modifier = Modifier.height(CulinarySpacing.xl))
             }
 
-            recipe.seedNote?.takeIf { it.isNotBlank() }?.let { note ->
+            if (recipe.seedNote?.isNotBlank() == true || state.noteImages.isNotEmpty()) {
                 ArchiveModuleHeader(number = "05", english = "NOTES", chinese = "研发备注")
-                ArchiveProse(note)
+                recipe.seedNote?.takeIf { it.isNotBlank() }?.let { note ->
+                    ArchiveProse(note)
+                    Spacer(modifier = Modifier.height(CulinarySpacing.sm))
+                }
+                if (state.noteImages.isNotEmpty()) {
+                    ArchiveNoteImages(images = state.noteImages)
+                }
                 Spacer(modifier = Modifier.height(CulinarySpacing.xl))
             }
 

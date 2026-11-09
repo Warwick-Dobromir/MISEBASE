@@ -109,7 +109,7 @@ internal fun SauceHeaderSection(
                 }
             }
             Column(modifier = Modifier.weight(1f)) {
-                MetaLabel(text = "DIFFICULTY")
+                MetaLabel(text = "MIN. CAPACITY")
                 DifficultyField(
                     value = state.difficulty,
                     onChange = actions.onDifficultyChange,

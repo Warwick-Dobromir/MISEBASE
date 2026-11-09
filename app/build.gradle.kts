@@ -48,9 +48,10 @@ android {
         applicationId = "com.culinary"
         // 原发布为 1.0.0 (1)；1.0.1 厨房首页、1.0.2 六库统一、1.0.3 种子数据、
         // 1.0.4 酱汁编辑器、1.0.5 六库分类/目录/详情（schema v6）；
-        // 本次 1.0.6 (7)：菜谱/酱汁档案详情统一改版 + 步骤时间 + 统一制作模式（schema v7）。
-        versionCode = 7
-        versionName = "1.0.6"
+        // 1.0.6 (7)：菜谱/酱汁档案详情统一改版 + 步骤时间 + 统一制作模式（schema v7）。
+        // 本次 1.0.7 (8)：计时交互与完成反馈修复 + 菜谱草稿编辑/详情 + 最小制作容量字段名（schema 仍为 v7）。
+        versionCode = 8
+        versionName = "1.0.7"
     }
 
     testOptions {

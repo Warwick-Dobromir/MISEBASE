@@ -100,9 +100,23 @@ class RecipeRepositoryImpl
 
         override suspend fun saveDraft(version: RecipeVersion): RecipeVersionId {
             val now = clock.now().toEpochMilli()
-            versionDao.insert(
-                RecipeMapper.toVersionEntity(version, publishedAt = null, createdAt = now),
-            )
+            val existing = versionDao.findById(version.id.value)
+            if (existing == null) {
+                versionDao.insert(
+                    RecipeMapper.toVersionEntity(version, publishedAt = null, createdAt = now),
+                )
+            } else {
+                // 同一份草稿重复保存时更新内容，不产生重复版本；已发布版本由用例与触发器共同保护。
+                versionDao.updateDraft(
+                    id = version.id.value,
+                    yieldQty = version.yield.amount,
+                    yieldUnitId = version.yield.unit.id.value,
+                    servings = version.servings,
+                    instructionsMd = version.instructions,
+                    stepsJson = version.stepsJson,
+                )
+                componentDao.deleteByVersion(version.id.value)
+            }
             insertComponents(version, now)
             return version.id
         }

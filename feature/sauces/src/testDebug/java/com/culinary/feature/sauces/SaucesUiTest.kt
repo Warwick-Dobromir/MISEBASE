@@ -126,6 +126,8 @@ class SaucesUiTest {
 
         compose.onNodeWithText("保存").assertIsDisplayed()
         compose.onNodeWithText("取消").assertIsDisplayed()
+        compose.onNodeWithText("MIN. CAPACITY").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("选择最小制作容量").performScrollTo().assertIsDisplayed()
         listOf("原料配方", "制作工艺", "适用范围", "衍生关系", "研发备注")
             .forEach { label ->
                 compose.onNodeWithText(label).performScrollTo().assertIsDisplayed()

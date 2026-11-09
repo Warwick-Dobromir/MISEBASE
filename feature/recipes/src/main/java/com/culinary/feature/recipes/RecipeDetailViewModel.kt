@@ -65,10 +65,7 @@ class RecipeDetailViewModel
                             runCatching {
                                 archiveImages.primary(ArchiveImageOwner.RECIPE, recipeId.value)
                             }.getOrNull()
-                        val version =
-                            detail.versions.firstOrNull {
-                                it.status == com.culinary.core.domain.model.VersionStatus.DRAFT
-                            } ?: detail.currentVersion ?: detail.versions.firstOrNull()
+                        val version = detail.displayVersion
                         var stepKey = 0
                         val steps =
                             runCatching {
@@ -86,6 +83,13 @@ class RecipeDetailViewModel
                                         )
                                     }.getOrNull()
                                 }.orEmpty()
+                        val noteImages =
+                            runCatching {
+                                archiveImages
+                                    .list(ArchiveImageOwner.RECIPE, recipeId.value)
+                                    .filter { it.role == "REFERENCE" }
+                                    .mapNotNull { archiveImages.read(it.id) }
+                            }.getOrDefault(emptyList())
                         _uiState.update {
                             it.copy(
                                 detail = detail,
@@ -93,7 +97,7 @@ class RecipeDetailViewModel
                                 imageBytes = image,
                                 steps = steps,
                                 stepImages = stepImages,
-                                noteImages = emptyList(),
+                                noteImages = noteImages,
                                 isLoading = false,
                                 isPublishing = false,
                                 targetServings = detail.baseServings.toString(),
@@ -127,7 +131,7 @@ class RecipeDetailViewModel
             detail: RecipeDetail,
             target: String,
         ) {
-            val versionId = (detail.currentVersion ?: detail.versions.firstOrNull())?.id
+            val versionId = (detail.displayVersion ?: detail.currentVersion ?: detail.versions.firstOrNull())?.id
             if (versionId == null) {
                 _uiState.update { it.copy(expanded = null, expansionError = "没有可展开的版本。") }
                 return

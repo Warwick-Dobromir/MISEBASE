@@ -20,6 +20,7 @@ import com.culinary.core.designsystem.component.CulinaryRule
 import com.culinary.core.designsystem.component.CulinaryTextField
 import com.culinary.core.designsystem.component.CulinaryTextButton
 import com.culinary.core.designsystem.component.KitchenTimeField
+import com.culinary.core.designsystem.component.SectionHeader
 import com.culinary.core.designsystem.icon.CulinaryIcons
 import com.culinary.core.designsystem.theme.CulinarySpacing
 import com.culinary.core.designsystem.theme.CulinaryTextStyles
@@ -39,21 +40,12 @@ internal fun RecipeMethodEditor(
     onStepTimeChange: (String, Int) -> Unit,
     onRemoveStep: (String) -> Unit,
 ) {
-    Column(modifier = Modifier.fillMaxWidth().padding(top = CulinarySpacing.block)) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(
-                text = "制作步骤",
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.weight(1f),
-            )
-            Text(
-                text = "${state.steps.size} 步",
-                style = CulinaryTextStyles.eyebrow,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-        Spacer(modifier = Modifier.height(CulinarySpacing.xs))
+    Column(modifier = Modifier.fillMaxWidth()) {
+        SectionHeader(
+            title = "制作工艺",
+            eyebrow = "02 / METHOD",
+            subtitle = "${state.steps.size} 步 · 可设置每步时间",
+        )
         state.steps.forEachIndexed { index, step ->
             CulinaryRule()
             Row(

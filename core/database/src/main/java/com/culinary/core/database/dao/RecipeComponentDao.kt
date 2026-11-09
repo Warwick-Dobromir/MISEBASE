@@ -17,6 +17,9 @@ interface RecipeComponentDao {
     @Query("SELECT * FROM recipe_component WHERE recipe_version_id = :versionId ORDER BY line_no")
     suspend fun listByVersion(versionId: String): List<RecipeComponentEntity>
 
+    @Query("DELETE FROM recipe_component WHERE recipe_version_id = :versionId")
+    suspend fun deleteByVersion(versionId: String)
+
     @Query("SELECT COUNT(*) FROM recipe_component")
     suspend fun count(): Int
 }

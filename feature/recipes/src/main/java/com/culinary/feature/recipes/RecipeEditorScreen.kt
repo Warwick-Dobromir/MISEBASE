@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -43,6 +44,7 @@ import com.culinary.core.designsystem.component.PageHeader
 import com.culinary.core.designsystem.component.SectionHeader
 import com.culinary.core.designsystem.component.StatusBadge
 import com.culinary.core.designsystem.component.StatusTone
+import com.culinary.core.designsystem.component.formatArchiveTimestamp
 import com.culinary.core.designsystem.icon.CulinaryIcons
 import com.culinary.core.designsystem.theme.CulinarySpacing
 import com.culinary.core.domain.model.Ingredient
@@ -70,6 +72,13 @@ fun RecipeEditorRoute(
     RecipeEditorScreen(
         state = state,
         onNameChange = viewModel::onNameChange,
+        onEnglishNameChange = viewModel::onEnglishNameChange,
+        onDescriptionChange = viewModel::onDescriptionChange,
+        onOpenCapacityPicker = { picker = EditorPicker.CAPACITY },
+        onCuisineChange = viewModel::onCuisineChange,
+        onPrepMinutesChange = viewModel::onPrepMinutesChange,
+        onCookMinutesChange = viewModel::onCookMinutesChange,
+        onAllergenNotesChange = viewModel::onAllergenNotesChange,
         onOpenCategoryPicker = { picker = EditorPicker.CATEGORY },
         onYieldAmountChange = viewModel::onYieldAmountChange,
         onOpenUnitPicker = { picker = EditorPicker.UNIT },
@@ -102,6 +111,10 @@ fun RecipeEditorRoute(
             viewModel.onCategoryChange(it)
             picker = EditorPicker.NONE
         },
+        onSelectCapacity = {
+            viewModel.onMinimumCapacityChange(it)
+            picker = EditorPicker.NONE
+        },
         onSelectIngredient = {
             viewModel.addIngredient(it)
             picker = EditorPicker.NONE
@@ -122,6 +135,7 @@ private enum class EditorPicker {
     NONE,
     UNIT,
     CATEGORY,
+    CAPACITY,
     INGREDIENT,
     RECIPE,
     SAUCE,
@@ -133,6 +147,7 @@ private fun RecipeEditorDialogs(
     active: EditorPicker,
     onSelectUnit: (UnitModel) -> Unit,
     onSelectCategory: (RecipeCategory) -> Unit,
+    onSelectCapacity: (String) -> Unit,
     onSelectIngredient: (Ingredient) -> Unit,
     onSelectOption: (RecipeOption) -> Unit,
     onSelectSauce: (SauceOption) -> Unit,
@@ -152,6 +167,13 @@ private fun RecipeEditorDialogs(
             CategoryPickerDialog(
                 selected = state.category,
                 onSelect = onSelectCategory,
+                onDismiss = onDismiss,
+            )
+
+        EditorPicker.CAPACITY ->
+            CapacityPickerDialog(
+                selected = state.minimumCapacity,
+                onSelect = onSelectCapacity,
                 onDismiss = onDismiss,
             )
 
@@ -182,6 +204,13 @@ private fun RecipeEditorDialogs(
 private fun RecipeEditorScreen(
     state: RecipeEditorUiState,
     onNameChange: (String) -> Unit,
+    onEnglishNameChange: (String) -> Unit,
+    onDescriptionChange: (String) -> Unit,
+    onOpenCapacityPicker: () -> Unit,
+    onCuisineChange: (String) -> Unit,
+    onPrepMinutesChange: (String) -> Unit,
+    onCookMinutesChange: (String) -> Unit,
+    onAllergenNotesChange: (String) -> Unit,
     onOpenCategoryPicker: () -> Unit,
     onYieldAmountChange: (String) -> Unit,
     onOpenUnitPicker: () -> Unit,
@@ -216,6 +245,13 @@ private fun RecipeEditorScreen(
             RecipeEditorForm(
                 state = state,
                 onNameChange = onNameChange,
+                onEnglishNameChange = onEnglishNameChange,
+                onDescriptionChange = onDescriptionChange,
+                onOpenCapacityPicker = onOpenCapacityPicker,
+                onCuisineChange = onCuisineChange,
+                onPrepMinutesChange = onPrepMinutesChange,
+                onCookMinutesChange = onCookMinutesChange,
+                onAllergenNotesChange = onAllergenNotesChange,
                 onOpenCategoryPicker = onOpenCategoryPicker,
                 onYieldAmountChange = onYieldAmountChange,
                 onOpenUnitPicker = onOpenUnitPicker,
@@ -243,6 +279,13 @@ internal fun RecipeEditorForm(
     state: RecipeEditorUiState,
     onNameChange: (String) -> Unit,
     onOpenCategoryPicker: () -> Unit,
+    onEnglishNameChange: (String) -> Unit = {},
+    onDescriptionChange: (String) -> Unit = {},
+    onOpenCapacityPicker: () -> Unit = {},
+    onCuisineChange: (String) -> Unit = {},
+    onPrepMinutesChange: (String) -> Unit = {},
+    onCookMinutesChange: (String) -> Unit = {},
+    onAllergenNotesChange: (String) -> Unit = {},
     onYieldAmountChange: (String) -> Unit,
     onOpenUnitPicker: () -> Unit,
     onServingsChange: (String) -> Unit,
@@ -272,6 +315,9 @@ internal fun RecipeEditorForm(
             RecipeBasics(
                 state = state,
                 onNameChange = onNameChange,
+                onEnglishNameChange = onEnglishNameChange,
+                onDescriptionChange = onDescriptionChange,
+                onOpenCapacityPicker = onOpenCapacityPicker,
                 onOpenCategoryPicker = onOpenCategoryPicker,
             )
             RecipeYieldSection(
@@ -297,8 +343,16 @@ internal fun RecipeEditorForm(
                 onStepTimeChange = onStepTimeChange,
                 onRemoveStep = onRemoveStep,
             )
+            RecipeApplicationSection(
+                state = state,
+                onCuisineChange = onCuisineChange,
+                onPrepMinutesChange = onPrepMinutesChange,
+                onCookMinutesChange = onCookMinutesChange,
+                onAllergenNotesChange = onAllergenNotesChange,
+            )
+            RecipeNotesSection(state)
             RecipeEditorFooter(
-                isSaving = state.isSaving,
+                state = state,
                 onSaveDraft = onSaveDraft,
                 onSaveAndPublish = onSaveAndPublish,
             )
@@ -316,7 +370,12 @@ private fun RecipeEditorIntro(state: RecipeEditorUiState) {
             } else {
                 stringResource(R.string.recipes_editor_edit_title, state.editingVersionNo ?: 1)
             },
-        supporting = if (state.hasPublishedVersion) stringResource(R.string.recipes_editor_published_hint) else null,
+        supporting =
+            when {
+                state.hasPublishedVersion -> stringResource(R.string.recipes_editor_published_hint)
+                state.isNew -> stringResource(R.string.recipes_editor_new_hint)
+                else -> null
+            },
     )
 }
 
@@ -324,6 +383,9 @@ private fun RecipeEditorIntro(state: RecipeEditorUiState) {
 private fun RecipeBasics(
     state: RecipeEditorUiState,
     onNameChange: (String) -> Unit,
+    onEnglishNameChange: (String) -> Unit,
+    onDescriptionChange: (String) -> Unit,
+    onOpenCapacityPicker: () -> Unit,
     onOpenCategoryPicker: () -> Unit,
 ) {
     CulinaryTextField(
@@ -332,15 +394,40 @@ private fun RecipeBasics(
         label = { Text(text = stringResource(R.string.recipes_name_label)) },
         singleLine = true,
     )
-    CulinaryButton(
-        text =
-            stringResource(R.string.recipes_category_label) +
-                "：" + recipeCategoryLabel(state.category),
-        onClick = onOpenCategoryPicker,
-        variant = CulinaryButtonVariant.Secondary,
-        icon = CulinaryIcons.ChevronDown,
+    CulinaryTextField(
+        value = state.englishName,
+        onValueChange = onEnglishNameChange,
+        label = { Text(text = stringResource(R.string.recipes_english_name)) },
+        singleLine = true,
         modifier = Modifier.padding(top = CulinarySpacing.sm),
     )
+    CulinaryTextField(
+        value = state.description,
+        onValueChange = onDescriptionChange,
+        label = { Text(text = stringResource(R.string.recipes_profile)) },
+        singleLine = false,
+        modifier = Modifier.padding(top = CulinarySpacing.sm),
+    )
+    Row(modifier = Modifier.padding(top = CulinarySpacing.sm)) {
+        CulinaryButton(
+            text =
+                stringResource(R.string.recipes_category_label) +
+                    "：" + recipeCategoryLabel(state.category),
+            onClick = onOpenCategoryPicker,
+            variant = CulinaryButtonVariant.Secondary,
+            icon = CulinaryIcons.ChevronDown,
+        )
+        Spacer(modifier = Modifier.width(CulinarySpacing.sm))
+        CulinaryButton(
+            text =
+                stringResource(R.string.recipes_minimum_capacity) +
+                    "：" + recipeMinimumCapacityLabel(state.minimumCapacity),
+            onClick = onOpenCapacityPicker,
+            variant = CulinaryButtonVariant.Secondary,
+            icon = CulinaryIcons.ChevronDown,
+            modifier = Modifier.weight(1f),
+        )
+    }
 }
 
 @Composable
@@ -392,7 +479,11 @@ private fun RecipeComponentsEditor(
     onToggleOptional: (String) -> Unit,
     onRemoveLine: (String) -> Unit,
 ) {
-    SectionHeader(title = stringResource(R.string.recipes_components, state.lines.size))
+    SectionHeader(
+        title = stringResource(R.string.recipes_ingredients_title),
+        eyebrow = "01 / INGREDIENTS",
+        subtitle = stringResource(R.string.recipes_components, state.lines.size),
+    )
     state.lines.forEach { line ->
         RecipeLineRowEditor(
             line = line,
@@ -498,11 +589,83 @@ private fun recipeLineKindLabel(line: RecipeLineEditor): String =
     }
 
 @Composable
+private fun RecipeApplicationSection(
+    state: RecipeEditorUiState,
+    onCuisineChange: (String) -> Unit,
+    onPrepMinutesChange: (String) -> Unit,
+    onCookMinutesChange: (String) -> Unit,
+    onAllergenNotesChange: (String) -> Unit,
+) {
+    SectionHeader(
+        title = stringResource(R.string.recipes_application),
+        eyebrow = "03 / APPLICATION",
+    )
+    CulinaryTextField(
+        value = state.cuisine,
+        onValueChange = onCuisineChange,
+        label = { Text(text = stringResource(R.string.recipes_cuisine)) },
+        singleLine = true,
+    )
+    Row(modifier = Modifier.padding(top = CulinarySpacing.sm)) {
+        CulinaryTextField(
+            value = state.prepMinutes,
+            onValueChange = onPrepMinutesChange,
+            label = { Text(text = stringResource(R.string.recipes_prep_minutes)) },
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            fillWidth = false,
+            modifier = Modifier.weight(1f),
+        )
+        Spacer(modifier = Modifier.width(CulinarySpacing.sm))
+        CulinaryTextField(
+            value = state.cookMinutes,
+            onValueChange = onCookMinutesChange,
+            label = { Text(text = stringResource(R.string.recipes_cook_minutes)) },
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            fillWidth = false,
+            modifier = Modifier.weight(1f),
+        )
+    }
+    CulinaryTextField(
+        value = state.allergenNotes,
+        onValueChange = onAllergenNotesChange,
+        label = { Text(text = stringResource(R.string.recipes_allergen)) },
+        singleLine = false,
+        modifier = Modifier.padding(top = CulinarySpacing.sm),
+    )
+}
+
+@Composable
+private fun RecipeNotesSection(state: RecipeEditorUiState) {
+    if (state.seedNote.isBlank()) return
+    SectionHeader(
+        title = stringResource(R.string.recipes_notes),
+        eyebrow = "04 / NOTES",
+    )
+    Text(
+        text = state.seedNote,
+        style = MaterialTheme.typography.bodyLarge,
+        color = MaterialTheme.colorScheme.onSurface,
+    )
+    Spacer(modifier = Modifier.height(CulinarySpacing.sm))
+}
+
+@Composable
 private fun RecipeEditorFooter(
-    isSaving: Boolean,
+    state: RecipeEditorUiState,
     onSaveDraft: () -> Unit,
     onSaveAndPublish: () -> Unit,
 ) {
+    val isSaving = state.isSaving
+    formatArchiveTimestamp(state.updatedAtEpochMillis)?.let { updated ->
+        Text(
+            text = stringResource(R.string.recipes_last_updated, updated),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(top = CulinarySpacing.md),
+        )
+    }
     Row(
         modifier = Modifier.fillMaxWidth().padding(top = CulinarySpacing.block),
         horizontalArrangement = Arrangement.spacedBy(CulinarySpacing.sm),
@@ -600,6 +763,28 @@ private fun SaucePickerDialog(
                 label to false
             },
         onSelect = { index -> onSelect(options[index]) },
+        onDismiss = onDismiss,
+        cancelLabel = stringResource(R.string.recipes_cancel),
+    )
+}
+
+@Composable
+private fun CapacityPickerDialog(
+    selected: String,
+    onSelect: (String) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val options =
+        listOf(
+            "EASY" to "简单",
+            "MEDIUM" to "中等",
+            "HARD" to "困难",
+        )
+    val current = selected.trim().uppercase()
+    PickerDialog(
+        title = stringResource(R.string.recipes_minimum_capacity),
+        items = options.map { (value, label) -> label to (value == current) },
+        onSelect = { index -> onSelect(options[index].first) },
         onDismiss = onDismiss,
         cancelLabel = stringResource(R.string.recipes_cancel),
     )

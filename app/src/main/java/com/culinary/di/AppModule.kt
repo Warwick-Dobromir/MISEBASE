@@ -2,6 +2,8 @@ package com.culinary.di
 
 import android.content.Context
 import com.culinary.core.common.Clock
+import com.culinary.cooking.CookingAlert
+import com.culinary.cooking.ToneCookingAlert
 import com.culinary.crash.CrashLogWriter
 import dagger.Module
 import dagger.Provides
@@ -21,4 +23,9 @@ object AppModule {
         @ApplicationContext context: Context,
         clock: Clock,
     ): CrashLogWriter = CrashLogWriter(File(context.filesDir, "crash-logs"), clock)
+
+    /** 制作模式计时结束提示音；无状态，单例即可。 */
+    @Provides
+    @Singleton
+    fun provideCookingAlert(): CookingAlert = ToneCookingAlert()
 }

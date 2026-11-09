@@ -1,5 +1,6 @@
 package com.culinary.core.domain.usecase.recipe
 
+import com.culinary.core.common.CulinaryError
 import com.culinary.core.common.IdGenerator
 import com.culinary.core.common.Outcome
 import com.culinary.core.common.flatMap
@@ -11,7 +12,8 @@ import com.culinary.core.domain.transaction.TransactionRunner
 /**
  * 保存菜谱草稿版本：解析"当前版本"引用并写入明确版本 ID。
  *
- * 草稿允许后续再编辑；已发布版本永不覆盖（D-006 / MB-D-013）。
+ * [RecipeVersionInput.versionId] 非空时更新同一份未发布草稿，避免每次保存都产生重复草稿；
+ * 为空时创建新草稿。已发布版本永不覆盖（D-006 / MB-D-013）。
  */
 class SaveRecipeDraftUseCase(
     private val repository: RecipeRepository,
@@ -22,10 +24,24 @@ class SaveRecipeDraftUseCase(
 
     suspend operator fun invoke(input: RecipeVersionInput): Outcome<RecipeVersionId> {
         RecipeInputValidator.validate(input)?.let { return it }
+        val existing =
+            input.versionId?.let { versionId ->
+                val version = repository.getVersion(versionId)
+                if (version == null) {
+                    return invalid("recipe.version", "draft not found")
+                }
+                if (version.status != VersionStatus.DRAFT) {
+                    return invalid("recipe.version", "only draft versions can be edited")
+                }
+                if (version.recipeId != input.recipeId) {
+                    return invalid("recipe.version", "draft belongs to another recipe")
+                }
+                version
+            }
         return transactionRunner
             .write {
-                val id = RecipeVersionId(idGenerator.newId())
-                val versionNo = repository.nextVersionNo(input.recipeId)
+                val id = existing?.id ?: RecipeVersionId(idGenerator.newId())
+                val versionNo = existing?.versionNo ?: repository.nextVersionNo(input.recipeId)
                 val draft = resolver.toDraft(input, id, versionNo)
                 when (val pinned = resolver.pin(draft)) {
                     is Outcome.Failure -> pinned
@@ -44,4 +60,9 @@ class SaveRecipeDraftUseCase(
                 }
             }.flatMap { it }
     }
+
+    private fun invalid(
+        field: String,
+        rule: String,
+    ): Outcome<Nothing> = Outcome.failure(CulinaryError.Validation(field = field, rule = rule))
 }

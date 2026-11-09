@@ -83,7 +83,16 @@ data class RecipeStepEditor(
 data class RecipeEditorUiState(
     val recipeId: String? = null,
     val name: String = "",
+    val englishName: String = "",
+    val description: String = "",
     val category: RecipeCategory = RecipeCategory.DISH,
+    /** 对应既有 `recipe.difficulty` 列，界面名称已统一为"最小制作容量"。 */
+    val minimumCapacity: String = "",
+    val cuisine: String = "",
+    val prepMinutes: String = "",
+    val cookMinutes: String = "",
+    val allergenNotes: String = "",
+    val seedNote: String = "",
     val yieldAmount: String = "",
     val yieldUnit: UnitModel? = null,
     val servings: String = "1",
@@ -98,10 +107,32 @@ data class RecipeEditorUiState(
     val error: String? = null,
     val savedRecipeId: String? = null,
     val editingVersionNo: Int? = null,
+    /** 已存在的未发布草稿；再次保存时更新它，避免重复创建草稿。 */
+    val editingDraftId: String? = null,
     val hasPublishedVersion: Boolean = false,
+    val updatedAtEpochMillis: Long? = null,
+    val isDirty: Boolean = false,
+    /** 只有版本内容（产量/份数/组成/步骤）变化时才需要新建或更新草稿。 */
+    val versionDirty: Boolean = false,
 ) {
     val isNew: Boolean get() = recipeId == null
+    val isEditingPublished: Boolean get() = hasPublishedVersion
 }
+
+/**
+ * 既有 `recipe.difficulty` 列的显示名。
+ *
+ * 数据库 CHECK 仍只允许 EASY/MEDIUM/HARD；本次只把字段名称改为"最小制作容量"，
+ * 不改存储值，也不删除既有数据。
+ */
+fun recipeMinimumCapacityLabel(value: String?): String =
+    when (value?.trim()?.uppercase()) {
+        "EASY" -> "简单"
+        "MEDIUM" -> "中等"
+        "HARD" -> "困难"
+        null, "" -> "—"
+        else -> value
+    }
 
 /** 把菜谱领域错误转成面向用户的中文提示。 */
 object RecipeErrorMessages {
@@ -133,6 +164,9 @@ object RecipeErrorMessages {
             error.field == "recipe.name" -> "名称过长，请控制在 120 个字符以内。"
             error.field == "recipe.yield" -> "标准产量必须是大于 0 的数字。"
             error.field == "recipe.servings" -> "基准份数必须是大于 0 的整数。"
+            error.field == "recipe.prepMinutes" || error.field == "recipe.cookMinutes" ->
+                "准备时间/烹饪时间必须是非负整数分钟。"
+            error.field == "recipe.version" -> "草稿状态已变化，请重新打开编辑。"
             error.field == "servings" -> "目标份数必须是大于 0 的数字。"
             error.field.startsWith("recipe.component") -> "组成行数量必须是大于 0 的数字。"
             else -> "输入不合法。"

@@ -300,7 +300,12 @@ internal fun NotesField(
     )
 }
 
-/** 难度选择：低强调下拉，不额外占用一整行。 */
+/**
+ * 最小制作容量选择：低强调下拉，不额外占用一整行。
+ *
+ * 沿用既有 `sauce.difficulty` 枚举列与存储值（EASY/MEDIUM/HARD），
+ * 本次只调整界面字段名称，不改变数据结构，也不删除既有数据。
+ */
 @Composable
 internal fun DifficultyField(
     value: SauceDifficulty?,
