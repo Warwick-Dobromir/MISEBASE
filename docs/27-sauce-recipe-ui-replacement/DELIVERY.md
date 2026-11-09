@@ -228,7 +228,7 @@ ALTER TABLE recipe ADD COLUMN notes TEXT;
 - 本次提交前基线：`d12de0a`（`restore-v7` 分支历史）
 - 上一功能提交：`17bdfa2`
 - 上一交付文档：`1d9579b`
-- 本次提交：`11976db`（提交信息 `feat(sauces,recipes): replace archive display and editor UI with shared editorial system`）
+- 本次提交：`c60bfc3`（提交信息 `feat(sauces,recipes): replace archive display and editor UI with shared editorial system`）
 
 数据库 schema v8 为单向迁移：
 - 回退代码到 1.0.7 前，需先恢复 v7 数据库备份；
