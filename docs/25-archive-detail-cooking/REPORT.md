@@ -352,7 +352,7 @@ v6 → v7：ALTER TABLE `recipe_version` ADD COLUMN `steps_json` TEXT
 
 - 工作分支：`restore-v7`（未切换、未重置、未清理他人未提交内容）
 - 回滚点（提交前）：`2c56f6b docs(archive): finalize APK hash and verification screenshots`
-- 本次提交：`327e172` · `feat(archive): unify recipe/sauce detail, step time and cooking mode`
+- 本次提交：`1740660` · `feat(archive): unify recipe/sauce detail, step time and cooking mode`
 - 回滚方式：`git revert <本次提交>` 或 `git reset --hard 2c56f6b`（后者会丢弃本次改动，按需使用）
 - APK 回滚：重新安装 `dist/MISEBASE-1.0.5-archive-unified-release.apk` 前需注意数据库为 v7，旧版会因 schema 更高而拒绝启动；如需降级必须先导出/清空数据。
 
