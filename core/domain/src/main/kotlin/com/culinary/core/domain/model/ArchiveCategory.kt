@@ -1,6 +1,6 @@
 package com.culinary.core.domain.model
 
-/** 六大档案库；分类树与 assignment 用这个枚举隔离。 */
+/** 七大档案库；分类树与 assignment 用这个枚举隔离。 */
 enum class ArchiveLibrary {
     SAUCE,
     INGREDIENT,
@@ -8,6 +8,9 @@ enum class ArchiveLibrary {
     TECHNIQUE,
     PRODUCTION_STANDARD,
     STORAGE_STANDARD,
+
+    /** 库存分类（v9）：与食材库分类共用同一棵树的技术，但业务归属独立。 */
+    INVENTORY,
 }
 
 data class ArchiveCategory(

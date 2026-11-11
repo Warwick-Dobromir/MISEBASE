@@ -249,10 +249,10 @@ class ListInventoryLedgerUseCase(
                     compareByDescending<com.culinary.core.domain.model.InventoryLedgerEntry> { it.occurredAt }
                         .thenByDescending { it.id.value },
                 ).map { entry ->
-                    val product = productsById[entry.productId]
+                    val product = entry.productId?.let(productsById::get)
                     InventoryLedgerRow(
                         entry = entry,
-                        productName = product?.name ?: "未命名商品",
+                        productName = product?.name ?: entry.archiveId?.let { "库存档案" } ?: "未命名商品",
                         ingredientName =
                             product?.ingredientId?.let { ingredientNames[it] } ?: "未关联食材",
                         locationName = locationsById[entry.locationId]?.name ?: "未命名位置",

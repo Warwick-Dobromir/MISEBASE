@@ -18,4 +18,9 @@ enum class LedgerEntryType {
     TRANSFER_IN,
     RETURN,
     VOID_RECEIPT,
+
+    /** v9：冻结/解冻/库位转移不改变数量，只留痕。 */
+    FREEZE,
+    UNFREEZE,
+    LOCATION_TRANSFER,
 }

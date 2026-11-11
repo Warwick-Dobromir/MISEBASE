@@ -100,7 +100,12 @@ object KitchenStepCodec {
             val id = stringField(objectText, "id")
             val title = stringField(objectText, "title")
             val body = stringField(objectText, "body")
-            val time = timePattern.find(objectText)?.groupValues?.get(1)?.toIntOrNull() ?: 0
+            val time =
+                timePattern
+                    .find(objectText)
+                    ?.groupValues
+                    ?.get(1)
+                    ?.toIntOrNull() ?: 0
             if (id == null && title == null && body == null && time <= 0) {
                 null
             } else {

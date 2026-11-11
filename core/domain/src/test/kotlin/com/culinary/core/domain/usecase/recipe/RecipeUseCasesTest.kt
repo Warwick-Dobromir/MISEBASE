@@ -169,7 +169,11 @@ class RecipeUseCasesTest {
                 )
 
             assertThat(result).isInstanceOf(Outcome.Failure::class.java)
-            assertThat(recipes.versions.getValue(published).yield.amount).isEqualTo(500.0)
+            assertThat(
+                recipes.versions
+                    .getValue(published)
+                    .yield.amount,
+            ).isEqualTo(500.0)
         }
 
     @Test
@@ -188,7 +192,12 @@ class RecipeUseCasesTest {
                         minRangeUnit = gram(),
                     ),
                 ) as Outcome.Success
-            assertThat(recipes.versions.getValue(saved.value).minRange?.amount).isEqualTo(500.0)
+            assertThat(
+                recipes.versions
+                    .getValue(saved.value)
+                    .minRange
+                    ?.amount,
+            ).isEqualTo(500.0)
 
             val rejected =
                 saveDraft(

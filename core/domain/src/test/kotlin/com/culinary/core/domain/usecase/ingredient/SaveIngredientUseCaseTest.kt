@@ -59,6 +59,16 @@ class SaveIngredientUseCaseTest {
     @Test
     fun `keeps the id when editing an existing ingredient`() =
         runBlocking<Unit> {
+            // 编辑前仓储里必须已有该食材：SaveIngredientUseCase 对未知 id 返回 NotFound。
+            repository.saved +=
+                Ingredient(
+                    id = IngredientId("existing"),
+                    name = "酱油",
+                    normalizedName = "酱油",
+                    defaultUnitId = null,
+                    status = EntityStatus.ACTIVE,
+                )
+
             useCase(SaveIngredientInput(name = "酱油", id = IngredientId("existing")))
 
             assertThat(
@@ -138,6 +148,8 @@ class SaveIngredientUseCaseTest {
                 )
 
         override suspend fun save(ingredient: Ingredient): Outcome<IngredientId> {
+            // 真实仓储是 upsert：同 id 覆盖，不追加第二条。
+            saved.removeAll { it.id == ingredient.id }
             saved += ingredient
             return Outcome.success(ingredient.id)
         }

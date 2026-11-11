@@ -299,7 +299,7 @@ class StockMovementUseCasesTest {
                 return Outcome.failure(
                     CulinaryError.Domain(
                         com.culinary.core.common.DomainDetail.InsufficientStock(
-                            entry.productId.value,
+                            entry.productId?.value.orEmpty(),
                             -entry.onHandDelta,
                             item.available,
                         ),

@@ -399,7 +399,11 @@ class RequirementPlanUseCasesTest {
             if (newOnHand < 0.0) {
                 return Outcome.failure(
                     CulinaryError.Domain(
-                        DomainDetail.InsufficientStock(entry.productId.value, -entry.onHandDelta, item.available),
+                        DomainDetail.InsufficientStock(
+                            entry.productId?.value.orEmpty(),
+                            -entry.onHandDelta,
+                            item.available,
+                        ),
                         ErrorCode.INV_003,
                     ),
                 )
