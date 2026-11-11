@@ -1,0 +1,47 @@
+MISEBASE 库存 V9 — AVD 数据库核对（2026-11-10 08:5x，HEAD 2b7411a）
+
+来源：AVD 内 `run-as com.culinary cat databases/culinary.db`（含 WAL checkpoint 后导出，PC 侧 Python sqlite3 只读核对）
+设备：com.culinary，APK 1.0.8 (9)，SHA-256 F8151121C24BE2A8D1CDE2494EBFBC6AC0C7FC7779005E92ABEE79CB806DD124
+
+[Schema]
+PRAGMA user_version = 9
+实体表（排除 android_metadata / room_master_table / sqlite_sequence）= 47
+
+[撕单前后对照：第一次撕单，200 g]
+批次 BATCH-001（57bf72f5-…）剩余：1000 g -> 800 g
+档案流水条数：4 -> 5
+出库单：
+  slip_no = ISS-20261109-235510-B06D
+  id      = 7081aa29-7b97-46cf-8e9b-0a0779708bc3
+  type    = MANUAL / status = CONFIRMED / total_lines = 1
+  idempotency_key = d0c72d24-1a0d-43ba-8367-b350c41b6fe6
+出库流水：
+  type = PRODUCTION_ISSUE, on_hand_delta = -200, on_hand_after = 800
+  reference_type/id = issue_slip / 7081aa29-…
+  idempotency_key = issue:7081aa29-…:0:0
+
+[幂等键唯一性]
+inventory_ledger.idempotency_key 上有 UNIQUE INDEX（index_inventory_ledger_idempotency_key）
+inventory_issue_slip.idempotency_key 上有 UNIQUE INDEX
+按 idempotency_key 分组无重复（HAVING count > 1 结果为空）
+
+[最终库状态（验收结束时）]
+ledger = 8：PURCHASE_RECEIPT 2、PRODUCTION_ISSUE 2、FREEZE 1、UNFREEZE 1、LOCATION_TRANSFER 1、ADJUSTMENT_OUT 1
+issue slips = 2：
+  ISS-20261109-235510-B06D / 7081aa29-… / MANUAL / 200 g
+  ISS-20261110-001006-EC12 / d2024b92-… / MANUAL / 50 g
+print jobs = 5：
+  RECEIPT 57bf72f5… PRINTED（80mm）
+  ISSUE   7081aa29… PENDING（80mm）
+  RECEIPT 73a52c26… PENDING（80mm）
+  LABEL   57bf72f5… FAILED，last_error = "No Activity found to handle null"（58mm）
+  ISSUE   d2024b92… PRINTED（80mm）
+batch：
+  BATCH-001 / 57bf72f5… / 650 g / 非临时 / ACTIVE / Cold Room
+  73a52c26… / 100 g / 临时 / temporary_since = 2026-10-25（导出时用 16 天前回填，用于临时库存规则联动）
+product = 2（Tomato Case、Tomato Box）；inventory_archive_product = 2（均挂 Tomato 档案，conversion_ratio = 1，Tomato Case 默认）
+
+[说明]
+- 采购商品关联是直接写库（页面无绑定入口），不是 UI 操作。
+- 临时批次的 temporary_since 为验证“规则改阈值后状态变化”回填为 16 天前，不是自然经过 16 天。
+- 打印失败通过禁用 com.android.printspooler 触发，不是实体打印机故障。

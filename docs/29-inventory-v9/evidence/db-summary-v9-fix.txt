@@ -1,0 +1,68 @@
+MISEBASE 库存 V9 验收缺陷修复 — AVD 数据库核对（2026-11-10 09:1x，HEAD 2b7411a + 本轮未提交修复）
+
+来源：AVD 内 `run-as com.culinary cat databases/culinary.db`（force-stop 后导出，PC 侧 Python sqlite3 只读核对）
+设备：com.culinary，APK 1.0.8 (9)，SHA-256 518C8C7A7C213AB91588F29A1E761445A7BE3E44CF57D021698257334806A76D
+
+[Schema]
+PRAGMA user_version = 9
+实体表（排除 android_metadata / room_master_table / sqlite_sequence）= 47
+
+[多物料菜谱出库（缺陷 2）]
+菜谱：普罗旺斯风味炖菜 / recipe_version = b921a897-3093-3727-b6aa-13481827d2ba / 4 份
+出库单：
+  slip_no = ISS-20261110-010842-6C58
+  id      = f0e38494-26d6-40ba-a058-7c34e710e0e6
+  type    = RECIPE / status = CONFIRMED / total_lines = 4
+出库明细（4 条 = 4 种物料）：
+  1 番茄   250 g
+  2 胡萝卜 100 g
+  3 黄洋葱 1 个
+  4 百里香 2 g
+出库流水：4 条，reference_type/id = issue_slip / f0e38494-…，与明细条数 1:1
+  -250 g / -100 g / -1 个 / -2 g
+批次余额（扣减后）：
+  番茄   MAT-TOM-001  2000 -> 1750 g
+  胡萝卜 MAT-CAR-001  1000 -> 900 g
+  黄洋葱 MAT-ONI-001  10 -> 9 个
+  百里香 MAT-THY-001  50 -> 48 g
+
+[流水打印状态（缺陷 1）]
+出库单 f0e38494… 的打印任务：
+  id = f5d59231-f545-4b8d-8989-6c1d5f656082
+  kind = ISSUE / ref_type = issue_slip / ref_id = f0e38494-…
+  status = FAILED（禁用 com.android.printspooler 后点打印；last_error = "No Activity found to handle null"）
+  reprint_count = 0
+点击流水页「重新打印」后：
+  status = PENDING / reprint_count = 1 / last_error = null
+  inventory_ledger 总条数保持 12，4 条出库流水的 on_hand_delta 与 on_hand_after 不变
+  inventory_issue_slip_line 仍为 4 条，未新增流水
+流水详情来源单号：issue_slip / f0e38494-26d6-40ba-a058-7c34e710e0e6
+说明：4 条出库流水的 print_job_id 均为 NULL（流水先于打印任务写入且 append-only），
+      页面按 reference_type + reference_id 反查 inventory_print_job 得到状态。
+
+[档案-采购商品 UI 绑定（缺陷 3）]
+Tomato 档案（7fba75f6-757a-4a2c-9d1c-77e35e436bbf）：
+  初始 2 条关联：Tomato Case（默认，1:1）、Tomato Box（1:1）
+  UI 点「解除关联」后：剩 1 条（Tomato Case）
+  UI「＋ 关联采购商品」重新绑定 Tomato Box：conversion_ratio = 2.0，is_default = 0
+  结果：2 条关联重新成立；不是直接写库
+  （`inventory_archive_product` 最终 6 条：上述 2 条 + 缺陷 2 的 4 条食材映射）
+
+[缺陷 2 数据准备说明]
+为普罗旺斯风味炖菜新建 4 个档案 / 4 个采购商品 / 4 条 ingredient→product→archive 映射 / 4 个批次：
+  番茄 (a100…0001 / b100…0001 / MAT-TOM-001)
+  胡萝卜 (a100…0002 / b100…0002 / MAT-CAR-001)
+  黄洋葱 (a100…0003 / b100…0003 / MAT-ONI-001)
+  百里香 (a100…0004 / b100…0004 / MAT-THY-001)
+上述为直接写库准备验收数据（任务书允许），不是 UI 建档案流程。
+此前 AVD 无 ingredient→archive 映射，菜谱出库返回 CUL-VAL-001；本轮已复现通过。
+
+[最终库状态]
+ledger = 12（新增 4 条 PRODUCTION_ISSUE）
+issue slips = 3（新增 1 条 RECIPE / 4 行）
+print jobs = 6（新增 1 条 ISSUE，最终 PENDING / reprint_count = 1）
+inventory_ledger.idempotency_key 仍无重复（count - count(distinct) = 0）
+
+[说明]
+- 打印失败通过禁用 com.android.printspooler 触发，不是真实打印机缺纸/离线。
+- 截图与录屏来自 Android 模拟器 Medium_Phone_API_36.1，不是真机。
