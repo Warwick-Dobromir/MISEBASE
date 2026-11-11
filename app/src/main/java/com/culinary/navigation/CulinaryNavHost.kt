@@ -23,6 +23,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation.NamedNavArgument
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
@@ -46,12 +47,31 @@ import com.culinary.feature.ingredients.IngredientDetailRoute
 import com.culinary.feature.ingredients.IngredientEditorRoute
 import com.culinary.feature.ingredients.IngredientsRoute
 import com.culinary.feature.ingredients.IngredientsRoutes
+import com.culinary.feature.inventory.ArchiveDetailRoute
+import com.culinary.feature.inventory.ArchiveEditRoute
+import com.culinary.feature.inventory.ArchiveListRoute
+import com.culinary.feature.inventory.BatchDetailRoute
+import com.culinary.feature.inventory.BatchListRoute
+import com.culinary.feature.inventory.CategoryManageRoute
+import com.culinary.feature.inventory.FreezeRoute
+import com.culinary.feature.inventory.InventoryCategoryRoute
 import com.culinary.feature.inventory.InventoryDetailRoute
+import com.culinary.feature.inventory.InventoryHomeRoute
 import com.culinary.feature.inventory.InventoryLedgerRoute
+import com.culinary.feature.inventory.InventoryManagementRoute
 import com.culinary.feature.inventory.InventoryRoute
 import com.culinary.feature.inventory.InventoryRoutes
+import com.culinary.feature.inventory.IssueRoute
+import com.culinary.feature.inventory.LedgerV9Route
+import com.culinary.feature.inventory.LocationRoute
+import com.culinary.feature.inventory.PrintPreviewRoute
+import com.culinary.feature.inventory.ReceiptRoute
+import com.culinary.feature.inventory.RecycleRoute
 import com.culinary.feature.inventory.RequirementPlanRoute
+import com.culinary.feature.inventory.RulesRoute
 import com.culinary.feature.inventory.StockMovementRoute
+import com.culinary.feature.inventory.StocktakeRoute
+import com.culinary.feature.inventory.TemporaryRoute
 import com.culinary.feature.recipes.RecipeDetailRoute
 import com.culinary.feature.recipes.RecipeEditorRoute
 import com.culinary.feature.recipes.RecipesRoute
@@ -524,17 +544,174 @@ private fun NavGraphBuilder.cookingGraph(navController: NavHostController) {
 
 private fun NavGraphBuilder.inventoryGraph(navController: NavHostController) {
     composable(INVENTORY_ROUTE) {
-        InventoryRoute(
-            onOpenProduct = { productId -> navController.navigate(InventoryRoutes.product(productId)) },
-            onReceipt = { navController.navigate(InventoryRoutes.receipt()) },
-            onOpenLedger = { navController.navigate(InventoryRoutes.ledger()) },
-            onOpenPlan = { navController.navigate(InventoryRoutes.plan()) },
+        InventoryHomeRoute(
+            onOpenArchive = { archiveId -> navController.navigate(InventoryRoutes.archive(archiveId)) },
+            onOpenCategory = { categoryId -> navController.navigate(InventoryRoutes.category(categoryId)) },
+            onAddCategory = { navController.navigate(InventoryRoutes.categories()) },
+            onOpenReceipt = { navController.navigate(InventoryRoutes.receipt()) },
+            onOpenIssue = { navController.navigate(InventoryRoutes.issue()) },
+            onOpenStocktake = { navController.navigate(InventoryRoutes.stocktake()) },
+            onOpenLedger = { navController.navigate(InventoryRoutes.ledgerV9()) },
+            onOpenManagement = { navController.navigate(InventoryRoutes.management()) },
+            onOpenArchives = { navController.navigate(InventoryRoutes.archives()) },
         )
     }
+    composable(
+        route = InventoryRoutes.CATEGORY,
+        arguments = listOf(nullableString(InventoryRoutes.ARG_CATEGORY_ID)),
+    ) {
+        InventoryCategoryRoute(
+            onOpenCategory = { categoryId -> navController.navigate(InventoryRoutes.category(categoryId)) },
+            onOpenArchive = { archiveId -> navController.navigate(InventoryRoutes.archive(archiveId)) },
+            onManage = { navController.navigate(InventoryRoutes.categories()) },
+        )
+    }
+    composable(InventoryRoutes.CATEGORY_MANAGE) {
+        CategoryManageRoute(onBack = { navController.popBackStack() })
+    }
+    composable(
+        route = InventoryRoutes.ARCHIVES,
+        arguments = listOf(nullableString(InventoryRoutes.ARG_FILTER)),
+    ) {
+        ArchiveListRoute(
+            onOpenArchive = { archiveId -> navController.navigate(InventoryRoutes.archive(archiveId)) },
+            onNewArchive = { navController.navigate(InventoryRoutes.archiveNew()) },
+        )
+    }
+    composable(InventoryRoutes.ARCHIVE) {
+        ArchiveDetailRoute(
+            onOpenBatch = { batchId -> navController.navigate(InventoryRoutes.batch(batchId)) },
+            onOpenBatches = { archiveId -> navController.navigate(InventoryRoutes.batches(archiveId)) },
+            onEdit = { archiveId -> navController.navigate(InventoryRoutes.archiveEdit(archiveId)) },
+            onReceipt = { archiveId -> navController.navigate(InventoryRoutes.receipt(archiveId)) },
+            onIssue = { archiveId -> navController.navigate(InventoryRoutes.issue(archiveId)) },
+            onStocktake = { archiveId -> navController.navigate(InventoryRoutes.stocktake(scope = "ARCHIVE", scopeRef = archiveId)) },
+        )
+    }
+    composable(
+        route = InventoryRoutes.ARCHIVE_EDIT,
+        arguments =
+            listOf(
+                nullableString(InventoryRoutes.ARG_ARCHIVE_ID),
+                nullableString(InventoryRoutes.ARG_KIND),
+                nullableString(InventoryRoutes.ARG_SAUCE_ID),
+                nullableString(InventoryRoutes.ARG_NAME),
+                nullableString(InventoryRoutes.ARG_BARCODE),
+            ),
+    ) {
+        ArchiveEditRoute(
+            onSaved = { archiveId ->
+                navController.navigate(InventoryRoutes.archive(archiveId)) {
+                    popUpTo(INVENTORY_ROUTE)
+                }
+            },
+            onBack = { navController.popBackStack() },
+        )
+    }
+    composable(InventoryRoutes.BATCHES) {
+        BatchListRoute(onOpenBatch = { batchId -> navController.navigate(InventoryRoutes.batch(batchId)) })
+    }
+    composable(InventoryRoutes.BATCH) {
+        BatchDetailRoute(
+            onTransfer = { navController.navigate(InventoryRoutes.locations()) },
+            onPrintLabel = { batchId ->
+                navController.navigate(InventoryRoutes.printPreview("LABEL", batchId, 58))
+            },
+            onBack = { navController.popBackStack() },
+        )
+    }
+    composable(
+        route = InventoryRoutes.RECEIPT,
+        arguments = listOf(nullableString(InventoryRoutes.ARG_ARCHIVE_ID)),
+    ) {
+        ReceiptRoute(
+            onBack = { navController.popBackStack() },
+            onPrint = { kind, refId -> navController.navigate(InventoryRoutes.printPreview(kind, refId, 80)) },
+            onSaved = { navController.popBackStack() },
+        )
+    }
+    composable(InventoryRoutes.PURCHASE) {
+        ReceiptRoute(
+            onBack = { navController.popBackStack() },
+            onPrint = { kind, refId -> navController.navigate(InventoryRoutes.printPreview(kind, refId, 80)) },
+            onSaved = { navController.popBackStack() },
+        )
+    }
+    composable(
+        route = InventoryRoutes.ISSUE,
+        arguments =
+            listOf(
+                nullableString(InventoryRoutes.ARG_ARCHIVE_ID),
+                nullableString(InventoryRoutes.ARG_RECIPE_VERSION_ID),
+            ),
+    ) {
+        IssueRoute(
+            onBack = { navController.popBackStack() },
+            onPrint = { kind, refId -> navController.navigate(InventoryRoutes.printPreview(kind, refId, 80)) },
+        )
+    }
+    composable(
+        route = InventoryRoutes.STOCKTAKE,
+        arguments =
+            listOf(
+                nullableString(InventoryRoutes.ARG_SCOPE),
+                nullableString(InventoryRoutes.ARG_SCOPE_REF),
+            ),
+    ) {
+        StocktakeRoute(onBack = { navController.popBackStack() })
+    }
+    composable(InventoryRoutes.FREEZE) {
+        FreezeRoute(
+            onBack = { navController.popBackStack() },
+            onOpenBatch = { batchId -> navController.navigate(InventoryRoutes.batch(batchId)) },
+        )
+    }
+    composable(InventoryRoutes.TEMPORARY) {
+        TemporaryRoute(onBack = { navController.popBackStack() })
+    }
+    composable(InventoryRoutes.LOCATIONS) {
+        LocationRoute(onBack = { navController.popBackStack() })
+    }
+    composable(InventoryRoutes.LEDGER_V9) {
+        LedgerV9Route(onBack = { navController.popBackStack() })
+    }
+    composable(InventoryRoutes.RECYCLE) {
+        RecycleRoute(onBack = { navController.popBackStack() })
+    }
+    composable(InventoryRoutes.RULES) {
+        RulesRoute(onBack = { navController.popBackStack() })
+    }
+    composable(InventoryRoutes.MANAGEMENT) {
+        InventoryManagementRoute(
+            onBack = { navController.popBackStack() },
+            onCategories = { navController.navigate(InventoryRoutes.categories()) },
+            onLocations = { navController.navigate(InventoryRoutes.locations()) },
+            onRecycle = { navController.navigate(InventoryRoutes.recycle()) },
+            onLedger = { navController.navigate(InventoryRoutes.ledgerV9()) },
+            onFreeze = { navController.navigate(InventoryRoutes.freeze()) },
+            onTemporary = { navController.navigate(InventoryRoutes.temporary()) },
+            onRules = { navController.navigate(InventoryRoutes.rules()) },
+        )
+    }
+    composable(
+        route = InventoryRoutes.PRINT_PREVIEW,
+        arguments =
+            listOf(
+                navArgument(InventoryRoutes.ARG_PRINT_KIND) { type = NavType.StringType },
+                navArgument(InventoryRoutes.ARG_REF_ID) { type = NavType.StringType },
+                nullableString(InventoryRoutes.ARG_WIDTH),
+            ),
+    ) {
+        PrintPreviewRoute(
+            onBack = { navController.popBackStack() },
+            onPrinted = { navController.popBackStack() },
+        )
+    }
+    // 旧入口继续保留：商品维度详情、旧流水、旧出入库表单与需求计划。
     composable(InventoryRoutes.PRODUCT) {
         InventoryDetailRoute(
-            onIssueBatch = { batchId -> navController.navigate(InventoryRoutes.issue(batchId)) },
-            onAdjustBatch = { batchId -> navController.navigate(InventoryRoutes.adjust(batchId)) },
+            onIssueBatch = { batchId -> navController.navigate(InventoryRoutes.issueLegacy(batchId)) },
+            onAdjustBatch = { batchId -> navController.navigate(InventoryRoutes.adjustLegacy(batchId)) },
         )
     }
     composable(InventoryRoutes.LEDGER) {
@@ -547,6 +724,14 @@ private fun NavGraphBuilder.inventoryGraph(navController: NavHostController) {
         RequirementPlanRoute()
     }
 }
+
+/** 可空字符串路由参数；扫码交接与筛选都会用到。 */
+private fun nullableString(name: String): NamedNavArgument =
+    navArgument(name) {
+        type = NavType.StringType
+        nullable = true
+        defaultValue = null
+    }
 
 /**
  * 扫码入口（N3 中央凸起按钮）。
@@ -570,7 +755,18 @@ private fun NavGraphBuilder.scanGraph(navController: NavHostController) {
                 navArgument(ScanRoutes.ARG_SOURCE) { type = NavType.StringType },
             ),
     ) {
-        ScanConfirmRoute(onBackToScan = { navController.popBackStack() })
+        ScanConfirmRoute(
+            onBackToScan = { navController.popBackStack() },
+            onHandoffToInventory = { handoff ->
+                // 识别成功不等于入库：先建/确认库存档案，再由用户在库存模块填写数量并确认入库。
+                navController.navigate(
+                    InventoryRoutes.archiveNew(
+                        name = handoff.suggestedName,
+                        barcode = handoff.barcode,
+                    ),
+                )
+            },
+        )
     }
 }
 

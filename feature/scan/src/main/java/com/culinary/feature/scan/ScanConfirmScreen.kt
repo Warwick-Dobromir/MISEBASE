@@ -157,6 +157,12 @@ internal fun ScanConfirmScreen(
                 loading = state.isSubmitting,
                 modifier = Modifier.fillMaxWidth(),
             )
+            Text(
+                text = stringResource(R.string.scan_confirm_handoff_note),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = CulinarySpacing.xs),
+            )
 
             state.result?.let { result ->
                 Spacer(modifier = Modifier.height(CulinarySpacing.md))

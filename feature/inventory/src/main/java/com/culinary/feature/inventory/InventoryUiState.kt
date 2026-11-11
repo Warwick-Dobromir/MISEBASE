@@ -216,6 +216,9 @@ fun ledgerTypeLabel(type: LedgerEntryType): String =
         LedgerEntryType.TRANSFER_IN -> "调入"
         LedgerEntryType.RETURN -> "退货"
         LedgerEntryType.VOID_RECEIPT -> "冲销"
+        LedgerEntryType.FREEZE -> "冻结"
+        LedgerEntryType.UNFREEZE -> "解冻"
+        LedgerEntryType.LOCATION_TRANSFER -> "库位转移"
     }
 
 fun issueReasonLabel(reason: StockIssueReason): String =

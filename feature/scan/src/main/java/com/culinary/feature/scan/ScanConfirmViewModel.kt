@@ -148,6 +148,32 @@ class ScanConfirmViewModel
             }
         }
 
+        /**
+         * v9 扫码交接：只返回识别结果与建议档案名/数量，**不写库存**。
+         *
+         * 库存数量必须由库存模块的"建档 → 入库确认"流程写入；
+         * 识别成功不等于入库成功。
+         */
+        fun handoff(): ScanHandoff? {
+            val state = _uiState.value
+            val capture = state.capture ?: return null
+            val suggestedName =
+                if (state.createNew) {
+                    state.newIngredientName.trim().takeIf { it.isNotEmpty() }
+                } else {
+                    state.ingredients.firstOrNull { it.id.value == state.selectedIngredientId }?.name
+                }
+            if (!state.createNew && suggestedName == null) {
+                _uiState.update { it.copy(error = "请选择已有食材，或填写新食材名称。") }
+                return null
+            }
+            return ScanHandoff(
+                barcode = capture.rawValue,
+                suggestedName = suggestedName,
+                quantity = state.quantity.trim().ifEmpty { "1" },
+            )
+        }
+
         /** 「取消」：清掉未完成的幂等键，避免下一次确认沿用它。 */
         fun onCancelImport() {
             _uiState.update {

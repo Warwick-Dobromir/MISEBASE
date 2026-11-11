@@ -10,6 +10,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 @Composable
 fun ScanConfirmRoute(
     onBackToScan: () -> Unit,
+    onHandoffToInventory: (ScanHandoff) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: ScanConfirmViewModel = hiltViewModel(),
 ) {
@@ -20,8 +21,9 @@ fun ScanConfirmRoute(
         onCreateNewChange = viewModel::onCreateNewChange,
         onNewIngredientNameChange = viewModel::onNewIngredientNameChange,
         onQuantityChange = viewModel::onQuantityChange,
-        onConfirm = viewModel::confirm,
-        onRetry = viewModel::confirm,
+        // v9：识别结果只交给库存建档流程，扫码本身不再写库存余额。
+        onConfirm = { viewModel.handoff()?.let(onHandoffToInventory) },
+        onRetry = { viewModel.handoff()?.let(onHandoffToInventory) },
         onBackToScan = {
             // 「返回扫码」= 取消本次确认：清掉未完成的 operation id，避免下一次确认沿用它。
             viewModel.onCancelImport()

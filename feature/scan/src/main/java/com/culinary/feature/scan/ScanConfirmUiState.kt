@@ -52,6 +52,18 @@ data class ScanImportOutcome(
     val replayed: Boolean,
 )
 
+/**
+ * 扫码 → 库存的交接数据（v9）。
+ *
+ * 扫码只负责识别与建议档案名/数量；**不写库存余额**。
+ * 库存数量由库存模块的入库流程在用户确认后写入。
+ */
+data class ScanHandoff(
+    val barcode: String,
+    val suggestedName: String?,
+    val quantity: String,
+)
+
 /** 扫码导入的错误文案：说明发生了什么，不暴露堆栈与 SQL。 */
 internal object ScanErrorMessages {
     fun describe(error: CulinaryError): String = "${friendly(error)}（${error.code.value}）"

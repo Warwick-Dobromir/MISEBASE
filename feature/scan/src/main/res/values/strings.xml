@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="scan_title">扫码</string>
     <string name="scan_subtitle">对准条码或二维码，识别结果交给确认页再入库</string>
@@ -49,7 +49,7 @@
     <string name="scan_confirm_new_name">新食材名称</string>
     <string name="scan_confirm_no_ingredients">食材库还没有食材，请直接新建。</string>
     <string name="scan_confirm_quantity">数量</string>
-    <string name="scan_confirm_action">确认导入</string>
+    <string name="scan_confirm_action">下一步：建立库存档案</string>
     <string name="scan_confirm_saving">正在导入…</string>
     <string name="scan_confirm_saved_badge">已入库</string>
     <string name="scan_confirm_saved">已入库 %1$s %2$s %3$s</string>
@@ -58,4 +58,6 @@
     <string name="scan_confirm_back_to_scan">返回扫码</string>
     <string name="scan_confirm_missing">无法读取扫码结果</string>
     <string name="scan_confirm_missing_body">请返回扫码页重新识别，或改用手工输入。</string>
+    <string name="scan_confirm_handoff_note">识别成功不等于入库：下一步进入库存"建档 → 入库确认"，库存数量在库存模块确认后才会变化。</string>
 </resources>
+
