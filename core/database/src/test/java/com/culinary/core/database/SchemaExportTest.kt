@@ -103,8 +103,23 @@ class SchemaExportTest {
     }
 
     @Test
+    fun `exports schema version 9 with inventory archive tables`() {
+        val v9 = File(schemaDirectory, "9.json")
+
+        assertThat(v9.exists()).isTrue()
+        assertThat(v9.readText()).contains("\"version\": 9")
+        assertThat(v9.readText()).contains("\"tableName\": \"inventory_archive\"")
+        assertThat(v9.readText()).contains("\"tableName\": \"inventory_archive_product\"")
+        assertThat(v9.readText()).contains("\"tableName\": \"inventory_issue_slip\"")
+        assertThat(v9.readText()).contains("\"tableName\": \"inventory_print_job\"")
+        assertThat(v9.readText()).contains("\"columnName\": \"archive_id\"")
+        assertThat(v9.readText()).contains("\"columnName\": \"is_temporary\"")
+        assertThat(tableCount(v9)).isEqualTo(47)
+    }
+
+    @Test
     fun `registers all forward migrations`() {
-        assertThat(CulinaryMigrations.ALL).hasLength(7)
+        assertThat(CulinaryMigrations.ALL).hasLength(8)
         assertThat(CulinaryMigrations.MIGRATION_1_2.startVersion).isEqualTo(1)
         assertThat(CulinaryMigrations.MIGRATION_1_2.endVersion).isEqualTo(2)
         assertThat(CulinaryMigrations.MIGRATION_2_3.startVersion).isEqualTo(2)
@@ -119,6 +134,8 @@ class SchemaExportTest {
         assertThat(CulinaryMigrations.MIGRATION_6_7.endVersion).isEqualTo(7)
         assertThat(CulinaryMigrations.MIGRATION_7_8.startVersion).isEqualTo(7)
         assertThat(CulinaryMigrations.MIGRATION_7_8.endVersion).isEqualTo(8)
+        assertThat(CulinaryMigrations.MIGRATION_8_9.startVersion).isEqualTo(8)
+        assertThat(CulinaryMigrations.MIGRATION_8_9.endVersion).isEqualTo(9)
     }
 
     private fun tableCount(file: File): Int = Regex("\"tableName\"").findAll(file.readText()).count()

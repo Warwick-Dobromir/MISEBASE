@@ -47,8 +47,8 @@ class CulinaryMigrationV1ToV2Test {
             val opened = openV2()
             val sqlite = opened.openHelper.writableDatabase
 
-            assertThat(userVersion(sqlite)).isEqualTo(8)
-            assertThat(countTables(sqlite)).isEqualTo(38)
+            assertThat(userVersion(sqlite)).isEqualTo(9)
+            assertThat(countTables(sqlite)).isEqualTo(47)
             assertThat(tableExists(sqlite, "kitchen_reference")).isTrue()
             assertThat(tableExists(sqlite, "kitchen_relation")).isTrue()
             assertThat(columnInfo(sqlite, "recipe_version", "servings"))

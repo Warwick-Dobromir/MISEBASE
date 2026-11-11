@@ -57,11 +57,14 @@ data class InventoryLedgerEntity(
     @ColumnInfo(name = "batch_id")
     val batchId: String,
     @ColumnInfo(name = "product_id")
-    val productId: String,
+    val productId: String? = null,
     @ColumnInfo(name = "location_id")
     val locationId: String,
     @ColumnInfo(name = "type")
     val type: LedgerTypeDb,
+    /** 归属库存档案（v9）；历史流水在 v8→v9 迁移时按商品回填。 */
+    @ColumnInfo(name = "archive_id")
+    val archiveId: String? = null,
     @ColumnInfo(name = "on_hand_delta")
     val onHandDelta: Double = 0.0,
     @ColumnInfo(name = "reserved_delta")
@@ -84,6 +87,12 @@ data class InventoryLedgerEntity(
     val idempotencyKey: String,
     @ColumnInfo(name = "note")
     val note: String? = null,
+    /** 操作来源/操作人预留（v9 单用户：默认本机）。 */
+    @ColumnInfo(name = "operator")
+    val operator: String? = null,
+    /** 关联打印任务（v9）：打印失败只改任务状态，不改流水。 */
+    @ColumnInfo(name = "print_job_id")
+    val printJobId: String? = null,
     @ColumnInfo(name = "occurred_at")
     val occurredAt: Long,
     @ColumnInfo(name = "created_at")

@@ -41,6 +41,7 @@ class CulinaryMigrationV4ToV5Test {
                     CulinaryMigrations.MIGRATION_5_6,
                     CulinaryMigrations.MIGRATION_6_7,
                     CulinaryMigrations.MIGRATION_7_8,
+                    CulinaryMigrations.MIGRATION_8_9,
                 )
                 .addCallback(CulinaryDatabaseCallback())
                 .allowMainThreadQueries()
@@ -48,7 +49,7 @@ class CulinaryMigrationV4ToV5Test {
         database = opened
         val sqlite = opened.openHelper.writableDatabase
 
-        assertThat(userVersion(sqlite)).isEqualTo(8)
+        assertThat(userVersion(sqlite)).isEqualTo(9)
         assertThat(columnNames(sqlite, "sauce"))
             .containsAtLeast("description", "difficulty", "hero_caption")
         assertThat(columnNames(sqlite, "sauce_version")).contains("steps_json")

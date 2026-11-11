@@ -3,6 +3,7 @@ package com.culinary.core.database.dao
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.Query
+import androidx.room.Update
 import com.culinary.core.database.entity.StorageLocationEntity
 
 /** 储存位置读写。 */
@@ -10,6 +11,10 @@ import com.culinary.core.database.entity.StorageLocationEntity
 interface StorageLocationDao {
     @Insert
     suspend fun insert(entity: StorageLocationEntity)
+
+    /** 按主键整行更新；调用方须保留原 `created_at`（v9 库位编辑）。 */
+    @Update
+    suspend fun update(entity: StorageLocationEntity): Int
 
     @Query("SELECT * FROM storage_location WHERE id = :id")
     suspend fun findById(id: String): StorageLocationEntity?

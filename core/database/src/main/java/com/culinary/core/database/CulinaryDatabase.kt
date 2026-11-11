@@ -21,9 +21,14 @@ import com.culinary.core.database.dao.ImageAssetDao
 import com.culinary.core.database.dao.IngredientAliasDao
 import com.culinary.core.database.dao.IngredientDao
 import com.culinary.core.database.dao.IngredientUnitConversionDao
+import com.culinary.core.database.dao.InventoryArchiveDao
+import com.culinary.core.database.dao.InventoryArchiveProductDao
 import com.culinary.core.database.dao.InventoryBatchDao
+import com.culinary.core.database.dao.InventoryIssueDao
 import com.culinary.core.database.dao.InventoryLedgerDao
+import com.culinary.core.database.dao.InventoryLifecycleDao
 import com.culinary.core.database.dao.InventoryReservationDao
+import com.culinary.core.database.dao.InventoryStocktakeDao
 import com.culinary.core.database.dao.KitchenReferenceContentDao
 import com.culinary.core.database.dao.KitchenReferenceDao
 import com.culinary.core.database.dao.KitchenRelationDao
@@ -59,9 +64,18 @@ import com.culinary.core.database.entity.ImageAssetEntity
 import com.culinary.core.database.entity.IngredientAliasEntity
 import com.culinary.core.database.entity.IngredientEntity
 import com.culinary.core.database.entity.IngredientUnitConversionEntity
+import com.culinary.core.database.entity.InventoryArchiveEntity
+import com.culinary.core.database.entity.InventoryArchiveProductEntity
 import com.culinary.core.database.entity.InventoryBatchEntity
+import com.culinary.core.database.entity.InventoryFreezeRecordEntity
+import com.culinary.core.database.entity.InventoryIssueSlipEntity
+import com.culinary.core.database.entity.InventoryIssueSlipLineEntity
 import com.culinary.core.database.entity.InventoryLedgerEntity
+import com.culinary.core.database.entity.InventoryLocationTransferEntity
+import com.culinary.core.database.entity.InventoryPrintJobEntity
 import com.culinary.core.database.entity.InventoryReservationEntity
+import com.culinary.core.database.entity.InventoryStocktakeEntity
+import com.culinary.core.database.entity.InventoryStocktakeLineEntity
 import com.culinary.core.database.entity.KitchenReferenceContentEntity
 import com.culinary.core.database.entity.KitchenReferenceEntity
 import com.culinary.core.database.entity.KitchenRelationEntity
@@ -94,6 +108,8 @@ import com.culinary.core.database.entity.UnitEntity
  * v6 新增六库分类树/档案分类归属与参考资料专业内容行；
  * v7 新增 recipe_version.steps_json（菜谱步骤标题/说明/时间，与酱汁同构）；
  * v8 新增 sauce_version/recipe_version 的最小制作范围数值与单位（可空，历史数据保持 null）。
+ * v9 新增库存档案与档案-商品关联、批次生产日期/冻结/回收/临时标记、冻结与库位转移记录、
+ * 出库单与明细、打印任务、盘点单与明细，并为批次/流水补充档案归属；历史数据按商品回填。
  */
 @Suppress("TooManyFunctions")
 @Database(
@@ -136,8 +152,17 @@ import com.culinary.core.database.entity.UnitEntity
         KitchenRelationEntity::class,
         ArchiveCategoryEntity::class,
         ArchiveCategoryAssignmentEntity::class,
+        InventoryArchiveEntity::class,
+        InventoryArchiveProductEntity::class,
+        InventoryFreezeRecordEntity::class,
+        InventoryLocationTransferEntity::class,
+        InventoryIssueSlipEntity::class,
+        InventoryIssueSlipLineEntity::class,
+        InventoryPrintJobEntity::class,
+        InventoryStocktakeEntity::class,
+        InventoryStocktakeLineEntity::class,
     ],
-    version = 8,
+    version = 9,
     exportSchema = true,
 )
 @TypeConverters(
@@ -179,6 +204,16 @@ abstract class CulinaryDatabase : RoomDatabase() {
     abstract fun inventoryBatchDao(): InventoryBatchDao
 
     abstract fun inventoryLedgerDao(): InventoryLedgerDao
+
+    abstract fun inventoryArchiveDao(): InventoryArchiveDao
+
+    abstract fun inventoryArchiveProductDao(): InventoryArchiveProductDao
+
+    abstract fun inventoryLifecycleDao(): InventoryLifecycleDao
+
+    abstract fun inventoryIssueDao(): InventoryIssueDao
+
+    abstract fun inventoryStocktakeDao(): InventoryStocktakeDao
 
     abstract fun productionPlanDao(): ProductionPlanDao
 

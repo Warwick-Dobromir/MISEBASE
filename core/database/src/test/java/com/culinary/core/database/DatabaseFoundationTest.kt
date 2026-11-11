@@ -59,14 +59,14 @@ class DatabaseFoundationTest {
     }
 
     @Test
-    fun `creates the schema at version 8`() {
+    fun `creates the schema at version 9`() {
         val version =
             database.openHelper.writableDatabase.query("PRAGMA user_version").use { cursor ->
                 cursor.moveToFirst()
                 cursor.getInt(0)
             }
 
-        assertThat(version).isEqualTo(8)
+        assertThat(version).isEqualTo(9)
     }
 
     @Test

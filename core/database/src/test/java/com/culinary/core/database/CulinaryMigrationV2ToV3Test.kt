@@ -39,7 +39,7 @@ class CulinaryMigrationV2ToV3Test {
             val opened = openV3()
             val sqlite = opened.openHelper.writableDatabase
 
-            assertThat(userVersion(sqlite)).isEqualTo(8)
+            assertThat(userVersion(sqlite)).isEqualTo(9)
             assertThat(tableExists(sqlite, "kitchen_reference")).isTrue()
             assertThat(tableExists(sqlite, "kitchen_relation")).isTrue()
             assertThat(indexExists(sqlite, "ux_ingredient_normalized_name")).isTrue()
@@ -121,6 +121,7 @@ class CulinaryMigrationV2ToV3Test {
                     CulinaryMigrations.MIGRATION_5_6,
                     CulinaryMigrations.MIGRATION_6_7,
                     CulinaryMigrations.MIGRATION_7_8,
+                    CulinaryMigrations.MIGRATION_8_9,
                 ).addCallback(CulinaryDatabaseCallback())
                 .allowMainThreadQueries()
                 .build()

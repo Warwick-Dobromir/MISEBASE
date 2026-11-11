@@ -47,6 +47,8 @@ internal object CulinarySchemaExtras {
         installChecks(db, "storage_location", LOCATION_PREDICATE)
         installChecks(db, "inventory_batch", BATCH_PREDICATE)
         installChecks(db, "inventory_ledger", LEDGER_PREDICATE)
+        installChecks(db, "inventory_archive", ARCHIVE_PREDICATE)
+        installChecks(db, "inventory_issue_slip_line", ISSUE_LINE_PREDICATE)
         installChecks(db, "production_plan", PLAN_PREDICATE)
         installChecks(db, "production_plan_item", PLAN_ITEM_PREDICATE)
         installChecks(db, "production_plan_snapshot", SNAPSHOT_PREDICATE)
@@ -421,20 +423,44 @@ internal object CulinarySchemaExtras {
     """
 
     private const val BATCH_PREDICATE = """
-        NEW.status NOT IN ('ACTIVE', 'DEPLETED', 'EXPIRED', 'DISCARDED')
+        NEW.status NOT IN ('ACTIVE', 'DEPLETED', 'EXPIRED', 'DISCARDED', 'FROZEN', 'RECYCLED')
         OR NEW.quantity_on_hand < 0
         OR NEW.quantity_reserved < 0
         OR NEW.quantity_reserved > NEW.quantity_on_hand
+        OR (NEW.status = 'FROZEN' AND NEW.frozen_at IS NULL)
+        OR (NEW.status = 'RECYCLED' AND NEW.recycled_at IS NULL)
         OR NEW.revision < 1
         OR NEW.created_at < 0
         OR NEW.updated_at < 0
+    """
+
+    /** 库存档案（v9）：名称非空、库存单位必填、阈值非负。 */
+    private const val ARCHIVE_PREDICATE = """
+        NEW.name = ''
+        OR NEW.normalized_name = ''
+        OR NEW.archive_kind NOT IN ('INGREDIENT', 'SAUCE')
+        OR NEW.status NOT IN ('ACTIVE', 'ARCHIVED')
+        OR NEW.minimum_stock < 0
+        OR NEW.target_stock < 0
+        OR NEW.revision < 1
+        OR NEW.created_at < 0
+        OR NEW.updated_at < 0
+    """
+
+    /** 出库明细（v9）：数量必须为正，行号从 1 起。 */
+    private const val ISSUE_LINE_PREDICATE = """
+        NEW.quantity <= 0
+        OR NEW.line_no < 1
+        OR NEW.archive_name = ''
+        OR NEW.unit_symbol = ''
     """
 
     private const val LEDGER_PREDICATE = """
         NEW.type NOT IN (
             'PURCHASE_RECEIPT', 'PRODUCTION_ISSUE', 'RESERVE', 'RELEASE',
             'ADJUSTMENT_IN', 'ADJUSTMENT_OUT', 'WASTE', 'TRANSFER_OUT',
-            'TRANSFER_IN', 'RETURN', 'VOID_RECEIPT')
+            'TRANSFER_IN', 'RETURN', 'VOID_RECEIPT', 'FREEZE', 'UNFREEZE',
+            'LOCATION_TRANSFER')
         OR NEW.on_hand_after < 0
         OR NEW.reserved_after < 0
         OR NEW.reserved_after > NEW.on_hand_after
