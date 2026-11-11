@@ -57,18 +57,18 @@ class StartupCoordinatorTest {
         }
 
     @Test
-    fun `reports ready for a persisted schema v8 database`() =
+    fun `reports ready for a persisted schema v9 database`() =
         runBlocking {
             createPersistedV4Database()
 
             val state = coordinator().start()
 
             assertThat(state).isEqualTo(StartupState.Ready)
-            assertThat(requireNotNull(database).openHelper.writableDatabase.version).isEqualTo(8)
+            assertThat(requireNotNull(database).openHelper.writableDatabase.version).isEqualTo(9)
         }
 
     @Test
-    fun `migrates a v1 database to v8 and reports ready`() =
+    fun `migrates a v1 database to v9 and reports ready`() =
         runBlocking {
             createV1Database()
             assertV1Fixture()
@@ -81,7 +81,7 @@ class StartupCoordinatorTest {
             SQLiteDatabase
                 .openDatabase(context.getDatabasePath(DATABASE_NAME).path, null, SQLiteDatabase.OPEN_READONLY)
                 .use { sqlite ->
-                    assertThat(sqlite.version).isEqualTo(8)
+                    assertThat(sqlite.version).isEqualTo(9)
                     assertThat(columnNames(sqlite, "recipe_version")).contains("servings")
                     assertThat(tableNames(sqlite)).contains("kitchen_reference")
                     assertThat(tableNames(sqlite)).contains("kitchen_relation")
@@ -95,7 +95,7 @@ class StartupCoordinatorTest {
             val file = context.getDatabasePath(DATABASE_NAME)
             file.parentFile?.mkdirs()
             SQLiteDatabase.openOrCreateDatabase(file, null).use { sqlite ->
-                sqlite.version = 9
+                sqlite.version = 10
             }
             val coordinator = coordinator()
 
@@ -103,8 +103,8 @@ class StartupCoordinatorTest {
 
             assertThat(state).isInstanceOf(StartupState.Incompatible::class.java)
             val incompatible = state as StartupState.Incompatible
-            assertThat(incompatible.databaseVersion).isEqualTo(9)
-            assertThat(incompatible.appSchemaVersion).isEqualTo(8)
+            assertThat(incompatible.databaseVersion).isEqualTo(10)
+            assertThat(incompatible.appSchemaVersion).isEqualTo(9)
         }
 
     @Test

@@ -4,6 +4,7 @@ import com.culinary.core.data.repository.ArchiveCategoryRepositoryImpl
 import com.culinary.core.data.repository.ArchiveImageRepositoryImpl
 import com.culinary.core.data.repository.CalculationRecordRepositoryImpl
 import com.culinary.core.data.repository.IngredientRepositoryImpl
+import com.culinary.core.data.repository.InventoryArchiveRepositoryImpl
 import com.culinary.core.data.repository.InventoryRepositoryImpl
 import com.culinary.core.data.repository.KitchenReferenceRepositoryImpl
 import com.culinary.core.data.repository.KitchenRelationRepositoryImpl
@@ -16,6 +17,7 @@ import com.culinary.core.domain.repository.ArchiveCategoryRepository
 import com.culinary.core.domain.repository.ArchiveImageRepository
 import com.culinary.core.domain.repository.CalculationRecordRepository
 import com.culinary.core.domain.repository.IngredientRepository
+import com.culinary.core.domain.repository.InventoryArchiveRepository
 import com.culinary.core.domain.repository.InventoryRepository
 import com.culinary.core.domain.repository.KitchenReferenceRepository
 import com.culinary.core.domain.repository.KitchenRelationRepository
@@ -53,6 +55,10 @@ abstract class RepositoryModule {
     @Binds
     @Singleton
     abstract fun bindInventoryRepository(impl: InventoryRepositoryImpl): InventoryRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindInventoryArchiveRepository(impl: InventoryArchiveRepositoryImpl): InventoryArchiveRepository
 
     @Binds
     @Singleton

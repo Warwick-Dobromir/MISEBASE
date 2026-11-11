@@ -109,7 +109,7 @@ class InMemoryInventoryRepository(
                 CulinaryError.Domain(
                     detail =
                         DomainDetail.InsufficientStock(
-                            productId = entry.productId.value,
+                            productId = entry.productId?.value.orEmpty(),
                             requested = -entry.onHandDelta,
                             available = item.available,
                         ),

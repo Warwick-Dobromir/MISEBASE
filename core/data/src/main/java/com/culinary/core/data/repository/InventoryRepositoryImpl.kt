@@ -54,7 +54,7 @@ class InventoryRepositoryImpl
     ) : InventoryRepository {
         override suspend fun listItems(): Outcome<List<InventoryItem>> =
             read {
-                batchDao.listActive().map { batch ->
+                batchDao.listActive().mapNotNull { batch ->
                     val unit = loadUnit(batch.stockUnitId) ?: unitNotFound(batch.stockUnitId)
                     InventoryMapper.toDomain(batch, unit)
                 }
@@ -269,7 +269,7 @@ class InventoryRepositoryImpl
                 CulinaryError.Domain(
                     detail =
                         DomainDetail.InsufficientStock(
-                            productId = entry.productId.value,
+                            productId = entry.productId?.value.orEmpty(),
                             requested = requested,
                             available = available,
                         ),

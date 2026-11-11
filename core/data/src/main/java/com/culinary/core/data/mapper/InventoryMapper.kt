@@ -16,13 +16,15 @@ import java.time.LocalDate
 
 /** 库存 Entity ↔ 领域模型；枚举显式穷举，新增类型时必须同步。 */
 object InventoryMapper {
+    /** 批次 → 商品维度的库存项；没有来源商品的批次（酱汁现货）返回 null。 */
     fun toDomain(
         entity: InventoryBatchEntity,
         stockUnit: Unit,
-    ): InventoryItem =
-        InventoryItem(
+    ): InventoryItem? {
+        val productId = entity.productId ?: return null
+        return InventoryItem(
             batchId = BatchId(entity.id),
-            productId = ProductId(entity.productId),
+            productId = ProductId(productId),
             locationId = LocationId(entity.locationId),
             stockUnit = stockUnit,
             onHand = entity.quantityOnHand,
@@ -31,6 +33,7 @@ object InventoryMapper {
             batchCode = entity.batchCode,
             receivedAt = Instant.ofEpochMilli(entity.receivedAt),
         )
+    }
 
     fun toDomain(
         entity: InventoryLedgerEntity,
@@ -39,7 +42,7 @@ object InventoryMapper {
         InventoryLedgerEntry(
             id = LedgerEntryId(entity.id),
             batchId = BatchId(entity.batchId),
-            productId = ProductId(entity.productId),
+            productId = entity.productId?.let(::ProductId),
             locationId = LocationId(entity.locationId),
             type = toDomain(entity.type),
             stockUnit = stockUnit,
@@ -52,13 +55,16 @@ object InventoryMapper {
             referenceType = entity.referenceType,
             referenceId = entity.referenceId,
             note = entity.note,
+            archiveId = entity.archiveId,
+            operator = entity.operator,
+            printJobId = entity.printJobId,
         )
 
     fun toEntity(entry: InventoryLedgerEntry): InventoryLedgerEntity =
         InventoryLedgerEntity(
             id = entry.id.value,
             batchId = entry.batchId.value,
-            productId = entry.productId.value,
+            productId = entry.productId?.value,
             locationId = entry.locationId.value,
             type = toDb(entry.type),
             onHandDelta = entry.onHandDelta,
@@ -72,9 +78,12 @@ object InventoryMapper {
             note = entry.note,
             occurredAt = entry.occurredAt.toEpochMilli(),
             createdAt = entry.occurredAt.toEpochMilli(),
+            archiveId = entry.archiveId,
+            operator = entry.operator,
+            printJobId = entry.printJobId,
         )
 
-    private fun toDomain(type: LedgerTypeDb): LedgerEntryType =
+    fun toDomain(type: LedgerTypeDb): LedgerEntryType =
         when (type) {
             LedgerTypeDb.PURCHASE_RECEIPT -> LedgerEntryType.PURCHASE_RECEIPT
             LedgerTypeDb.PRODUCTION_ISSUE -> LedgerEntryType.PRODUCTION_ISSUE
@@ -87,9 +96,12 @@ object InventoryMapper {
             LedgerTypeDb.TRANSFER_IN -> LedgerEntryType.TRANSFER_IN
             LedgerTypeDb.RETURN -> LedgerEntryType.RETURN
             LedgerTypeDb.VOID_RECEIPT -> LedgerEntryType.VOID_RECEIPT
+            LedgerTypeDb.FREEZE -> LedgerEntryType.FREEZE
+            LedgerTypeDb.UNFREEZE -> LedgerEntryType.UNFREEZE
+            LedgerTypeDb.LOCATION_TRANSFER -> LedgerEntryType.LOCATION_TRANSFER
         }
 
-    private fun toDb(type: LedgerEntryType): LedgerTypeDb =
+    fun toDb(type: LedgerEntryType): LedgerTypeDb =
         when (type) {
             LedgerEntryType.PURCHASE_RECEIPT -> LedgerTypeDb.PURCHASE_RECEIPT
             LedgerEntryType.PRODUCTION_ISSUE -> LedgerTypeDb.PRODUCTION_ISSUE
@@ -102,5 +114,8 @@ object InventoryMapper {
             LedgerEntryType.TRANSFER_IN -> LedgerTypeDb.TRANSFER_IN
             LedgerEntryType.RETURN -> LedgerTypeDb.RETURN
             LedgerEntryType.VOID_RECEIPT -> LedgerTypeDb.VOID_RECEIPT
+            LedgerEntryType.FREEZE -> LedgerTypeDb.FREEZE
+            LedgerEntryType.UNFREEZE -> LedgerTypeDb.UNFREEZE
+            LedgerEntryType.LOCATION_TRANSFER -> LedgerTypeDb.LOCATION_TRANSFER
         }
 }
