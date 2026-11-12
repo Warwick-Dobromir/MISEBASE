@@ -1,0 +1,3940 @@
+21697@AnfuZhengzhang UCRT64 /d/MISEBASE (feature/recipe-sauce-parity)
+$
+$ cd /d/MISEBASE
+
+echo "===== DESIGN SYSTEM: ARCHIVE EDITOR ====="
+cat core/designsystem/src/main/java/com/culinary/core/designsystem/component/ArchiveEditor.kt
+
+echo "===== DESIGN SYSTEM: ARCHIVE IMAGE ====="
+cat core/designsystem/src/main/java/com/culinary/core/designsystem/component/ArchiveImage.kt
+
+echo "===== DESIGN SYSTEM: CULINARY FIELDS ====="
+cat core/designsystem/src/main/java/com/culinary/core/designsystem/component/CulinaryFields.kt
+
+echo "===== DESIGN SYSTEM: RELATION ITEM ====="
+cat core/designsystem/src/main/java/com/culinary/core/designsystem/component/CulinaryRelationItem.kt
+
+echo "===== SAUCE EDITOR COMPONENTS ====="
+cat feature/sauces/src/main/java/com/culinary/feature/sauces/SauceEditorComponents.kt
+
+echo "===== SAUCE EDITOR SECTIONS ====="
+cat feature/sauces/src/main/java/com/culinary/feature/sauces/SauceEditorSections.kt
+
+echo "===== SAUCE EDITOR SCREEN ====="
+cat feature/sauces/src/main/java/com/culinary/feature/sauces/SauceEditorScreen.kt
+
+echo "===== RECIPE EDITOR SCREEN ====="
+cat feature/recipes/src/main/java/com/culinary/feature/recipes/RecipeEditorScreen.kt
+
+echo "===== MODULE DEPENDENCIES ====="
+cat feature/sauces/build.gradle.kts
+cat feature/recipes/build.gradle.kts
+cat core/designsystem/build.gradle.kts
+===== DESIGN SYSTEM: ARCHIVE EDITOR =====
+package com.culinary.core.designsystem.component
+
+import android.graphics.BitmapFactory
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
+import com.culinary.core.common.KitchenTime
+import com.culinary.core.designsystem.icon.CulinaryIcons
+import com.culinary.core.designsystem.theme.CulinarySpacing
+import com.culinary.core.designsystem.theme.CulinaryTextStyles
+
+/**
+ * 酱汁/菜谱共用的编辑页视觉组件。
+ *
+ * 只提供排版、输入和轻量交互，不读取业务数据；字段映射留在各自模块。
+ */
+
+/** 顶部操作栏：返回 / 取消 / 标题 / 保存。 */
+@Composable
+fun ArchiveEditorTopBar(
+    title: String,
+    onBack: () -> Unit,
+    onCancel: () -> Unit,
+    onSave: () -> Unit,
+    isSaving: Boolean,
+    canSave: Boolean,
+    modifier: Modifier = Modifier,
+    cancelLabel: String = "取消",
+    saveLabel: String = "保存",
+) {
+    Column(modifier = modifier.fillMaxWidth()) {
+        Row(
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .height(56.dp)
+                    .padding(horizontal = CulinarySpacing.xs),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(
+                imageVector = CulinaryIcons.Back,
+                contentDescription = "返回",
+                tint = MaterialTheme.colorScheme.onSurface,
+                modifier =
+                    Modifier
+                        .size(44.dp)
+                        .clickable(role = androidx.compose.ui.semantics.Role.Button, onClick = onBack)
+                        .padding(12.dp),
+            )
+            Text(
+                text = cancelLabel,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier =
+                    Modifier
+                        .clickable(role = androidx.compose.ui.semantics.Role.Button, onClick = onCancel)
+                        .padding(horizontal = CulinarySpacing.xs, vertical = CulinarySpacing.sm),
+            )
+            Spacer(modifier = Modifier.weight(1f))
+            Text(
+                text = title,
+                style = CulinaryTextStyles.eyebrow,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            Spacer(modifier = Modifier.weight(1f))
+            Text(
+                text = saveLabel,
+                style = MaterialTheme.typography.titleSmall,
+                color =
+                    if (canSave && !isSaving) {
+                        MaterialTheme.colorScheme.onSurface
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
+                    },
+                modifier =
+                    Modifier
+                        .clickable(
+                            enabled = canSave && !isSaving,
+                            role = androidx.compose.ui.semantics.Role.Button,
+                            onClick = onSave,
+                        ).padding(horizontal = CulinarySpacing.sm, vertical = CulinarySpacing.sm),
+            )
+        }
+        CulinaryRule()
+    }
+}
+
+/** 分节标题：编号 / 英文 / 中文 / 副标题 / 右侧动作。 */
+@Composable
+fun ArchiveEditorSectionHeader(
+    index: String,
+    english: String,
+    title: String,
+    modifier: Modifier = Modifier,
+    subtitle: String? = null,
+    action: (@Composable () -> Unit)? = null,
+    showRule: Boolean = true,
+) {
+    Column(modifier = modifier.fillMaxWidth().padding(top = CulinarySpacing.xl, bottom = CulinarySpacing.sm)) {
+        if (showRule) {
+            CulinaryRule()
+        }
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(top = CulinarySpacing.md),
+            verticalAlignment = Alignment.Bottom,
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = if (index.isBlank()) english else "$index / $english",
+                    style = CulinaryTextStyles.eyebrow,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Spacer(modifier = Modifier.height(CulinarySpacing.xxs))
+                Text(
+                    text = title,
+                    style = CulinaryTextStyles.sectionTitle,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+                subtitle?.takeIf { it.isNotBlank() }?.let { value ->
+                    Spacer(modifier = Modifier.height(CulinarySpacing.xxs))
+                    Text(
+                        text = value,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+            action?.invoke()
+        }
+    }
+}
+
+/** 行内无边框输入；编辑式档案不使用 Material 外框。 */
+@Composable
+fun ArchiveEditorInlineField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    placeholder: String,
+    modifier: Modifier = Modifier,
+    textStyle: TextStyle = MaterialTheme.typography.bodyLarge,
+    singleLine: Boolean = true,
+    minLines: Int = 1,
+    keyboardType: KeyboardType = KeyboardType.Text,
+    textAlign: TextAlign = TextAlign.Start,
+    enabled: Boolean = true,
+) {
+    BasicTextField(
+        value = value,
+        onValueChange = onValueChange,
+        modifier = modifier,
+        enabled = enabled,
+        singleLine = singleLine,
+        textStyle = textStyle.copy(color = MaterialTheme.colorScheme.onSurface, textAlign = textAlign),
+        cursorBrush = SolidColor(MaterialTheme.colorScheme.secondary),
+        keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
+        minLines = minLines,
+        decorationBox = { inner ->
+            Box {
+                if (value.isEmpty()) {
+                    Text(
+                        text = placeholder,
+                        style = textStyle.copy(textAlign = textAlign),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.55f),
+                        maxLines = if (singleLine) 1 else 3,
+                    )
+                }
+                inner()
+            }
+        },
+    )
+}
+
+/** 拖动排序手柄；只作用于手柄，避免和文本输入抢手势。 */
+@Composable
+fun ArchiveEditorDragHandle(
+    modifier: Modifier = Modifier,
+    onMove: (Int) -> Unit,
+) {
+    var dragging by remember { mutableStateOf(false) }
+    var accumulated by remember { mutableStateOf(0f) }
+    Icon(
+        imageVector = CulinaryIcons.Sort,
+        contentDescription = "拖动排序",
+        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier =
+            modifier
+                .size(36.dp)
+                .alpha(if (dragging) 0.45f else 1f)
+                .pointerInput(onMove) {
+                    detectDragGesturesAfterLongPress(
+                        onDragStart = {
+                            dragging = true
+                            accumulated = 0f
+                        },
+                        onDrag = { change, dragAmount ->
+                            change.consume()
+                            accumulated += dragAmount.y
+                            when {
+                                accumulated > 32f -> {
+                                    onMove(1)
+                                    accumulated = 0f
+                                }
+
+                                accumulated < -32f -> {
+                                    onMove(-1)
+                                    accumulated = 0f
+                                }
+                            }
+                        },
+                        onDragEnd = { dragging = false },
+                        onDragCancel = { dragging = false },
+                    )
+                },
+    )
+}
+
+/** 双列计量中的单列：英文名 + 中文名 + 数值 + 单位。 */
+@Composable
+fun ArchiveMeasurementColumn(
+    englishLabel: String,
+    chineseLabel: String,
+    value: String,
+    unitSymbol: String,
+    onValueChange: (String) -> Unit,
+    onUnitClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+) {
+    Column(modifier = modifier) {
+        Text(
+            text = englishLabel.uppercase(),
+            style = CulinaryTextStyles.eyebrow,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Text(
+            text = chineseLabel,
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Spacer(modifier = Modifier.height(CulinarySpacing.xxs))
+        Row(verticalAlignment = Alignment.Bottom) {
+            ArchiveEditorInlineField(
+                value = value,
+                onValueChange = onValueChange,
+                placeholder = "",
+                textStyle = CulinaryTextStyles.numeralS,
+                keyboardType = KeyboardType.Decimal,
+                enabled = enabled,
+                modifier = Modifier.width(72.dp),
+            )
+            Text(
+                text = if (value.isBlank()) "—" else unitSymbol.ifBlank { "—" },
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier =
+                    Modifier
+                        .clickable(enabled = enabled, onClick = onUnitClick)
+                        .padding(start = 4.dp, bottom = 2.dp, top = 8.dp),
+            )
+        }
+    }
+}
+
+/** 双列默认产量 / 最小制作范围；两列等宽。 */
+@Composable
+fun ArchiveYieldRangeFields(
+    yieldAmount: String,
+    yieldUnit: String,
+    minRangeAmount: String,
+    minRangeUnit: String,
+    onYieldAmountChange: (String) -> Unit,
+    onYieldUnitClick: () -> Unit,
+    onMinRangeAmountChange: (String) -> Unit,
+    onMinRangeUnitClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+) {
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(CulinarySpacing.md),
+    ) {
+        ArchiveMeasurementColumn(
+            englishLabel = "YIELD",
+            chineseLabel = "默认产量",
+            value = yieldAmount,
+            unitSymbol = yieldUnit,
+            onValueChange = onYieldAmountChange,
+            onUnitClick = onYieldUnitClick,
+            enabled = enabled,
+            modifier = Modifier.weight(1f),
+        )
+        ArchiveMeasurementColumn(
+            englishLabel = "MIN. RANGE",
+            chineseLabel = "最小制作范围",
+            value = minRangeAmount,
+            unitSymbol = minRangeUnit,
+            onValueChange = onMinRangeAmountChange,
+            onUnitClick = onMinRangeUnitClick,
+            enabled = enabled,
+            modifier = Modifier.weight(1f),
+        )
+    }
+}
+
+/**
+ * 三段式制作时间：`[时] / [分] / [秒]`。
+ *
+ * 不显示 h/m/s、不显示单位文字；数值只保存总秒数。
+ */
+@Composable
+fun KitchenTimeSegmentsField(
+    seconds: Int,
+    onSecondsChange: (Int) -> Unit,
+    modifier: Modifier = Modifier,
+    label: String = "制作时间",
+    enabled: Boolean = true,
+) {
+    val parts = remember(seconds) { partsOf(seconds) }
+    var hours by remember { mutableStateOf(parts[0]) }
+    var minutes by remember { mutableStateOf(parts[1]) }
+    var secs by remember { mutableStateOf(parts[2]) }
+
+    fun push() {
+        onSecondsChange(KitchenTime.secondsOfParts(hours.toIntOrNull() ?: 0, minutes.toIntOrNull() ?: 0, secs.toIntOrNull() ?: 0))
+    }
+
+    LaunchedEffect(seconds) {
+        val expected = partsOf(seconds)
+        if (expected != listOf(hours, minutes, secs).map { it.padStart(2, '0') }) {
+            hours = expected[0]
+            minutes = expected[1]
+            secs = expected[2]
+        }
+    }
+
+    Column(modifier = modifier.fillMaxWidth()) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Spacer(modifier = Modifier.height(CulinarySpacing.xs))
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            SegmentBox(
+                value = hours,
+                onValueChange = {
+                    hours = it
+                    push()
+                },
+                enabled = enabled,
+            )
+            Text(
+                text = " / ",
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            SegmentBox(
+                value = minutes,
+                onValueChange = {
+                    minutes = it
+                    push()
+                },
+                enabled = enabled,
+            )
+            Text(
+                text = " / ",
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            SegmentBox(
+                value = secs,
+                onValueChange = {
+                    secs = it
+                    push()
+                },
+                enabled = enabled,
+            )
+        }
+    }
+}
+
+@Composable
+private fun SegmentBox(
+    value: String,
+    onValueChange: (String) -> Unit,
+    enabled: Boolean,
+) {
+    var focused by remember { mutableStateOf(false) }
+    Box(
+        modifier =
+            Modifier
+                .width(48.dp)
+                .height(44.dp)
+                .background(MaterialTheme.colorScheme.surfaceContainerLow)
+                .border(
+                    width = if (focused) 1.dp else 0.5.dp,
+                    color =
+                        if (focused) {
+                            MaterialTheme.colorScheme.secondary
+                        } else {
+                            MaterialTheme.colorScheme.outlineVariant
+                        },
+                ),
+        contentAlignment = Alignment.Center,
+    ) {
+        BasicTextField(
+            value = value,
+            onValueChange = { raw ->
+                val digits = raw.filter { it.isDigit() }.takeLast(2)
+                onValueChange(digits)
+            },
+            enabled = enabled,
+            singleLine = true,
+            textStyle =
+                CulinaryTextStyles.numeralS.copy(
+                    color = MaterialTheme.colorScheme.onSurface,
+                    textAlign = TextAlign.Center,
+                ),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            cursorBrush = SolidColor(MaterialTheme.colorScheme.secondary),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .onFocusChanged { focused = it.isFocused },
+        )
+    }
+}
+
+private fun partsOf(seconds: Int): List<String> {
+    val safe = seconds.coerceIn(0, KitchenTime.MAX_SECONDS)
+    return listOf(
+        (safe / 3600).toString().padStart(2, '0'),
+        ((safe % 3600) / 60).toString().padStart(2, '0'),
+        (safe % 60).toString().padStart(2, '0'),
+    )
+}
+
+/** 研发备注：浅底细边框，不使用阴影。 */
+@Composable
+fun ArchiveEditorNotesBox(
+    value: String,
+    onValueChange: (String) -> Unit,
+    placeholder: String,
+    modifier: Modifier = Modifier,
+) {
+    BasicTextField(
+        value = value,
+        onValueChange = onValueChange,
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .background(MaterialTheme.colorScheme.surfaceContainerLow)
+                .border(1.dp, MaterialTheme.colorScheme.outlineVariant)
+                .padding(CulinarySpacing.md),
+        textStyle = MaterialTheme.typography.bodyLarge.copy(color = MaterialTheme.colorScheme.onSurface),
+        cursorBrush = SolidColor(MaterialTheme.colorScheme.secondary),
+        minLines = 6,
+        decorationBox = { inner ->
+            Box {
+                if (value.isEmpty()) {
+                    Text(
+                        text = placeholder,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.55f),
+                    )
+                }
+                inner()
+            }
+        },
+    )
+}
+
+/** 完整宽度图片区域；空态是浅灰上传面，有图时右上角提供替换/删除。 */
+@Composable
+fun ArchiveEditorImageBox(
+    imageBytes: ByteArray?,
+    onPick: () -> Unit,
+    onClear: (() -> Unit)?,
+    emptyLabel: String,
+    modifier: Modifier = Modifier,
+    aspectRatio: Float = 16f / 9f,
+    showActions: Boolean = true,
+) {
+    val bitmap = remember(imageBytes) { imageBytes?.toImageBitmapOrNull() }
+    Box(
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .aspectRatio(aspectRatio)
+                .background(MaterialTheme.colorScheme.surfaceContainerLow)
+                .border(1.dp, MaterialTheme.colorScheme.outlineVariant),
+    ) {
+        if (bitmap != null) {
+            Image(
+                bitmap = bitmap,
+                contentDescription = emptyLabel,
+                modifier = Modifier.fillMaxWidth().aspectRatio(aspectRatio),
+                contentScale = ContentScale.Crop,
+            )
+        } else {
+            Column(
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .aspectRatio(aspectRatio)
+                        .clickable(onClick = onPick),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center,
+            ) {
+                Icon(
+                    imageVector = CulinaryIcons.Add,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Spacer(modifier = Modifier.height(CulinarySpacing.xs))
+                Text(
+                    text = emptyLabel,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+        if (bitmap != null && showActions) {
+            Row(
+                modifier =
+                    Modifier
+                        .align(Alignment.TopEnd)
+                        .background(Color.White.copy(alpha = 0.9f))
+                        .padding(horizontal = CulinarySpacing.xs, vertical = 2.dp),
+                horizontalArrangement = Arrangement.spacedBy(CulinarySpacing.sm),
+            ) {
+                Text(
+                    text = "替换",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.clickable(onClick = onPick).padding(4.dp),
+                )
+                if (onClear != null) {
+                    Text(
+                        text = "删除",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.clickable(onClick = onClear).padding(4.dp),
+                    )
+                }
+            }
+        }
+    }
+}
+
+internal fun ByteArray.toImageBitmapOrNull() =
+    runCatching {
+        BitmapFactory.decodeByteArray(this, 0, size)?.asImageBitmap()
+    }.getOrNull()
+===== DESIGN SYSTEM: ARCHIVE IMAGE =====
+package com.culinary.core.designsystem.component
+
+import android.graphics.BitmapFactory
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.unit.dp
+
+/** 档案详情主图：只展示已持久化的真实图片，不做占位图。 */
+@Composable
+fun ArchiveHeroImage(
+    bytes: ByteArray,
+    modifier: Modifier = Modifier,
+    height: Int = 220,
+) {
+    val bitmap = remember(bytes) { BitmapFactory.decodeByteArray(bytes, 0, bytes.size) }
+    if (bitmap != null) {
+        Image(
+            bitmap = bitmap.asImageBitmap(),
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            modifier =
+                modifier
+                    .fillMaxWidth()
+                    .height(height.dp)
+                    .clip(RoundedCornerShape(2.dp)),
+        )
+    } else {
+        Box(
+            modifier =
+                modifier
+                    .fillMaxWidth()
+                    .height(0.dp)
+                    .background(MaterialTheme.colorScheme.surfaceVariant),
+        )
+    }
+}
+===== DESIGN SYSTEM: CULINARY FIELDS =====
+package com.culinary.core.designsystem.component
+
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.defaultMinSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.unit.dp
+import com.culinary.core.designsystem.icon.CulinaryIcons
+import com.culinary.core.designsystem.theme.CulinarySizes
+import com.culinary.core.designsystem.theme.CulinarySpacing
+import com.culinary.core.designsystem.theme.CulinaryStrokes
+
+/**
+ * 输入规范（MB-UI-001 §3.9 / §8.2）。
+ *
+ * 以 Material 3 的 OutlinedTextField 为无障碍与 IME 底座，但外观重设：
+ * 2dp 圆角、1dp 细边框、聚焦时香槟金描边、标签在框内上方，不使用填充色块。
+ */
+@Composable
+fun CulinaryTextField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    label: String,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    singleLine: Boolean = false,
+    minLines: Int = 1,
+    isError: Boolean = false,
+    supportingText: String? = null,
+    placeholder: String? = null,
+    keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
+    trailing: (@Composable () -> Unit)? = null,
+    fillWidth: Boolean = true,
+) {
+    OutlinedTextField(
+        value = value,
+        onValueChange = onValueChange,
+        modifier =
+            modifier
+                .then(if (fillWidth) Modifier.fillMaxWidth() else Modifier)
+                .defaultMinSize(minHeight = CulinarySizes.fieldHeight),
+        enabled = enabled,
+        isError = isError,
+        singleLine = singleLine,
+        minLines = if (singleLine) 1 else minLines,
+        textStyle = MaterialTheme.typography.bodyLarge,
+        label = {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelMedium,
+            )
+        },
+        placeholder =
+            placeholder?.let { hint ->
+                {
+                    Text(
+                        text = hint,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            },
+        supportingText =
+            supportingText?.let { hint ->
+                {
+                    Text(
+                        text = hint,
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                }
+            },
+        trailingIcon = trailing,
+        keyboardOptions = keyboardOptions,
+        shape = MaterialTheme.shapes.extraSmall,
+        colors = culinaryFieldColors(),
+    )
+}
+
+/**
+ * 兼容 Material 3 调用风格的重载：`label = { Text(…) }`、`supportingText = { … }`。
+ *
+ * 既有编辑页已使用 lambda 写法，保留该重载可让页面只替换组件名，
+ * 不重写表单逻辑，降低迁移风险。
+ */
+@Composable
+fun CulinaryTextField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    label: @Composable () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    readOnly: Boolean = false,
+    singleLine: Boolean = false,
+    minLines: Int = 1,
+    isError: Boolean = false,
+    supportingText: (@Composable () -> Unit)? = null,
+    leadingIcon: (@Composable () -> Unit)? = null,
+    trailingIcon: (@Composable () -> Unit)? = null,
+    placeholder: (@Composable () -> Unit)? = null,
+    keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
+    keyboardActions: KeyboardActions = KeyboardActions.Default,
+    visualTransformation: VisualTransformation = VisualTransformation.None,
+    fillWidth: Boolean = true,
+) {
+    OutlinedTextField(
+        value = value,
+        onValueChange = onValueChange,
+        modifier =
+            modifier
+                .then(if (fillWidth) Modifier.fillMaxWidth() else Modifier)
+                .defaultMinSize(minHeight = CulinarySizes.fieldHeight),
+        enabled = enabled,
+        readOnly = readOnly,
+        isError = isError,
+        singleLine = singleLine,
+        minLines = if (singleLine) 1 else minLines,
+        textStyle = MaterialTheme.typography.bodyLarge,
+        label = label,
+        placeholder = placeholder,
+        supportingText = supportingText,
+        leadingIcon = leadingIcon,
+        trailingIcon = trailingIcon,
+        keyboardOptions = keyboardOptions,
+        keyboardActions = keyboardActions,
+        visualTransformation = visualTransformation,
+        shape = MaterialTheme.shapes.extraSmall,
+        colors = culinaryFieldColors(),
+    )
+}
+
+/** 搜索框：左侧放大镜、右侧清空；高度 48dp，容器用极浅灰与页面区分。 */
+@Composable
+fun CulinarySearchField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    placeholder: String,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+) {
+    OutlinedTextField(
+        value = value,
+        onValueChange = onValueChange,
+        modifier = modifier.fillMaxWidth().heightIn(min = CulinarySizes.touchTarget),
+        enabled = enabled,
+        singleLine = true,
+        textStyle = MaterialTheme.typography.bodyMedium,
+        placeholder = {
+            Text(
+                text = placeholder,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        },
+        leadingIcon = {
+            Icon(
+                imageVector = CulinaryIcons.Search,
+                contentDescription = null,
+                modifier = Modifier.size(18.dp),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        },
+        trailingIcon =
+            if (value.isNotEmpty()) {
+                {
+                    IconButton(onClick = { onValueChange("") }) {
+                        Icon(
+                            imageVector = CulinaryIcons.Close,
+                            contentDescription = "清除",
+                            modifier = Modifier.size(18.dp),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+            } else {
+                null
+            },
+        shape = MaterialTheme.shapes.extraSmall,
+        colors =
+            culinaryFieldColors(
+                containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+                unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
+            ),
+    )
+}
+
+@Composable
+private fun culinaryFieldColors(
+    containerColor: Color = Color.Transparent,
+    unfocusedBorderColor: Color = MaterialTheme.colorScheme.outline,
+) = OutlinedTextFieldDefaults.colors(
+    focusedTextColor = MaterialTheme.colorScheme.onSurface,
+    unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+    disabledTextColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f),
+    focusedContainerColor = containerColor,
+    unfocusedContainerColor = containerColor,
+    disabledContainerColor = Color.Transparent,
+    cursorColor = MaterialTheme.colorScheme.secondary,
+    errorCursorColor = MaterialTheme.colorScheme.error,
+    focusedBorderColor = MaterialTheme.colorScheme.secondary,
+    unfocusedBorderColor = unfocusedBorderColor,
+    disabledBorderColor = MaterialTheme.colorScheme.outlineVariant,
+    errorBorderColor = MaterialTheme.colorScheme.error,
+    focusedLabelColor = MaterialTheme.colorScheme.secondary,
+    unfocusedLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+    disabledLabelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f),
+    errorLabelColor = MaterialTheme.colorScheme.error,
+    errorSupportingTextColor = MaterialTheme.colorScheme.error,
+)
+
+/**
+ * 分段控件：用于知识库三库切换等少量互斥选项。
+ *
+ * 选中态用香槟金下划线 + 主文字色，不使用填充胶囊，保持编辑式克制。
+ */
+@Composable
+fun CulinarySegmentedControl(
+    options: List<String>,
+    selectedIndex: Int,
+    onSelect: (Int) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier.fillMaxWidth().selectableGroup(),
+    ) {
+        options.forEachIndexed { index, label ->
+            val selected = index == selectedIndex
+            Column(
+                modifier =
+                    Modifier
+                        .weight(1f)
+                        .heightIn(min = CulinarySizes.touchTarget)
+                        .selectable(
+                            selected = selected,
+                            role = Role.Tab,
+                            onClick = { onSelect(index) },
+                        ).padding(top = CulinarySpacing.sm),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Text(
+                    text = label,
+                    style = MaterialTheme.typography.labelLarge,
+                    color =
+                        if (selected) {
+                            MaterialTheme.colorScheme.onSurface
+                        } else {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        },
+                    modifier = Modifier.padding(bottom = CulinarySpacing.xs),
+                )
+                Box(
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .height(if (selected) CulinaryStrokes.emphasis else CulinaryStrokes.hairline)
+                            .background(
+                                if (selected) {
+                                    MaterialTheme.colorScheme.secondary
+                                } else {
+                                    MaterialTheme.colorScheme.outlineVariant
+                                },
+                            ),
+                )
+            }
+        }
+    }
+}
+
+/** 过滤标签：2dp 圆角、1dp 描边；选中用浅金底 + 深金文字。 */
+@Composable
+fun CulinaryFilterPill(
+    text: String,
+    selected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+) {
+    Surface(
+        modifier =
+            modifier
+                .defaultMinSize(minHeight = 40.dp)
+                .selectable(
+                    selected = selected,
+                    enabled = enabled,
+                    role = Role.Checkbox,
+                    onClick = onClick,
+                ),
+        shape = MaterialTheme.shapes.extraSmall,
+        color =
+            if (selected) {
+                MaterialTheme.colorScheme.secondaryContainer
+            } else {
+                Color.Transparent
+            },
+        contentColor =
+            if (selected) {
+                MaterialTheme.colorScheme.onSecondaryContainer
+            } else {
+                MaterialTheme.colorScheme.onSurfaceVariant
+            },
+        border =
+            BorderStroke(
+                width = CulinaryStrokes.hairline,
+                color =
+                    when {
+                        !enabled -> MaterialTheme.colorScheme.outlineVariant
+                        selected -> MaterialTheme.colorScheme.secondary
+                        else -> MaterialTheme.colorScheme.outline
+                    },
+            ),
+    ) {
+        Text(
+            text = text,
+            style = MaterialTheme.typography.labelMedium,
+            maxLines = 1,
+            modifier =
+                Modifier.padding(
+                    horizontal = CulinarySpacing.sm,
+                    vertical = CulinarySpacing.xs,
+                ),
+        )
+    }
+}
+===== DESIGN SYSTEM: RELATION ITEM =====
+package com.culinary.core.designsystem.component
+
+/** 详情页关联行；由调用方把领域关系映射成展示文案。 */
+data class CulinaryRelationItem(
+    val eyebrow: String,
+    val title: String,
+    val meta: String? = null,
+    val onClick: () -> Unit,
+)
+===== SAUCE EDITOR COMPONENTS =====
+package com.culinary.feature.sauces
+
+import android.graphics.BitmapFactory
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
+import com.culinary.core.designsystem.component.CulinaryRule
+import com.culinary.core.designsystem.icon.CulinaryIcons
+import com.culinary.core.designsystem.theme.CulinarySpacing
+import com.culinary.core.designsystem.theme.CulinaryTextStyles
+import com.culinary.core.domain.model.PendingSauceImage
+import com.culinary.core.domain.model.Sauce
+import com.culinary.core.domain.model.SauceDifficulty
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+
+/** 行内无边框输入；编辑式档案不使用 Material 外框。 */
+@Composable
+internal fun EditorInlineField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    placeholder: String,
+    modifier: Modifier = Modifier,
+    textStyle: TextStyle = MaterialTheme.typography.bodyLarge,
+    singleLine: Boolean = true,
+    minLines: Int = 1,
+    keyboardType: KeyboardType = KeyboardType.Text,
+    textAlign: TextAlign = TextAlign.Start,
+    enabled: Boolean = true,
+) {
+    BasicTextField(
+        value = value,
+        onValueChange = onValueChange,
+        modifier = modifier,
+        enabled = enabled,
+        singleLine = singleLine,
+        textStyle = textStyle.copy(color = MaterialTheme.colorScheme.onSurface, textAlign = textAlign),
+        cursorBrush = SolidColor(MaterialTheme.colorScheme.secondary),
+        keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
+        minLines = minLines,
+        decorationBox = { inner ->
+            Box {
+                if (value.isEmpty()) {
+                    Text(
+                        text = placeholder,
+                        style = textStyle.copy(textAlign = textAlign),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.55f),
+                        maxLines = if (singleLine) 1 else 3,
+                    )
+                }
+                inner()
+            }
+        },
+    )
+}
+
+/** 章节标题：编号 / 英文小标题、中文标题、副标题，延续现有编辑式字阶。 */
+@Composable
+internal fun SauceSectionHeader(
+    index: String,
+    english: String,
+    title: String,
+    subtitle: String? = null,
+    action: (@Composable () -> Unit)? = null,
+) {
+    Column(modifier = Modifier.fillMaxWidth().padding(top = CulinarySpacing.xl, bottom = CulinarySpacing.sm)) {
+        CulinaryRule()
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(top = CulinarySpacing.md),
+            verticalAlignment = Alignment.Bottom,
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = "$index / $english",
+                    style = CulinaryTextStyles.eyebrow,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Spacer(modifier = Modifier.height(CulinarySpacing.xxs))
+                Text(
+                    text = title,
+                    style = CulinaryTextStyles.sectionTitle,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+                if (!subtitle.isNullOrBlank()) {
+                    Spacer(modifier = Modifier.height(CulinarySpacing.xxs))
+                    Text(
+                        text = subtitle,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+            action?.invoke()
+        }
+    }
+}
+
+/** 拖动排序手柄；只作用于手柄，避免和文本输入抢手势。 */
+@Composable
+internal fun DragHandle(
+    modifier: Modifier = Modifier,
+    onMove: (Int) -> Unit,
+) {
+    var dragging by remember { mutableStateOf(false) }
+    var accumulated by remember { mutableStateOf(0f) }
+    Icon(
+        imageVector = CulinaryIcons.Sort,
+        contentDescription = "拖动排序",
+        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier =
+            modifier
+                .size(36.dp)
+                .alpha(if (dragging) 0.45f else 1f)
+                .pointerInput(onMove) {
+                    detectDragGesturesAfterLongPress(
+                        onDragStart = {
+                            dragging = true
+                            accumulated = 0f
+                        },
+                        onDrag = { change, dragAmount ->
+                            change.consume()
+                            accumulated += dragAmount.y
+                            when {
+                                accumulated > 32f -> {
+                                    onMove(1)
+                                    accumulated = 0f
+                                }
+
+                                accumulated < -32f -> {
+                                    onMove(-1)
+                                    accumulated = 0f
+                                }
+                            }
+                        },
+                        onDragEnd = { dragging = false },
+                        onDragCancel = { dragging = false },
+                    )
+                },
+    )
+}
+
+/** 完整宽度图片区域：无图是浅灰上传面，有图时右上角提供替换/删除。 */
+@Suppress("LongMethod") // 空态、预览、替换/删除覆盖层是一个整体
+@Composable
+internal fun EditorImageBox(
+    imageBytes: ByteArray?,
+    onPick: () -> Unit,
+    onClear: (() -> Unit)?,
+    emptyLabel: String,
+    modifier: Modifier = Modifier,
+    aspectRatio: Float = 16f / 9f,
+    showActions: Boolean = true,
+) {
+    val bitmap = remember(imageBytes) { imageBytes?.toImageBitmapOrNull() }
+    Box(
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .aspectRatio(aspectRatio)
+                .background(MaterialTheme.colorScheme.surfaceContainerLow)
+                .border(1.dp, MaterialTheme.colorScheme.outlineVariant),
+    ) {
+        if (bitmap != null) {
+            Image(
+                bitmap = bitmap,
+                contentDescription = emptyLabel,
+                modifier = Modifier.fillMaxWidth().aspectRatio(aspectRatio),
+                contentScale = ContentScale.Crop,
+            )
+        } else {
+            Column(
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .aspectRatio(aspectRatio)
+                        .clickable(onClick = onPick),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center,
+            ) {
+                Icon(
+                    imageVector = CulinaryIcons.Add,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Spacer(modifier = Modifier.height(CulinarySpacing.xs))
+                Text(
+                    text = emptyLabel,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+        if (bitmap != null && showActions) {
+            Row(
+                modifier =
+                    Modifier
+                        .align(Alignment.TopEnd)
+                        .background(Color.White.copy(alpha = 0.9f))
+                        .padding(horizontal = CulinarySpacing.xs, vertical = 2.dp),
+                horizontalArrangement = Arrangement.spacedBy(CulinarySpacing.sm),
+            ) {
+                Text(
+                    text = stringResource(R.string.sauces_image_replace),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.clickable(onClick = onPick).padding(4.dp),
+                )
+                if (onClear != null) {
+                    Text(
+                        text = stringResource(R.string.sauces_image_delete),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.clickable(onClick = onClear).padding(4.dp),
+                    )
+                }
+            }
+        }
+    }
+}
+
+/** 研发备注区域：浅底细边框，不使用阴影。 */
+@Composable
+internal fun NotesField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    placeholder: String,
+    modifier: Modifier = Modifier,
+) {
+    BasicTextField(
+        value = value,
+        onValueChange = onValueChange,
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .background(MaterialTheme.colorScheme.surfaceContainerLow)
+                .border(1.dp, MaterialTheme.colorScheme.outlineVariant)
+                .padding(CulinarySpacing.md),
+        textStyle = MaterialTheme.typography.bodyLarge.copy(color = MaterialTheme.colorScheme.onSurface),
+        cursorBrush = SolidColor(MaterialTheme.colorScheme.secondary),
+        minLines = 6,
+        decorationBox = { inner ->
+            Box {
+                if (value.isEmpty()) {
+                    Text(
+                        text = placeholder,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.55f),
+                    )
+                }
+                inner()
+            }
+        },
+    )
+}
+
+/**
+ * 最小制作容量选择：低强调下拉，不额外占用一整行。
+ *
+ * 沿用既有 `sauce.difficulty` 枚举列与存储值（EASY/MEDIUM/HARD），
+ * 本次只调整界面字段名称，不改变数据结构，也不删除既有数据。
+ */
+@Composable
+internal fun DifficultyField(
+    value: SauceDifficulty?,
+    onChange: (SauceDifficulty) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    var expanded by remember { mutableStateOf(false) }
+    val labels =
+        mapOf(
+            SauceDifficulty.EASY to stringResource(R.string.sauces_difficulty_easy),
+            SauceDifficulty.MEDIUM to stringResource(R.string.sauces_difficulty_medium),
+            SauceDifficulty.HARD to stringResource(R.string.sauces_difficulty_hard),
+        )
+    Box(modifier = modifier) {
+        Text(
+            text = value?.let { labels[it] } ?: stringResource(R.string.sauces_difficulty_placeholder),
+            style = MaterialTheme.typography.bodyMedium,
+            color =
+                if (value == null) {
+                    MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.55f)
+                } else {
+                    MaterialTheme.colorScheme.onSurface
+                },
+            modifier = Modifier.fillMaxWidth().clickable { expanded = true }.padding(vertical = 4.dp),
+        )
+        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            labels.forEach { (difficulty, label) ->
+                DropdownMenuItem(
+                    text = { Text(text = label) },
+                    onClick = {
+                        onChange(difficulty)
+                        expanded = false
+                    },
+                )
+            }
+        }
+    }
+}
+
+/** 系统照片选择器：不申请存储权限，不引入额外图片库。 */
+@Composable
+internal fun rememberSauceImagePicker(onPicked: (PendingSauceImage) -> Unit): () -> Unit {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val launcher =
+        rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri: Uri? ->
+            if (uri != null) {
+                scope.launch {
+                    val loaded =
+                        withContext(Dispatchers.IO) {
+                            runCatching {
+                                val bytes = context.contentResolver.openInputStream(uri)?.use { it.readBytes() }
+                                if (bytes == null || bytes.isEmpty()) {
+                                    null
+                                } else {
+                                    PendingSauceImage(
+                                        bytes = bytes,
+                                        mimeType = context.contentResolver.getType(uri) ?: "image/jpeg",
+                                    )
+                                }
+                            }.getOrNull()
+                        }
+                    loaded?.let(onPicked)
+                }
+            }
+        }
+    return {
+        launcher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+    }
+}
+
+internal fun ByteArray.toImageBitmapOrNull() =
+    runCatching {
+        BitmapFactory.decodeByteArray(this, 0, size)?.asImageBitmap()
+    }.getOrNull()
+
+/** 关联酱汁选择器：只允许选择既有酱汁，排除当前档案。 */
+@Composable
+internal fun SaucePickerDialog(
+    sauces: List<Sauce>,
+    currentSauceId: String?,
+    selectedIds: Set<String>,
+    onSelect: (Sauce) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val candidates = sauces.filter { it.id.value != currentSauceId && it.id.value !in selectedIds }
+    androidx.compose.material3.AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(text = stringResource(R.string.sauces_relation_picker_title)) },
+        text = {
+            if (candidates.isEmpty()) {
+                Text(text = stringResource(R.string.sauces_picker_empty))
+            } else {
+                Column(
+                    modifier =
+                        Modifier
+                            .heightIn(max = 420.dp)
+                            .verticalScroll(rememberScrollState()),
+                ) {
+                    candidates.forEach { sauce ->
+                        Column(
+                            modifier =
+                                Modifier
+                                    .fillMaxWidth()
+                                    .clickable { onSelect(sauce) }
+                                    .padding(vertical = CulinarySpacing.sm),
+                        ) {
+                            Text(
+                                text = sauce.name,
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.onSurface,
+                            )
+                            sauce.englishName?.takeIf { it.isNotBlank() }?.let { englishName ->
+                                Text(
+                                    text = englishName,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                        }
+                        CulinaryRule()
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            androidx.compose.material3.TextButton(onClick = onDismiss) {
+                Text(text = stringResource(R.string.sauces_cancel))
+            }
+        },
+    )
+}
+
+/** 食材选择器：原料只能关联既有食材档案。 */
+@Composable
+internal fun SauceIngredientPickerDialog(
+    ingredients: List<com.culinary.core.domain.model.Ingredient>,
+    onSelect: (com.culinary.core.domain.model.Ingredient) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    androidx.compose.material3.AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(text = stringResource(R.string.sauces_ingredient_picker_title)) },
+        text = {
+            if (ingredients.isEmpty()) {
+                Text(text = stringResource(R.string.sauces_picker_empty))
+            } else {
+                Column(
+                    modifier =
+                        Modifier
+                            .heightIn(max = 460.dp)
+                            .verticalScroll(rememberScrollState()),
+                ) {
+                    ingredients.forEach { ingredient ->
+                        Column(
+                            modifier =
+                                Modifier
+                                    .fillMaxWidth()
+                                    .clickable { onSelect(ingredient) }
+                                    .padding(vertical = CulinarySpacing.sm),
+                        ) {
+                            Text(
+                                text = ingredient.name,
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.onSurface,
+                            )
+                            ingredient.englishName?.takeIf { it.isNotBlank() }?.let { englishName ->
+                                Text(
+                                    text = englishName,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                        }
+                        CulinaryRule()
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            androidx.compose.material3.TextButton(onClick = onDismiss) {
+                Text(text = stringResource(R.string.sauces_cancel))
+            }
+        },
+    )
+}
+
+/** 单位选择器；保留既有单位数据与校验。 */
+@Composable
+internal fun SauceUnitPickerDialog(
+    units: List<com.culinary.core.domain.model.Unit>,
+    selectedId: String?,
+    onSelect: (com.culinary.core.domain.model.Unit) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    androidx.compose.material3.AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(text = stringResource(R.string.sauces_unit_picker_title)) },
+        text = {
+            Column(
+                modifier =
+                    Modifier
+                        .heightIn(max = 420.dp)
+                        .verticalScroll(rememberScrollState()),
+            ) {
+                units.forEach { unit ->
+                    Row(
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .clickable { onSelect(unit) }
+                                .padding(vertical = CulinarySpacing.sm),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            text = "${unit.name}（${unit.symbol}）",
+                            style = MaterialTheme.typography.bodyLarge,
+                            modifier = Modifier.weight(1f),
+                        )
+                        if (unit.id.value == selectedId) {
+                            Icon(
+                                imageVector = CulinaryIcons.Check,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp),
+                                tint = MaterialTheme.colorScheme.secondary,
+                            )
+                        }
+                    }
+                    CulinaryRule()
+                }
+            }
+        },
+        confirmButton = {
+            androidx.compose.material3.TextButton(onClick = onDismiss) {
+                Text(text = stringResource(R.string.sauces_cancel))
+            }
+        },
+    )
+}
+===== SAUCE EDITOR SECTIONS =====
+package com.culinary.feature.sauces
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
+import com.culinary.core.designsystem.component.ArchiveYieldRangeFields
+import com.culinary.core.designsystem.component.CulinaryRule
+import com.culinary.core.designsystem.component.CulinaryTextButton
+import com.culinary.core.designsystem.component.KitchenTimeSegmentsField
+import com.culinary.core.designsystem.icon.CulinaryIcons
+import com.culinary.core.designsystem.theme.CulinarySpacing
+import com.culinary.core.designsystem.theme.CulinaryTextStyles
+
+@Suppress("LongMethod") // 头部品牌/分类路径 + 双语标题 + 三栏元数据是一个排版单元
+@Composable
+internal fun SauceHeaderSection(
+    state: SauceEditorUiState,
+    actions: SauceEditorActions,
+) {
+    val pathCategories =
+        state.categoryPathIds.mapNotNull { id -> state.categories.firstOrNull { it.id == id } }
+    Column(modifier = Modifier.fillMaxWidth().padding(top = CulinarySpacing.lg)) {
+        Text(
+            text =
+                pathCategories
+                    .joinToString(" / ") { it.name }
+                    .ifBlank { "SAUCE · 酱汁档案" },
+            style = CulinaryTextStyles.eyebrow,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Spacer(modifier = Modifier.height(CulinarySpacing.sm))
+        EditorInlineField(
+            value = state.englishName,
+            onValueChange = actions.onEnglishNameChange,
+            placeholder = "Beurre Blanc",
+            textStyle = CulinaryTextStyles.pageTitle,
+            modifier = Modifier.fillMaxWidth(),
+        )
+        Spacer(modifier = Modifier.height(CulinarySpacing.xxs))
+        EditorInlineField(
+            value = state.name,
+            onValueChange = actions.onNameChange,
+            placeholder = "中文名称",
+            textStyle = MaterialTheme.typography.headlineSmall,
+            modifier = Modifier.fillMaxWidth(),
+        )
+        Spacer(modifier = Modifier.height(CulinarySpacing.xs))
+        EditorInlineField(
+            value = state.description,
+            onValueChange = actions.onDescriptionChange,
+            placeholder = "描述这款酱汁的风格与用途……",
+            textStyle = MaterialTheme.typography.bodySmall,
+            modifier = Modifier.fillMaxWidth(),
+        )
+        Spacer(modifier = Modifier.height(CulinarySpacing.lg))
+        SauceClassificationSelector(state = state, actions = actions)
+        Spacer(modifier = Modifier.height(CulinarySpacing.lg))
+        ArchiveYieldRangeFields(
+            yieldAmount = state.yieldAmount,
+            yieldUnit = state.yieldUnit?.symbol.orEmpty(),
+            minRangeAmount = state.minRangeAmount,
+            minRangeUnit = state.minRangeUnit?.symbol.orEmpty(),
+            onYieldAmountChange = actions.onYieldAmountChange,
+            onYieldUnitClick = actions.onOpenYieldUnit,
+            onMinRangeAmountChange = actions.onMinRangeAmountChange,
+            onMinRangeUnitClick = actions.onOpenMinRangeUnit,
+        )
+    }
+}
+
+@Suppress("LoopWithTooManyJumpStatements")
+@Composable
+private fun SauceClassificationSelector(
+    state: SauceEditorUiState,
+    actions: SauceEditorActions,
+) {
+    val formal = state.categories.filter { state.isTestRecord || !it.isTest }
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Text(
+            text = "CLASSIFICATION / 分类归属",
+            style = CulinaryTextStyles.eyebrow,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Spacer(modifier = Modifier.height(CulinarySpacing.xs))
+        if (formal.isEmpty()) {
+            Text(
+                text = "分类数据尚未加载。",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            return
+        }
+        var level = 0
+        while (level <= state.categoryPathIds.size) {
+            val parentId = if (level == 0) null else state.categoryPathIds.getOrNull(level - 1)
+            val options = formal.filter { it.parentId == parentId }
+            if (options.isEmpty()) break
+            CategoryLevelField(
+                level = level,
+                selectedId = state.categoryPathIds.getOrNull(level),
+                options = options,
+                onSelect = { id -> actions.onCategorySelect(level, id) },
+            )
+            level++
+            if (level > 32) break
+        }
+    }
+}
+
+@Composable
+private fun CategoryLevelField(
+    level: Int,
+    selectedId: String?,
+    options: List<com.culinary.core.domain.model.ArchiveCategory>,
+    onSelect: (String?) -> Unit,
+) {
+    var expanded by remember { mutableStateOf(false) }
+    val selected = options.firstOrNull { it.id == selectedId }
+    Column(modifier = Modifier.fillMaxWidth().padding(top = CulinarySpacing.xs)) {
+        Text(
+            text = "LEVEL ${(level + 1).toString().padStart(2, '0')}",
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Box(modifier = Modifier.fillMaxWidth()) {
+            Row(
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .clickable { expanded = true }
+                        .padding(vertical = CulinarySpacing.xs),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = selected?.name ?: "选择分类",
+                    style = MaterialTheme.typography.bodyLarge,
+                    color =
+                        if (selected == null) {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        } else {
+                            MaterialTheme.colorScheme.onSurface
+                        },
+                    modifier = Modifier.weight(1f),
+                )
+                if (selected != null) {
+                    Text(
+                        text = "清除",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.clickable { onSelect(null) },
+                    )
+                }
+                Icon(
+                    imageVector = CulinaryIcons.ChevronDown,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(start = CulinarySpacing.xs).size(14.dp),
+                )
+            }
+            DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+                options.forEach { category ->
+                    DropdownMenuItem(
+                        text = { Text(category.name) },
+                        onClick = {
+                            expanded = false
+                            onSelect(category.id)
+                        },
+                    )
+                }
+            }
+        }
+        CulinaryRule()
+    }
+}
+
+@Composable
+internal fun SauceHeroSection(
+    state: SauceEditorUiState,
+    actions: SauceEditorActions,
+) {
+    Column(modifier = Modifier.fillMaxWidth().padding(top = CulinarySpacing.xl)) {
+        Text(
+            text = "HERO MEDIA",
+            style = CulinaryTextStyles.eyebrow,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Spacer(modifier = Modifier.height(CulinarySpacing.xxs))
+        Text(
+            text = stringResource(R.string.sauces_hero_title),
+            style = CulinaryTextStyles.sectionTitle,
+            color = MaterialTheme.colorScheme.onSurface,
+        )
+        Spacer(modifier = Modifier.height(CulinarySpacing.sm))
+        val pick = rememberSauceImagePicker { actions.onHeroPicked(it) }
+        EditorImageBox(
+            imageBytes = state.heroImagePending?.bytes ?: state.heroImage?.let { state.imageBytes[it.id] },
+            onPick = pick,
+            onClear =
+                if (state.heroImage != null || state.heroImagePending != null) {
+                    actions.onHeroClear
+                } else {
+                    null
+                },
+            emptyLabel = stringResource(R.string.sauces_hero_upload),
+        )
+        Spacer(modifier = Modifier.height(CulinarySpacing.xs))
+        EditorInlineField(
+            value = state.heroCaption,
+            onValueChange = actions.onHeroCaptionChange,
+            placeholder = stringResource(R.string.sauces_hero_caption_hint),
+            textStyle = MaterialTheme.typography.bodySmall,
+            modifier = Modifier.fillMaxWidth(),
+        )
+    }
+}
+
+@Composable
+internal fun SauceIngredientsSection(
+    state: SauceEditorUiState,
+    actions: SauceEditorActions,
+) {
+    var showPicker by remember { mutableStateOf(false) }
+    SauceSectionHeader(
+        index = "01",
+        english = "INGREDIENTS",
+        title = stringResource(R.string.sauces_editor_ingredients),
+        subtitle = "基础配方",
+    )
+    state.lines.forEachIndexed { index, line ->
+        SauceIngredientRow(
+            line = line,
+            onNameChange = { actions.onLineNameChange(line.key, it) },
+            onNameEnChange = { actions.onLineNameEnChange(line.key, it) },
+            onAmountChange = { actions.onLineAmountChange(line.key, it) },
+            onUnitClick = { actions.onOpenLineUnit(line.key) },
+            onToggleOptional = { actions.onToggleOptional(line.key) },
+            onRemove = { actions.onRemoveLine(line.key) },
+            onMove = { delta -> actions.onMoveLine(index, index + delta) },
+        )
+    }
+    if (state.lines.isEmpty()) {
+        Text(
+            text = "暂未添加食材",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(vertical = CulinarySpacing.sm),
+        )
+    }
+    CulinaryTextButton(
+        text = stringResource(R.string.sauces_add_ingredient),
+        onClick = { showPicker = true },
+        modifier = Modifier.padding(top = CulinarySpacing.xxs),
+    )
+    if (showPicker) {
+        SauceIngredientPickerDialog(
+            ingredients = state.ingredients,
+            onSelect = {
+                actions.onAddIngredient(it)
+                showPicker = false
+            },
+            onDismiss = { showPicker = false },
+        )
+    }
+}
+
+@Suppress("LongMethod") // 名称/英文名/数量/单位/可选/删除共享同一行布局
+@Composable
+private fun SauceIngredientRow(
+    line: SauceLineEditor,
+    onNameChange: (String) -> Unit,
+    onNameEnChange: (String) -> Unit,
+    onAmountChange: (String) -> Unit,
+    onUnitClick: () -> Unit,
+    onToggleOptional: () -> Unit,
+    onRemove: () -> Unit,
+    onMove: (Int) -> Unit,
+) {
+    Column(modifier = Modifier.fillMaxWidth()) {
+        CulinaryRule()
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(vertical = CulinarySpacing.sm),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            DragHandle(onMove = onMove)
+            Column(modifier = Modifier.weight(1f).padding(start = CulinarySpacing.xs)) {
+                if (line.isReadOnly) {
+                    Text(
+                        text = line.name,
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSurface,
+                    )
+                    Text(
+                        text = line.kindLabel,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                } else {
+                    EditorInlineField(
+                        value = line.name,
+                        onValueChange = onNameChange,
+                        placeholder = stringResource(R.string.sauces_editor_ingredient_name),
+                        textStyle = MaterialTheme.typography.bodyLarge,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    EditorInlineField(
+                        value = line.nameEn,
+                        onValueChange = onNameEnChange,
+                        placeholder = "English name",
+                        textStyle = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
+            }
+            Column(horizontalAlignment = Alignment.End) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    EditorInlineField(
+                        value = line.amount,
+                        onValueChange = onAmountChange,
+                        placeholder = "0",
+                        textStyle = CulinaryTextStyles.numeralS,
+                        textAlign = TextAlign.End,
+                        keyboardType = androidx.compose.ui.text.input.KeyboardType.Decimal,
+                        modifier = Modifier.width(58.dp),
+                    )
+                    Text(
+                        text = line.unit.symbol,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier =
+                            Modifier
+                                .clickable(onClick = onUnitClick)
+                                .padding(start = 4.dp, end = 4.dp, top = 8.dp, bottom = 8.dp),
+                    )
+                }
+                Text(
+                    text = stringResource(R.string.sauces_optional),
+                    style = MaterialTheme.typography.labelSmall,
+                    color =
+                        if (line.isOptional) {
+                            MaterialTheme.colorScheme.secondary
+                        } else {
+                            MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                        },
+                    modifier = Modifier.clickable(onClick = onToggleOptional).padding(4.dp),
+                )
+            }
+            Icon(
+                imageVector = CulinaryIcons.Close,
+                contentDescription = stringResource(R.string.sauces_remove_line),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(20.dp).clickable(onClick = onRemove).padding(2.dp),
+            )
+        }
+    }
+}
+
+@Composable
+internal fun SauceMethodSection(
+    state: SauceEditorUiState,
+    actions: SauceEditorActions,
+) {
+    SauceSectionHeader(
+        index = "02",
+        english = "METHOD",
+        title = stringResource(R.string.sauces_editor_method),
+    )
+    state.steps.forEachIndexed { index, step ->
+        SauceStepRow(
+            index = index,
+            step = step,
+            imageBytes = step.pendingImage?.bytes ?: step.image?.let { state.imageBytes[it.id] },
+            onTitleChange = { actions.onStepTitleChange(step.key, it) },
+            onBodyChange = { actions.onStepBodyChange(step.key, it) },
+            onTimeChange = { actions.onStepTimeChange(step.key, it) },
+            onImagePicked = { actions.onStepImage(step.key, it) },
+            onClearImage = { actions.onClearStepImage(step.key) },
+            onRemove = { actions.onRemoveStep(step.key) },
+            onMove = { delta -> actions.onMoveStep(index, index + delta) },
+        )
+    }
+    if (state.steps.isEmpty()) {
+        Text(
+            text = stringResource(R.string.sauces_method_empty),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(vertical = CulinarySpacing.sm),
+        )
+    }
+    CulinaryTextButton(
+        text = stringResource(R.string.sauces_add_step),
+        onClick = actions.onAddStep,
+        modifier = Modifier.padding(top = CulinarySpacing.xxs),
+    )
+}
+
+@Composable
+private fun SauceStepRow(
+    index: Int,
+    step: SauceStepEditor,
+    imageBytes: ByteArray?,
+    onTitleChange: (String) -> Unit,
+    onBodyChange: (String) -> Unit,
+    onTimeChange: (Int) -> Unit,
+    onImagePicked: (com.culinary.core.domain.model.PendingSauceImage) -> Unit,
+    onClearImage: () -> Unit,
+    onRemove: () -> Unit,
+    onMove: (Int) -> Unit,
+) {
+    val pick = rememberSauceImagePicker(onPicked = onImagePicked)
+    Column(modifier = Modifier.fillMaxWidth()) {
+        CulinaryRule()
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(top = CulinarySpacing.sm),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            DragHandle(onMove = onMove)
+            Text(
+                text = "%02d".format(index + 1),
+                style = CulinaryTextStyles.numeralS,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(horizontal = CulinarySpacing.xs),
+            )
+            EditorInlineField(
+                value = step.title,
+                onValueChange = onTitleChange,
+                placeholder = stringResource(R.string.sauces_editor_step_title),
+                textStyle = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.weight(1f),
+            )
+            Icon(
+                imageVector = CulinaryIcons.Close,
+                contentDescription = stringResource(R.string.sauces_remove_step),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(20.dp).clickable(onClick = onRemove).padding(2.dp),
+            )
+        }
+        Spacer(modifier = Modifier.height(CulinarySpacing.xs))
+        EditorImageBox(
+            imageBytes = imageBytes,
+            onPick = pick,
+            onClear = if (imageBytes != null) onClearImage else null,
+            emptyLabel = stringResource(R.string.sauces_step_upload),
+            aspectRatio = 4f / 3f,
+        )
+        Spacer(modifier = Modifier.height(CulinarySpacing.xs))
+        EditorInlineField(
+            value = step.body,
+            onValueChange = onBodyChange,
+            placeholder = stringResource(R.string.sauces_editor_step_body),
+            textStyle = MaterialTheme.typography.bodyMedium,
+            singleLine = false,
+            minLines = 3,
+            modifier = Modifier.fillMaxWidth(),
+        )
+        KitchenTimeSegmentsField(
+            seconds = step.timeSeconds,
+            onSecondsChange = onTimeChange,
+            modifier = Modifier.padding(top = CulinarySpacing.xs),
+        )
+        Spacer(modifier = Modifier.height(CulinarySpacing.sm))
+    }
+}
+
+@Composable
+internal fun SauceApplicationSection(
+    state: SauceEditorUiState,
+    actions: SauceEditorActions,
+) {
+    SauceSectionHeader(
+        index = "03",
+        english = "APPLICATION",
+        title = stringResource(R.string.sauces_application),
+    )
+    EditorInlineField(
+        value = state.application,
+        onValueChange = actions.onApplicationChange,
+        placeholder = stringResource(R.string.sauces_application_hint),
+        textStyle = MaterialTheme.typography.bodyLarge,
+        singleLine = false,
+        minLines = 4,
+        modifier = Modifier.fillMaxWidth(),
+    )
+}
+
+@Suppress("LongMethod") // 关系行、空态、添加入口与选择弹窗属于同一分节
+@Composable
+internal fun SauceRelationsSection(
+    state: SauceEditorUiState,
+    actions: SauceEditorActions,
+) {
+    var showPicker by remember { mutableStateOf(false) }
+    SauceSectionHeader(
+        index = "04",
+        english = "RELATED SAUCES",
+        title = stringResource(R.string.sauces_relations_title),
+    )
+    state.relations.forEachIndexed { index, relation ->
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(vertical = CulinarySpacing.xs),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            DragHandle(onMove = { delta -> actions.onMoveRelation(index, index + delta) })
+            Column(
+                modifier =
+                    Modifier
+                        .weight(1f)
+                        .clickable { actions.onOpenSauce(relation.sauceId) }
+                        .padding(horizontal = CulinarySpacing.xs, vertical = 4.dp),
+            ) {
+                Text(
+                    text = relation.name,
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+                if (relation.nameEn.isNotBlank()) {
+                    Text(
+                        text = relation.nameEn,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+            Text(
+                text = "↗",
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier =
+                    Modifier
+                        .clickable { actions.onOpenSauce(relation.sauceId) }
+                        .padding(horizontal = CulinarySpacing.xs, vertical = 4.dp),
+            )
+            Icon(
+                imageVector = CulinaryIcons.Close,
+                contentDescription = stringResource(R.string.sauces_relation_remove),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier =
+                    Modifier
+                        .size(20.dp)
+                        .clickable { actions.onRemoveRelation(relation.sauceId) }
+                        .padding(2.dp),
+            )
+        }
+        CulinaryRule()
+    }
+    if (state.relations.isEmpty()) {
+        Text(
+            text = stringResource(R.string.sauces_relation_empty),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(vertical = CulinarySpacing.sm),
+        )
+    }
+    CulinaryTextButton(
+        text = stringResource(R.string.sauces_relation_add),
+        onClick = { showPicker = true },
+        modifier = Modifier.padding(top = CulinarySpacing.xxs),
+    )
+    if (showPicker) {
+        SaucePickerDialog(
+            sauces = state.sauceOptions,
+            currentSauceId = state.sauceId,
+            selectedIds = state.relations.map { it.sauceId }.toSet(),
+            onSelect = {
+                actions.onAddRelation(it)
+                showPicker = false
+            },
+            onDismiss = { showPicker = false },
+        )
+    }
+}
+
+@Composable
+internal fun SauceNotesSection(
+    state: SauceEditorUiState,
+    actions: SauceEditorActions,
+) {
+    SauceSectionHeader(
+        index = "05",
+        english = "NOTES",
+        title = stringResource(R.string.sauces_notes),
+    )
+    Text(
+        text = stringResource(R.string.sauces_notes_hint),
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
+    Spacer(modifier = Modifier.height(CulinarySpacing.sm))
+    NotesField(
+        value = state.notes,
+        onValueChange = actions.onNotesChange,
+        placeholder = stringResource(R.string.sauces_notes_placeholder),
+    )
+    Spacer(modifier = Modifier.height(CulinarySpacing.xs))
+    Row(horizontalArrangement = Arrangement.spacedBy(CulinarySpacing.md)) {
+        CulinaryTextButton(
+            text = stringResource(R.string.sauces_notes_add_text),
+            onClick = actions.onAddTextNote,
+        )
+        val pick = rememberSauceImagePicker { actions.onNoteImage(it) }
+        CulinaryTextButton(
+            text = stringResource(R.string.sauces_notes_add_photo),
+            onClick = pick,
+        )
+    }
+    val pending = state.noteImagesPending
+    val existing = state.noteImages
+    if (pending.isNotEmpty() || existing.isNotEmpty()) {
+        Row(
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState())
+                    .padding(top = CulinarySpacing.xs),
+            horizontalArrangement = Arrangement.spacedBy(CulinarySpacing.sm),
+        ) {
+            pending.forEachIndexed { index, image ->
+                NoteThumbnail(
+                    bytes = image.bytes,
+                    onRemove = { actions.onRemoveNoteImage(index) },
+                )
+            }
+            existing.forEachIndexed { index, image ->
+                NoteThumbnail(
+                    bytes = state.imageBytes[image.id],
+                    onRemove = { actions.onRemoveNoteImage(pending.size + index) },
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun NoteThumbnail(
+    bytes: ByteArray?,
+    onRemove: () -> Unit,
+) {
+    Box(
+        modifier =
+            Modifier
+                .width(88.dp)
+                .height(88.dp)
+                .clip(RectangleShape)
+                .background(MaterialTheme.colorScheme.surfaceContainerLow),
+    ) {
+        bytes?.toImageBitmapOrNull()?.let { bitmap ->
+            androidx.compose.foundation.Image(
+                bitmap = bitmap,
+                contentDescription = null,
+                contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+                modifier = Modifier.fillMaxWidth().height(88.dp),
+            )
+        }
+        Icon(
+            imageVector = CulinaryIcons.Close,
+            contentDescription = stringResource(R.string.sauces_image_delete),
+            tint = MaterialTheme.colorScheme.error,
+            modifier =
+                Modifier
+                    .align(Alignment.TopEnd)
+                    .background(MaterialTheme.colorScheme.surface)
+                    .size(20.dp)
+                    .clickable(onClick = onRemove)
+                    .padding(2.dp),
+        )
+    }
+}
+
+@Composable
+private fun MetaLabel(text: String) {
+    Text(
+        text = text,
+        style = CulinaryTextStyles.eyebrow,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
+}
+===== SAUCE EDITOR SCREEN =====
+package com.culinary.feature.sauces
+
+import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.isImeVisible
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.culinary.core.designsystem.component.ArchiveEditorTopBar
+import com.culinary.core.designsystem.component.ConfirmDialog
+import com.culinary.core.designsystem.component.CulinaryIconButton
+import com.culinary.core.designsystem.component.CulinaryRule
+import com.culinary.core.designsystem.component.ErrorBanner
+import com.culinary.core.designsystem.component.LoadingRows
+import com.culinary.core.designsystem.icon.CulinaryIcons
+import com.culinary.core.designsystem.theme.CulinarySpacing
+import com.culinary.core.domain.model.PendingSauceImage
+import com.culinary.core.domain.model.Sauce
+import com.culinary.core.domain.model.SauceDifficulty
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+
+/** 酱汁编辑器路由：新建与编辑共用同一页。 */
+@Composable
+fun SauceEditorRoute(
+    onSaved: () -> Unit,
+    onCancelled: () -> Unit = {},
+    onOpenSauce: (String) -> Unit = {},
+    onArchived: () -> Unit = onCancelled,
+    modifier: Modifier = Modifier,
+    viewModel: SauceEditorViewModel = hiltViewModel(),
+) {
+    val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val saved = state.savedSauceId
+    val archived = state.archived
+
+    LaunchedEffect(saved) {
+        if (saved != null) onSaved()
+    }
+    LaunchedEffect(archived) {
+        if (archived) onArchived()
+    }
+
+    SauceEditorScreen(
+        state = state,
+        onSaved = viewModel::save,
+        onCancelled = onCancelled,
+        onArchive = viewModel::archive,
+        onOpenSauce = onOpenSauce,
+        onDismissError = viewModel::clearError,
+        onFamilyChange = viewModel::onFamilyChange,
+        onCategorySelect = viewModel::onCategorySelect,
+        onEnglishNameChange = viewModel::onEnglishNameChange,
+        onNameChange = viewModel::onNameChange,
+        onDescriptionChange = viewModel::onDescriptionChange,
+        onYieldAmountChange = viewModel::onYieldAmountChange,
+        onYieldUnitChange = viewModel::onYieldUnitChange,
+        onMinRangeAmountChange = viewModel::onMinRangeAmountChange,
+        onMinRangeUnitChange = viewModel::onMinRangeUnitChange,
+        onHeroPicked = viewModel::setHeroImage,
+        onHeroClear = viewModel::clearHeroImage,
+        onHeroCaptionChange = viewModel::onHeroCaptionChange,
+        onLineNameChange = viewModel::onLineNameChange,
+        onLineNameEnChange = viewModel::onLineNameEnChange,
+        onLineAmountChange = viewModel::onLineAmountChange,
+        onLineUnitChange = viewModel::onLineUnitChange,
+        onToggleOptional = viewModel::toggleOptional,
+        onRemoveLine = viewModel::removeLine,
+        onMoveLine = viewModel::moveLine,
+        onAddIngredient = viewModel::addIngredient,
+        onStepTitleChange = viewModel::onStepTitleChange,
+        onStepBodyChange = viewModel::onStepBodyChange,
+        onStepTimeChange = viewModel::onStepTimeChange,
+        onStepImage = viewModel::setStepImage,
+        onClearStepImage = viewModel::clearStepImage,
+        onRemoveStep = viewModel::removeStep,
+        onMoveStep = viewModel::moveStep,
+        onAddStep = viewModel::addStep,
+        onApplicationChange = viewModel::onApplicationChange,
+        onAddRelation = viewModel::addRelation,
+        onRemoveRelation = viewModel::removeRelation,
+        onMoveRelation = viewModel::moveRelation,
+        onNotesChange = viewModel::onNotesChange,
+        onAddTextNote = viewModel::addTextNote,
+        onNoteImage = viewModel::addNoteImage,
+        onRemoveNoteImage = viewModel::removeNoteImageAt,
+        modifier = modifier,
+    )
+}
+
+@Suppress("LongMethod", "LongParameterList") // 编辑器九个分节的统一事件入口
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+internal fun SauceEditorScreen(
+    state: SauceEditorUiState,
+    onSaved: () -> Unit,
+    onCancelled: () -> Unit,
+    onArchive: () -> Unit,
+    onOpenSauce: (String) -> Unit,
+    onDismissError: () -> Unit,
+    onFamilyChange: (String) -> Unit,
+    onCategorySelect: (Int, String?) -> Unit = { _, _ -> },
+    onEnglishNameChange: (String) -> Unit,
+    onNameChange: (String) -> Unit,
+    onDescriptionChange: (String) -> Unit,
+    onYieldAmountChange: (String) -> Unit,
+    onYieldUnitChange: (com.culinary.core.domain.model.Unit) -> Unit,
+    onMinRangeAmountChange: (String) -> Unit = {},
+    onMinRangeUnitChange: (com.culinary.core.domain.model.Unit) -> Unit = {},
+    onHeroPicked: (PendingSauceImage) -> Unit,
+    onHeroClear: () -> Unit,
+    onHeroCaptionChange: (String) -> Unit,
+    onLineNameChange: (String, String) -> Unit,
+    onLineNameEnChange: (String, String) -> Unit,
+    onLineAmountChange: (String, String) -> Unit,
+    onLineUnitChange: (String, com.culinary.core.domain.model.Unit) -> Unit,
+    onToggleOptional: (String) -> Unit,
+    onRemoveLine: (String) -> Unit,
+    onMoveLine: (Int, Int) -> Unit,
+    onAddIngredient: (com.culinary.core.domain.model.Ingredient) -> Unit,
+    onStepTitleChange: (String, String) -> Unit,
+    onStepBodyChange: (String, String) -> Unit,
+    onStepTimeChange: (String, Int) -> Unit = { _, _ -> },
+    onStepImage: (String, PendingSauceImage) -> Unit,
+    onClearStepImage: (String) -> Unit,
+    onRemoveStep: (String) -> Unit,
+    onMoveStep: (Int, Int) -> Unit,
+    onAddStep: () -> Unit,
+    onApplicationChange: (String) -> Unit,
+    onAddRelation: (Sauce) -> Unit,
+    onRemoveRelation: (String) -> Unit,
+    onMoveRelation: (Int, Int) -> Unit,
+    onNotesChange: (String) -> Unit,
+    onAddTextNote: () -> Unit,
+    onNoteImage: (PendingSauceImage) -> Unit,
+    onRemoveNoteImage: (Int) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    var showDiscard by remember { mutableStateOf(false) }
+    var showDelete by remember { mutableStateOf(false) }
+    var showYieldUnitPicker by remember { mutableStateOf(false) }
+    var showMinRangeUnitPicker by remember { mutableStateOf(false) }
+    var lineUnitKey by remember { mutableStateOf<String?>(null) }
+
+    val actions =
+        SauceEditorActions(
+            onFamilyChange = onFamilyChange,
+            onCategorySelect = onCategorySelect,
+            onEnglishNameChange = onEnglishNameChange,
+            onNameChange = onNameChange,
+            onDescriptionChange = onDescriptionChange,
+            onYieldAmountChange = onYieldAmountChange,
+            onOpenYieldUnit = { showYieldUnitPicker = true },
+            onMinRangeAmountChange = onMinRangeAmountChange,
+            onOpenMinRangeUnit = { showMinRangeUnitPicker = true },
+            onHeroPicked = onHeroPicked,
+            onHeroClear = onHeroClear,
+            onHeroCaptionChange = onHeroCaptionChange,
+            onLineNameChange = onLineNameChange,
+            onLineNameEnChange = onLineNameEnChange,
+            onLineAmountChange = onLineAmountChange,
+            onOpenLineUnit = { key -> lineUnitKey = key },
+            onToggleOptional = onToggleOptional,
+            onRemoveLine = onRemoveLine,
+            onMoveLine = onMoveLine,
+            onAddIngredient = onAddIngredient,
+            onStepTitleChange = onStepTitleChange,
+            onStepBodyChange = onStepBodyChange,
+            onStepTimeChange = onStepTimeChange,
+            onStepImage = onStepImage,
+            onClearStepImage = onClearStepImage,
+            onRemoveStep = onRemoveStep,
+            onMoveStep = onMoveStep,
+            onAddStep = onAddStep,
+            onApplicationChange = onApplicationChange,
+            onAddRelation = onAddRelation,
+            onRemoveRelation = onRemoveRelation,
+            onMoveRelation = onMoveRelation,
+            onOpenSauce = onOpenSauce,
+            onNotesChange = onNotesChange,
+            onAddTextNote = onAddTextNote,
+            onNoteImage = onNoteImage,
+            onRemoveNoteImage = onRemoveNoteImage,
+        )
+
+    val imeVisible = WindowInsets.isImeVisible
+    BackHandler(enabled = state.isDirty && !imeVisible) { showDiscard = true }
+    BackHandler(enabled = !state.isDirty && !imeVisible) { onCancelled() }
+
+    Column(modifier = modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
+        ArchiveEditorTopBar(
+            title =
+                if (state.isNew) {
+                    stringResource(R.string.sauces_editor_new_title)
+                } else {
+                    stringResource(R.string.sauces_editor_edit_title)
+                },
+            isSaving = state.isSaving,
+            canSave = !state.isLoading && (state.isDirty || state.isNew),
+            onBack = { if (state.isDirty) showDiscard = true else onCancelled() },
+            onCancel = { if (state.isDirty) showDiscard = true else onCancelled() },
+            onSave = onSaved,
+        )
+        state.error?.let { message ->
+            ErrorBanner(
+                message = message,
+                onAction = onDismissError,
+                modifier = Modifier.padding(horizontal = CulinarySpacing.pageHorizontal),
+            )
+        }
+        if (state.isLoading) {
+            LoadingRows()
+        } else {
+            Column(
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .verticalScroll(rememberScrollState())
+                        .padding(horizontal = CulinarySpacing.pageHorizontal),
+            ) {
+                SauceHeaderSection(state, actions)
+                SauceHeroSection(state, actions)
+                SauceIngredientsSection(state, actions)
+                SauceMethodSection(state, actions)
+                SauceApplicationSection(state, actions)
+                SauceRelationsSection(state, actions)
+                SauceNotesSection(state, actions)
+                SauceFooter(
+                    state = state,
+                    onDelete = { showDelete = true },
+                )
+                Spacer(modifier = Modifier.height(CulinarySpacing.spacious))
+            }
+        }
+    }
+
+    if (showDiscard) {
+        ConfirmDialog(
+            title = stringResource(R.string.sauces_discard_title),
+            message = stringResource(R.string.sauces_discard_message),
+            confirmLabel = stringResource(R.string.sauces_discard_confirm),
+            dismissLabel = stringResource(R.string.sauces_continue_editing),
+            onConfirm = {
+                showDiscard = false
+                onCancelled()
+            },
+            onDismiss = { showDiscard = false },
+            destructive = true,
+        )
+    }
+    if (showDelete) {
+        ConfirmDialog(
+            title = stringResource(R.string.sauces_delete_title),
+            message = stringResource(R.string.sauces_delete_message),
+            confirmLabel = stringResource(R.string.sauces_delete_confirm),
+            dismissLabel = stringResource(R.string.sauces_cancel),
+            onConfirm = {
+                showDelete = false
+                onArchive()
+            },
+            onDismiss = { showDelete = false },
+            destructive = true,
+        )
+    }
+    if (showYieldUnitPicker) {
+        SauceUnitPickerDialog(
+            units = state.units,
+            selectedId = state.yieldUnit?.id?.value,
+            onSelect = {
+                onYieldUnitChange(it)
+                showYieldUnitPicker = false
+            },
+            onDismiss = { showYieldUnitPicker = false },
+        )
+    }
+    if (showMinRangeUnitPicker) {
+        SauceUnitPickerDialog(
+            units = state.units,
+            selectedId = state.minRangeUnit?.id?.value,
+            onSelect = {
+                onMinRangeUnitChange(it)
+                showMinRangeUnitPicker = false
+            },
+            onDismiss = { showMinRangeUnitPicker = false },
+        )
+    }
+    lineUnitKey?.let { key ->
+        val line = state.lines.firstOrNull { it.key == key }
+        SauceUnitPickerDialog(
+            units = state.units,
+            selectedId = line?.unit?.id?.value,
+            onSelect = {
+                onLineUnitChange(key, it)
+                lineUnitKey = null
+            },
+            onDismiss = { lineUnitKey = null },
+        )
+    }
+}
+
+@Composable
+private fun SauceFooter(
+    state: SauceEditorUiState,
+    onDelete: () -> Unit,
+) {
+    Column(modifier = Modifier.fillMaxWidth().padding(top = CulinarySpacing.xl)) {
+        CulinaryRule()
+        Spacer(modifier = Modifier.height(CulinarySpacing.md))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text =
+                    if (state.updatedAtEpochMillis == null) {
+                        stringResource(R.string.sauces_unsaved_date)
+                    } else {
+                        stringResource(
+                            R.string.sauces_last_updated,
+                            formatUpdatedAt(state.updatedAtEpochMillis),
+                        )
+                    },
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.weight(1f),
+            )
+            if (state.sauceId != null) {
+                Text(
+                    text = stringResource(R.string.sauces_delete_archive),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error.copy(alpha = 0.72f),
+                    modifier = Modifier.clickable(onClick = onDelete).padding(4.dp),
+                )
+            }
+        }
+    }
+}
+
+private fun formatUpdatedAt(epochMillis: Long): String =
+    Instant
+        .ofEpochMilli(epochMillis)
+        .atZone(ZoneId.systemDefault())
+        .format(DateTimeFormatter.ofPattern("yyyy.MM.dd HH:mm"))
+
+/** 九个分节共用的编辑器事件集合；保持状态与 UI 解耦。 */
+internal data class SauceEditorActions(
+    val onFamilyChange: (String) -> Unit,
+    val onCategorySelect: (Int, String?) -> Unit = { _, _ -> },
+    val onEnglishNameChange: (String) -> Unit,
+    val onNameChange: (String) -> Unit,
+    val onDescriptionChange: (String) -> Unit,
+    val onYieldAmountChange: (String) -> Unit,
+    val onOpenYieldUnit: () -> Unit,
+    val onMinRangeAmountChange: (String) -> Unit,
+    val onOpenMinRangeUnit: () -> Unit,
+    val onHeroPicked: (PendingSauceImage) -> Unit,
+    val onHeroClear: () -> Unit,
+    val onHeroCaptionChange: (String) -> Unit,
+    val onLineNameChange: (String, String) -> Unit,
+    val onLineNameEnChange: (String, String) -> Unit,
+    val onLineAmountChange: (String, String) -> Unit,
+    val onOpenLineUnit: (String) -> Unit,
+    val onToggleOptional: (String) -> Unit,
+    val onRemoveLine: (String) -> Unit,
+    val onMoveLine: (Int, Int) -> Unit,
+    val onAddIngredient: (com.culinary.core.domain.model.Ingredient) -> Unit,
+    val onStepTitleChange: (String, String) -> Unit,
+    val onStepBodyChange: (String, String) -> Unit,
+    val onStepTimeChange: (String, Int) -> Unit,
+    val onStepImage: (String, PendingSauceImage) -> Unit,
+    val onClearStepImage: (String) -> Unit,
+    val onRemoveStep: (String) -> Unit,
+    val onMoveStep: (Int, Int) -> Unit,
+    val onAddStep: () -> Unit,
+    val onApplicationChange: (String) -> Unit,
+    val onAddRelation: (Sauce) -> Unit,
+    val onRemoveRelation: (String) -> Unit,
+    val onMoveRelation: (Int, Int) -> Unit,
+    val onOpenSauce: (String) -> Unit,
+    val onNotesChange: (String) -> Unit,
+    val onAddTextNote: () -> Unit,
+    val onNoteImage: (PendingSauceImage) -> Unit,
+    val onRemoveNoteImage: (Int) -> Unit,
+)
+===== RECIPE EDITOR SCREEN =====
+package com.culinary.feature.recipes
+
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.unit.dp
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.culinary.core.designsystem.component.ArchiveEditorImageBox
+import com.culinary.core.designsystem.component.ArchiveEditorInlineField
+import com.culinary.core.designsystem.component.ArchiveEditorNotesBox
+import com.culinary.core.designsystem.component.ArchiveEditorSectionHeader
+import com.culinary.core.designsystem.component.ArchiveEditorTopBar
+import com.culinary.core.designsystem.component.ArchiveProse
+import com.culinary.core.designsystem.component.ArchiveYieldRangeFields
+import com.culinary.core.designsystem.component.CulinaryButton
+import com.culinary.core.designsystem.component.CulinaryButtonVariant
+import com.culinary.core.designsystem.component.CulinaryRule
+import com.culinary.core.designsystem.component.CulinaryTextButton
+import com.culinary.core.designsystem.component.CulinaryTextField
+import com.culinary.core.designsystem.component.ErrorBanner
+import com.culinary.core.designsystem.component.LoadingRows
+import com.culinary.core.designsystem.component.StatusBadge
+import com.culinary.core.designsystem.component.StatusTone
+import com.culinary.core.designsystem.component.formatArchiveTimestamp
+import com.culinary.core.designsystem.icon.CulinaryIcons
+import com.culinary.core.designsystem.theme.CulinarySpacing
+import com.culinary.core.designsystem.theme.CulinaryTextStyles
+import com.culinary.core.domain.model.Ingredient
+import com.culinary.core.domain.model.ArchiveCategory
+import com.culinary.core.domain.model.PendingRecipeImage
+import com.culinary.core.domain.model.RecipeCategory
+import com.culinary.core.domain.model.RecipeComponentKind
+import com.culinary.core.domain.usecase.recipe.RecipeOption
+import com.culinary.core.domain.usecase.sauce.SauceOption
+import com.culinary.core.domain.model.Unit as UnitModel
+
+/** 菜谱编辑器路由：档案信息、基准份数、组成行（食材/子菜谱），保存草稿或发布。 */
+@Composable
+fun RecipeEditorRoute(
+    onSaved: () -> Unit,
+    onCancelled: () -> Unit = onSaved,
+    modifier: Modifier = Modifier,
+    viewModel: RecipeEditorViewModel = hiltViewModel(),
+) {
+    val state by viewModel.uiState.collectAsStateWithLifecycle()
+    var picker by remember { mutableStateOf(EditorPicker.NONE) }
+    val saved = state.savedRecipeId
+
+    LaunchedEffect(saved) {
+        if (saved != null) onSaved()
+    }
+
+    RecipeEditorScreen(
+        state = state,
+        onNameChange = viewModel::onNameChange,
+        onEnglishNameChange = viewModel::onEnglishNameChange,
+        onDescriptionChange = viewModel::onDescriptionChange,
+        onNotesChange = viewModel::onNotesChange,
+        onHeroPicked = viewModel::setHeroImage,
+        onHeroClear = viewModel::clearHeroImage,
+        onNoteImage = viewModel::addNoteImage,
+        onRemoveNoteImage = viewModel::removeNoteImageAt,
+        onCuisineChange = viewModel::onCuisineChange,
+        onPrepMinutesChange = viewModel::onPrepMinutesChange,
+        onCookMinutesChange = viewModel::onCookMinutesChange,
+        onAllergenNotesChange = viewModel::onAllergenNotesChange,
+        onOpenCategoryPicker = { picker = EditorPicker.CATEGORY },
+        onOpenArchiveCategoryPicker = { picker = EditorPicker.ARCHIVE_CATEGORY },
+        onYieldAmountChange = viewModel::onYieldAmountChange,
+        onOpenYieldUnit = { picker = EditorPicker.YIELD_UNIT },
+        onMinRangeAmountChange = viewModel::onMinRangeAmountChange,
+        onOpenMinRangeUnit = { picker = EditorPicker.MIN_RANGE_UNIT },
+        onServingsChange = viewModel::onServingsChange,
+        onAddIngredient = { picker = EditorPicker.INGREDIENT },
+        onAddRecipe = { picker = EditorPicker.RECIPE },
+        onAddSauce = { picker = EditorPicker.SAUCE },
+        onAddRelationSauce = { picker = EditorPicker.RELATION_SAUCE },
+        onAddRelationRecipe = { picker = EditorPicker.RELATION_RECIPE },
+        onRemoveRelation = viewModel::removeRelation,
+        onLineAmountChange = viewModel::onLineAmountChange,
+        onToggleOptional = viewModel::toggleOptional,
+        onRemoveLine = viewModel::removeLine,
+        onAddStep = viewModel::addStep,
+        onStepTitleChange = viewModel::onStepTitleChange,
+        onStepBodyChange = viewModel::onStepBodyChange,
+        onStepTimeChange = viewModel::onStepTimeChange,
+        onStepImage = viewModel::setStepImage,
+        onClearStepImage = viewModel::clearStepImage,
+        onRemoveStep = viewModel::removeStep,
+        onSave = viewModel::save,
+        onCancel = onCancelled,
+        onDismissError = viewModel::clearError,
+        modifier = modifier,
+    )
+
+    RecipeEditorDialogs(
+        state = state,
+        active = picker,
+        onSelectYieldUnit = {
+            viewModel.onYieldUnitChange(it)
+            picker = EditorPicker.NONE
+        },
+        onSelectMinRangeUnit = {
+            viewModel.onMinRangeUnitChange(it)
+            picker = EditorPicker.NONE
+        },
+        onSelectCategory = {
+            viewModel.onCategoryChange(it)
+            picker = EditorPicker.NONE
+        },
+        onSelectArchiveCategory = {
+            viewModel.onArchiveCategorySelect(it)
+            picker = EditorPicker.NONE
+        },
+        onSelectIngredient = {
+            viewModel.addIngredient(it)
+            picker = EditorPicker.NONE
+        },
+        onSelectOption = {
+            viewModel.addRecipeOption(it)
+            picker = EditorPicker.NONE
+        },
+        onSelectSauce = {
+            viewModel.addSauceOption(it)
+            picker = EditorPicker.NONE
+        },
+        onSelectRelationSauce = {
+            viewModel.addSauceRelation(it)
+            picker = EditorPicker.NONE
+        },
+        onSelectRelationRecipe = {
+            viewModel.addRecipeRelation(it)
+            picker = EditorPicker.NONE
+        },
+        onDismiss = { picker = EditorPicker.NONE },
+    )
+}
+
+private enum class EditorPicker {
+    NONE,
+    YIELD_UNIT,
+    MIN_RANGE_UNIT,
+    CATEGORY,
+    ARCHIVE_CATEGORY,
+    INGREDIENT,
+    RECIPE,
+    SAUCE,
+    RELATION_SAUCE,
+    RELATION_RECIPE,
+}
+
+@Composable
+private fun RecipeEditorDialogs(
+    state: RecipeEditorUiState,
+    active: EditorPicker,
+    onSelectYieldUnit: (UnitModel) -> Unit,
+    onSelectMinRangeUnit: (UnitModel) -> Unit,
+    onSelectCategory: (RecipeCategory) -> Unit,
+    onSelectArchiveCategory: (String) -> Unit,
+    onSelectIngredient: (Ingredient) -> Unit,
+    onSelectOption: (RecipeOption) -> Unit,
+    onSelectSauce: (SauceOption) -> Unit,
+    onSelectRelationSauce: (SauceOption) -> Unit,
+    onSelectRelationRecipe: (RecipeOption) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    when (active) {
+        EditorPicker.NONE -> Unit
+        EditorPicker.YIELD_UNIT ->
+            UnitPickerDialog(
+                units = state.units,
+                selectedId = state.yieldUnit?.id?.value,
+                onSelect = onSelectYieldUnit,
+                onDismiss = onDismiss,
+            )
+
+        EditorPicker.MIN_RANGE_UNIT ->
+            UnitPickerDialog(
+                units = state.units,
+                selectedId = state.minRangeUnit?.id?.value,
+                onSelect = onSelectMinRangeUnit,
+                onDismiss = onDismiss,
+            )
+
+        EditorPicker.CATEGORY ->
+            CategoryPickerDialog(
+                selected = state.category,
+                onSelect = onSelectCategory,
+                onDismiss = onDismiss,
+            )
+
+        EditorPicker.ARCHIVE_CATEGORY ->
+            ArchiveCategoryPickerDialog(
+                categories = state.categories,
+                selectedId = state.archiveCategoryId,
+                onSelect = onSelectArchiveCategory,
+                onDismiss = onDismiss,
+            )
+
+        EditorPicker.INGREDIENT ->
+            IngredientPickerDialog(
+                ingredients = state.ingredients,
+                onSelect = onSelectIngredient,
+                onDismiss = onDismiss,
+            )
+
+        EditorPicker.RECIPE ->
+            RecipePickerDialog(
+                options = state.recipeOptions,
+                onSelect = onSelectOption,
+                onDismiss = onDismiss,
+            )
+
+        EditorPicker.SAUCE ->
+            SaucePickerDialog(
+                options = state.sauceOptions,
+                onSelect = onSelectSauce,
+                onDismiss = onDismiss,
+            )
+
+        EditorPicker.RELATION_SAUCE ->
+            SaucePickerDialog(
+                options = state.sauceOptions,
+                onSelect = onSelectRelationSauce,
+                onDismiss = onDismiss,
+            )
+
+        EditorPicker.RELATION_RECIPE ->
+            RecipePickerDialog(
+                options = state.recipeOptions,
+                onSelect = onSelectRelationRecipe,
+                onDismiss = onDismiss,
+            )
+    }
+}
+
+@Composable
+private fun RecipeEditorScreen(
+    state: RecipeEditorUiState,
+    onNameChange: (String) -> Unit,
+    onEnglishNameChange: (String) -> Unit,
+    onDescriptionChange: (String) -> Unit,
+    onNotesChange: (String) -> Unit,
+    onCuisineChange: (String) -> Unit,
+    onPrepMinutesChange: (String) -> Unit,
+    onCookMinutesChange: (String) -> Unit,
+    onAllergenNotesChange: (String) -> Unit,
+    onHeroPicked: (PendingRecipeImage) -> Unit,
+    onHeroClear: () -> Unit,
+    onNoteImage: (PendingRecipeImage) -> Unit,
+    onRemoveNoteImage: (Int) -> Unit,
+    onOpenCategoryPicker: () -> Unit,
+    onOpenArchiveCategoryPicker: () -> Unit,
+    onYieldAmountChange: (String) -> Unit,
+    onOpenYieldUnit: () -> Unit,
+    onMinRangeAmountChange: (String) -> Unit,
+    onOpenMinRangeUnit: () -> Unit,
+    onServingsChange: (String) -> Unit,
+    onAddIngredient: () -> Unit,
+    onAddRecipe: () -> Unit,
+    onAddSauce: () -> Unit,
+    onAddRelationSauce: () -> Unit,
+    onAddRelationRecipe: () -> Unit,
+    onRemoveRelation: (String) -> Unit,
+    onLineAmountChange: (String, String) -> Unit,
+    onToggleOptional: (String) -> Unit,
+    onRemoveLine: (String) -> Unit,
+    onAddStep: () -> Unit,
+    onStepTitleChange: (String, String) -> Unit,
+    onStepBodyChange: (String, String) -> Unit,
+    onStepTimeChange: (String, Int) -> Unit,
+    onStepImage: (String, PendingRecipeImage) -> Unit,
+    onClearStepImage: (String) -> Unit,
+    onRemoveStep: (String) -> Unit,
+    onSave: () -> Unit,
+    onCancel: () -> Unit,
+    onDismissError: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(modifier = modifier.fillMaxSize()) {
+        ArchiveEditorTopBar(
+            title =
+                if (state.isNew) {
+                    stringResource(R.string.recipes_editor_new_title)
+                } else {
+                    stringResource(R.string.recipes_editor_edit_title_short)
+                },
+            isSaving = state.isSaving,
+            canSave = !state.isLoading && (state.isDirty || state.isNew),
+            onBack = onCancel,
+            onCancel = onCancel,
+            onSave = onSave,
+        )
+        state.error?.let { message ->
+            ErrorBanner(
+                message = message,
+                onAction = onDismissError,
+                modifier = Modifier.padding(horizontal = CulinarySpacing.pageHorizontal),
+            )
+        }
+        if (state.isLoading) {
+            LoadingRows()
+        } else {
+            RecipeEditorForm(
+                state = state,
+                onNameChange = onNameChange,
+                onEnglishNameChange = onEnglishNameChange,
+                onDescriptionChange = onDescriptionChange,
+                onNotesChange = onNotesChange,
+                onHeroPicked = onHeroPicked,
+                onHeroClear = onHeroClear,
+                onNoteImage = onNoteImage,
+                onRemoveNoteImage = onRemoveNoteImage,
+                onOpenArchiveCategoryPicker = onOpenArchiveCategoryPicker,
+                onCuisineChange = onCuisineChange,
+                onPrepMinutesChange = onPrepMinutesChange,
+                onCookMinutesChange = onCookMinutesChange,
+                onAllergenNotesChange = onAllergenNotesChange,
+                onOpenCategoryPicker = onOpenCategoryPicker,
+                onYieldAmountChange = onYieldAmountChange,
+                onOpenYieldUnit = onOpenYieldUnit,
+                onMinRangeAmountChange = onMinRangeAmountChange,
+                onOpenMinRangeUnit = onOpenMinRangeUnit,
+                onServingsChange = onServingsChange,
+                onAddIngredient = onAddIngredient,
+                onAddRecipe = onAddRecipe,
+                onAddSauce = onAddSauce,
+                onAddRelationSauce = onAddRelationSauce,
+                onAddRelationRecipe = onAddRelationRecipe,
+                onRemoveRelation = onRemoveRelation,
+                onLineAmountChange = onLineAmountChange,
+                onToggleOptional = onToggleOptional,
+                onRemoveLine = onRemoveLine,
+                onAddStep = onAddStep,
+                onStepTitleChange = onStepTitleChange,
+                onStepBodyChange = onStepBodyChange,
+                onStepTimeChange = onStepTimeChange,
+                onStepImage = onStepImage,
+                onClearStepImage = onClearStepImage,
+                onRemoveStep = onRemoveStep,
+            )
+        }
+    }
+}
+
+@Composable
+internal fun RecipeEditorForm(
+    state: RecipeEditorUiState,
+    onNameChange: (String) -> Unit,
+    onOpenCategoryPicker: () -> Unit,
+    onEnglishNameChange: (String) -> Unit = {},
+    onDescriptionChange: (String) -> Unit = {},
+    onNotesChange: (String) -> Unit = {},
+    onHeroPicked: (PendingRecipeImage) -> Unit = {},
+    onHeroClear: () -> Unit = {},
+    onNoteImage: (PendingRecipeImage) -> Unit = {},
+    onRemoveNoteImage: (Int) -> Unit = {},
+    onOpenArchiveCategoryPicker: () -> Unit = {},
+    onCuisineChange: (String) -> Unit = {},
+    onPrepMinutesChange: (String) -> Unit = {},
+    onCookMinutesChange: (String) -> Unit = {},
+    onAllergenNotesChange: (String) -> Unit = {},
+    onYieldAmountChange: (String) -> Unit,
+    onOpenYieldUnit: () -> Unit,
+    onMinRangeAmountChange: (String) -> Unit = {},
+    onOpenMinRangeUnit: () -> Unit = {},
+    onServingsChange: (String) -> Unit,
+    onAddIngredient: () -> Unit,
+    onAddRecipe: () -> Unit,
+    onAddSauce: () -> Unit,
+    onAddRelationSauce: () -> Unit = {},
+    onAddRelationRecipe: () -> Unit = {},
+    onRemoveRelation: (String) -> Unit = {},
+    onLineAmountChange: (String, String) -> Unit,
+    onToggleOptional: (String) -> Unit,
+    onRemoveLine: (String) -> Unit,
+    onAddStep: () -> Unit = {},
+    onStepTitleChange: (String, String) -> Unit = { _, _ -> },
+    onStepBodyChange: (String, String) -> Unit = { _, _ -> },
+    onStepTimeChange: (String, Int) -> Unit = { _, _ -> },
+    onStepImage: (String, PendingRecipeImage) -> Unit = { _, _ -> },
+    onClearStepImage: (String) -> Unit = {},
+    onRemoveStep: (String) -> Unit = {},
+) {
+    Column(
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = CulinarySpacing.pageHorizontal)
+                .padding(bottom = CulinarySpacing.xl),
+    ) {
+        RecipeBasics(
+            state = state,
+            onNameChange = onNameChange,
+            onEnglishNameChange = onEnglishNameChange,
+            onDescriptionChange = onDescriptionChange,
+            onOpenCategoryPicker = onOpenCategoryPicker,
+            onOpenArchiveCategoryPicker = onOpenArchiveCategoryPicker,
+        )
+        RecipeYieldRangeSection(
+            state = state,
+            onYieldAmountChange = onYieldAmountChange,
+            onOpenYieldUnit = onOpenYieldUnit,
+            onMinRangeAmountChange = onMinRangeAmountChange,
+            onOpenMinRangeUnit = onOpenMinRangeUnit,
+            onServingsChange = onServingsChange,
+        )
+        RecipeHeroSection(
+            state = state,
+            onPicked = onHeroPicked,
+            onClear = onHeroClear,
+        )
+        RecipeComponentsEditor(
+            state = state,
+            onAddIngredient = onAddIngredient,
+            onAddRecipe = onAddRecipe,
+            onAddSauce = onAddSauce,
+            onLineAmountChange = onLineAmountChange,
+            onToggleOptional = onToggleOptional,
+            onRemoveLine = onRemoveLine,
+        )
+        RecipeMethodEditor(
+            state = state,
+            stepImageBytes =
+                state.steps.associate { step ->
+                    step.key to (step.pendingImage?.bytes ?: step.image?.let { state.imageBytes[it.id] })
+                },
+            onAddStep = onAddStep,
+            onStepTitleChange = onStepTitleChange,
+            onStepBodyChange = onStepBodyChange,
+            onStepTimeChange = onStepTimeChange,
+            onStepImage = onStepImage,
+            onClearStepImage = onClearStepImage,
+            onRemoveStep = onRemoveStep,
+        )
+        RecipeApplicationSection(
+            state = state,
+            onCuisineChange = onCuisineChange,
+            onPrepMinutesChange = onPrepMinutesChange,
+            onCookMinutesChange = onCookMinutesChange,
+            onAllergenNotesChange = onAllergenNotesChange,
+        )
+        RecipeRelationsSection(
+            state = state,
+            onAddSauce = onAddRelationSauce,
+            onAddRecipe = onAddRelationRecipe,
+            onRemove = onRemoveRelation,
+        )
+        RecipeNotesSection(
+            state = state,
+            onNotesChange = onNotesChange,
+            onNoteImage = onNoteImage,
+            onRemoveNoteImage = onRemoveNoteImage,
+        )
+        RecipeEditorFooter(state)
+    }
+}
+
+@Composable
+private fun RecipeBasics(
+    state: RecipeEditorUiState,
+    onNameChange: (String) -> Unit,
+    onEnglishNameChange: (String) -> Unit,
+    onDescriptionChange: (String) -> Unit,
+    onOpenCategoryPicker: () -> Unit,
+    onOpenArchiveCategoryPicker: () -> Unit,
+) {
+    ArchiveEditorSectionHeader(
+        index = "",
+        english = "CLASSIFICATION",
+        title = "档案信息",
+        subtitle = if (state.isNew) "新菜谱默认保存并发布首版，之后编辑生成待发布修改。" else "修改保存为待发布版本，不覆盖当前正式版本。",
+        showRule = false,
+    )
+    ArchiveEditorInlineField(
+        value = state.englishName,
+        onValueChange = onEnglishNameChange,
+        placeholder = "English name",
+        textStyle = CulinaryTextStyles.pageTitle,
+        modifier = Modifier.fillMaxWidth(),
+    )
+    Spacer(modifier = Modifier.height(CulinarySpacing.xxs))
+    ArchiveEditorInlineField(
+        value = state.name,
+        onValueChange = onNameChange,
+        placeholder = "中文名称",
+        textStyle = MaterialTheme.typography.headlineSmall,
+        modifier = Modifier.fillMaxWidth(),
+    )
+    Spacer(modifier = Modifier.height(CulinarySpacing.xs))
+    ArchiveEditorInlineField(
+        value = state.description,
+        onValueChange = onDescriptionChange,
+        placeholder = "描述这道菜的风格、来源与用途……",
+        textStyle = MaterialTheme.typography.bodySmall,
+        singleLine = false,
+        minLines = 2,
+        modifier = Modifier.fillMaxWidth(),
+    )
+    Spacer(modifier = Modifier.height(CulinarySpacing.md))
+    val categoryPath =
+        state.categories
+            .firstOrNull { it.id == state.archiveCategoryId }
+            ?.pathLabel
+            .orEmpty()
+            .ifBlank { "未分类" }
+    Column(verticalArrangement = Arrangement.spacedBy(CulinarySpacing.xs)) {
+        CulinaryButton(
+            text =
+                stringResource(R.string.recipes_category_label) +
+                    "：" + recipeCategoryLabel(state.category),
+            onClick = onOpenCategoryPicker,
+            variant = CulinaryButtonVariant.Secondary,
+            icon = CulinaryIcons.ChevronDown,
+        )
+        CulinaryButton(
+            text = "分类归属：$categoryPath",
+            onClick = onOpenArchiveCategoryPicker,
+            variant = CulinaryButtonVariant.Secondary,
+            icon = CulinaryIcons.ChevronDown,
+        )
+    }
+}
+
+@Composable
+private fun RecipeYieldRangeSection(
+    state: RecipeEditorUiState,
+    onYieldAmountChange: (String) -> Unit,
+    onOpenYieldUnit: () -> Unit,
+    onMinRangeAmountChange: (String) -> Unit,
+    onOpenMinRangeUnit: () -> Unit,
+    onServingsChange: (String) -> Unit,
+) {
+    ArchiveEditorSectionHeader(
+        index = "",
+        english = "YIELD / MIN. RANGE",
+        title = "产量与制作范围",
+    )
+    ArchiveYieldRangeFields(
+        yieldAmount = state.yieldAmount,
+        yieldUnit = state.yieldUnit?.symbol.orEmpty(),
+        minRangeAmount = state.minRangeAmount,
+        minRangeUnit = state.minRangeUnit?.symbol.orEmpty(),
+        onYieldAmountChange = onYieldAmountChange,
+        onYieldUnitClick = onOpenYieldUnit,
+        onMinRangeAmountChange = onMinRangeAmountChange,
+        onMinRangeUnitClick = onOpenMinRangeUnit,
+    )
+    Spacer(modifier = Modifier.height(CulinarySpacing.md))
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Text(
+            text = stringResource(R.string.recipes_servings_label),
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.weight(1f),
+        )
+        ArchiveEditorInlineField(
+            value = state.servings,
+            onValueChange = onServingsChange,
+            placeholder = "1",
+            textStyle = CulinaryTextStyles.numeralS,
+            keyboardType = KeyboardType.Number,
+            textAlign = androidx.compose.ui.text.style.TextAlign.End,
+            modifier = Modifier.width(120.dp),
+        )
+    }
+}
+
+@Composable
+private fun RecipeHeroSection(
+    state: RecipeEditorUiState,
+    onPicked: (PendingRecipeImage) -> Unit,
+    onClear: () -> Unit,
+) {
+    ArchiveEditorSectionHeader(
+        index = "",
+        english = "HERO MEDIA",
+        title = "成品图片",
+    )
+    val pick = rememberRecipeImagePicker(onPicked)
+    val preview =
+        state.heroImagePending?.bytes
+            ?: state.heroImage?.let { state.imageBytes[it.id] }
+    ArchiveEditorImageBox(
+        imageBytes = preview,
+        onPick = pick,
+        onClear = if (state.heroImage != null || state.heroImagePending != null) onClear else null,
+        emptyLabel = "上传成品图片",
+    )
+}
+
+@Composable
+private fun RecipeComponentsEditor(
+    state: RecipeEditorUiState,
+    onAddIngredient: () -> Unit,
+    onAddRecipe: () -> Unit,
+    onAddSauce: () -> Unit,
+    onLineAmountChange: (String, String) -> Unit,
+    onToggleOptional: (String) -> Unit,
+    onRemoveLine: (String) -> Unit,
+) {
+    ArchiveEditorSectionHeader(
+        index = "01",
+        english = "INGREDIENTS",
+        title = stringResource(R.string.recipes_ingredients_title),
+        subtitle = stringResource(R.string.recipes_components, state.lines.size),
+    )
+    state.lines.forEach { line ->
+        RecipeLineRowEditor(
+            line = line,
+            onAmountChange = { onLineAmountChange(line.key, it) },
+            onToggleOptional = { onToggleOptional(line.key) },
+            onRemove = { onRemoveLine(line.key) },
+        )
+    }
+    if (state.lines.isEmpty()) {
+        Text(
+            text = "暂未添加食材",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+    Row(
+        modifier = Modifier.padding(top = CulinarySpacing.xs),
+        horizontalArrangement = Arrangement.spacedBy(CulinarySpacing.xs),
+    ) {
+        CulinaryButton(
+            text = stringResource(R.string.recipes_add_ingredient),
+            onClick = onAddIngredient,
+            variant = CulinaryButtonVariant.Secondary,
+            icon = CulinaryIcons.Add,
+        )
+        CulinaryButton(
+            text = stringResource(R.string.recipes_add_recipe),
+            onClick = onAddRecipe,
+            variant = CulinaryButtonVariant.Secondary,
+            icon = CulinaryIcons.Add,
+        )
+    }
+    CulinaryButton(
+        text = stringResource(R.string.recipes_add_sauce),
+        onClick = onAddSauce,
+        variant = CulinaryButtonVariant.Secondary,
+        icon = CulinaryIcons.Add,
+        modifier = Modifier.padding(top = CulinarySpacing.xs),
+    )
+}
+
+@Composable
+private fun RecipeLineRowEditor(
+    line: RecipeLineEditor,
+    onAmountChange: (String) -> Unit,
+    onToggleOptional: () -> Unit,
+    onRemove: () -> Unit,
+) {
+    Column(modifier = Modifier.fillMaxWidth().padding(vertical = CulinarySpacing.sm)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = line.name,
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+                Text(
+                    text = recipeLineKindLabel(line),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            CulinaryTextField(
+                value = line.amount,
+                onValueChange = onAmountChange,
+                label = { Text(text = stringResource(R.string.recipes_amount)) },
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                trailingIcon = { Text(text = line.unit.symbol) },
+                fillWidth = false,
+                modifier = Modifier.width(132.dp),
+            )
+            CulinaryTextButton(
+                text = stringResource(R.string.recipes_remove_line),
+                onClick = onRemove,
+            )
+        }
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            StatusBadge(
+                text =
+                    stringResource(
+                        if (line.isOptional) R.string.recipes_optional_on else R.string.recipes_optional_off,
+                    ),
+                tone = if (line.isOptional) StatusTone.Warning else StatusTone.Neutral,
+            )
+            CulinaryTextButton(
+                text = stringResource(R.string.recipes_optional),
+                onClick = onToggleOptional,
+            )
+        }
+        CulinaryRule()
+    }
+}
+
+@Composable
+private fun recipeLineKindLabel(line: RecipeLineEditor): String =
+    when (line.kind) {
+        RecipeComponentKind.INGREDIENT -> stringResource(R.string.recipes_kind_ingredient)
+        RecipeComponentKind.RECIPE ->
+            stringResource(R.string.recipes_kind_recipe, line.recipeVersionNo ?: 0)
+        RecipeComponentKind.SAUCE ->
+            stringResource(R.string.recipes_kind_sauce, line.sauceVersionNo ?: 0)
+    }
+
+@Composable
+private fun RecipeApplicationSection(
+    state: RecipeEditorUiState,
+    onCuisineChange: (String) -> Unit,
+    onPrepMinutesChange: (String) -> Unit,
+    onCookMinutesChange: (String) -> Unit,
+    onAllergenNotesChange: (String) -> Unit,
+) {
+    ArchiveEditorSectionHeader(
+        index = "03",
+        english = "APPLICATION",
+        title = stringResource(R.string.recipes_application),
+    )
+    Text(
+        text = stringResource(R.string.recipes_cuisine),
+        style = MaterialTheme.typography.labelMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
+    ArchiveEditorInlineField(
+        value = state.cuisine,
+        onValueChange = onCuisineChange,
+        placeholder = "填写适用菜系",
+        modifier = Modifier.fillMaxWidth(),
+    )
+    Spacer(modifier = Modifier.height(CulinarySpacing.md))
+    Row(horizontalArrangement = Arrangement.spacedBy(CulinarySpacing.md)) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = stringResource(R.string.recipes_prep_minutes),
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            ArchiveEditorInlineField(
+                value = state.prepMinutes,
+                onValueChange = onPrepMinutesChange,
+                placeholder = "0",
+                textStyle = CulinaryTextStyles.numeralS,
+                keyboardType = KeyboardType.Number,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = stringResource(R.string.recipes_cook_minutes),
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            ArchiveEditorInlineField(
+                value = state.cookMinutes,
+                onValueChange = onCookMinutesChange,
+                placeholder = "0",
+                textStyle = CulinaryTextStyles.numeralS,
+                keyboardType = KeyboardType.Number,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
+    }
+    Spacer(modifier = Modifier.height(CulinarySpacing.md))
+    Text(
+        text = stringResource(R.string.recipes_allergen),
+        style = MaterialTheme.typography.labelMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
+    ArchiveEditorInlineField(
+        value = state.allergenNotes,
+        onValueChange = onAllergenNotesChange,
+        placeholder = "填写过敏原与适用提示",
+        singleLine = false,
+        minLines = 2,
+        modifier = Modifier.fillMaxWidth(),
+    )
+}
+
+@Composable
+private fun RecipeRelationsSection(
+    state: RecipeEditorUiState,
+    onAddSauce: () -> Unit,
+    onAddRecipe: () -> Unit,
+    onRemove: (String) -> Unit,
+) {
+    ArchiveEditorSectionHeader(
+        index = "04",
+        english = "RELATED RECORDS",
+        title = "关联档案",
+    )
+    if (state.relations.isEmpty()) {
+        Text(
+            text = "暂未添加关联档案",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    } else {
+        state.relations.forEach { relation ->
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(vertical = CulinarySpacing.xs),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = relation.name,
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.weight(1f),
+                )
+                Text(
+                    text = relation.relationLabel,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                CulinaryTextButton(
+                    text = "移除",
+                    onClick = { onRemove(relation.targetId) },
+                )
+            }
+            CulinaryRule()
+        }
+    }
+    Row(
+        modifier = Modifier.padding(top = CulinarySpacing.xs),
+        horizontalArrangement = Arrangement.spacedBy(CulinarySpacing.xs),
+    ) {
+        CulinaryTextButton(text = "+ 关联酱汁", onClick = onAddSauce)
+        CulinaryTextButton(text = "+ 关联菜谱", onClick = onAddRecipe)
+    }
+}
+
+@Composable
+private fun RecipeNotesSection(
+    state: RecipeEditorUiState,
+    onNotesChange: (String) -> Unit,
+    onNoteImage: (PendingRecipeImage) -> Unit,
+    onRemoveNoteImage: (Int) -> Unit,
+) {
+    ArchiveEditorSectionHeader(
+        index = "05",
+        english = "NOTES",
+        title = stringResource(R.string.recipes_notes),
+    )
+    ArchiveEditorNotesBox(
+        value = state.notes,
+        onValueChange = onNotesChange,
+        placeholder = "记录研发说明、实验结论与调整记录……",
+    )
+    val pickNoteImage = rememberRecipeImagePicker(onNoteImage)
+    Spacer(modifier = Modifier.height(CulinarySpacing.sm))
+    val noteImages = state.noteImages.mapNotNull { it to state.imageBytes[it.id] } +
+        state.noteImagesPending.map { null to it.bytes }
+    if (noteImages.isNotEmpty()) {
+        Row(horizontalArrangement = Arrangement.spacedBy(CulinarySpacing.xs)) {
+            noteImages.forEachIndexed { index, (_, bytes) ->
+                if (bytes != null) {
+                    RecipeNoteThumbnail(
+                        bytes = bytes,
+                        onRemove = { onRemoveNoteImage(index) },
+                    )
+                }
+            }
+        }
+        Spacer(modifier = Modifier.height(CulinarySpacing.xs))
+    }
+    CulinaryTextButton(text = "+ 上传研发照片", onClick = pickNoteImage)
+    state.seedNote.takeIf { it.isNotBlank() }?.let { seed ->
+        Spacer(modifier = Modifier.height(CulinarySpacing.sm))
+        Text(
+            text = "原有测试记录",
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        ArchiveProse(seed)
+    }
+}
+
+@Composable
+private fun RecipeNoteThumbnail(
+    bytes: ByteArray,
+    onRemove: () -> Unit,
+) {
+    val bitmap =
+        remember(bytes) {
+            android.graphics.BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+        }
+    if (bitmap == null) return
+    Box {
+        androidx.compose.foundation.Image(
+            bitmap = bitmap.asImageBitmap(),
+            contentDescription = null,
+            contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+            modifier = Modifier.size(96.dp),
+        )
+        Icon(
+            imageVector = CulinaryIcons.Close,
+            contentDescription = "移除照片",
+            tint = MaterialTheme.colorScheme.error,
+            modifier =
+                Modifier
+                    .align(Alignment.TopEnd)
+                    .size(20.dp)
+                    .clickable(onClick = onRemove)
+                    .padding(2.dp),
+        )
+    }
+}
+
+@Composable
+private fun RecipeEditorFooter(state: RecipeEditorUiState) {
+    Spacer(modifier = Modifier.height(CulinarySpacing.lg))
+    CulinaryRule()
+    Spacer(modifier = Modifier.height(CulinarySpacing.sm))
+    val status =
+        when {
+            state.isSaving -> "正在保存…"
+            state.isNew || !state.hasPublishedVersion -> "尚未保存"
+            state.isDirty -> "修改尚未保存"
+            else -> "已保存"
+        }
+    Text(
+        text = status,
+        style = MaterialTheme.typography.labelMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
+    formatArchiveTimestamp(state.updatedAtEpochMillis)?.let { updated ->
+        Text(
+            text = stringResource(R.string.recipes_last_updated, updated),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(top = CulinarySpacing.xxs),
+        )
+    }
+}
+
+@Composable
+private fun UnitPickerDialog(
+    units: List<UnitModel>,
+    selectedId: String?,
+    onSelect: (UnitModel) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    PickerDialog(
+        title = stringResource(R.string.recipes_unit_picker_title),
+        items = units.map { "${it.name}（${it.symbol}）" to (it.id.value == selectedId) },
+        onSelect = { index -> onSelect(units[index]) },
+        onDismiss = onDismiss,
+        cancelLabel = stringResource(R.string.recipes_cancel),
+    )
+}
+
+@Composable
+private fun IngredientPickerDialog(
+    ingredients: List<Ingredient>,
+    onSelect: (Ingredient) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    PickerDialog(
+        title = stringResource(R.string.recipes_ingredient_picker_title),
+        items = ingredients.map { it.name to false },
+        onSelect = { index -> onSelect(ingredients[index]) },
+        onDismiss = onDismiss,
+        cancelLabel = stringResource(R.string.recipes_cancel),
+    )
+}
+
+@Composable
+private fun RecipePickerDialog(
+    options: List<RecipeOption>,
+    onSelect: (RecipeOption) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    PickerDialog(
+        title = stringResource(R.string.recipes_recipe_picker_title),
+        items =
+            options.map { option ->
+                val version = option.currentVersion
+                val label =
+                    if (version == null) {
+                        option.recipe.name + stringResource(R.string.recipes_recipe_no_version)
+                    } else {
+                        option.recipe.name + " · v" + version.versionNo
+                    }
+                label to false
+            },
+        onSelect = { index -> onSelect(options[index]) },
+        onDismiss = onDismiss,
+        cancelLabel = stringResource(R.string.recipes_cancel),
+    )
+}
+
+@Composable
+private fun SaucePickerDialog(
+    options: List<SauceOption>,
+    onSelect: (SauceOption) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    PickerDialog(
+        title = stringResource(R.string.recipes_sauce_picker_title),
+        items =
+            options.map { option ->
+                val version = option.currentVersion
+                val label =
+                    if (version == null) {
+                        option.sauce.name + stringResource(R.string.recipes_recipe_no_version)
+                    } else {
+                        option.sauce.name + " · v" + version.versionNo
+                    }
+                label to false
+            },
+        onSelect = { index -> onSelect(options[index]) },
+        onDismiss = onDismiss,
+        cancelLabel = stringResource(R.string.recipes_cancel),
+    )
+}
+
+@Composable
+private fun CapacityPickerDialog(
+    selected: String,
+    onSelect: (String) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val options =
+        listOf(
+            "EASY" to "简单",
+            "MEDIUM" to "中等",
+            "HARD" to "困难",
+        )
+    val current = selected.trim().uppercase()
+    PickerDialog(
+        title = stringResource(R.string.recipes_minimum_capacity),
+        items = options.map { (value, label) -> label to (value == current) },
+        onSelect = { index -> onSelect(options[index].first) },
+        onDismiss = onDismiss,
+        cancelLabel = stringResource(R.string.recipes_cancel),
+    )
+}
+
+@Composable
+private fun ArchiveCategoryPickerDialog(
+    categories: List<ArchiveCategory>,
+    selectedId: String?,
+    onSelect: (String) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val options = categories.filterNot { it.isTest }.sortedBy { it.pathLabel }
+    PickerDialog(
+        title = "选择分类归属",
+        items = options.map { it.pathLabel to (it.id == selectedId) },
+        onSelect = { index -> onSelect(options[index].id) },
+        onDismiss = onDismiss,
+        cancelLabel = stringResource(R.string.recipes_cancel),
+    )
+}
+
+@Composable
+private fun CategoryPickerDialog(
+    selected: RecipeCategory,
+    onSelect: (RecipeCategory) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val categories = RecipeCategory.entries
+    PickerDialog(
+        title = stringResource(R.string.recipes_category_picker_title),
+        items = categories.map { recipeCategoryLabel(it) to (it == selected) },
+        onSelect = { index -> onSelect(categories[index]) },
+        onDismiss = onDismiss,
+        cancelLabel = stringResource(R.string.recipes_cancel),
+    )
+}
+
+/** 统一的选择弹窗：细线列表 + 选中对勾 + 文字取消。 */
+@Composable
+private fun PickerDialog(
+    title: String,
+    items: List<Pair<String, Boolean>>,
+    onSelect: (Int) -> Unit,
+    onDismiss: () -> Unit,
+    cancelLabel: String,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        shape = MaterialTheme.shapes.large,
+        containerColor = MaterialTheme.colorScheme.surface,
+        title = {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.headlineSmall,
+            )
+        },
+        text = {
+            if (items.isEmpty()) {
+                Text(text = stringResource(R.string.recipes_picker_empty))
+            } else {
+                Column(modifier = Modifier.heightIn(max = 420.dp).verticalScroll(rememberScrollState())) {
+                    items.forEachIndexed { index, (label, selected) ->
+                        Row(
+                            modifier =
+                                Modifier
+                                    .fillMaxWidth()
+                                    .clickable { onSelect(index) }
+                                    .padding(vertical = CulinarySpacing.sm),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text(
+                                text = label,
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.onSurface,
+                                modifier = Modifier.weight(1f),
+                            )
+                            if (selected) {
+                                Icon(
+                                    imageVector = CulinaryIcons.Check,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(20.dp),
+                                    tint = MaterialTheme.colorScheme.secondary,
+                                )
+                            }
+                        }
+                        CulinaryRule()
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text(
+                    text = cancelLabel,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        },
+    )
+}
+===== MODULE DEPENDENCIES =====
+plugins {
+    id("culinary.android.library")
+    id("culinary.android.compose")
+    id("culinary.android.hilt")
+}
+
+android {
+    testOptions {
+        unitTests.isIncludeAndroidResources = true
+    }
+}
+
+// 表现层：只含 UI 与 ViewModel；业务规则在 core:domain，持久化在 core:data（A03A §4.9）。
+dependencies {
+    implementation(project(":core:domain"))
+    implementation(project(":core:common"))
+    implementation(project(":core:designsystem"))
+
+    implementation(libs.androidx.activity.compose)
+    implementation(libs.androidx.lifecycle.runtime.compose)
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
+    implementation(libs.androidx.hilt.lifecycle.viewmodel.compose)
+
+    testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.turbine)
+    testImplementation(libs.robolectric)
+    testImplementation(platform(libs.androidx.compose.bom))
+    testImplementation(libs.androidx.compose.ui.test.junit4)
+    testImplementation(libs.androidx.compose.ui.test.manifest)
+}
+plugins {
+    id("culinary.android.library")
+    id("culinary.android.compose")
+    id("culinary.android.hilt")
+}
+
+android {
+    testOptions {
+        unitTests.isIncludeAndroidResources = true
+    }
+}
+
+// 表现层：只含 UI 与 ViewModel；业务规则在 core:domain，持久化在 core:data（A03A §4.9）。
+dependencies {
+    implementation(project(":core:domain"))
+    implementation(project(":core:common"))
+    implementation(project(":core:designsystem"))
+
+    implementation(libs.androidx.activity.compose)
+    implementation(libs.androidx.lifecycle.runtime.compose)
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
+    implementation(libs.androidx.hilt.lifecycle.viewmodel.compose)
+
+    testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.turbine)
+    testImplementation(libs.robolectric)
+    testImplementation(platform(libs.androidx.compose.bom))
+    testImplementation(libs.androidx.compose.ui.test.junit4)
+    testImplementation(libs.androidx.compose.ui.test.manifest)
+}
+plugins {
+    id("culinary.android.library")
+    id("culinary.android.compose")
+}
+
+// 表现基础层：只放主题与通用组件，不依赖 domain/data/database/feature（A03A §4）。
+dependencies {
+    implementation(project(":core:common"))
+    implementation(libs.androidx.core.ktx)
+}
+
+21697@AnfuZhengzhang UCRT64 /d/MISEBASE (feature/recipe-sauce-parity)
+$
