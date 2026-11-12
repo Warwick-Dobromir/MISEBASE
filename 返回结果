@@ -5,126 +5,47 @@ $ cd /d/MISEBASE
 
 python - <<'PY'
 from pathlib import Path
+import subprocess
 
-# 1. 扩展公共图片组件，允许领域模块传入自己的文案
-p = Path(
-    "core/designsystem/src/main/java/com/culinary/core/designsystem/component/ArchiveEditor.kt"
-)
-s = p.read_text(encoding="utf-8")
-
-signature = '    showActions: Boolean = true,\n) {'
-assert s.count(signature) == 1, "ArchiveEditorImageBox 函数签名不唯一或已变化"
-
-s = s.replace(
-    signature,
-    '    showActions: Boolean = true,\n'
-    '    replaceLabel: String = "替换",\n'
-    '    deleteLabel: String = "删除",\n'
-    ') {',
-    1,
-)
-
-assert s.count('text = "替换",') == 1, "替换文案位置异常"
-assert s.count('text = "删除",') == 1, "删除文案位置异常"
-
-s = s.replace('text = "替换",', 'text = replaceLabel,', 1)
-s = s.replace('text = "删除",', 'text = deleteLabel,', 1)
-
-p.write_text(s, encoding="utf-8")
-
-
-# 2. 酱汁编辑器改用现有公共组件
-p = Path(
-    "feature/sauces/src/main/java/com/culinary/feature/sauces/SauceEditorSections.kt"
-)
-s = p.read_text(encoding="utf-8")
-
-imports = [
-    "import com.culinary.core.designsystem.component.ArchiveEditorDragHandle",
-    "import com.culinary.core.designsystem.component.ArchiveEditorImageBox",
-    "import com.culinary.core.designsystem.component.ArchiveEditorInlineField",
-    "import com.culinary.core.designsystem.component.ArchiveEditorNotesBox",
-    "import com.culinary.core.designsystem.component.ArchiveEditorSectionHeader",
+root = Path(".")
+files = [
+    "core/designsystem/src/main/java/com/culinary/core/designsystem/component/ArchiveEditor.kt",
+    "feature/sauces/src/main/java/com/culinary/feature/sauces/SauceEditorSections.kt",
+    "feature/sauces/src/main/java/com/culinary/feature/sauces/SauceEditorScreen.kt",
+    "feature/sauces/src/main/java/com/culinary/feature/sauces/SauceEditorComponents.kt",
+    "feature/recipes/src/main/java/com/culinary/feature/recipes/RecipeEditorScreen.kt",
+    "feature/recipes/src/main/java/com/culinary/feature/recipes/RecipeMethodEditor.kt",
+    "feature/recipes/src/main/java/com/culinary/feature/recipes/RecipeEditorViewModel.kt",
 ]
 
-marker = "package com.culinary.feature.sauces\n"
-assert s.startswith(marker), "SauceEditorSections.kt 文件结构异常"
+parts = []
 
-for item in imports:
-    assert item not in s, f"重复导入：{item}"
-
-s = s.replace(marker, marker + "\n" + "\n".join(imports) + "\n", 1)
-
-replacements = {
-    "SauceSectionHeader(": "ArchiveEditorSectionHeader(",
-    "EditorInlineField(": "ArchiveEditorInlineField(",
-    "DragHandle(": "ArchiveEditorDragHandle(",
-    "EditorImageBox(": "ArchiveEditorImageBox(",
-    "NotesField(": "ArchiveEditorNotesBox(",
-}
-
-for old, new in replacements.items():
-    count = s.count(old)
-    assert count > 0, f"没有找到待替换组件：{old}"
-    s = s.replace(old, new)
-
-for label in [
-    "emptyLabel = stringResource(R.string.sauces_hero_upload),",
-    "emptyLabel = stringResource(R.string.sauces_step_upload),",
-]:
-    assert s.count(label) == 1, f"图片区域位置异常：{label}"
-    s = s.replace(
-        label,
-        label + "\n"
-        "            replaceLabel = stringResource(R.string.sauces_image_replace),\n"
-        "            deleteLabel = stringResource(R.string.sauces_image_delete),",
-        1,
+def command(title, args):
+    result = subprocess.run(
+        args, cwd=root, text=True,
+        stdout=subprocess.PIPE, stderr=subprocess.STDOUT
     )
+    parts.append(f"\n===== {title} =====\n{result.stdout}")
 
-p.write_text(s, encoding="utf-8")
+command("CURRENT BRANCH", ["git", "branch", "--show-current"])
+command("GIT STATUS", ["git", "status", "--short"])
+command("DIFF STAT", ["git", "diff", "--stat"])
+command("DIFF CHECK", ["git", "diff", "--check"])
 
-print("第一批公共组件迁移完成。")
+for name in files:
+    path = root / name
+    if path.exists():
+        content = path.read_text(encoding="utf-8")
+        parts.append(f"\n===== FILE: {name} =====\n{content}")
+    else:
+        parts.append(f"\n===== FILE MISSING: {name} =====")
+
+Path("返回结果").write_text("\n".join(parts), encoding="utf-8")
+print("已生成项目根目录的「返回结果」文件。")
+print("请将它更新到 GitHub 仓库的「返回结果」文件。")
 PY
-第一批公共组件迁移完成。
-
-21697@AnfuZhengzhang UCRT64 /d/MISEBASE (feature/recipe-sauce-parity)
-$ ./gradlew \
-  :core:designsystem:compileDebugKotlin \
-  :feature:sauces:compileDebugKotlin \
-  :feature:recipes:compileDebugKotlin \
-  :feature:sauces:testDebugUnitTest
-Calculating task graph as no cached configuration is available for tasks: :core:designsystem:compileDebugKotlin :feature:sauces:compileDebugKotlin :feature:recipes:compileDebugKotlin :feature:sauces:testDebugUnitTest
-
-BUILD SUCCESSFUL in 48s
-77 actionable tasks: 16 executed, 61 up-to-date
-Configuration cache entry stored.
-
-21697@AnfuZhengzhang UCRT64 /d/MISEBASE (feature/recipe-sauce-parity)
-$ ^[git diff --stat[200~git diff --check
-bash: $'\E[200~git': command not found
-git status --short
-git diff --statgit status --short
-git diff --stat
-21697@AnfuZhengzhang UCRT64 /d/MISEBASE (feature/recipe-sauce-parity)
-$ git status --short
-Refresh index: 100% (1248/1248), done.
- M core/designsystem/src/main/java/com/culinary/core/designsystem/component/ArchiveEditor.kt
- M feature/sauces/src/main/java/com/culinary/feature/sauces/SauceEditorSections.kt
-git diff --statgit diff --statgit diff --stat
-21697@AnfuZhengzhang UCRT64 /d/MISEBASE (feature/recipe-sauce-parity)
-$ git diff --stat~git diff --check
-git status --short
-git diff --stat
-fatal: ambiguous argument 'diff': unknown revision or path not in the working tree.
-Use '--' to separate paths from revisions, like this:
-'git <command> [<revision>...] -- [<file>...]'
- M core/designsystem/src/main/java/com/culinary/core/designsystem/component/ArchiveEditor.kt
- M feature/sauces/src/main/java/com/culinary/feature/sauces/SauceEditorSections.kt
-warning: in the working copy of 'core/designsystem/src/main/java/com/culinary/core/designsystem/component/ArchiveEditor.kt', CRLF will be replaced by LF the next time Git touches it
-warning: in the working copy of 'feature/sauces/src/main/java/com/culinary/feature/sauces/SauceEditorSections.kt', CRLF will be replaced by LF the next time Git touches it
- .../core/designsystem/component/ArchiveEditor.kt   |  6 ++-
- .../culinary/feature/sauces/SauceEditorSections.kt | 52 +++++++++++++---------
- 2 files changed, 35 insertions(+), 23 deletions(-)
+已生成项目根目录的「返回结果」文件。
+请将它更新到 GitHub 仓库的「返回结果」文件。
 
 21697@AnfuZhengzhang UCRT64 /d/MISEBASE (feature/recipe-sauce-parity)
 $
