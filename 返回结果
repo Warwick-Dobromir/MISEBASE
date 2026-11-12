@@ -8214,3 +8214,510 @@ object RecipeErrorMessages {
 945:             const val INVALID_MINUTES = Int.MIN_VALUE
 946:         }
 947:     }
+
+===== FINAL LOCAL SOURCE CHECK =====
+
+===== FILE: core/designsystem/src/main/java/com/culinary/core/designsystem/component/ArchiveEditor.kt =====
+
+--- ArchiveEditorDragHandle | lines 205-277 ---
+205:                 inner()
+206:             }
+207:         },
+208:     )
+209: }
+210: 
+211: /** 拖动排序手柄；只作用于手柄，避免和文本输入抢手势。 */
+212: @Composable
+213: fun ArchiveEditorDragHandle(
+214:     modifier: Modifier = Modifier,
+215:     onMove: (Int) -> Unit,
+216: ) {
+217:     var dragging by remember { mutableStateOf(false) }
+218:     var accumulated by remember { mutableStateOf(0f) }
+219:     Icon(
+220:         imageVector = CulinaryIcons.Sort,
+221:         contentDescription = "拖动排序",
+222:         tint = MaterialTheme.colorScheme.onSurfaceVariant,
+223:         modifier =
+224:             modifier
+225:                 .size(36.dp)
+226:                 .alpha(if (dragging) 0.45f else 1f)
+227:                 .pointerInput(onMove) {
+228:                     detectDragGesturesAfterLongPress(
+229:                         onDragStart = {
+230:                             dragging = true
+231:                             accumulated = 0f
+232:                         },
+233:                         onDrag = { change, dragAmount ->
+234:                             change.consume()
+235:                             accumulated += dragAmount.y
+236:                             when {
+237:                                 accumulated > 32f -> {
+238:                                     onMove(1)
+239:                                     accumulated = 0f
+240:                                 }
+241: 
+242:                                 accumulated < -32f -> {
+243:                                     onMove(-1)
+244:                                     accumulated = 0f
+245:                                 }
+246:                             }
+247:                         },
+248:                         onDragEnd = { dragging = false },
+249:                         onDragCancel = { dragging = false },
+250:                     )
+251:                 },
+252:     )
+253: }
+254: 
+255: /** 双列计量中的单列：英文名 + 中文名 + 数值 + 单位。 */
+256: @Composable
+257: fun ArchiveMeasurementColumn(
+258:     englishLabel: String,
+259:     chineseLabel: String,
+260:     value: String,
+261:     unitSymbol: String,
+262:     onValueChange: (String) -> Unit,
+263:     onUnitClick: () -> Unit,
+264:     modifier: Modifier = Modifier,
+265:     enabled: Boolean = true,
+266: ) {
+267:     Column(modifier = modifier) {
+268:         Text(
+269:             text = englishLabel.uppercase(),
+270:             style = CulinaryTextStyles.eyebrow,
+271:             color = MaterialTheme.colorScheme.onSurfaceVariant,
+272:         )
+273:         Text(
+274:             text = chineseLabel,
+275:             style = MaterialTheme.typography.labelSmall,
+276:             color = MaterialTheme.colorScheme.onSurfaceVariant,
+277:         )
+
+--- ArchiveEditorSectionHeader | lines 120-192 ---
+120:             )
+121:         }
+122:         CulinaryRule()
+123:     }
+124: }
+125: 
+126: /** 分节标题：编号 / 英文 / 中文 / 副标题 / 右侧动作。 */
+127: @Composable
+128: fun ArchiveEditorSectionHeader(
+129:     index: String,
+130:     english: String,
+131:     title: String,
+132:     modifier: Modifier = Modifier,
+133:     subtitle: String? = null,
+134:     action: (@Composable () -> Unit)? = null,
+135:     showRule: Boolean = true,
+136: ) {
+137:     Column(modifier = modifier.fillMaxWidth().padding(top = CulinarySpacing.xl, bottom = CulinarySpacing.sm)) {
+138:         if (showRule) {
+139:             CulinaryRule()
+140:         }
+141:         Row(
+142:             modifier = Modifier.fillMaxWidth().padding(top = CulinarySpacing.md),
+143:             verticalAlignment = Alignment.Bottom,
+144:         ) {
+145:             Column(modifier = Modifier.weight(1f)) {
+146:                 Text(
+147:                     text = if (index.isBlank()) english else "$index / $english",
+148:                     style = CulinaryTextStyles.eyebrow,
+149:                     color = MaterialTheme.colorScheme.onSurfaceVariant,
+150:                 )
+151:                 Spacer(modifier = Modifier.height(CulinarySpacing.xxs))
+152:                 Text(
+153:                     text = title,
+154:                     style = CulinaryTextStyles.sectionTitle,
+155:                     color = MaterialTheme.colorScheme.onSurface,
+156:                 )
+157:                 subtitle?.takeIf { it.isNotBlank() }?.let { value ->
+158:                     Spacer(modifier = Modifier.height(CulinarySpacing.xxs))
+159:                     Text(
+160:                         text = value,
+161:                         style = MaterialTheme.typography.bodySmall,
+162:                         color = MaterialTheme.colorScheme.onSurfaceVariant,
+163:                     )
+164:                 }
+165:             }
+166:             action?.invoke()
+167:         }
+168:     }
+169: }
+170: 
+171: /** 行内无边框输入；编辑式档案不使用 Material 外框。 */
+172: @Composable
+173: fun ArchiveEditorInlineField(
+174:     value: String,
+175:     onValueChange: (String) -> Unit,
+176:     placeholder: String,
+177:     modifier: Modifier = Modifier,
+178:     textStyle: TextStyle = MaterialTheme.typography.bodyLarge,
+179:     singleLine: Boolean = true,
+180:     minLines: Int = 1,
+181:     keyboardType: KeyboardType = KeyboardType.Text,
+182:     textAlign: TextAlign = TextAlign.Start,
+183:     enabled: Boolean = true,
+184: ) {
+185:     BasicTextField(
+186:         value = value,
+187:         onValueChange = onValueChange,
+188:         modifier = modifier,
+189:         enabled = enabled,
+190:         singleLine = singleLine,
+191:         textStyle = textStyle.copy(color = MaterialTheme.colorScheme.onSurface, textAlign = textAlign),
+192:         cursorBrush = SolidColor(MaterialTheme.colorScheme.secondary),
+
+--- ArchiveEditorInlineField | lines 165-237 ---
+165:             }
+166:             action?.invoke()
+167:         }
+168:     }
+169: }
+170: 
+171: /** 行内无边框输入；编辑式档案不使用 Material 外框。 */
+172: @Composable
+173: fun ArchiveEditorInlineField(
+174:     value: String,
+175:     onValueChange: (String) -> Unit,
+176:     placeholder: String,
+177:     modifier: Modifier = Modifier,
+178:     textStyle: TextStyle = MaterialTheme.typography.bodyLarge,
+179:     singleLine: Boolean = true,
+180:     minLines: Int = 1,
+181:     keyboardType: KeyboardType = KeyboardType.Text,
+182:     textAlign: TextAlign = TextAlign.Start,
+183:     enabled: Boolean = true,
+184: ) {
+185:     BasicTextField(
+186:         value = value,
+187:         onValueChange = onValueChange,
+188:         modifier = modifier,
+189:         enabled = enabled,
+190:         singleLine = singleLine,
+191:         textStyle = textStyle.copy(color = MaterialTheme.colorScheme.onSurface, textAlign = textAlign),
+192:         cursorBrush = SolidColor(MaterialTheme.colorScheme.secondary),
+193:         keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
+194:         minLines = minLines,
+195:         decorationBox = { inner ->
+196:             Box {
+197:                 if (value.isEmpty()) {
+198:                     Text(
+199:                         text = placeholder,
+200:                         style = textStyle.copy(textAlign = textAlign),
+201:                         color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.55f),
+202:                         maxLines = if (singleLine) 1 else 3,
+203:                     )
+204:                 }
+205:                 inner()
+206:             }
+207:         },
+208:     )
+209: }
+210: 
+211: /** 拖动排序手柄；只作用于手柄，避免和文本输入抢手势。 */
+212: @Composable
+213: fun ArchiveEditorDragHandle(
+214:     modifier: Modifier = Modifier,
+215:     onMove: (Int) -> Unit,
+216: ) {
+217:     var dragging by remember { mutableStateOf(false) }
+218:     var accumulated by remember { mutableStateOf(0f) }
+219:     Icon(
+220:         imageVector = CulinaryIcons.Sort,
+221:         contentDescription = "拖动排序",
+222:         tint = MaterialTheme.colorScheme.onSurfaceVariant,
+223:         modifier =
+224:             modifier
+225:                 .size(36.dp)
+226:                 .alpha(if (dragging) 0.45f else 1f)
+227:                 .pointerInput(onMove) {
+228:                     detectDragGesturesAfterLongPress(
+229:                         onDragStart = {
+230:                             dragging = true
+231:                             accumulated = 0f
+232:                         },
+233:                         onDrag = { change, dragAmount ->
+234:                             change.consume()
+235:                             accumulated += dragAmount.y
+236:                             when {
+237:                                 accumulated > 32f -> {
+
+--- ArchiveEditorInlineField | lines 272-344 ---
+272:         )
+273:         Text(
+274:             text = chineseLabel,
+275:             style = MaterialTheme.typography.labelSmall,
+276:             color = MaterialTheme.colorScheme.onSurfaceVariant,
+277:         )
+278:         Spacer(modifier = Modifier.height(CulinarySpacing.xxs))
+279:         Row(verticalAlignment = Alignment.Bottom) {
+280:             ArchiveEditorInlineField(
+281:                 value = value,
+282:                 onValueChange = onValueChange,
+283:                 placeholder = "",
+284:                 textStyle = CulinaryTextStyles.numeralS,
+285:                 keyboardType = KeyboardType.Decimal,
+286:                 enabled = enabled,
+287:                 modifier = Modifier.width(72.dp),
+288:             )
+289:             Text(
+290:                 text = if (value.isBlank()) "—" else unitSymbol.ifBlank { "—" },
+291:                 style = MaterialTheme.typography.bodySmall,
+292:                 color = MaterialTheme.colorScheme.onSurfaceVariant,
+293:                 modifier =
+294:                     Modifier
+295:                         .clickable(enabled = enabled, onClick = onUnitClick)
+296:                         .padding(start = 4.dp, bottom = 2.dp, top = 8.dp),
+297:             )
+298:         }
+299:     }
+300: }
+301: 
+302: /** 双列默认产量 / 最小制作范围；两列等宽。 */
+303: @Composable
+304: fun ArchiveYieldRangeFields(
+305:     yieldAmount: String,
+306:     yieldUnit: String,
+307:     minRangeAmount: String,
+308:     minRangeUnit: String,
+309:     onYieldAmountChange: (String) -> Unit,
+310:     onYieldUnitClick: () -> Unit,
+311:     onMinRangeAmountChange: (String) -> Unit,
+312:     onMinRangeUnitClick: () -> Unit,
+313:     modifier: Modifier = Modifier,
+314:     enabled: Boolean = true,
+315: ) {
+316:     Row(
+317:         modifier = modifier.fillMaxWidth(),
+318:         horizontalArrangement = Arrangement.spacedBy(CulinarySpacing.md),
+319:     ) {
+320:         ArchiveMeasurementColumn(
+321:             englishLabel = "YIELD",
+322:             chineseLabel = "默认产量",
+323:             value = yieldAmount,
+324:             unitSymbol = yieldUnit,
+325:             onValueChange = onYieldAmountChange,
+326:             onUnitClick = onYieldUnitClick,
+327:             enabled = enabled,
+328:             modifier = Modifier.weight(1f),
+329:         )
+330:         ArchiveMeasurementColumn(
+331:             englishLabel = "MIN. RANGE",
+332:             chineseLabel = "最小制作范围",
+333:             value = minRangeAmount,
+334:             unitSymbol = minRangeUnit,
+335:             onValueChange = onMinRangeAmountChange,
+336:             onUnitClick = onMinRangeUnitClick,
+337:             enabled = enabled,
+338:             modifier = Modifier.weight(1f),
+339:         )
+340:     }
+341: }
+342: 
+343: /**
+344:  * 三段式制作时间：`[时] / [分] / [秒]`。
+
+===== FILE: feature/recipes/src/main/java/com/culinary/feature/recipes/RecipeEditorViewModel.kt =====
+1: package com.culinary.feature.recipes
+2: 
+3: import androidx.lifecycle.SavedStateHandle
+4: import androidx.lifecycle.ViewModel
+5: import androidx.lifecycle.viewModelScope
+6: import com.culinary.core.common.Outcome
+7: import com.culinary.core.domain.model.ArchiveLibrary
+8: import com.culinary.core.domain.model.Ingredient
+9: import com.culinary.core.domain.model.KitchenStep
+10: import com.culinary.core.domain.model.KitchenStepCodec
+11: import com.culinary.core.domain.model.RecipeCategory
+12: import com.culinary.core.domain.model.RecipeComponentKind
+13: import com.culinary.core.domain.model.RecipeDetail
+14: import com.culinary.core.domain.model.RecipeId
+15: import com.culinary.core.domain.model.RecipeVersionId
+16: import com.culinary.core.domain.usecase.archive.AssignArchiveCategoryUseCase
+17: import com.culinary.core.domain.usecase.archive.GetArchiveCategoryForRecordUseCase
+18: import com.culinary.core.domain.usecase.archive.ListArchiveCategoriesUseCase
+19: import com.culinary.core.domain.usecase.ingredient.ListIngredientsUseCase
+20: import com.culinary.core.domain.usecase.recipe.GetRecipeDetailUseCase
+21: import com.culinary.core.domain.usecase.recipe.ListRecipeOptionsUseCase
+22: import com.culinary.core.domain.model.KitchenRecordKind
+23: import com.culinary.core.domain.model.KitchenRelationDraft
+24: import com.culinary.core.domain.model.PendingRecipeImage
+25: import com.culinary.core.domain.model.RecipeImage
+26: import com.culinary.core.domain.model.RecipeImageOwner
+27: import com.culinary.core.domain.model.RecipeImageRole
+28: import com.culinary.core.domain.usecase.kitchen.ObserveKitchenRelationsUseCase
+29: import com.culinary.core.domain.usecase.recipe.PublishStoredRecipeVersionUseCase
+30: import com.culinary.core.domain.usecase.recipe.RecipeLineInput
+31: import com.culinary.core.domain.usecase.recipe.RecipeLineTarget
+32: import com.culinary.core.domain.usecase.recipe.RecipeImageUseCase
+33: import com.culinary.core.domain.usecase.recipe.RecipeOption
+34: import com.culinary.core.domain.usecase.recipe.RecipeVersionInput
+35: import com.culinary.core.domain.usecase.recipe.SaveRecipeDraftUseCase
+36: import com.culinary.core.domain.usecase.recipe.SaveRecipeInput
+37: import com.culinary.core.domain.usecase.recipe.SaveRecipeRelationsUseCase
+38: import com.culinary.core.domain.usecase.recipe.SaveRecipeUseCase
+39: import com.culinary.core.domain.usecase.sauce.ListSauceOptionsUseCase
+40: import com.culinary.core.domain.usecase.sauce.SauceOption
+41: import com.culinary.core.domain.usecase.unit.ListUnitsUseCase
+42: import dagger.hilt.android.lifecycle.HiltViewModel
+43: import kotlinx.coroutines.flow.MutableStateFlow
+44: import kotlinx.coroutines.flow.StateFlow
+45: import kotlinx.coroutines.flow.asStateFlow
+46: import kotlinx.coroutines.flow.first
+47: import kotlinx.coroutines.flow.update
+48: import kotlinx.coroutines.launch
+49: import javax.inject.Inject
+50: import com.culinary.core.domain.model.Unit as UnitModel
+51: 
+52: /**
+53:  * 菜谱编辑器 ViewModel：档案 + 版本组成。
+54:  *
+55:  * 编辑已发布菜谱时，保存写入"可继续编辑的草稿"而不是覆盖发布版本；
+56:  * 再次保存更新同一份草稿，只有用户明确点击"保存并发布"才切换当前版本。
+57:  */
+58: @Suppress("TooManyFunctions", "LargeClass") // 编辑器集中管理档案字段、组成、步骤与保存
+59: @HiltViewModel
+60: class RecipeEditorViewModel
+61:     @Inject
+62:     constructor(
+63:         savedStateHandle: SavedStateHandle,
+64:         private val getRecipeDetail: GetRecipeDetailUseCase,
+65:         private val saveRecipe: SaveRecipeUseCase,
+
+--- fun onLineAmountChange | lines 467-539 ---
+467:                                 sauceId = option.sauce.id,
+468:                                 sauceVersionId = current.id,
+469:                                 sauceVersionNo = current.versionNo,
+470:                             ),
+471:                 )
+472:             }
+473:         }
+474: 
+475:         fun onLineAmountChange(
+476:             key: String,
+477:             value: String,
+478:         ) {
+479:             mutateVersion { state ->
+480:                 state.copy(lines = state.lines.map { if (it.key == key) it.copy(amount = value) else it })
+481:             }
+482:         }
+483: 
+484:         fun toggleOptional(key: String) {
+485:             mutateVersion { state ->
+486:                 state.copy(
+487:                     lines = state.lines.map { if (it.key == key) it.copy(isOptional = !it.isOptional) else it },
+488:                 )
+489:             }
+490:         }
+491: 
+492:         fun removeLine(key: String) {
+493:             mutateVersion { state -> state.copy(lines = state.lines.filterNot { it.key == key }) }
+494:         }
+495: 
+496:         fun addStep() {
+497:             mutateVersion { state ->
+498:                 state.copy(steps = state.steps + RecipeStepEditor(key = "step-${stepKey++}"))
+499:             }
+500:         }
+501: 
+502:         fun onStepTitleChange(
+503:             key: String,
+504:             value: String,
+505:         ) {
+506:             mutateVersion { state ->
+507:                 state.copy(steps = state.steps.map { if (it.key == key) it.copy(title = value) else it })
+508:             }
+509:         }
+510: 
+511:         fun onStepBodyChange(
+512:             key: String,
+513:             value: String,
+514:         ) {
+515:             mutateVersion { state ->
+516:                 state.copy(steps = state.steps.map { if (it.key == key) it.copy(body = value) else it })
+517:             }
+518:         }
+519: 
+520:         fun onStepTimeChange(
+521:             key: String,
+522:             seconds: Int,
+523:         ) {
+524:             mutateVersion { state ->
+525:                 state.copy(steps = state.steps.map { if (it.key == key) it.copy(timeSeconds = seconds) else it })
+526:             }
+527:         }
+528: 
+529:         fun removeStep(key: String) {
+530:             mutateVersion { state -> state.copy(steps = state.steps.filterNot { it.key == key }) }
+531:         }
+532: 
+533:         fun clearError() {
+534:             _uiState.update { it.copy(error = null) }
+535:         }
+536: 
+537:         /** 统一保存：新档案自动发布首版；已有正式版本只保存待发布修改。 */
+538:         fun save() {
+539:             val state = _uiState.value
+
+--- private fun formatAmount | lines 889-947 ---
+889:                         amount = amount,
+890:                         unit = line.unit,
+891:                         isOptional = line.isOptional,
+892:                     )
+893:             }
+894:             return result
+895:         }
+896: 
+897:         private fun formatAmount(value: Double): String =
+898:             if (value % 1.0 == 0.0) value.toLong().toString() else value.toString()
+899: 
+900:         private data class Submission(
+901:             val recipeId: RecipeId?,
+902:             val name: String,
+903:             val englishName: String,
+904:             val description: String,
+905:             val category: RecipeCategory,
+906:             val minimumCapacity: String,
+907:             val cuisine: String,
+908:             val prepMinutes: Int?,
+909:             val cookMinutes: Int?,
+910:             val allergenNotes: String,
+911:             val notes: String,
+912:             val yieldAmount: Double,
+913:             val yieldUnit: UnitModel,
+914:             val minRangeAmount: Double?,
+915:             val minRangeUnit: UnitModel?,
+916:             val servings: Int,
+917:             val lines: List<RecipeLineInput>,
+918:             val steps: List<RecipeStepEditor>,
+919:         ) {
+920:             fun toVersionInput(
+921:                 recipeId: RecipeId,
+922:                 versionId: RecipeVersionId?,
+923:             ): RecipeVersionInput =
+924:                 RecipeVersionInput(
+925:                     recipeId = recipeId,
+926:                     yieldAmount = yieldAmount,
+927:                     yieldUnit = yieldUnit,
+928:                     servings = servings,
+929:                     components = lines,
+930:                     instructions =
+931:                         KitchenStepCodec.toInstructions(
+932:                             steps.map { KitchenStep(it.key, it.title, it.body, it.timeSeconds) },
+933:                         ),
+934:                     stepsJson =
+935:                         KitchenStepCodec.encode(
+936:                             steps.map { KitchenStep(it.key, it.title, it.body, it.timeSeconds) },
+937:                         ),
+938:                     versionId = versionId,
+939:                     minRangeAmount = minRangeAmount,
+940:                     minRangeUnit = minRangeUnit,
+941:                 )
+942:         }
+943: 
+944:         private companion object {
+945:             const val INVALID_MINUTES = Int.MIN_VALUE
+946:         }
+947:     }
