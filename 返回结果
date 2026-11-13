@@ -6,233 +6,223 @@ $ cd /d/MISEBASE
 python - <<'PY'
 from pathlib import Path
 
-def patch(path, replacements):
-    p = Path(path)
-    original = p.read_text(encoding="utf-8")
-    updated = original
+changes = {}
 
-    for old, new, expected in replacements:
-        count = updated.count(old)
-        if count != expected:
-            raise SystemExit(
-                f"ABORT: {path}\n"
-                f"Expected {expected} occurrence(s), found {count}:\n{old[:240]}"
-            )
-        updated = updated.replace(old, new)
+def load(path):
+    if path not in changes:
+        changes[path] = Path(path).read_text(encoding="utf-8")
+    return changes[path]
 
-    if updated == original:
-        raise SystemExit(f"ABORT: no changes generated for {path}")
-
-    p.write_text(updated, encoding="utf-8", newline="")
-    print(f"PATCH APPLIED: {path}")
+def replace(path, old, new, count=1):
+    content = load(path)
+    found = content.count(old)
+    if found != count:
+        raise SystemExit(
+            f"ABORT: {path}: expected {count}, found {found}\n"
+            f"{old[:300]}"
+        )
+    changes[path] = content.replace(old, new)
 
 screen = "feature/recipes/src/main/java/com/culinary/feature/recipes/RecipeEditorScreen.kt"
 method = "feature/recipes/src/main/java/com/culinary/feature/recipes/RecipeMethodEditor.kt"
 vm = "feature/recipes/src/main/java/com/culinary/feature/recipes/RecipeEditorViewModel.kt"
 
-patch(screen, [
-    (
-        "        onRemoveRelation = viewModel::removeRelation,\n",
-        "        onRemoveRelation = viewModel::removeRelation,\n"
-        "        onMoveRelation = viewModel::moveRelation,\n",
-        1,
-    ),
-    (
-        "        onRemoveStep = viewModel::removeStep,\n",
-        "        onRemoveStep = viewModel::removeStep,\n"
-        "        onMoveStep = viewModel::moveStep,\n",
-        1,
-    ),
-    (
-        "    onRemoveRelation: (String) -> Unit,\n",
-        "    onRemoveRelation: (String) -> Unit,\n"
-        "    onMoveRelation: (Int, Int) -> Unit,\n",
-        1,
-    ),
-    (
-        "    onRemoveStep: (String) -> Unit,\n",
-        "    onRemoveStep: (String) -> Unit,\n"
-        "    onMoveStep: (Int, Int) -> Unit,\n",
-        1,
-    ),
-    (
-        "                onRemoveRelation = onRemoveRelation,\n",
-        "                onRemoveRelation = onRemoveRelation,\n"
-        "                onMoveRelation = onMoveRelation,\n",
-        1,
-    ),
-    (
-        "                onRemoveStep = onRemoveStep,\n",
-        "                onRemoveStep = onRemoveStep,\n"
-        "                onMoveStep = onMoveStep,\n",
-        1,
-    ),
-    (
-        "    onRemoveRelation: (String) -> Unit = {},\n",
-        "    onRemoveRelation: (String) -> Unit = {},\n"
-        "    onMoveRelation: (Int, Int) -> Unit = { _, _ -> },\n",
-        1,
-    ),
-    (
-        "    onRemoveStep: (String) -> Unit = {},\n",
-        "    onRemoveStep: (String) -> Unit = {},\n"
-        "    onMoveStep: (Int, Int) -> Unit = { _, _ -> },\n",
-        1,
-    ),
-    (
-        "            onRemoveStep = onRemoveStep,\n",
-        "            onRemoveStep = onRemoveStep,\n"
-        "            onMoveStep = onMoveStep,\n",
-        1,
-    ),
-    (
-        "            onRemove = onRemoveRelation,\n",
-        "            onRemove = onRemoveRelation,\n"
-        "            onMove = onMoveRelation,\n",
-        1,
-    ),
-])
+# Route -> Screen
+replace(screen,
+    "        onRemoveRelation = viewModel::removeRelation,\n"
+    "        onLineAmountChange = viewModel::onLineAmountChange,\n",
+    "        onRemoveRelation = viewModel::removeRelation,\n"
+    "        onMoveRelation = viewModel::moveRelation,\n"
+    "        onLineAmountChange = viewModel::onLineAmountChange,\n")
 
-patch(method, [
-    (
-        "import com.culinary.core.designsystem.component.ArchiveEditorImageBox\n",
-        "import com.culinary.core.designsystem.component.ArchiveEditorDragHandle\n"
-        "import com.culinary.core.designsystem.component.ArchiveEditorImageBox\n",
-        1,
-    ),
-    (
-        "    onRemoveStep: (String) -> Unit,\n",
-        "    onRemoveStep: (String) -> Unit,\n"
-        "    onMoveStep: (Int, Int) -> Unit,\n",
-        1,
-    ),
-    (
-        "                Spacer(modifier = Modifier.width(CulinarySpacing.xs))\n"
-        "                ArchiveEditorInlineField(\n",
-        "                Spacer(modifier = Modifier.width(CulinarySpacing.xs))\n"
-        "                ArchiveEditorDragHandle(\n"
-        "                    onMove = { offset ->\n"
-        "                        val target = index + offset\n"
-        "                        if (target in state.steps.indices) onMoveStep(index, target)\n"
-        "                    },\n"
-        "                )\n"
-        "                Spacer(modifier = Modifier.width(CulinarySpacing.xs))\n"
-        "                ArchiveEditorInlineField(\n",
-        1,
-    ),
-])
+replace(screen,
+    "        onRemoveStep = viewModel::removeStep,\n"
+    "        onSave = viewModel::save,\n",
+    "        onRemoveStep = viewModel::removeStep,\n"
+    "        onMoveStep = viewModel::moveStep,\n"
+    "        onSave = viewModel::save,\n")
 
-patch(screen, [
-    (
-        "    onRemove: (String) -> Unit,\n"
-        ") {\n"
-        "    ArchiveEditorSectionHeader(\n"
-        "        index = \"04\",\n"
-        "        english = \"RELATED RECORDS\",\n",
-        "    onRemove: (String) -> Unit,\n"
-        "    onMove: (Int, Int) -> Unit,\n"
-        ") {\n"
-        "    ArchiveEditorSectionHeader(\n"
-        "        index = \"04\",\n"
-        "        english = \"RELATED RECORDS\",\n",
-        1,
-    ),
-    (
-        "        state.relations.forEach { relation ->\n"
-        "            Row(\n",
-        "        state.relations.forEachIndexed { index, relation ->\n"
-        "            Row(\n",
-        1,
-    ),
-    (
-        "                Text(\n"
-        "                    text = relation.name,\n",
-        "                ArchiveEditorDragHandle(\n"
-        "                    onMove = { offset ->\n"
-        "                        val target = index + offset\n"
-        "                        if (target in state.relations.indices) onMove(index, target)\n"
-        "                    },\n"
-        "                )\n"
-        "                Spacer(modifier = Modifier.width(CulinarySpacing.xs))\n"
-        "                Text(\n"
-        "                    text = relation.name,\n",
-        1,
-    ),
-])
+# RecipeEditorScreen callback declarations
+replace(screen,
+    "    onRemoveRelation: (String) -> Unit,\n"
+    "    onLineAmountChange: (String, String) -> Unit,\n",
+    "    onRemoveRelation: (String) -> Unit,\n"
+    "    onMoveRelation: (Int, Int) -> Unit,\n"
+    "    onLineAmountChange: (String, String) -> Unit,\n")
 
-patch(vm, [
-    (
-        "        fun removeRelation(targetId: String) {\n"
-        "            mutateArchive { state -> state.copy(relations = state.relations.filterNot { it.targetId == targetId }) }\n"
-        "        }\n",
-        "        fun removeRelation(targetId: String) {\n"
-        "            mutateArchive { state -> state.copy(relations = state.relations.filterNot { it.targetId == targetId }) }\n"
-        "        }\n"
-        "\n"
-        "        fun moveRelation(from: Int, to: Int) {\n"
-        "            mutateArchive { state ->\n"
-        "                if (from == to || from !in state.relations.indices || to !in state.relations.indices) {\n"
-        "                    state\n"
-        "                } else {\n"
-        "                    state.copy(\n"
-        "                        relations = state.relations.toMutableList().apply { add(to, removeAt(from)) },\n"
-        "                    )\n"
-        "                }\n"
-        "            }\n"
-        "        }\n",
-        1,
-    ),
-    (
-        "        fun removeStep(key: String) {\n"
-        "            mutateVersion { state -> state.copy(steps = state.steps.filterNot { it.key == key }) }\n"
-        "        }\n",
-        "        fun removeStep(key: String) {\n"
-        "            mutateVersion { state -> state.copy(steps = state.steps.filterNot { it.key == key }) }\n"
-        "        }\n"
-        "\n"
-        "        fun moveStep(from: Int, to: Int) {\n"
-        "            mutateVersion { state ->\n"
-        "                if (from == to || from !in state.steps.indices || to !in state.steps.indices) {\n"
-        "                    state\n"
-        "                } else {\n"
-        "                    state.copy(\n"
-        "                        steps = state.steps.toMutableList().apply { add(to, removeAt(from)) },\n"
-        "                    )\n"
-        "                }\n"
-        "            }\n"
-        "        }\n",
-        1,
-    ),
-])
+replace(screen,
+    "    onRemoveStep: (String) -> Unit,\n"
+    "    onSave: () -> Unit,\n",
+    "    onRemoveStep: (String) -> Unit,\n"
+    "    onMoveStep: (Int, Int) -> Unit,\n"
+    "    onSave: () -> Unit,\n")
+
+# Screen -> Form
+replace(screen,
+    "                onRemoveRelation = onRemoveRelation,\n"
+    "                onLineAmountChange = onLineAmountChange,\n",
+    "                onRemoveRelation = onRemoveRelation,\n"
+    "                onMoveRelation = onMoveRelation,\n"
+    "                onLineAmountChange = onLineAmountChange,\n")
+
+replace(screen,
+    "                onRemoveStep = onRemoveStep,\n"
+    "            )\n"
+    "        }\n",
+    "                onRemoveStep = onRemoveStep,\n"
+    "                onMoveStep = onMoveStep,\n"
+    "            )\n"
+    "        }\n")
+
+# Form callback declarations
+replace(screen,
+    "    onRemoveRelation: (String) -> Unit = {},\n"
+    "    onLineAmountChange: (String, String) -> Unit,\n",
+    "    onRemoveRelation: (String) -> Unit = {},\n"
+    "    onMoveRelation: (Int, Int) -> Unit = { _, _ -> },\n"
+    "    onLineAmountChange: (String, String) -> Unit,\n")
+
+replace(screen,
+    "    onRemoveStep: (String) -> Unit = {},\n"
+    ") {\n",
+    "    onRemoveStep: (String) -> Unit = {},\n"
+    "    onMoveStep: (Int, Int) -> Unit = { _, _ -> },\n"
+    ") {\n")
+
+# Form -> Method editor
+replace(screen,
+    "            onClearStepImage = onClearStepImage,\n"
+    "            onRemoveStep = onRemoveStep,\n"
+    "        )\n"
+    "        RecipeApplicationSection(\n",
+    "            onClearStepImage = onClearStepImage,\n"
+    "            onRemoveStep = onRemoveStep,\n"
+    "            onMoveStep = onMoveStep,\n"
+    "        )\n"
+    "        RecipeApplicationSection(\n")
+
+# Form -> Relations section
+replace(screen,
+    "            onRemove = onRemoveRelation,\n"
+    "        )\n"
+    "        RecipeNotesSection(\n",
+    "            onRemove = onRemoveRelation,\n"
+    "            onMove = onMoveRelation,\n"
+    "        )\n"
+    "        RecipeNotesSection(\n")
+
+# Relations section declaration and rows
+replace(screen,
+    "    onRemove: (String) -> Unit,\n"
+    ") {\n"
+    "    ArchiveEditorSectionHeader(\n"
+    "        index = \"04\",\n",
+    "    onRemove: (String) -> Unit,\n"
+    "    onMove: (Int, Int) -> Unit,\n"
+    ") {\n"
+    "    ArchiveEditorSectionHeader(\n"
+    "        index = \"04\",\n")
+
+replace(screen,
+    "        state.relations.forEach { relation ->\n"
+    "            Row(\n",
+    "        state.relations.forEachIndexed { index, relation ->\n"
+    "            Row(\n")
+
+replace(screen,
+    "            ) {\n"
+    "                Text(\n"
+    "                    text = relation.name,\n",
+    "            ) {\n"
+    "                ArchiveEditorDragHandle(\n"
+    "                    onMove = { offset ->\n"
+    "                        val target = index + offset\n"
+    "                        if (target in state.relations.indices) onMove(index, target)\n"
+    "                    },\n"
+    "                )\n"
+    "                Spacer(modifier = Modifier.width(CulinarySpacing.xs))\n"
+    "                Text(\n"
+    "                    text = relation.name,\n")
+
+# Method editor
+replace(method,
+    "import com.culinary.core.designsystem.component.ArchiveEditorImageBox\n",
+    "import com.culinary.core.designsystem.component.ArchiveEditorDragHandle\n"
+    "import com.culinary.core.designsystem.component.ArchiveEditorImageBox\n")
+
+replace(method,
+    "    onRemoveStep: (String) -> Unit,\n"
+    ") {\n",
+    "    onRemoveStep: (String) -> Unit,\n"
+    "    onMoveStep: (Int, Int) -> Unit,\n"
+    ") {\n")
+
+replace(method,
+    "                Spacer(modifier = Modifier.width(CulinarySpacing.xs))\n"
+    "                ArchiveEditorInlineField(\n",
+    "                Spacer(modifier = Modifier.width(CulinarySpacing.xs))\n"
+    "                ArchiveEditorDragHandle(\n"
+    "                    onMove = { offset ->\n"
+    "                        val target = index + offset\n"
+    "                        if (target in state.steps.indices) onMoveStep(index, target)\n"
+    "                    },\n"
+    "                )\n"
+    "                Spacer(modifier = Modifier.width(CulinarySpacing.xs))\n"
+    "                ArchiveEditorInlineField(\n")
+
+# ViewModel: relation ordering
+replace(vm,
+    "        fun removeRelation(targetId: String) {\n"
+    "            mutateArchive { state -> state.copy(relations = state.relations.filterNot { it.targetId == targetId }) }\n"
+    "        }\n",
+    "        fun removeRelation(targetId: String) {\n"
+    "            mutateArchive { state -> state.copy(relations = state.relations.filterNot { it.targetId == targetId }) }\n"
+    "        }\n"
+    "\n"
+    "        fun moveRelation(from: Int, to: Int) {\n"
+    "            mutateArchive { state ->\n"
+    "                if (from == to || from !in state.relations.indices || to !in state.relations.indices) {\n"
+    "                    state\n"
+    "                } else {\n"
+    "                    state.copy(\n"
+    "                        relations = state.relations.toMutableList().apply { add(to, removeAt(from)) },\n"
+    "                    )\n"
+    "                }\n"
+    "            }\n"
+    "        }\n")
+
+# ViewModel: step ordering
+replace(vm,
+    "        fun removeStep(key: String) {\n"
+    "            mutateVersion { state -> state.copy(steps = state.steps.filterNot { it.key == key }) }\n"
+    "        }\n",
+    "        fun removeStep(key: String) {\n"
+    "            mutateVersion { state -> state.copy(steps = state.steps.filterNot { it.key == key }) }\n"
+    "        }\n"
+    "\n"
+    "        fun moveStep(from: Int, to: Int) {\n"
+    "            mutateVersion { state ->\n"
+    "                if (from == to || from !in state.steps.indices || to !in state.steps.indices) {\n"
+    "                    state\n"
+    "                } else {\n"
+    "                    state.copy(\n"
+    "                        steps = state.steps.toMutableList().apply { add(to, removeAt(from)) },\n"
+    "                    )\n"
+    "                }\n"
+    "            }\n"
+    "        }\n")
+
+# 所有文件断言通过后才统一写入
+for path, content in changes.items():
+    Path(path).write_text(content, encoding="utf-8", newline="")
+    print("PATCH APPLIED:", path)
 
 print("ALL PATCHES APPLIED")
 PY
-ABORT: feature/recipes/src/main/java/com/culinary/feature/recipes/RecipeEditorScreen.kt
-Expected 1 occurrence(s), found 2:
-            onRemoveStep = onRemoveStep,
-
-
-21697@AnfuZhengzhang UCRT64 /d/MISEBASE (feature/recipe-sauce-parity)
-$ ./gradlew \
-  :feature:recipes:compileDebugKotlin \
-  :feature:recipes:testDebugUnitTest \
-  :feature:sauces:compileDebugKotlin \
-  :core:designsystem:compileDebugKotlin
-
-git diff --check
-git status --short
-Reusing configuration cache.
-
-BUILD SUCCESSFUL in 1s
-68 actionable tasks: 68 up-to-date
-Configuration cache entry reused.
-warning: in the working copy of 'core/designsystem/src/main/java/com/culinary/core/designsystem/component/ArchiveEditor.kt', CRLF will be replaced by LF the next time Git touches it
-warning: in the working copy of 'feature/sauces/src/main/java/com/culinary/feature/sauces/SauceEditorSections.kt', CRLF will be replaced by LF the next time Git touches it
- M core/designsystem/src/main/java/com/culinary/core/designsystem/component/ArchiveEditor.kt
- M feature/recipes/src/main/java/com/culinary/feature/recipes/RecipeEditorScreen.kt
- M feature/recipes/src/main/java/com/culinary/feature/recipes/RecipeEditorViewModel.kt
- M feature/sauces/src/main/java/com/culinary/feature/sauces/SauceEditorSections.kt
-?? "\350\277\224\345\233\236\347\273\223\346\236\234"
+PATCH APPLIED: feature/recipes/src/main/java/com/culinary/feature/recipes/RecipeEditorScreen.kt
+PATCH APPLIED: feature/recipes/src/main/java/com/culinary/feature/recipes/RecipeMethodEditor.kt
+PATCH APPLIED: feature/recipes/src/main/java/com/culinary/feature/recipes/RecipeEditorViewModel.kt
+ALL PATCHES APPLIED
 
 21697@AnfuZhengzhang UCRT64 /d/MISEBASE (feature/recipe-sauce-parity)
 $
