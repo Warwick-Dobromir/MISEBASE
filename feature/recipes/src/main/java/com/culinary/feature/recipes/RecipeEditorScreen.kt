@@ -757,13 +757,14 @@ private fun RecipeLineRowEditor(
     onToggleOptional: () -> Unit,
     onRemove: () -> Unit,
 ) {
-    Column(modifier = Modifier.fillMaxWidth().padding(vertical = CulinarySpacing.sm)) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            ArchiveEditorDragHandle(
-                onMove = onMove,
-                modifier = Modifier.padding(end = CulinarySpacing.xs),
-            )
-            Column(modifier = Modifier.weight(1f)) {
+    Column(modifier = Modifier.fillMaxWidth()) {
+        CulinaryRule()
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(vertical = CulinarySpacing.sm),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            ArchiveEditorDragHandle(onMove = onMove)
+            Column(modifier = Modifier.weight(1f).padding(start = CulinarySpacing.xs)) {
                 Text(
                     text = line.name,
                     style = MaterialTheme.typography.bodyLarge,
@@ -771,49 +772,45 @@ private fun RecipeLineRowEditor(
                 )
                 Text(
                     text = recipeLineKindLabel(line),
-                    style = MaterialTheme.typography.labelSmall,
+                    style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
-            CulinaryTextField(
-                value = line.amount,
-                onValueChange = onAmountChange,
-                label = { Text(text = stringResource(R.string.recipes_amount)) },
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                fillWidth = false,
-                modifier = Modifier.width(112.dp),
-            )
-            Text(
-                text = line.unit.symbol,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier
-                    .clickable(onClick = onUnitClick)
-                    .padding(horizontal = CulinarySpacing.xs, vertical = CulinarySpacing.md),
-            )
-            CulinaryTextButton(
-                text = stringResource(R.string.recipes_remove_line),
-                onClick = onRemove,
-            )
-        }
-        Row(
-            modifier = Modifier.padding(start = 36.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            StatusBadge(
-                text =
-                    stringResource(
-                        if (line.isOptional) R.string.recipes_optional_on else R.string.recipes_optional_off,
-                    ),
-                tone = if (line.isOptional) StatusTone.Warning else StatusTone.Neutral,
-            )
-            CulinaryTextButton(
-                text = stringResource(R.string.recipes_optional),
-                onClick = onToggleOptional,
+            Column(horizontalAlignment = Alignment.End) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    ArchiveEditorInlineField(
+                        value = line.amount,
+                        onValueChange = onAmountChange,
+                        placeholder = "0",
+                        textStyle = CulinaryTextStyles.numeralS,
+                        textAlign = androidx.compose.ui.text.style.TextAlign.End,
+                        keyboardType = KeyboardType.Decimal,
+                        modifier = Modifier.width(58.dp),
+                    )
+                    Text(
+                        text = line.unit.symbol,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier
+                            .clickable(onClick = onUnitClick)
+                            .padding(start = 4.dp, end = 4.dp, top = 8.dp, bottom = 8.dp),
+                    )
+                }
+                Text(
+                    text = stringResource(R.string.recipes_optional),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = if (line.isOptional) MaterialTheme.colorScheme.secondary
+                    else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                    modifier = Modifier.clickable(onClick = onToggleOptional).padding(4.dp),
+                )
+            }
+            Icon(
+                imageVector = CulinaryIcons.Close,
+                contentDescription = stringResource(R.string.recipes_remove_line),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(20.dp).clickable(onClick = onRemove).padding(2.dp),
             )
         }
-        CulinaryRule()
     }
 }
 
