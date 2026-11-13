@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -728,28 +729,13 @@ private fun RecipeComponentsEditor(
     }
     Row(
         modifier = Modifier.padding(top = CulinarySpacing.xs),
-        horizontalArrangement = Arrangement.spacedBy(CulinarySpacing.xs),
+        horizontalArrangement = Arrangement.spacedBy(CulinarySpacing.md),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        CulinaryButton(
-            text = stringResource(R.string.recipes_add_ingredient),
-            onClick = onAddIngredient,
-            variant = CulinaryButtonVariant.Secondary,
-            icon = CulinaryIcons.Add,
-        )
-        CulinaryButton(
-            text = stringResource(R.string.recipes_add_recipe),
-            onClick = onAddRecipe,
-            variant = CulinaryButtonVariant.Secondary,
-            icon = CulinaryIcons.Add,
-        )
+        CulinaryTextButton(text = "+ 食材", onClick = onAddIngredient)
+        CulinaryTextButton(text = "+ 子菜谱", onClick = onAddRecipe)
+        CulinaryTextButton(text = "+ 酱汁", onClick = onAddSauce)
     }
-    CulinaryButton(
-        text = stringResource(R.string.recipes_add_sauce),
-        onClick = onAddSauce,
-        variant = CulinaryButtonVariant.Secondary,
-        icon = CulinaryIcons.Add,
-        modifier = Modifier.padding(top = CulinarySpacing.xs),
-    )
 }
 
 @Composable
@@ -983,7 +969,10 @@ private fun RecipeNotesSection(
     val noteImages = state.noteImages.mapNotNull { it to state.imageBytes[it.id] } +
         state.noteImagesPending.map { null to it.bytes }
     if (noteImages.isNotEmpty()) {
-        Row(horizontalArrangement = Arrangement.spacedBy(CulinarySpacing.xs)) {
+        Row(
+            modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(CulinarySpacing.sm),
+        ) {
             noteImages.forEachIndexed { index, (_, bytes) ->
                 if (bytes != null) {
                     RecipeNoteThumbnail(
@@ -1022,7 +1011,7 @@ private fun RecipeNoteThumbnail(
             bitmap = bitmap.asImageBitmap(),
             contentDescription = null,
             contentScale = androidx.compose.ui.layout.ContentScale.Crop,
-            modifier = Modifier.size(96.dp),
+            modifier = Modifier.size(88.dp),
         )
         Icon(
             imageVector = CulinaryIcons.Close,
