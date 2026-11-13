@@ -7,20 +7,20 @@ cd /d/MISEBASE
 python - <<'PY'
 from pathlib import Path
 
-sp = Path("feature/recipes/src/main/java/com/culinary/feature/recipes/RecipeEditorScreen.kt")
-vp = Path("feature/recipes/src/main/java/com/culinary/feature/recipes/RecipeEditorViewModel.kt")
+screen_path = Path("feature/recipes/src/main/java/com/culinary/feature/recipes/RecipeEditorScreen.kt")
+vm_path = Path("feature/recipes/src/main/java/com/culinary/feature/recipes/RecipeEditorViewModel.kt")
 
-s = sp.read_text(encoding="utf-8")
-v = vp.read_text(encoding="utf-8")
+s = screen_path.read_text(encoding="utf-8")
+v = vm_path.read_text(encoding="utf-8")
 
-def once(src, old, new, label):
+def replace_once(src, old, new, label):
     count = src.count(old)
     if count != 1:
         raise RuntimeError(f"{label}: expected 1 match, got {count}; no files written")
     return src.replace(old, new, 1)
 
-# 1. Import shared drag handle.
-s = once(
+# Screen: shared drag handle import.
+s = replace_once(
     s,
     "import com.culinary.core.designsystem.component.ArchiveEditorImageBox\n",
     "import com.culinary.core.designsystem.component.ArchiveEditorDragHandle\n"
@@ -28,17 +28,17 @@ s = once(
     "drag handle import",
 )
 
-# 2. Route state.
-s = once(
+# Route: selected line key.
+s = replace_once(
     s,
     "    var picker by remember { mutableStateOf(EditorPicker.NONE) }\n",
     "    var picker by remember { mutableStateOf(EditorPicker.NONE) }\n"
     "    var lineUnitKey by remember { mutableStateOf<String?>(null) }\n",
-    "line unit state",
+    "route picker state",
 )
 
-# 3. Route -> Screen callbacks.
-s = once(
+# Route: pass callbacks to RecipeEditorScreen.
+s = replace_once(
     s,
     "        onLineAmountChange = viewModel::onLineAmountChange,\n"
     "        onToggleOptional = viewModel::toggleOptional,\n",
@@ -47,13 +47,13 @@ s = once(
     "            lineUnitKey = key\n"
     "            picker = EditorPicker.LINE_UNIT\n"
     "        },\n"
-    "        onMoveLine = { from, to -> viewModel.moveLine(from, to) },\n"
+    "        onMoveLine = viewModel::moveLine,\n"
     "        onToggleOptional = viewModel::toggleOptional,\n",
-    "route callbacks",
+    "route line callbacks",
 )
 
-# 4. Route -> Dialog callbacks.
-s = once(
+# Route: pass selected line and handler to dialog.
+s = replace_once(
     s,
     "    RecipeEditorDialogs(\n"
     "        state = state,\n"
@@ -69,19 +69,19 @@ s = once(
     "            picker = EditorPicker.NONE\n"
     "        },\n"
     "        onSelectYieldUnit = {\n",
-    "dialog route callbacks",
+    "dialog route arguments",
 )
 
-# 5. Picker enum.
-s = once(
+# Picker enum.
+s = replace_once(
     s,
     "    MIN_RANGE_UNIT,\n    CATEGORY,\n",
     "    MIN_RANGE_UNIT,\n    LINE_UNIT,\n    CATEGORY,\n",
-    "picker enum",
+    "line unit picker enum",
 )
 
-# 6. Dialog signature.
-s = once(
+# Dialog signature.
+s = replace_once(
     s,
     "private fun RecipeEditorDialogs(\n"
     "    state: RecipeEditorUiState,\n"
@@ -96,8 +96,8 @@ s = once(
     "dialog signature",
 )
 
-# 7. Unit picker branch.
-s = once(
+# Dialog branch.
+s = replace_once(
     s,
     "        EditorPicker.MIN_RANGE_UNIT ->\n"
     "            UnitPickerDialog(\n"
@@ -120,11 +120,11 @@ s = once(
     "                onSelect = onSelectLineUnit,\n"
     "                onDismiss = onDismiss,\n"
     "            )\n",
-    "line unit picker branch",
+    "line unit dialog branch",
 )
 
-# 8. Screen callback signature.
-s = once(
+# RecipeEditorScreen signature.
+s = replace_once(
     s,
     "    onLineAmountChange: (String, String) -> Unit,\n"
     "    onToggleOptional: (String) -> Unit,\n"
@@ -136,11 +136,11 @@ s = once(
     "    onToggleOptional: (String) -> Unit,\n"
     "    onRemoveLine: (String) -> Unit,\n"
     "    onAddStep: () -> Unit,\n",
-    "screen callback signature",
+    "screen signature",
 )
 
-# 9. Screen -> Form callback forwarding.
-s = once(
+# RecipeEditorScreen -> RecipeEditorForm forwarding.
+s = replace_once(
     s,
     "                onLineAmountChange = onLineAmountChange,\n"
     "                onToggleOptional = onToggleOptional,\n"
@@ -150,11 +150,11 @@ s = once(
     "                onMoveLine = onMoveLine,\n"
     "                onToggleOptional = onToggleOptional,\n"
     "                onRemoveLine = onRemoveLine,\n",
-    "screen to form",
+    "screen to form forwarding",
 )
 
-# 10. Form signature.
-s = once(
+# RecipeEditorForm: optional callbacks preserve existing callers.
+s = replace_once(
     s,
     "    onLineAmountChange: (String, String) -> Unit,\n"
     "    onToggleOptional: (String) -> Unit,\n"
@@ -166,11 +166,11 @@ s = once(
     "    onToggleOptional: (String) -> Unit,\n"
     "    onRemoveLine: (String) -> Unit,\n"
     "    onAddStep: () -> Unit = {},\n",
-    "form callback signature",
+    "form callback parameters",
 )
 
-# 11. Form -> Components callback forwarding.
-s = once(
+# RecipeEditorForm -> RecipeComponentsEditor.
+s = replace_once(
     s,
     "            onLineAmountChange = onLineAmountChange,\n"
     "            onToggleOptional = onToggleOptional,\n"
@@ -180,11 +180,11 @@ s = once(
     "            onMoveLine = onMoveLine,\n"
     "            onToggleOptional = onToggleOptional,\n"
     "            onRemoveLine = onRemoveLine,\n",
-    "form to components",
+    "form to components forwarding",
 )
 
-# 12. Components editor signature.
-s = once(
+# RecipeComponentsEditor signature.
+s = replace_once(
     s,
     "private fun RecipeComponentsEditor(\n"
     "    state: RecipeEditorUiState,\n"
@@ -202,11 +202,11 @@ s = once(
     "    onOpenLineUnit: (String) -> Unit,\n"
     "    onMoveLine: (Int, Int) -> Unit,\n"
     "    onToggleOptional: (String) -> Unit,\n",
-    "components signature",
+    "components editor signature",
 )
 
-# 13. Components list with stable current index.
-s = once(
+# Components: indexed rows and boundary-safe direction callback.
+s = replace_once(
     s,
     "    state.lines.forEach { line ->\n"
     "        RecipeLineRowEditor(\n"
@@ -221,7 +221,10 @@ s = once(
     "            line = line,\n"
     "            onAmountChange = { onLineAmountChange(line.key, it) },\n"
     "            onUnitClick = { onOpenLineUnit(line.key) },\n"
-    "            onMove = { direction -> onMoveLine(index, index + direction) },\n"
+    "            onMove = { direction ->\n"
+    "                val target = index + direction\n"
+    "                if (target in state.lines.indices) onMoveLine(index, target)\n"
+    "            },\n"
     "            onToggleOptional = { onToggleOptional(line.key) },\n"
     "            onRemove = { onRemoveLine(line.key) },\n"
     "        )\n"
@@ -229,7 +232,7 @@ s = once(
     "indexed component rows",
 )
 
-# 14. Replace the complete line row.
+# Replace the complete row implementation.
 old_row = '''@Composable
 private fun RecipeLineRowEditor(
     line: RecipeLineEditor,
@@ -352,10 +355,10 @@ private fun RecipeLineRowEditor(
     }
 }'''
 
-s = once(s, old_row, new_row, "line row composable")
+s = replace_once(s, old_row, new_row, "line row implementation")
 
-# 15. ViewModel methods.
-v = once(
+# ViewModel: unit mutation and ordering.
+v = replace_once(
     v,
     "        fun toggleOptional(key: String) {\n",
     "        fun onLineUnitChange(\n"
@@ -381,30 +384,32 @@ v = once(
     "            }\n"
     "        }\n\n"
     "        fun toggleOptional(key: String) {\n",
-    "viewmodel methods",
+    "viewmodel line operations",
 )
 
-# Final assertions. Nothing is written unless every assertion passes.
-assert "EditorPicker.LINE_UNIT ->" in s
-assert "onSelectLineUnit = { unit ->" in s
-assert "onLineUnitChange" not in s  # ViewModel call is in the Route lambda under a qualified name.
-assert "viewModel.onLineUnitChange(it, unit)" in s
+# Final consistency checks. No file is written until all pass.
 assert s.count("ArchiveEditorDragHandle(") == 1
-assert "onMove = { direction -> onMoveLine(index, index + direction) }" in s
+assert "viewModel.onLineUnitChange(it, unit)" in s
+assert "EditorPicker.LINE_UNIT ->" in s
+assert "onOpenLineUnit = onOpenLineUnit" in s
+assert "onMoveLine = onMoveLine" in s
+assert "if (target in state.lines.indices) onMoveLine(index, target)" in s
+assert "trailingIcon = { Text(text = line.unit.symbol) }" not in s
 assert "fun onLineUnitChange(" in v
 assert "fun moveLine(" in v
+assert "unit: UnitModel" in v
 assert "lines = state.lines.toMutableList().apply { add(to, removeAt(from)) }" in v
 
-sp.write_text(s, encoding="utf-8", newline="\n")
-vp.write_text(v, encoding="utf-8", newline="\n")
+screen_path.write_text(s, encoding="utf-8", newline="\n")
+vm_path.write_text(v, encoding="utf-8", newline="\n")
 
 print("PATCH APPLIED")
-print(sp)
-print(vp)
+print(screen_path)
+print(vm_path)
 PY
-Traceback (most recent call last):
-  File "<stdin>", line 383, in <module>
-AssertionError
+PATCH APPLIED
+feature\recipes\src\main\java\com\culinary\feature\recipes\RecipeEditorScreen.kt
+feature\recipes\src\main\java\com\culinary\feature\recipes\RecipeEditorViewModel.kt
 
 21697@AnfuZhengzhang UCRT64 /d/MISEBASE (feature/recipe-sauce-parity)
 $
@@ -419,19 +424,28 @@ git status --short
 git diff --stat
 Reusing configuration cache.
 
-BUILD SUCCESSFUL in 1s
-68 actionable tasks: 68 up-to-date
+> Task :feature:recipes:compileDebugKotlin
+w: file:///D:/MISEBASE/feature/recipes/src/main/java/com/culinary/feature/recipes/RecipeEditorViewModel.kt:817:25 Condition is always 'true'.
+w: file:///D:/MISEBASE/feature/recipes/src/main/java/com/culinary/feature/recipes/RecipeEditorViewModel.kt:822:25 Condition is always 'true'.
+w: file:///D:/MISEBASE/feature/recipes/src/main/java/com/culinary/feature/recipes/RecipeEditorViewModel.kt:823:25 Condition is always 'true'.
+
+BUILD SUCCESSFUL in 47s
+68 actionable tasks: 11 executed, 57 up-to-date
 Configuration cache entry reused.
 warning: in the working copy of 'core/designsystem/src/main/java/com/culinary/core/designsystem/component/ArchiveEditor.kt', CRLF will be replaced by LF the next time Git touches it
 warning: in the working copy of 'feature/sauces/src/main/java/com/culinary/feature/sauces/SauceEditorSections.kt', CRLF will be replaced by LF the next time Git touches it
  M core/designsystem/src/main/java/com/culinary/core/designsystem/component/ArchiveEditor.kt
+ M feature/recipes/src/main/java/com/culinary/feature/recipes/RecipeEditorScreen.kt
+ M feature/recipes/src/main/java/com/culinary/feature/recipes/RecipeEditorViewModel.kt
  M feature/sauces/src/main/java/com/culinary/feature/sauces/SauceEditorSections.kt
 ?? "\350\277\224\345\233\236\347\273\223\346\236\234"
 warning: in the working copy of 'core/designsystem/src/main/java/com/culinary/core/designsystem/component/ArchiveEditor.kt', CRLF will be replaced by LF the next time Git touches it
 warning: in the working copy of 'feature/sauces/src/main/java/com/culinary/feature/sauces/SauceEditorSections.kt', CRLF will be replaced by LF the next time Git touches it
  .../core/designsystem/component/ArchiveEditor.kt   |  6 ++-
- .../culinary/feature/sauces/SauceEditorSections.kt | 52 +++++++++++++---------
- 2 files changed, 35 insertions(+), 23 deletions(-)
+ .../culinary/feature/recipes/RecipeEditorScreen.kt | 63 ++++++++++++++++++++--
+ .../feature/recipes/RecipeEditorViewModel.kt       | 24 +++++++++
+ .../culinary/feature/sauces/SauceEditorSections.kt | 52 ++++++++++--------
+ 4 files changed, 118 insertions(+), 27 deletions(-)
 
 21697@AnfuZhengzhang UCRT64 /d/MISEBASE (feature/recipe-sauce-parity)
 $
