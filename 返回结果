@@ -1,451 +1,472 @@
 
 21697@AnfuZhengzhang UCRT64 /d/MISEBASE (feature/recipe-sauce-parity)
-$
-$
-cd /d/MISEBASE
+$ cd /d/MISEBASE
 
-python - <<'PY'
-from pathlib import Path
+git diff -- \
+  feature/recipes/src/main/java/com/culinary/feature/recipes/RecipeEditorScreen.kt \
+  feature/recipes/src/main/java/com/culinary/feature/recipes/RecipeEditorViewModel.kt \
+  core/designsystem/src/main/java/com/culinary/core/designsystem/component/ArchiveEditor.kt \
+  feature/sauces/src/main/java/com/culinary/feature/sauces/SauceEditorSections.kt
 
-screen_path = Path("feature/recipes/src/main/java/com/culinary/feature/recipes/RecipeEditorScreen.kt")
-vm_path = Path("feature/recipes/src/main/java/com/culinary/feature/recipes/RecipeEditorViewModel.kt")
-
-s = screen_path.read_text(encoding="utf-8")
-v = vm_path.read_text(encoding="utf-8")
-
-def replace_once(src, old, new, label):
-    count = src.count(old)
-    if count != 1:
-        raise RuntimeError(f"{label}: expected 1 match, got {count}; no files written")
-    return src.replace(old, new, 1)
-
-# Screen: shared drag handle import.
-s = replace_once(
-    s,
-    "import com.culinary.core.designsystem.component.ArchiveEditorImageBox\n",
-    "import com.culinary.core.designsystem.component.ArchiveEditorDragHandle\n"
-    "import com.culinary.core.designsystem.component.ArchiveEditorImageBox\n",
-    "drag handle import",
-)
-
-# Route: selected line key.
-s = replace_once(
-    s,
-    "    var picker by remember { mutableStateOf(EditorPicker.NONE) }\n",
-    "    var picker by remember { mutableStateOf(EditorPicker.NONE) }\n"
-    "    var lineUnitKey by remember { mutableStateOf<String?>(null) }\n",
-    "route picker state",
-)
-
-# Route: pass callbacks to RecipeEditorScreen.
-s = replace_once(
-    s,
-    "        onLineAmountChange = viewModel::onLineAmountChange,\n"
-    "        onToggleOptional = viewModel::toggleOptional,\n",
-    "        onLineAmountChange = viewModel::onLineAmountChange,\n"
-    "        onOpenLineUnit = { key ->\n"
-    "            lineUnitKey = key\n"
-    "            picker = EditorPicker.LINE_UNIT\n"
-    "        },\n"
-    "        onMoveLine = viewModel::moveLine,\n"
-    "        onToggleOptional = viewModel::toggleOptional,\n",
-    "route line callbacks",
-)
-
-# Route: pass selected line and handler to dialog.
-s = replace_once(
-    s,
-    "    RecipeEditorDialogs(\n"
-    "        state = state,\n"
-    "        active = picker,\n"
-    "        onSelectYieldUnit = {\n",
-    "    RecipeEditorDialogs(\n"
-    "        state = state,\n"
-    "        active = picker,\n"
-    "        lineUnitKey = lineUnitKey,\n"
-    "        onSelectLineUnit = { unit ->\n"
-    "            lineUnitKey?.let { viewModel.onLineUnitChange(it, unit) }\n"
-    "            lineUnitKey = null\n"
-    "            picker = EditorPicker.NONE\n"
-    "        },\n"
-    "        onSelectYieldUnit = {\n",
-    "dialog route arguments",
-)
-
-# Picker enum.
-s = replace_once(
-    s,
-    "    MIN_RANGE_UNIT,\n    CATEGORY,\n",
-    "    MIN_RANGE_UNIT,\n    LINE_UNIT,\n    CATEGORY,\n",
-    "line unit picker enum",
-)
-
-# Dialog signature.
-s = replace_once(
-    s,
-    "private fun RecipeEditorDialogs(\n"
-    "    state: RecipeEditorUiState,\n"
-    "    active: EditorPicker,\n"
-    "    onSelectYieldUnit: (UnitModel) -> Unit,\n",
-    "private fun RecipeEditorDialogs(\n"
-    "    state: RecipeEditorUiState,\n"
-    "    active: EditorPicker,\n"
-    "    lineUnitKey: String?,\n"
-    "    onSelectLineUnit: (UnitModel) -> Unit,\n"
-    "    onSelectYieldUnit: (UnitModel) -> Unit,\n",
-    "dialog signature",
-)
-
-# Dialog branch.
-s = replace_once(
-    s,
-    "        EditorPicker.MIN_RANGE_UNIT ->\n"
-    "            UnitPickerDialog(\n"
-    "                units = state.units,\n"
-    "                selectedId = state.minRangeUnit?.id?.value,\n"
-    "                onSelect = onSelectMinRangeUnit,\n"
-    "                onDismiss = onDismiss,\n"
-    "            )\n",
-    "        EditorPicker.MIN_RANGE_UNIT ->\n"
-    "            UnitPickerDialog(\n"
-    "                units = state.units,\n"
-    "                selectedId = state.minRangeUnit?.id?.value,\n"
-    "                onSelect = onSelectMinRangeUnit,\n"
-    "                onDismiss = onDismiss,\n"
-    "            )\n\n"
-    "        EditorPicker.LINE_UNIT ->\n"
-    "            UnitPickerDialog(\n"
-    "                units = state.units,\n"
-    "                selectedId = state.lines.firstOrNull { it.key == lineUnitKey }?.unit?.id?.value,\n"
-    "                onSelect = onSelectLineUnit,\n"
-    "                onDismiss = onDismiss,\n"
-    "            )\n",
-    "line unit dialog branch",
-)
-
-# RecipeEditorScreen signature.
-s = replace_once(
-    s,
-    "    onLineAmountChange: (String, String) -> Unit,\n"
-    "    onToggleOptional: (String) -> Unit,\n"
-    "    onRemoveLine: (String) -> Unit,\n"
-    "    onAddStep: () -> Unit,\n",
-    "    onLineAmountChange: (String, String) -> Unit,\n"
-    "    onOpenLineUnit: (String) -> Unit,\n"
-    "    onMoveLine: (Int, Int) -> Unit,\n"
-    "    onToggleOptional: (String) -> Unit,\n"
-    "    onRemoveLine: (String) -> Unit,\n"
-    "    onAddStep: () -> Unit,\n",
-    "screen signature",
-)
-
-# RecipeEditorScreen -> RecipeEditorForm forwarding.
-s = replace_once(
-    s,
-    "                onLineAmountChange = onLineAmountChange,\n"
-    "                onToggleOptional = onToggleOptional,\n"
-    "                onRemoveLine = onRemoveLine,\n",
-    "                onLineAmountChange = onLineAmountChange,\n"
-    "                onOpenLineUnit = onOpenLineUnit,\n"
-    "                onMoveLine = onMoveLine,\n"
-    "                onToggleOptional = onToggleOptional,\n"
-    "                onRemoveLine = onRemoveLine,\n",
-    "screen to form forwarding",
-)
-
-# RecipeEditorForm: optional callbacks preserve existing callers.
-s = replace_once(
-    s,
-    "    onLineAmountChange: (String, String) -> Unit,\n"
-    "    onToggleOptional: (String) -> Unit,\n"
-    "    onRemoveLine: (String) -> Unit,\n"
-    "    onAddStep: () -> Unit = {},\n",
-    "    onLineAmountChange: (String, String) -> Unit,\n"
-    "    onOpenLineUnit: (String) -> Unit = {},\n"
-    "    onMoveLine: (Int, Int) -> Unit = { _, _ -> },\n"
-    "    onToggleOptional: (String) -> Unit,\n"
-    "    onRemoveLine: (String) -> Unit,\n"
-    "    onAddStep: () -> Unit = {},\n",
-    "form callback parameters",
-)
-
-# RecipeEditorForm -> RecipeComponentsEditor.
-s = replace_once(
-    s,
-    "            onLineAmountChange = onLineAmountChange,\n"
-    "            onToggleOptional = onToggleOptional,\n"
-    "            onRemoveLine = onRemoveLine,\n",
-    "            onLineAmountChange = onLineAmountChange,\n"
-    "            onOpenLineUnit = onOpenLineUnit,\n"
-    "            onMoveLine = onMoveLine,\n"
-    "            onToggleOptional = onToggleOptional,\n"
-    "            onRemoveLine = onRemoveLine,\n",
-    "form to components forwarding",
-)
-
-# RecipeComponentsEditor signature.
-s = replace_once(
-    s,
-    "private fun RecipeComponentsEditor(\n"
-    "    state: RecipeEditorUiState,\n"
-    "    onAddIngredient: () -> Unit,\n"
-    "    onAddRecipe: () -> Unit,\n"
-    "    onAddSauce: () -> Unit,\n"
-    "    onLineAmountChange: (String, String) -> Unit,\n"
-    "    onToggleOptional: (String) -> Unit,\n",
-    "private fun RecipeComponentsEditor(\n"
-    "    state: RecipeEditorUiState,\n"
-    "    onAddIngredient: () -> Unit,\n"
-    "    onAddRecipe: () -> Unit,\n"
-    "    onAddSauce: () -> Unit,\n"
-    "    onLineAmountChange: (String, String) -> Unit,\n"
-    "    onOpenLineUnit: (String) -> Unit,\n"
-    "    onMoveLine: (Int, Int) -> Unit,\n"
-    "    onToggleOptional: (String) -> Unit,\n",
-    "components editor signature",
-)
-
-# Components: indexed rows and boundary-safe direction callback.
-s = replace_once(
-    s,
-    "    state.lines.forEach { line ->\n"
-    "        RecipeLineRowEditor(\n"
-    "            line = line,\n"
-    "            onAmountChange = { onLineAmountChange(line.key, it) },\n"
-    "            onToggleOptional = { onToggleOptional(line.key) },\n"
-    "            onRemove = { onRemoveLine(line.key) },\n"
-    "        )\n"
-    "    }\n",
-    "    state.lines.forEachIndexed { index, line ->\n"
-    "        RecipeLineRowEditor(\n"
-    "            line = line,\n"
-    "            onAmountChange = { onLineAmountChange(line.key, it) },\n"
-    "            onUnitClick = { onOpenLineUnit(line.key) },\n"
-    "            onMove = { direction ->\n"
-    "                val target = index + direction\n"
-    "                if (target in state.lines.indices) onMoveLine(index, target)\n"
-    "            },\n"
-    "            onToggleOptional = { onToggleOptional(line.key) },\n"
-    "            onRemove = { onRemoveLine(line.key) },\n"
-    "        )\n"
-    "    }\n",
-    "indexed component rows",
-)
-
-# Replace the complete row implementation.
-old_row = '''@Composable
-private fun RecipeLineRowEditor(
-    line: RecipeLineEditor,
-    onAmountChange: (String) -> Unit,
-    onToggleOptional: () -> Unit,
-    onRemove: () -> Unit,
-) {
-    Column(modifier = Modifier.fillMaxWidth().padding(vertical = CulinarySpacing.sm)) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = line.name,
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurface,
-                )
-                Text(
-                    text = recipeLineKindLabel(line),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-            CulinaryTextField(
-                value = line.amount,
-                onValueChange = onAmountChange,
-                label = { Text(text = stringResource(R.string.recipes_amount)) },
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                trailingIcon = { Text(text = line.unit.symbol) },
-                fillWidth = false,
-                modifier = Modifier.width(132.dp),
-            )
-            CulinaryTextButton(
-                text = stringResource(R.string.recipes_remove_line),
-                onClick = onRemove,
-            )
-        }
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            StatusBadge(
-                text =
-                    stringResource(
-                        if (line.isOptional) R.string.recipes_optional_on else R.string.recipes_optional_off,
-                    ),
-                tone = if (line.isOptional) StatusTone.Warning else StatusTone.Neutral,
-            )
-            CulinaryTextButton(
-                text = stringResource(R.string.recipes_optional),
-                onClick = onToggleOptional,
-            )
-        }
-        CulinaryRule()
-    }
-}'''
-
-new_row = '''@Composable
-private fun RecipeLineRowEditor(
-    line: RecipeLineEditor,
-    onAmountChange: (String) -> Unit,
-    onUnitClick: () -> Unit,
-    onMove: (Int) -> Unit,
-    onToggleOptional: () -> Unit,
-    onRemove: () -> Unit,
-) {
-    Column(modifier = Modifier.fillMaxWidth().padding(vertical = CulinarySpacing.sm)) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            ArchiveEditorDragHandle(
-                onMove = onMove,
-                modifier = Modifier.padding(end = CulinarySpacing.xs),
-            )
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = line.name,
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurface,
-                )
-                Text(
-                    text = recipeLineKindLabel(line),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-            CulinaryTextField(
-                value = line.amount,
-                onValueChange = onAmountChange,
-                label = { Text(text = stringResource(R.string.recipes_amount)) },
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                fillWidth = false,
-                modifier = Modifier.width(112.dp),
-            )
-            Text(
-                text = line.unit.symbol,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier
-                    .clickable(onClick = onUnitClick)
-                    .padding(horizontal = CulinarySpacing.xs, vertical = CulinarySpacing.md),
-            )
-            CulinaryTextButton(
-                text = stringResource(R.string.recipes_remove_line),
-                onClick = onRemove,
-            )
-        }
-        Row(
-            modifier = Modifier.padding(start = 36.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            StatusBadge(
-                text =
-                    stringResource(
-                        if (line.isOptional) R.string.recipes_optional_on else R.string.recipes_optional_off,
-                    ),
-                tone = if (line.isOptional) StatusTone.Warning else StatusTone.Neutral,
-            )
-            CulinaryTextButton(
-                text = stringResource(R.string.recipes_optional),
-                onClick = onToggleOptional,
-            )
-        }
-        CulinaryRule()
-    }
-}'''
-
-s = replace_once(s, old_row, new_row, "line row implementation")
-
-# ViewModel: unit mutation and ordering.
-v = replace_once(
-    v,
-    "        fun toggleOptional(key: String) {\n",
-    "        fun onLineUnitChange(\n"
-    "            key: String,\n"
-    "            unit: UnitModel,\n"
-    "        ) {\n"
-    "            mutateVersion { state ->\n"
-    "                state.copy(lines = state.lines.map { if (it.key == key) it.copy(unit = unit) else it })\n"
-    "            }\n"
-    "        }\n\n"
-    "        fun moveLine(\n"
-    "            from: Int,\n"
-    "            to: Int,\n"
-    "        ) {\n"
-    "            mutateVersion { state ->\n"
-    "                if (from !in state.lines.indices || to !in state.lines.indices || from == to) {\n"
-    "                    state\n"
-    "                } else {\n"
-    "                    state.copy(\n"
-    "                        lines = state.lines.toMutableList().apply { add(to, removeAt(from)) },\n"
-    "                    )\n"
-    "                }\n"
-    "            }\n"
-    "        }\n\n"
-    "        fun toggleOptional(key: String) {\n",
-    "viewmodel line operations",
-)
-
-# Final consistency checks. No file is written until all pass.
-assert s.count("ArchiveEditorDragHandle(") == 1
-assert "viewModel.onLineUnitChange(it, unit)" in s
-assert "EditorPicker.LINE_UNIT ->" in s
-assert "onOpenLineUnit = onOpenLineUnit" in s
-assert "onMoveLine = onMoveLine" in s
-assert "if (target in state.lines.indices) onMoveLine(index, target)" in s
-assert "trailingIcon = { Text(text = line.unit.symbol) }" not in s
-assert "fun onLineUnitChange(" in v
-assert "fun moveLine(" in v
-assert "unit: UnitModel" in v
-assert "lines = state.lines.toMutableList().apply { add(to, removeAt(from)) }" in v
-
-screen_path.write_text(s, encoding="utf-8", newline="\n")
-vm_path.write_text(v, encoding="utf-8", newline="\n")
-
-print("PATCH APPLIED")
-print(screen_path)
-print(vm_path)
-PY
-PATCH APPLIED
-feature\recipes\src\main\java\com\culinary\feature\recipes\RecipeEditorScreen.kt
-feature\recipes\src\main\java\com\culinary\feature\recipes\RecipeEditorViewModel.kt
-
-21697@AnfuZhengzhang UCRT64 /d/MISEBASE (feature/recipe-sauce-parity)
-$
-./gradlew \
-  :feature:recipes:compileDebugKotlin \
-  :feature:recipes:testDebugUnitTest \
-  :feature:sauces:compileDebugKotlin \
-  :core:designsystem:compileDebugKotlin
-
-git diff --check
 git status --short
-git diff --stat
-Reusing configuration cache.
-
-> Task :feature:recipes:compileDebugKotlin
-w: file:///D:/MISEBASE/feature/recipes/src/main/java/com/culinary/feature/recipes/RecipeEditorViewModel.kt:817:25 Condition is always 'true'.
-w: file:///D:/MISEBASE/feature/recipes/src/main/java/com/culinary/feature/recipes/RecipeEditorViewModel.kt:822:25 Condition is always 'true'.
-w: file:///D:/MISEBASE/feature/recipes/src/main/java/com/culinary/feature/recipes/RecipeEditorViewModel.kt:823:25 Condition is always 'true'.
-
-BUILD SUCCESSFUL in 47s
-68 actionable tasks: 11 executed, 57 up-to-date
-Configuration cache entry reused.
 warning: in the working copy of 'core/designsystem/src/main/java/com/culinary/core/designsystem/component/ArchiveEditor.kt', CRLF will be replaced by LF the next time Git touches it
 warning: in the working copy of 'feature/sauces/src/main/java/com/culinary/feature/sauces/SauceEditorSections.kt', CRLF will be replaced by LF the next time Git touches it
- M core/designsystem/src/main/java/com/culinary/core/designsystem/component/ArchiveEditor.kt
- M feature/recipes/src/main/java/com/culinary/feature/recipes/RecipeEditorScreen.kt
- M feature/recipes/src/main/java/com/culinary/feature/recipes/RecipeEditorViewModel.kt
- M feature/sauces/src/main/java/com/culinary/feature/sauces/SauceEditorSections.kt
-?? "\350\277\224\345\233\236\347\273\223\346\236\234"
-warning: in the working copy of 'core/designsystem/src/main/java/com/culinary/core/designsystem/component/ArchiveEditor.kt', CRLF will be replaced by LF the next time Git touches it
-warning: in the working copy of 'feature/sauces/src/main/java/com/culinary/feature/sauces/SauceEditorSections.kt', CRLF will be replaced by LF the next time Git touches it
- .../core/designsystem/component/ArchiveEditor.kt   |  6 ++-
- .../culinary/feature/recipes/RecipeEditorScreen.kt | 63 ++++++++++++++++++++--
- .../feature/recipes/RecipeEditorViewModel.kt       | 24 +++++++++
- .../culinary/feature/sauces/SauceEditorSections.kt | 52 ++++++++++--------
- 4 files changed, 118 insertions(+), 27 deletions(-)
+diff --git a/core/designsystem/src/main/java/com/culinary/core/designsystem/component/ArchiveEditor.kt b/core/designsystem/src/main/java/com/culinary/core/designsystem/component/ArchiveEditor.kt
+index 9453e1c..c7c0640 100644
+--- a/core/designsystem/src/main/java/com/culinary/core/designsystem/component/ArchiveEditor.kt
++++ b/core/designsystem/src/main/java/com/culinary/core/designsystem/component/ArchiveEditor.kt
+@@ -518,6 +518,8 @@ fun ArchiveEditorImageBox(
+     modifier: Modifier = Modifier,
+     aspectRatio: Float = 16f / 9f,
+     showActions: Boolean = true,
++    replaceLabel: String = "替换",
++    deleteLabel: String = "删除",
+ ) {
+     val bitmap = remember(imageBytes) { imageBytes?.toImageBitmapOrNull() }
+     Box(
+@@ -568,14 +570,14 @@ fun ArchiveEditorImageBox(
+                 horizontalArrangement = Arrangement.spacedBy(CulinarySpacing.sm),
+             ) {
+                 Text(
+-                    text = "替换",
++                    text = replaceLabel,
+                     style = MaterialTheme.typography.labelSmall,
+                     color = MaterialTheme.colorScheme.onSurface,
+                     modifier = Modifier.clickable(onClick = onPick).padding(4.dp),
+                 )
+                 if (onClear != null) {
+                     Text(
+-                        text = "删除",
++                        text = deleteLabel,
+                         style = MaterialTheme.typography.labelSmall,
+                         color = MaterialTheme.colorScheme.error,
+                         modifier = Modifier.clickable(onClick = onClear).padding(4.dp),
+diff --git a/feature/recipes/src/main/java/com/culinary/feature/recipes/RecipeEditorScreen.kt b/feature/recipes/src/main/java/com/culinary/feature/recipes/RecipeEditorScreen.kt
+index 24dbc6b..53993ab 100644
+--- a/feature/recipes/src/main/java/com/culinary/feature/recipes/RecipeEditorScreen.kt
++++ b/feature/recipes/src/main/java/com/culinary/feature/recipes/RecipeEditorScreen.kt
+@@ -36,6 +36,7 @@ import androidx.compose.ui.text.input.KeyboardType
+ import androidx.compose.ui.unit.dp
+ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+ import androidx.lifecycle.compose.collectAsStateWithLifecycle
++import com.culinary.core.designsystem.component.ArchiveEditorDragHandle
+ import com.culinary.core.designsystem.component.ArchiveEditorImageBox
+ import com.culinary.core.designsystem.component.ArchiveEditorInlineField
+ import com.culinary.core.designsystem.component.ArchiveEditorNotesBox
+@@ -75,6 +76,7 @@ fun RecipeEditorRoute(
+ ) {
+     val state by viewModel.uiState.collectAsStateWithLifecycle()
+     var picker by remember { mutableStateOf(EditorPicker.NONE) }
++    var lineUnitKey by remember { mutableStateOf<String?>(null) }
+     val saved = state.savedRecipeId
 
-21697@AnfuZhengzhang UCRT64 /d/MISEBASE (feature/recipe-sauce-parity)
-$
+     LaunchedEffect(saved) {
+@@ -109,6 +111,11 @@ fun RecipeEditorRoute(
+         onAddRelationRecipe = { picker = EditorPicker.RELATION_RECIPE },
+         onRemoveRelation = viewModel::removeRelation,
+         onLineAmountChange = viewModel::onLineAmountChange,
++        onOpenLineUnit = { key ->
++            lineUnitKey = key
++            picker = EditorPicker.LINE_UNIT
++        },
++        onMoveLine = viewModel::moveLine,
+         onToggleOptional = viewModel::toggleOptional,
+         onRemoveLine = viewModel::removeLine,
+         onAddStep = viewModel::addStep,
+@@ -127,6 +134,12 @@ fun RecipeEditorRoute(
+     RecipeEditorDialogs(
+         state = state,
+         active = picker,
++        lineUnitKey = lineUnitKey,
++        onSelectLineUnit = { unit ->
++            lineUnitKey?.let { viewModel.onLineUnitChange(it, unit) }
++            lineUnitKey = null
++            picker = EditorPicker.NONE
++        },
+         onSelectYieldUnit = {
+             viewModel.onYieldUnitChange(it)
+             picker = EditorPicker.NONE
+@@ -171,6 +184,7 @@ private enum class EditorPicker {
+     NONE,
+     YIELD_UNIT,
+     MIN_RANGE_UNIT,
++    LINE_UNIT,
+     CATEGORY,
+     ARCHIVE_CATEGORY,
+     INGREDIENT,
+@@ -184,6 +198,8 @@ private enum class EditorPicker {
+ private fun RecipeEditorDialogs(
+     state: RecipeEditorUiState,
+     active: EditorPicker,
++    lineUnitKey: String?,
++    onSelectLineUnit: (UnitModel) -> Unit,
+     onSelectYieldUnit: (UnitModel) -> Unit,
+     onSelectMinRangeUnit: (UnitModel) -> Unit,
+     onSelectCategory: (RecipeCategory) -> Unit,
+@@ -213,6 +229,14 @@ private fun RecipeEditorDialogs(
+                 onDismiss = onDismiss,
+             )
+
++        EditorPicker.LINE_UNIT ->
++            UnitPickerDialog(
++                units = state.units,
++                selectedId = state.lines.firstOrNull { it.key == lineUnitKey }?.unit?.id?.value,
++                onSelect = onSelectLineUnit,
++                onDismiss = onDismiss,
++            )
++
+         EditorPicker.CATEGORY ->
+             CategoryPickerDialog(
+                 selected = state.category,
+@@ -294,6 +318,8 @@ private fun RecipeEditorScreen(
+     onAddRelationRecipe: () -> Unit,
+     onRemoveRelation: (String) -> Unit,
+     onLineAmountChange: (String, String) -> Unit,
++    onOpenLineUnit: (String) -> Unit,
++    onMoveLine: (Int, Int) -> Unit,
+     onToggleOptional: (String) -> Unit,
+     onRemoveLine: (String) -> Unit,
+     onAddStep: () -> Unit,
+@@ -360,6 +386,8 @@ private fun RecipeEditorScreen(
+                 onAddRelationRecipe = onAddRelationRecipe,
+                 onRemoveRelation = onRemoveRelation,
+                 onLineAmountChange = onLineAmountChange,
++                onOpenLineUnit = onOpenLineUnit,
++                onMoveLine = onMoveLine,
+                 onToggleOptional = onToggleOptional,
+                 onRemoveLine = onRemoveLine,
+                 onAddStep = onAddStep,
+@@ -403,6 +431,8 @@ internal fun RecipeEditorForm(
+     onAddRelationRecipe: () -> Unit = {},
+     onRemoveRelation: (String) -> Unit = {},
+     onLineAmountChange: (String, String) -> Unit,
++    onOpenLineUnit: (String) -> Unit = {},
++    onMoveLine: (Int, Int) -> Unit = { _, _ -> },
+     onToggleOptional: (String) -> Unit,
+     onRemoveLine: (String) -> Unit,
+     onAddStep: () -> Unit = {},
+@@ -448,6 +478,8 @@ internal fun RecipeEditorForm(
+             onAddRecipe = onAddRecipe,
+             onAddSauce = onAddSauce,
+             onLineAmountChange = onLineAmountChange,
++            onOpenLineUnit = onOpenLineUnit,
++            onMoveLine = onMoveLine,
+             onToggleOptional = onToggleOptional,
+             onRemoveLine = onRemoveLine,
+         )
+@@ -628,6 +660,8 @@ private fun RecipeComponentsEditor(
+     onAddRecipe: () -> Unit,
+     onAddSauce: () -> Unit,
+     onLineAmountChange: (String, String) -> Unit,
++    onOpenLineUnit: (String) -> Unit,
++    onMoveLine: (Int, Int) -> Unit,
+     onToggleOptional: (String) -> Unit,
+     onRemoveLine: (String) -> Unit,
+ ) {
+@@ -637,10 +671,15 @@ private fun RecipeComponentsEditor(
+         title = stringResource(R.string.recipes_ingredients_title),
+         subtitle = stringResource(R.string.recipes_components, state.lines.size),
+     )
+-    state.lines.forEach { line ->
++    state.lines.forEachIndexed { index, line ->
+         RecipeLineRowEditor(
+             line = line,
+             onAmountChange = { onLineAmountChange(line.key, it) },
++            onUnitClick = { onOpenLineUnit(line.key) },
++            onMove = { direction ->
++                val target = index + direction
++                if (target in state.lines.indices) onMoveLine(index, target)
++            },
+             onToggleOptional = { onToggleOptional(line.key) },
+             onRemove = { onRemoveLine(line.key) },
+         )
+@@ -682,11 +721,17 @@ private fun RecipeComponentsEditor(
+ private fun RecipeLineRowEditor(
+     line: RecipeLineEditor,
+     onAmountChange: (String) -> Unit,
++    onUnitClick: () -> Unit,
++    onMove: (Int) -> Unit,
+     onToggleOptional: () -> Unit,
+     onRemove: () -> Unit,
+ ) {
+     Column(modifier = Modifier.fillMaxWidth().padding(vertical = CulinarySpacing.sm)) {
+         Row(verticalAlignment = Alignment.CenterVertically) {
++            ArchiveEditorDragHandle(
++                onMove = onMove,
++                modifier = Modifier.padding(end = CulinarySpacing.xs),
++            )
+             Column(modifier = Modifier.weight(1f)) {
+                 Text(
+                     text = line.name,
+@@ -705,16 +750,26 @@ private fun RecipeLineRowEditor(
+                 label = { Text(text = stringResource(R.string.recipes_amount)) },
+                 singleLine = true,
+                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+-                trailingIcon = { Text(text = line.unit.symbol) },
+                 fillWidth = false,
+-                modifier = Modifier.width(132.dp),
++                modifier = Modifier.width(112.dp),
++            )
++            Text(
++                text = line.unit.symbol,
++                style = MaterialTheme.typography.bodySmall,
++                color = MaterialTheme.colorScheme.onSurfaceVariant,
++                modifier = Modifier
++                    .clickable(onClick = onUnitClick)
++                    .padding(horizontal = CulinarySpacing.xs, vertical = CulinarySpacing.md),
+             )
+             CulinaryTextButton(
+                 text = stringResource(R.string.recipes_remove_line),
+                 onClick = onRemove,
+             )
+         }
+-        Row(verticalAlignment = Alignment.CenterVertically) {
++        Row(
++            modifier = Modifier.padding(start = 36.dp),
++            verticalAlignment = Alignment.CenterVertically,
++        ) {
+             StatusBadge(
+                 text =
+                     stringResource(
+diff --git a/feature/recipes/src/main/java/com/culinary/feature/recipes/RecipeEditorViewModel.kt b/feature/recipes/src/main/java/com/culinary/feature/recipes/RecipeEditorViewModel.kt
+index 466f502..075b804 100644
+--- a/feature/recipes/src/main/java/com/culinary/feature/recipes/RecipeEditorViewModel.kt
++++ b/feature/recipes/src/main/java/com/culinary/feature/recipes/RecipeEditorViewModel.kt
+@@ -481,6 +481,30 @@ class RecipeEditorViewModel
+             }
+         }
+
++        fun onLineUnitChange(
++            key: String,
++            unit: UnitModel,
++        ) {
++            mutateVersion { state ->
++                state.copy(lines = state.lines.map { if (it.key == key) it.copy(unit = unit) else it })
++            }
++        }
++
++        fun moveLine(
++            from: Int,
++            to: Int,
++        ) {
++            mutateVersion { state ->
++                if (from !in state.lines.indices || to !in state.lines.indices || from == to) {
++                    state
++                } else {
++                    state.copy(
++                        lines = state.lines.toMutableList().apply { add(to, removeAt(from)) },
++                    )
++                }
++            }
++        }
++
+         fun toggleOptional(key: String) {
+             mutateVersion { state ->
+                 state.copy(
+diff --git a/feature/sauces/src/main/java/com/culinary/feature/sauces/SauceEditorSections.kt b/feature/sauces/src/main/java/com/culinary/feature/sauces/SauceEditorSections.kt
+index 4c3a0c9..cdf5f7c 100644
+--- a/feature/sauces/src/main/java/com/culinary/feature/sauces/SauceEditorSections.kt
++++ b/feature/sauces/src/main/java/com/culinary/feature/sauces/SauceEditorSections.kt
+@@ -1,5 +1,11 @@
+ package com.culinary.feature.sauces
+
++import com.culinary.core.designsystem.component.ArchiveEditorDragHandle
++import com.culinary.core.designsystem.component.ArchiveEditorImageBox
++import com.culinary.core.designsystem.component.ArchiveEditorInlineField
++import com.culinary.core.designsystem.component.ArchiveEditorNotesBox
++import com.culinary.core.designsystem.component.ArchiveEditorSectionHeader
++
+ import androidx.compose.foundation.background
+ import androidx.compose.foundation.clickable
+ import androidx.compose.foundation.horizontalScroll
+@@ -57,7 +63,7 @@ internal fun SauceHeaderSection(
+             color = MaterialTheme.colorScheme.onSurfaceVariant,
+         )
+         Spacer(modifier = Modifier.height(CulinarySpacing.sm))
+-        EditorInlineField(
++        ArchiveEditorInlineField(
+             value = state.englishName,
+             onValueChange = actions.onEnglishNameChange,
+             placeholder = "Beurre Blanc",
+@@ -65,7 +71,7 @@ internal fun SauceHeaderSection(
+             modifier = Modifier.fillMaxWidth(),
+         )
+         Spacer(modifier = Modifier.height(CulinarySpacing.xxs))
+-        EditorInlineField(
++        ArchiveEditorInlineField(
+             value = state.name,
+             onValueChange = actions.onNameChange,
+             placeholder = "中文名称",
+@@ -73,7 +79,7 @@ internal fun SauceHeaderSection(
+             modifier = Modifier.fillMaxWidth(),
+         )
+         Spacer(modifier = Modifier.height(CulinarySpacing.xs))
+-        EditorInlineField(
++        ArchiveEditorInlineField(
+             value = state.description,
+             onValueChange = actions.onDescriptionChange,
+             placeholder = "描述这款酱汁的风格与用途……",
+@@ -220,7 +226,7 @@ internal fun SauceHeroSection(
+         )
+         Spacer(modifier = Modifier.height(CulinarySpacing.sm))
+         val pick = rememberSauceImagePicker { actions.onHeroPicked(it) }
+-        EditorImageBox(
++        ArchiveEditorImageBox(
+             imageBytes = state.heroImagePending?.bytes ?: state.heroImage?.let { state.imageBytes[it.id] },
+             onPick = pick,
+             onClear =
+@@ -230,9 +236,11 @@ internal fun SauceHeroSection(
+                     null
+                 },
+             emptyLabel = stringResource(R.string.sauces_hero_upload),
++            replaceLabel = stringResource(R.string.sauces_image_replace),
++            deleteLabel = stringResource(R.string.sauces_image_delete),
+         )
+         Spacer(modifier = Modifier.height(CulinarySpacing.xs))
+-        EditorInlineField(
++        ArchiveEditorInlineField(
+             value = state.heroCaption,
+             onValueChange = actions.onHeroCaptionChange,
+             placeholder = stringResource(R.string.sauces_hero_caption_hint),
+@@ -248,7 +256,7 @@ internal fun SauceIngredientsSection(
+     actions: SauceEditorActions,
+ ) {
+     var showPicker by remember { mutableStateOf(false) }
+-    SauceSectionHeader(
++    ArchiveEditorSectionHeader(
+         index = "01",
+         english = "INGREDIENTS",
+         title = stringResource(R.string.sauces_editor_ingredients),
+@@ -309,7 +317,7 @@ private fun SauceIngredientRow(
+             modifier = Modifier.fillMaxWidth().padding(vertical = CulinarySpacing.sm),
+             verticalAlignment = Alignment.CenterVertically,
+         ) {
+-            DragHandle(onMove = onMove)
++            ArchiveEditorDragHandle(onMove = onMove)
+             Column(modifier = Modifier.weight(1f).padding(start = CulinarySpacing.xs)) {
+                 if (line.isReadOnly) {
+                     Text(
+@@ -323,14 +331,14 @@ private fun SauceIngredientRow(
+                         color = MaterialTheme.colorScheme.onSurfaceVariant,
+                     )
+                 } else {
+-                    EditorInlineField(
++                    ArchiveEditorInlineField(
+                         value = line.name,
+                         onValueChange = onNameChange,
+                         placeholder = stringResource(R.string.sauces_editor_ingredient_name),
+                         textStyle = MaterialTheme.typography.bodyLarge,
+                         modifier = Modifier.fillMaxWidth(),
+                     )
+-                    EditorInlineField(
++                    ArchiveEditorInlineField(
+                         value = line.nameEn,
+                         onValueChange = onNameEnChange,
+                         placeholder = "English name",
+@@ -341,7 +349,7 @@ private fun SauceIngredientRow(
+             }
+             Column(horizontalAlignment = Alignment.End) {
+                 Row(verticalAlignment = Alignment.CenterVertically) {
+-                    EditorInlineField(
++                    ArchiveEditorInlineField(
+                         value = line.amount,
+                         onValueChange = onAmountChange,
+                         placeholder = "0",
+@@ -387,7 +395,7 @@ internal fun SauceMethodSection(
+     state: SauceEditorUiState,
+     actions: SauceEditorActions,
+ ) {
+-    SauceSectionHeader(
++    ArchiveEditorSectionHeader(
+         index = "02",
+         english = "METHOD",
+         title = stringResource(R.string.sauces_editor_method),
+@@ -441,14 +449,14 @@ private fun SauceStepRow(
+             modifier = Modifier.fillMaxWidth().padding(top = CulinarySpacing.sm),
+             verticalAlignment = Alignment.CenterVertically,
+         ) {
+-            DragHandle(onMove = onMove)
++            ArchiveEditorDragHandle(onMove = onMove)
+             Text(
+                 text = "%02d".format(index + 1),
+                 style = CulinaryTextStyles.numeralS,
+                 color = MaterialTheme.colorScheme.onSurfaceVariant,
+                 modifier = Modifier.padding(horizontal = CulinarySpacing.xs),
+             )
+-            EditorInlineField(
++            ArchiveEditorInlineField(
+                 value = step.title,
+                 onValueChange = onTitleChange,
+                 placeholder = stringResource(R.string.sauces_editor_step_title),
+@@ -463,15 +471,17 @@ private fun SauceStepRow(
+             )
+         }
+         Spacer(modifier = Modifier.height(CulinarySpacing.xs))
+-        EditorImageBox(
++        ArchiveEditorImageBox(
+             imageBytes = imageBytes,
+             onPick = pick,
+             onClear = if (imageBytes != null) onClearImage else null,
+             emptyLabel = stringResource(R.string.sauces_step_upload),
++            replaceLabel = stringResource(R.string.sauces_image_replace),
++            deleteLabel = stringResource(R.string.sauces_image_delete),
+             aspectRatio = 4f / 3f,
+         )
+         Spacer(modifier = Modifier.height(CulinarySpacing.xs))
+-        EditorInlineField(
++        ArchiveEditorInlineField(
+             value = step.body,
+             onValueChange = onBodyChange,
+             placeholder = stringResource(R.string.sauces_editor_step_body),
+@@ -494,12 +504,12 @@ internal fun SauceApplicationSection(
+     state: SauceEditorUiState,
+     actions: SauceEditorActions,
+ ) {
+-    SauceSectionHeader(
++    ArchiveEditorSectionHeader(
+         index = "03",
+         english = "APPLICATION",
+         title = stringResource(R.string.sauces_application),
+     )
+-    EditorInlineField(
++    ArchiveEditorInlineField(
+         value = state.application,
+         onValueChange = actions.onApplicationChange,
+         placeholder = stringResource(R.string.sauces_application_hint),
+@@ -517,7 +527,7 @@ internal fun SauceRelationsSection(
+     actions: SauceEditorActions,
+ ) {
+     var showPicker by remember { mutableStateOf(false) }
+-    SauceSectionHeader(
++    ArchiveEditorSectionHeader(
+         index = "04",
+         english = "RELATED SAUCES",
+         title = stringResource(R.string.sauces_relations_title),
+@@ -527,7 +537,7 @@ internal fun SauceRelationsSection(
+             modifier = Modifier.fillMaxWidth().padding(vertical = CulinarySpacing.xs),
+             verticalAlignment = Alignment.CenterVertically,
+         ) {
+-            DragHandle(onMove = { delta -> actions.onMoveRelation(index, index + delta) })
++            ArchiveEditorDragHandle(onMove = { delta -> actions.onMoveRelation(index, index + delta) })
+             Column(
+                 modifier =
+                     Modifier
+@@ -602,7 +612,7 @@ internal fun SauceNotesSection(
+     state: SauceEditorUiState,
+     actions: SauceEditorActions,
+ ) {
+-    SauceSectionHeader(
++    ArchiveEditorSectionHeader(
+         index = "05",
+         english = "NOTES",
+         title = stringResource(R.string.sauces_notes),
+@@ -613,7 +623,7 @@ internal fun SauceNotesSection(
+         color = MaterialTheme.colorScheme.onSurfaceVariant,
+     )
+     Spacer(modifier = Modifier.height(CulinarySpacing.sm))
+-    NotesField(
++    ArchiveEditorNotesBox(
+         value = state.notes,
+         onValueChange = actions.onNotesChange,
+         placeholder = stringResource(R.string.sauces_notes_placeholder),
+(END)
