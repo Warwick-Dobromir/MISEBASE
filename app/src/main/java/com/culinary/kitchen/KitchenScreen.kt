@@ -58,10 +58,9 @@ fun KitchenRoute(
 }
 
 /**
- * 厨房首页视觉结构：字标/标题 → 烹饪资料 → 工作标准。
+ * 厨房首页只展示三个核心资料库：酱汁、食材、菜谱。
  *
  * 顶部区固定，分类主体独立滚动；底栏由导航外壳提供，不参与本页滚动。
- * 跨库搜索已按任务要求移除；六库各自在目录页提供单库搜索。
  */
 @Composable
 internal fun KitchenScreen(
@@ -99,12 +98,6 @@ internal fun KitchenScreen(
             }
             KitchenSectionBlock(
                 section = KitchenSection.REFERENCES,
-                state = state,
-                onOpenCategory = onOpenCategory,
-            )
-            Spacer(modifier = Modifier.height(CulinarySpacing.xl))
-            KitchenSectionBlock(
-                section = KitchenSection.STANDARDS,
                 state = state,
                 onOpenCategory = onOpenCategory,
             )
