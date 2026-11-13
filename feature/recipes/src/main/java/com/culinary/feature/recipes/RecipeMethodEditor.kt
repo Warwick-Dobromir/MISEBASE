@@ -51,7 +51,6 @@ internal fun RecipeMethodEditor(
             index = "02",
             english = "METHOD",
             title = "制作工艺",
-            subtitle = "${state.steps.size} 步 · 每步可独立设置制作时间",
         )
         state.steps.forEachIndexed { index, step ->
             CulinaryRule()
@@ -59,24 +58,23 @@ internal fun RecipeMethodEditor(
                 modifier = Modifier.fillMaxWidth().padding(top = CulinarySpacing.sm),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text(
-                    text = "%02d".format(index + 1),
-                    style = CulinaryTextStyles.numeralS,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                Spacer(modifier = Modifier.width(CulinarySpacing.xs))
                 ArchiveEditorDragHandle(
                     onMove = { offset ->
                         val target = index + offset
                         if (target in state.steps.indices) onMoveStep(index, target)
                     },
                 )
-                Spacer(modifier = Modifier.width(CulinarySpacing.xs))
+                Text(
+                    text = "%02d".format(index + 1),
+                    style = CulinaryTextStyles.numeralS,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(horizontal = CulinarySpacing.xs),
+                )
                 ArchiveEditorInlineField(
                     value = step.title,
                     onValueChange = { onStepTitleChange(step.key, it) },
                     placeholder = "步骤标题",
-                    textStyle = MaterialTheme.typography.bodyLarge,
+                    textStyle = MaterialTheme.typography.titleMedium,
                     modifier = Modifier.weight(1f),
                 )
                 Spacer(modifier = Modifier.width(CulinarySpacing.xs))
@@ -92,6 +90,13 @@ internal fun RecipeMethodEditor(
                 )
             }
             Spacer(modifier = Modifier.height(CulinarySpacing.xs))
+            StepImageEditor(
+                step = step,
+                bytes = stepImageBytes[step.key],
+                onPicked = { onStepImage(step.key, it) },
+                onClear = { onClearStepImage(step.key) },
+            )
+            Spacer(modifier = Modifier.height(CulinarySpacing.xs))
             ArchiveEditorInlineField(
                 value = step.body,
                 onValueChange = { onStepBodyChange(step.key, it) },
@@ -103,13 +108,7 @@ internal fun RecipeMethodEditor(
             KitchenTimeSegmentsField(
                 seconds = step.timeSeconds,
                 onSecondsChange = { onStepTimeChange(step.key, it) },
-                modifier = Modifier.padding(top = CulinarySpacing.sm),
-            )
-            StepImageEditor(
-                step = step,
-                bytes = stepImageBytes[step.key],
-                onPicked = { onStepImage(step.key, it) },
-                onClear = { onClearStepImage(step.key) },
+                modifier = Modifier.padding(top = CulinarySpacing.xs),
             )
             Spacer(modifier = Modifier.height(CulinarySpacing.sm))
         }
