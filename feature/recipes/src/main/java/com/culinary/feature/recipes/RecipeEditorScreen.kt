@@ -36,6 +36,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.culinary.core.designsystem.component.ArchiveEditorDragHandle
 import com.culinary.core.designsystem.component.ArchiveEditorImageBox
 import com.culinary.core.designsystem.component.ArchiveEditorInlineField
 import com.culinary.core.designsystem.component.ArchiveEditorNotesBox
@@ -75,6 +76,7 @@ fun RecipeEditorRoute(
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     var picker by remember { mutableStateOf(EditorPicker.NONE) }
+    var lineUnitKey by remember { mutableStateOf<String?>(null) }
     val saved = state.savedRecipeId
 
     LaunchedEffect(saved) {
@@ -108,7 +110,13 @@ fun RecipeEditorRoute(
         onAddRelationSauce = { picker = EditorPicker.RELATION_SAUCE },
         onAddRelationRecipe = { picker = EditorPicker.RELATION_RECIPE },
         onRemoveRelation = viewModel::removeRelation,
+        onMoveRelation = viewModel::moveRelation,
         onLineAmountChange = viewModel::onLineAmountChange,
+        onOpenLineUnit = { key ->
+            lineUnitKey = key
+            picker = EditorPicker.LINE_UNIT
+        },
+        onMoveLine = viewModel::moveLine,
         onToggleOptional = viewModel::toggleOptional,
         onRemoveLine = viewModel::removeLine,
         onAddStep = viewModel::addStep,
@@ -118,6 +126,7 @@ fun RecipeEditorRoute(
         onStepImage = viewModel::setStepImage,
         onClearStepImage = viewModel::clearStepImage,
         onRemoveStep = viewModel::removeStep,
+        onMoveStep = viewModel::moveStep,
         onSave = viewModel::save,
         onCancel = onCancelled,
         onDismissError = viewModel::clearError,
@@ -127,6 +136,12 @@ fun RecipeEditorRoute(
     RecipeEditorDialogs(
         state = state,
         active = picker,
+        lineUnitKey = lineUnitKey,
+        onSelectLineUnit = { unit ->
+            lineUnitKey?.let { viewModel.onLineUnitChange(it, unit) }
+            lineUnitKey = null
+            picker = EditorPicker.NONE
+        },
         onSelectYieldUnit = {
             viewModel.onYieldUnitChange(it)
             picker = EditorPicker.NONE
@@ -171,6 +186,7 @@ private enum class EditorPicker {
     NONE,
     YIELD_UNIT,
     MIN_RANGE_UNIT,
+    LINE_UNIT,
     CATEGORY,
     ARCHIVE_CATEGORY,
     INGREDIENT,
@@ -184,6 +200,8 @@ private enum class EditorPicker {
 private fun RecipeEditorDialogs(
     state: RecipeEditorUiState,
     active: EditorPicker,
+    lineUnitKey: String?,
+    onSelectLineUnit: (UnitModel) -> Unit,
     onSelectYieldUnit: (UnitModel) -> Unit,
     onSelectMinRangeUnit: (UnitModel) -> Unit,
     onSelectCategory: (RecipeCategory) -> Unit,
@@ -210,6 +228,14 @@ private fun RecipeEditorDialogs(
                 units = state.units,
                 selectedId = state.minRangeUnit?.id?.value,
                 onSelect = onSelectMinRangeUnit,
+                onDismiss = onDismiss,
+            )
+
+        EditorPicker.LINE_UNIT ->
+            UnitPickerDialog(
+                units = state.units,
+                selectedId = state.lines.firstOrNull { it.key == lineUnitKey }?.unit?.id?.value,
+                onSelect = onSelectLineUnit,
                 onDismiss = onDismiss,
             )
 
@@ -293,7 +319,10 @@ private fun RecipeEditorScreen(
     onAddRelationSauce: () -> Unit,
     onAddRelationRecipe: () -> Unit,
     onRemoveRelation: (String) -> Unit,
+    onMoveRelation: (Int, Int) -> Unit,
     onLineAmountChange: (String, String) -> Unit,
+    onOpenLineUnit: (String) -> Unit,
+    onMoveLine: (Int, Int) -> Unit,
     onToggleOptional: (String) -> Unit,
     onRemoveLine: (String) -> Unit,
     onAddStep: () -> Unit,
@@ -303,6 +332,7 @@ private fun RecipeEditorScreen(
     onStepImage: (String, PendingRecipeImage) -> Unit,
     onClearStepImage: (String) -> Unit,
     onRemoveStep: (String) -> Unit,
+    onMoveStep: (Int, Int) -> Unit,
     onSave: () -> Unit,
     onCancel: () -> Unit,
     onDismissError: () -> Unit,
@@ -359,7 +389,10 @@ private fun RecipeEditorScreen(
                 onAddRelationSauce = onAddRelationSauce,
                 onAddRelationRecipe = onAddRelationRecipe,
                 onRemoveRelation = onRemoveRelation,
+                onMoveRelation = onMoveRelation,
                 onLineAmountChange = onLineAmountChange,
+                onOpenLineUnit = onOpenLineUnit,
+                onMoveLine = onMoveLine,
                 onToggleOptional = onToggleOptional,
                 onRemoveLine = onRemoveLine,
                 onAddStep = onAddStep,
@@ -369,6 +402,7 @@ private fun RecipeEditorScreen(
                 onStepImage = onStepImage,
                 onClearStepImage = onClearStepImage,
                 onRemoveStep = onRemoveStep,
+                onMoveStep = onMoveStep,
             )
         }
     }
@@ -402,7 +436,10 @@ internal fun RecipeEditorForm(
     onAddRelationSauce: () -> Unit = {},
     onAddRelationRecipe: () -> Unit = {},
     onRemoveRelation: (String) -> Unit = {},
+    onMoveRelation: (Int, Int) -> Unit = { _, _ -> },
     onLineAmountChange: (String, String) -> Unit,
+    onOpenLineUnit: (String) -> Unit = {},
+    onMoveLine: (Int, Int) -> Unit = { _, _ -> },
     onToggleOptional: (String) -> Unit,
     onRemoveLine: (String) -> Unit,
     onAddStep: () -> Unit = {},
@@ -412,6 +449,7 @@ internal fun RecipeEditorForm(
     onStepImage: (String, PendingRecipeImage) -> Unit = { _, _ -> },
     onClearStepImage: (String) -> Unit = {},
     onRemoveStep: (String) -> Unit = {},
+    onMoveStep: (Int, Int) -> Unit = { _, _ -> },
 ) {
     Column(
         modifier =
@@ -448,6 +486,8 @@ internal fun RecipeEditorForm(
             onAddRecipe = onAddRecipe,
             onAddSauce = onAddSauce,
             onLineAmountChange = onLineAmountChange,
+            onOpenLineUnit = onOpenLineUnit,
+            onMoveLine = onMoveLine,
             onToggleOptional = onToggleOptional,
             onRemoveLine = onRemoveLine,
         )
@@ -464,6 +504,7 @@ internal fun RecipeEditorForm(
             onStepImage = onStepImage,
             onClearStepImage = onClearStepImage,
             onRemoveStep = onRemoveStep,
+            onMoveStep = onMoveStep,
         )
         RecipeApplicationSection(
             state = state,
@@ -477,6 +518,7 @@ internal fun RecipeEditorForm(
             onAddSauce = onAddRelationSauce,
             onAddRecipe = onAddRelationRecipe,
             onRemove = onRemoveRelation,
+            onMove = onMoveRelation,
         )
         RecipeNotesSection(
             state = state,
@@ -628,6 +670,8 @@ private fun RecipeComponentsEditor(
     onAddRecipe: () -> Unit,
     onAddSauce: () -> Unit,
     onLineAmountChange: (String, String) -> Unit,
+    onOpenLineUnit: (String) -> Unit,
+    onMoveLine: (Int, Int) -> Unit,
     onToggleOptional: (String) -> Unit,
     onRemoveLine: (String) -> Unit,
 ) {
@@ -637,10 +681,15 @@ private fun RecipeComponentsEditor(
         title = stringResource(R.string.recipes_ingredients_title),
         subtitle = stringResource(R.string.recipes_components, state.lines.size),
     )
-    state.lines.forEach { line ->
+    state.lines.forEachIndexed { index, line ->
         RecipeLineRowEditor(
             line = line,
             onAmountChange = { onLineAmountChange(line.key, it) },
+            onUnitClick = { onOpenLineUnit(line.key) },
+            onMove = { direction ->
+                val target = index + direction
+                if (target in state.lines.indices) onMoveLine(index, target)
+            },
             onToggleOptional = { onToggleOptional(line.key) },
             onRemove = { onRemoveLine(line.key) },
         )
@@ -682,11 +731,17 @@ private fun RecipeComponentsEditor(
 private fun RecipeLineRowEditor(
     line: RecipeLineEditor,
     onAmountChange: (String) -> Unit,
+    onUnitClick: () -> Unit,
+    onMove: (Int) -> Unit,
     onToggleOptional: () -> Unit,
     onRemove: () -> Unit,
 ) {
     Column(modifier = Modifier.fillMaxWidth().padding(vertical = CulinarySpacing.sm)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
+            ArchiveEditorDragHandle(
+                onMove = onMove,
+                modifier = Modifier.padding(end = CulinarySpacing.xs),
+            )
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = line.name,
@@ -705,16 +760,26 @@ private fun RecipeLineRowEditor(
                 label = { Text(text = stringResource(R.string.recipes_amount)) },
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                trailingIcon = { Text(text = line.unit.symbol) },
                 fillWidth = false,
-                modifier = Modifier.width(132.dp),
+                modifier = Modifier.width(112.dp),
+            )
+            Text(
+                text = line.unit.symbol,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier
+                    .clickable(onClick = onUnitClick)
+                    .padding(horizontal = CulinarySpacing.xs, vertical = CulinarySpacing.md),
             )
             CulinaryTextButton(
                 text = stringResource(R.string.recipes_remove_line),
                 onClick = onRemove,
             )
         }
-        Row(verticalAlignment = Alignment.CenterVertically) {
+        Row(
+            modifier = Modifier.padding(start = 36.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
             StatusBadge(
                 text =
                     stringResource(
@@ -820,6 +885,7 @@ private fun RecipeRelationsSection(
     onAddSauce: () -> Unit,
     onAddRecipe: () -> Unit,
     onRemove: (String) -> Unit,
+    onMove: (Int, Int) -> Unit,
 ) {
     ArchiveEditorSectionHeader(
         index = "04",
@@ -833,11 +899,18 @@ private fun RecipeRelationsSection(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     } else {
-        state.relations.forEach { relation ->
+        state.relations.forEachIndexed { index, relation ->
             Row(
                 modifier = Modifier.fillMaxWidth().padding(vertical = CulinarySpacing.xs),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
+                ArchiveEditorDragHandle(
+                    onMove = { offset ->
+                        val target = index + offset
+                        if (target in state.relations.indices) onMove(index, target)
+                    },
+                )
+                Spacer(modifier = Modifier.width(CulinarySpacing.xs))
                 Text(
                     text = relation.name,
                     style = MaterialTheme.typography.bodyLarge,

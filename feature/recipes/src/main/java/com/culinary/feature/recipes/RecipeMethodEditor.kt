@@ -16,6 +16,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.culinary.core.designsystem.component.ArchiveEditorDragHandle
 import com.culinary.core.designsystem.component.ArchiveEditorImageBox
 import com.culinary.core.designsystem.component.ArchiveEditorInlineField
 import com.culinary.core.designsystem.component.ArchiveEditorSectionHeader
@@ -43,6 +44,7 @@ internal fun RecipeMethodEditor(
     onStepImage: (String, PendingRecipeImage) -> Unit,
     onClearStepImage: (String) -> Unit,
     onRemoveStep: (String) -> Unit,
+    onMoveStep: (Int, Int) -> Unit,
 ) {
     Column(modifier = Modifier.fillMaxWidth()) {
         ArchiveEditorSectionHeader(
@@ -61,6 +63,13 @@ internal fun RecipeMethodEditor(
                     text = "%02d".format(index + 1),
                     style = CulinaryTextStyles.numeralS,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Spacer(modifier = Modifier.width(CulinarySpacing.xs))
+                ArchiveEditorDragHandle(
+                    onMove = { offset ->
+                        val target = index + offset
+                        if (target in state.steps.indices) onMoveStep(index, target)
+                    },
                 )
                 Spacer(modifier = Modifier.width(CulinarySpacing.xs))
                 ArchiveEditorInlineField(

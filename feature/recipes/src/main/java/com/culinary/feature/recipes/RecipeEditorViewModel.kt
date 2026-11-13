@@ -348,6 +348,18 @@ class RecipeEditorViewModel
             mutateArchive { state -> state.copy(relations = state.relations.filterNot { it.targetId == targetId }) }
         }
 
+        fun moveRelation(from: Int, to: Int) {
+            mutateArchive { state ->
+                if (from == to || from !in state.relations.indices || to !in state.relations.indices) {
+                    state
+                } else {
+                    state.copy(
+                        relations = state.relations.toMutableList().apply { add(to, removeAt(from)) },
+                    )
+                }
+            }
+        }
+
         fun setHeroImage(image: PendingRecipeImage) {
             mutateArchive { it.copy(heroImagePending = image) }
         }
@@ -481,6 +493,30 @@ class RecipeEditorViewModel
             }
         }
 
+        fun onLineUnitChange(
+            key: String,
+            unit: UnitModel,
+        ) {
+            mutateVersion { state ->
+                state.copy(lines = state.lines.map { if (it.key == key) it.copy(unit = unit) else it })
+            }
+        }
+
+        fun moveLine(
+            from: Int,
+            to: Int,
+        ) {
+            mutateVersion { state ->
+                if (from !in state.lines.indices || to !in state.lines.indices || from == to) {
+                    state
+                } else {
+                    state.copy(
+                        lines = state.lines.toMutableList().apply { add(to, removeAt(from)) },
+                    )
+                }
+            }
+        }
+
         fun toggleOptional(key: String) {
             mutateVersion { state ->
                 state.copy(
@@ -528,6 +564,18 @@ class RecipeEditorViewModel
 
         fun removeStep(key: String) {
             mutateVersion { state -> state.copy(steps = state.steps.filterNot { it.key == key }) }
+        }
+
+        fun moveStep(from: Int, to: Int) {
+            mutateVersion { state ->
+                if (from == to || from !in state.steps.indices || to !in state.steps.indices) {
+                    state
+                } else {
+                    state.copy(
+                        steps = state.steps.toMutableList().apply { add(to, removeAt(from)) },
+                    )
+                }
+            }
         }
 
         fun clearError() {
