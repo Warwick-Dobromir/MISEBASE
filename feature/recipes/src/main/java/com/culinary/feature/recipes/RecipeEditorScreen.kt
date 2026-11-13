@@ -664,21 +664,28 @@ private fun RecipeHeroSection(
     onPicked: (PendingRecipeImage) -> Unit,
     onClear: () -> Unit,
 ) {
-    ArchiveEditorSectionHeader(
-        index = "",
-        english = "HERO MEDIA",
-        title = "成品图片",
-    )
-    val pick = rememberRecipeImagePicker(onPicked)
-    val preview =
-        state.heroImagePending?.bytes
-            ?: state.heroImage?.let { state.imageBytes[it.id] }
-    ArchiveEditorImageBox(
-        imageBytes = preview,
-        onPick = pick,
-        onClear = if (state.heroImage != null || state.heroImagePending != null) onClear else null,
-        emptyLabel = "上传成品图片",
-    )
+    Column(modifier = Modifier.fillMaxWidth().padding(top = CulinarySpacing.xl)) {
+        Text(
+            text = "HERO MEDIA",
+            style = CulinaryTextStyles.eyebrow,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Spacer(modifier = Modifier.height(CulinarySpacing.xxs))
+        Text(
+            text = "成品图片",
+            style = CulinaryTextStyles.sectionTitle,
+            color = MaterialTheme.colorScheme.onSurface,
+        )
+        Spacer(modifier = Modifier.height(CulinarySpacing.sm))
+        val pick = rememberRecipeImagePicker(onPicked)
+        ArchiveEditorImageBox(
+            imageBytes = state.heroImagePending?.bytes
+                ?: state.heroImage?.let { state.imageBytes[it.id] },
+            onPick = pick,
+            onClear = if (state.heroImage != null || state.heroImagePending != null) onClear else null,
+            emptyLabel = "上传成品图片",
+        )
+    }
 }
 
 @Composable
@@ -697,7 +704,7 @@ private fun RecipeComponentsEditor(
         index = "01",
         english = "INGREDIENTS",
         title = stringResource(R.string.recipes_ingredients_title),
-        subtitle = stringResource(R.string.recipes_components, state.lines.size),
+        subtitle = "基础配方",
     )
     state.lines.forEachIndexed { index, line ->
         RecipeLineRowEditor(
