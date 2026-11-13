@@ -5,31 +5,32 @@ import com.culinary.kitchen.KitchenCategory
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 
-/** 六库配置契约：每个厨房分类都有独立路由、类型与文案。 */
+/** 厨房可见资料库契约：只允许酱汁、食材、菜谱三个入口。 */
 class KitchenArchiveSectionTest {
     @Test
-    fun `six sections cover six distinct archive kinds and routes`() {
+    fun `only the three core libraries are exposed in kitchen`() {
         val sections = KitchenArchiveSection.entries
 
-        assertThat(sections).hasSize(6)
+        assertThat(sections).hasSize(3)
         assertThat(sections.map(KitchenArchiveSection::kind))
-            .containsExactlyElementsIn(KitchenArchiveKind.entries)
+            .containsExactly(
+                KitchenArchiveKind.SAUCE,
+                KitchenArchiveKind.INGREDIENT,
+                KitchenArchiveKind.RECIPE,
+            ).inOrder()
         assertThat(sections.map(KitchenArchiveSection::routeValue)).containsNoDuplicates()
         assertThat(sections.map(KitchenArchiveSection::titleRes)).containsNoDuplicates()
     }
 
     @Test
-    fun `every kitchen category maps to its own library section`() {
+    fun `every kitchen category maps to one of the three visible library sections`() {
         val sections = KitchenCategory.entries.map(KitchenCategory::toArchiveSection)
 
         assertThat(sections).containsExactlyElementsIn(KitchenArchiveSection.entries).inOrder()
     }
 
     @Test
-    fun `only the three new reference kinds map to an editor type`() {
-        assertThat(KitchenArchiveKind.SAUCE.toReferenceType()).isNull()
-        assertThat(KitchenArchiveKind.INGREDIENT.toReferenceType()).isNull()
-        assertThat(KitchenArchiveKind.RECIPE.toReferenceType()).isNull()
+    fun `hidden reference record kinds remain type-safe but are not library sections`() {
         assertThat(KitchenArchiveKind.TECHNIQUE.toReferenceType()).isNotNull()
         assertThat(KitchenArchiveKind.PRODUCTION_STANDARD.toReferenceType()).isNotNull()
         assertThat(KitchenArchiveKind.STORAGE_STANDARD.toReferenceType()).isNotNull()
