@@ -487,9 +487,6 @@ internal fun RecipeEditorForm(
             onDescriptionChange = onDescriptionChange,
             onOpenCategoryPicker = onOpenCategoryPicker,
             onOpenArchiveCategoryPicker = onOpenArchiveCategoryPicker,
-        )
-        RecipeYieldRangeSection(
-            state = state,
             onYieldAmountChange = onYieldAmountChange,
             onOpenYieldUnit = onOpenYieldUnit,
             onMinRangeAmountChange = onMinRangeAmountChange,
@@ -559,105 +556,112 @@ private fun RecipeBasics(
     onDescriptionChange: (String) -> Unit,
     onOpenCategoryPicker: () -> Unit,
     onOpenArchiveCategoryPicker: () -> Unit,
-) {
-    ArchiveEditorSectionHeader(
-        index = "",
-        english = "CLASSIFICATION",
-        title = "档案信息",
-        subtitle = if (state.isNew) "新菜谱默认保存并发布首版，之后编辑生成待发布修改。" else "修改保存为待发布版本，不覆盖当前正式版本。",
-        showRule = false,
-    )
-    ArchiveEditorInlineField(
-        value = state.englishName,
-        onValueChange = onEnglishNameChange,
-        placeholder = "English name",
-        textStyle = CulinaryTextStyles.pageTitle,
-        modifier = Modifier.fillMaxWidth(),
-    )
-    Spacer(modifier = Modifier.height(CulinarySpacing.xxs))
-    ArchiveEditorInlineField(
-        value = state.name,
-        onValueChange = onNameChange,
-        placeholder = "中文名称",
-        textStyle = MaterialTheme.typography.headlineSmall,
-        modifier = Modifier.fillMaxWidth(),
-    )
-    Spacer(modifier = Modifier.height(CulinarySpacing.xs))
-    ArchiveEditorInlineField(
-        value = state.description,
-        onValueChange = onDescriptionChange,
-        placeholder = "描述这道菜的风格、来源与用途……",
-        textStyle = MaterialTheme.typography.bodySmall,
-        singleLine = false,
-        minLines = 2,
-        modifier = Modifier.fillMaxWidth(),
-    )
-    Spacer(modifier = Modifier.height(CulinarySpacing.md))
-    val categoryPath =
-        state.categories
-            .firstOrNull { it.id == state.archiveCategoryId }
-            ?.pathLabel
-            .orEmpty()
-            .ifBlank { "未分类" }
-    Column(verticalArrangement = Arrangement.spacedBy(CulinarySpacing.xs)) {
-        CulinaryButton(
-            text =
-                stringResource(R.string.recipes_category_label) +
-                    "：" + recipeCategoryLabel(state.category),
-            onClick = onOpenCategoryPicker,
-            variant = CulinaryButtonVariant.Secondary,
-            icon = CulinaryIcons.ChevronDown,
-        )
-        CulinaryButton(
-            text = "分类归属：$categoryPath",
-            onClick = onOpenArchiveCategoryPicker,
-            variant = CulinaryButtonVariant.Secondary,
-            icon = CulinaryIcons.ChevronDown,
-        )
-    }
-}
-
-@Composable
-private fun RecipeYieldRangeSection(
-    state: RecipeEditorUiState,
     onYieldAmountChange: (String) -> Unit,
     onOpenYieldUnit: () -> Unit,
     onMinRangeAmountChange: (String) -> Unit,
     onOpenMinRangeUnit: () -> Unit,
     onServingsChange: (String) -> Unit,
 ) {
-    ArchiveEditorSectionHeader(
-        index = "",
-        english = "YIELD / MIN. RANGE",
-        title = "产量与制作范围",
-    )
-    ArchiveYieldRangeFields(
-        yieldAmount = state.yieldAmount,
-        yieldUnit = state.yieldUnit?.symbol.orEmpty(),
-        minRangeAmount = state.minRangeAmount,
-        minRangeUnit = state.minRangeUnit?.symbol.orEmpty(),
-        onYieldAmountChange = onYieldAmountChange,
-        onYieldUnitClick = onOpenYieldUnit,
-        onMinRangeAmountChange = onMinRangeAmountChange,
-        onMinRangeUnitClick = onOpenMinRangeUnit,
-    )
-    Spacer(modifier = Modifier.height(CulinarySpacing.md))
-    Row(verticalAlignment = Alignment.CenterVertically) {
+    val categoryPath = state.categories.firstOrNull { it.id == state.archiveCategoryId }
+        ?.pathLabel.orEmpty().ifBlank { "未分类" }
+    Column(modifier = Modifier.fillMaxWidth().padding(top = CulinarySpacing.lg)) {
         Text(
-            text = stringResource(R.string.recipes_servings_label),
-            style = MaterialTheme.typography.labelMedium,
+            text = "RECIPE · $categoryPath",
+            style = CulinaryTextStyles.eyebrow,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.weight(1f),
         )
+        Spacer(modifier = Modifier.height(CulinarySpacing.sm))
         ArchiveEditorInlineField(
-            value = state.servings,
-            onValueChange = onServingsChange,
-            placeholder = "1",
-            textStyle = CulinaryTextStyles.numeralS,
-            keyboardType = KeyboardType.Number,
-            textAlign = androidx.compose.ui.text.style.TextAlign.End,
-            modifier = Modifier.width(120.dp),
+            value = state.englishName,
+            onValueChange = onEnglishNameChange,
+            placeholder = "English name",
+            textStyle = CulinaryTextStyles.pageTitle,
+            modifier = Modifier.fillMaxWidth(),
         )
+        Spacer(modifier = Modifier.height(CulinarySpacing.xxs))
+        ArchiveEditorInlineField(
+            value = state.name,
+            onValueChange = onNameChange,
+            placeholder = "中文名称",
+            textStyle = MaterialTheme.typography.headlineSmall,
+            modifier = Modifier.fillMaxWidth(),
+        )
+        Spacer(modifier = Modifier.height(CulinarySpacing.xs))
+        ArchiveEditorInlineField(
+            value = state.description,
+            onValueChange = onDescriptionChange,
+            placeholder = "描述这道菜的风格、来源与用途……",
+            textStyle = MaterialTheme.typography.bodySmall,
+            singleLine = false,
+            minLines = 2,
+            modifier = Modifier.fillMaxWidth(),
+        )
+        Spacer(modifier = Modifier.height(CulinarySpacing.lg))
+        Text(
+            text = "CLASSIFICATION / 分类归属",
+            style = CulinaryTextStyles.eyebrow,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(vertical = CulinarySpacing.xs),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = "菜谱类型",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.weight(1f),
+            )
+            CulinaryTextButton(
+                text = recipeCategoryLabel(state.category),
+                onClick = onOpenCategoryPicker,
+            )
+        }
+        CulinaryRule()
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(vertical = CulinarySpacing.xs),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = "分类路径",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.weight(1f),
+            )
+            CulinaryTextButton(
+                text = categoryPath,
+                onClick = onOpenArchiveCategoryPicker,
+            )
+        }
+        Spacer(modifier = Modifier.height(CulinarySpacing.md))
+        ArchiveYieldRangeFields(
+            yieldAmount = state.yieldAmount,
+            yieldUnit = state.yieldUnit?.symbol.orEmpty(),
+            minRangeAmount = state.minRangeAmount,
+            minRangeUnit = state.minRangeUnit?.symbol.orEmpty(),
+            onYieldAmountChange = onYieldAmountChange,
+            onYieldUnitClick = onOpenYieldUnit,
+            onMinRangeAmountChange = onMinRangeAmountChange,
+            onMinRangeUnitClick = onOpenMinRangeUnit,
+        )
+        Spacer(modifier = Modifier.height(CulinarySpacing.md))
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                text = stringResource(R.string.recipes_servings_label),
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.weight(1f),
+            )
+            ArchiveEditorInlineField(
+                value = state.servings,
+                onValueChange = onServingsChange,
+                placeholder = "1",
+                textStyle = CulinaryTextStyles.numeralS,
+                keyboardType = KeyboardType.Number,
+                textAlign = androidx.compose.ui.text.style.TextAlign.End,
+                modifier = Modifier.width(120.dp),
+            )
+        }
     }
 }
 
