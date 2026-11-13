@@ -1,7 +1,8 @@
 
 21697@AnfuZhengzhang UCRT64 /d/MISEBASE (feature/recipe-sauce-parity)
 $
-$ cd /d/MISEBASE
+$
+cd /d/MISEBASE
 
 python - <<'PY'
 from pathlib import Path
@@ -13,12 +14,12 @@ s = sp.read_text(encoding="utf-8")
 v = vp.read_text(encoding="utf-8")
 
 def once(src, old, new, label):
-    n = src.count(old)
-    if n != 1:
-        raise RuntimeError(f"{label}: expected 1 match, got {n}; no files written")
+    count = src.count(old)
+    if count != 1:
+        raise RuntimeError(f"{label}: expected 1 match, got {count}; no files written")
     return src.replace(old, new, 1)
 
-# 1. Public drag handle import
+# 1. Import shared drag handle.
 s = once(
     s,
     "import com.culinary.core.designsystem.component.ArchiveEditorImageBox\n",
@@ -27,16 +28,16 @@ s = once(
     "drag handle import",
 )
 
-# 2. Route state
+# 2. Route state.
 s = once(
     s,
     "    var picker by remember { mutableStateOf(EditorPicker.NONE) }\n",
     "    var picker by remember { mutableStateOf(EditorPicker.NONE) }\n"
     "    var lineUnitKey by remember { mutableStateOf<String?>(null) }\n",
-    "route picker state",
+    "line unit state",
 )
 
-# 3. Route -> Screen callbacks
+# 3. Route -> Screen callbacks.
 s = once(
     s,
     "        onLineAmountChange = viewModel::onLineAmountChange,\n"
@@ -46,17 +47,19 @@ s = once(
     "            lineUnitKey = key\n"
     "            picker = EditorPicker.LINE_UNIT\n"
     "        },\n"
-    "        onMoveLine = viewModel::moveLine,\n"
+    "        onMoveLine = { from, to -> viewModel.moveLine(from, to) },\n"
     "        onToggleOptional = viewModel::toggleOptional,\n",
-    "route component callbacks",
+    "route callbacks",
 )
 
-# 4. Route -> Dialog callbacks
+# 4. Route -> Dialog callbacks.
 s = once(
     s,
+    "    RecipeEditorDialogs(\n"
     "        state = state,\n"
     "        active = picker,\n"
     "        onSelectYieldUnit = {\n",
+    "    RecipeEditorDialogs(\n"
     "        state = state,\n"
     "        active = picker,\n"
     "        lineUnitKey = lineUnitKey,\n"
@@ -66,10 +69,10 @@ s = once(
     "            picker = EditorPicker.NONE\n"
     "        },\n"
     "        onSelectYieldUnit = {\n",
-    "route dialog callbacks",
+    "dialog route callbacks",
 )
 
-# 5. Picker enum
+# 5. Picker enum.
 s = once(
     s,
     "    MIN_RANGE_UNIT,\n    CATEGORY,\n",
@@ -77,11 +80,15 @@ s = once(
     "picker enum",
 )
 
-# 6. Dialog signature
+# 6. Dialog signature.
 s = once(
     s,
+    "private fun RecipeEditorDialogs(\n"
+    "    state: RecipeEditorUiState,\n"
     "    active: EditorPicker,\n"
     "    onSelectYieldUnit: (UnitModel) -> Unit,\n",
+    "private fun RecipeEditorDialogs(\n"
+    "    state: RecipeEditorUiState,\n"
     "    active: EditorPicker,\n"
     "    lineUnitKey: String?,\n"
     "    onSelectLineUnit: (UnitModel) -> Unit,\n"
@@ -89,7 +96,7 @@ s = once(
     "dialog signature",
 )
 
-# 7. Dialog branch
+# 7. Unit picker branch.
 s = once(
     s,
     "        EditorPicker.MIN_RANGE_UNIT ->\n"
@@ -113,10 +120,10 @@ s = once(
     "                onSelect = onSelectLineUnit,\n"
     "                onDismiss = onDismiss,\n"
     "            )\n",
-    "line unit dialog branch",
+    "line unit picker branch",
 )
 
-# 8. RecipeEditorScreen signature, identified by its following onAddStep parameter
+# 8. Screen callback signature.
 s = once(
     s,
     "    onLineAmountChange: (String, String) -> Unit,\n"
@@ -125,14 +132,14 @@ s = once(
     "    onAddStep: () -> Unit,\n",
     "    onLineAmountChange: (String, String) -> Unit,\n"
     "    onOpenLineUnit: (String) -> Unit,\n"
-    "    onMoveLine: (Int) -> Unit,\n"
+    "    onMoveLine: (Int, Int) -> Unit,\n"
     "    onToggleOptional: (String) -> Unit,\n"
     "    onRemoveLine: (String) -> Unit,\n"
     "    onAddStep: () -> Unit,\n",
-    "screen signature",
+    "screen callback signature",
 )
 
-# 9. Screen -> Form
+# 9. Screen -> Form callback forwarding.
 s = once(
     s,
     "                onLineAmountChange = onLineAmountChange,\n"
@@ -146,7 +153,7 @@ s = once(
     "screen to form",
 )
 
-# 10. Form signature: distinguish defaulted callbacks
+# 10. Form signature.
 s = once(
     s,
     "    onLineAmountChange: (String, String) -> Unit,\n"
@@ -155,14 +162,14 @@ s = once(
     "    onAddStep: () -> Unit = {},\n",
     "    onLineAmountChange: (String, String) -> Unit,\n"
     "    onOpenLineUnit: (String) -> Unit = {},\n"
-    "    onMoveLine: (Int) -> Unit = {},\n"
+    "    onMoveLine: (Int, Int) -> Unit = { _, _ -> },\n"
     "    onToggleOptional: (String) -> Unit,\n"
     "    onRemoveLine: (String) -> Unit,\n"
     "    onAddStep: () -> Unit = {},\n",
-    "form signature",
+    "form callback signature",
 )
 
-# 11. Form -> Components
+# 11. Form -> Components callback forwarding.
 s = once(
     s,
     "            onLineAmountChange = onLineAmountChange,\n"
@@ -176,7 +183,7 @@ s = once(
     "form to components",
 )
 
-# 12. Components editor signature
+# 12. Components editor signature.
 s = once(
     s,
     "private fun RecipeComponentsEditor(\n"
@@ -193,12 +200,12 @@ s = once(
     "    onAddSauce: () -> Unit,\n"
     "    onLineAmountChange: (String, String) -> Unit,\n"
     "    onOpenLineUnit: (String) -> Unit,\n"
-    "    onMoveLine: (Int) -> Unit,\n"
+    "    onMoveLine: (Int, Int) -> Unit,\n"
     "    onToggleOptional: (String) -> Unit,\n",
     "components signature",
 )
 
-# 13. Components list rows
+# 13. Components list with stable current index.
 s = once(
     s,
     "    state.lines.forEach { line ->\n"
@@ -214,15 +221,15 @@ s = once(
     "            line = line,\n"
     "            onAmountChange = { onLineAmountChange(line.key, it) },\n"
     "            onUnitClick = { onOpenLineUnit(line.key) },\n"
-    "            onMove = { direction -> onMoveLine(index + direction) },\n"
+    "            onMove = { direction -> onMoveLine(index, index + direction) },\n"
     "            onToggleOptional = { onToggleOptional(line.key) },\n"
     "            onRemove = { onRemoveLine(line.key) },\n"
     "        )\n"
     "    }\n",
-    "components row list",
+    "indexed component rows",
 )
 
-# 14. Replace only the complete line-row composable
+# 14. Replace the complete line row.
 old_row = '''@Composable
 private fun RecipeLineRowEditor(
     line: RecipeLineEditor,
@@ -347,7 +354,7 @@ private fun RecipeLineRowEditor(
 
 s = once(s, old_row, new_row, "line row composable")
 
-# 15. ViewModel line-unit update and reorder
+# 15. ViewModel methods.
 v = once(
     v,
     "        fun toggleOptional(key: String) {\n",
@@ -360,38 +367,6 @@ v = once(
     "            }\n"
     "        }\n\n"
     "        fun moveLine(\n"
-    "            to: Int,\n"
-    "        ) {\n"
-    "            mutateVersion { state ->\n"
-    "                val from = state.lines.indexOfFirst { it.key == state.lines.getOrNull(to)?.key }\n"
-    "                if (from < 0 || to !in state.lines.indices || from == to) {\n"
-    "                    state\n"
-    "                } else {\n"
-    "                    state.copy(lines = state.lines.move(from, to))\n"
-    "                }\n"
-    "            }\n"
-    "        }\n\n"
-    "        fun toggleOptional(key: String) {\n",
-    "viewmodel line methods",
-)
-
-# Use an index-based method instead; the list index passed by the UI is the destination,
-# and the row key is resolved at invocation time by the UI callback. Replace with explicit
-# from/to callback signature to avoid deriving a source from the destination.
-v = v.replace(
-    "        fun moveLine(\n"
-    "            to: Int,\n"
-    "        ) {\n"
-    "            mutateVersion { state ->\n"
-    "                val from = state.lines.indexOfFirst { it.key == state.lines.getOrNull(to)?.key }\n"
-    "                if (from < 0 || to !in state.lines.indices || from == to) {\n"
-    "                    state\n"
-    "                } else {\n"
-    "                    state.copy(lines = state.lines.move(from, to))\n"
-    "                }\n"
-    "            }\n"
-    "        }\n\n",
-    "        fun moveLine(\n"
     "            from: Int,\n"
     "            to: Int,\n"
     "        ) {\n"
@@ -399,67 +374,26 @@ v = v.replace(
     "                if (from !in state.lines.indices || to !in state.lines.indices || from == to) {\n"
     "                    state\n"
     "                } else {\n"
-    "                    state.copy(lines = state.lines.move(from, to))\n"
+    "                    state.copy(\n"
+    "                        lines = state.lines.toMutableList().apply { add(to, removeAt(from)) },\n"
+    "                    )\n"
     "                }\n"
     "            }\n"
-    "        }\n\n",
-    1,
+    "        }\n\n"
+    "        fun toggleOptional(key: String) {\n",
+    "viewmodel methods",
 )
 
-# Update UI callbacks to pass the source and destination indices.
-s = once(
-    s,
-    "        onMoveLine = viewModel::moveLine,\n",
-    "        onMoveLine = { from, to -> viewModel.moveLine(from, to) },\n",
-    "route move callback",
-)
-s = once(
-    s,
-    "    onMoveLine: (Int) -> Unit,\n",
-    "    onMoveLine: (Int, Int) -> Unit,\n",
-    "screen move callback type",
-)
-s = once(
-    s,
-    "    onMoveLine: (Int) -> Unit = {},\n",
-    "    onMoveLine: (Int, Int) -> Unit = { _, _ -> },\n",
-    "form move callback type",
-)
-s = once(
-    s,
-    "    onMoveLine: (Int) -> Unit,\n",
-    "    onMoveLine: (Int, Int) -> Unit,\n",
-    "components move callback type",
-)
-s = once(
-    s,
-    "            onMove = { direction -> onMoveLine(index + direction) },\n",
-    "            onMove = { direction -> onMoveLine(index, index + direction) },\n",
-    "row move callback",
-)
-
-# 16. Append top-level list move helper after class; guard against duplicate.
-if "private fun <T> List<T>.move(" in v:
-    raise RuntimeError("List.move helper already exists; refusing duplicate insertion")
-
-v = v.rstrip() + '''
-
-private fun <T> List<T>.move(
-    from: Int,
-    to: Int,
-): List<T> {
-    if (from == to || from !in indices || to !in indices) return this
-    return toMutableList().apply { add(to, removeAt(from)) }
-}
-'''
-
-# Final structural assertions before writing either file.
-assert "EditorPicker.LINE_UNIT" in s
-assert "onLineUnitChange" not in s  # ViewModel callback is invoked from Route only.
+# Final assertions. Nothing is written unless every assertion passes.
+assert "EditorPicker.LINE_UNIT ->" in s
+assert "onSelectLineUnit = { unit ->" in s
+assert "onLineUnitChange" not in s  # ViewModel call is in the Route lambda under a qualified name.
+assert "viewModel.onLineUnitChange(it, unit)" in s
 assert s.count("ArchiveEditorDragHandle(") == 1
+assert "onMove = { direction -> onMoveLine(index, index + direction) }" in s
 assert "fun onLineUnitChange(" in v
 assert "fun moveLine(" in v
-assert "private fun <T> List<T>.move(" in v
+assert "lines = state.lines.toMutableList().apply { add(to, removeAt(from)) }" in v
 
 sp.write_text(s, encoding="utf-8", newline="\n")
 vp.write_text(v, encoding="utf-8", newline="\n")
@@ -469,12 +403,12 @@ print(sp)
 print(vp)
 PY
 Traceback (most recent call last):
-  File "<stdin>", line 410, in <module>
-  File "<stdin>", line 12, in once
-RuntimeError: screen move callback type: expected 1 match, got 2; no files written
+  File "<stdin>", line 383, in <module>
+AssertionError
 
 21697@AnfuZhengzhang UCRT64 /d/MISEBASE (feature/recipe-sauce-parity)
-$ ./gradlew \
+$
+./gradlew \
   :feature:recipes:compileDebugKotlin \
   :feature:recipes:testDebugUnitTest \
   :feature:sauces:compileDebugKotlin \
@@ -485,7 +419,7 @@ git status --short
 git diff --stat
 Reusing configuration cache.
 
-BUILD SUCCESSFUL in 4s
+BUILD SUCCESSFUL in 1s
 68 actionable tasks: 68 up-to-date
 Configuration cache entry reused.
 warning: in the working copy of 'core/designsystem/src/main/java/com/culinary/core/designsystem/component/ArchiveEditor.kt', CRLF will be replaced by LF the next time Git touches it
@@ -498,7 +432,6 @@ warning: in the working copy of 'feature/sauces/src/main/java/com/culinary/featu
  .../core/designsystem/component/ArchiveEditor.kt   |  6 ++-
  .../culinary/feature/sauces/SauceEditorSections.kt | 52 +++++++++++++---------
  2 files changed, 35 insertions(+), 23 deletions(-)
-
 
 21697@AnfuZhengzhang UCRT64 /d/MISEBASE (feature/recipe-sauce-parity)
 $
