@@ -1,5 +1,6 @@
 package com.culinary.feature.recipes
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -14,6 +15,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -42,6 +44,7 @@ import com.culinary.core.designsystem.component.ArchiveEditorInlineField
 import com.culinary.core.designsystem.component.ArchiveEditorNotesBox
 import com.culinary.core.designsystem.component.ArchiveEditorSectionHeader
 import com.culinary.core.designsystem.component.ArchiveEditorTopBar
+import com.culinary.core.designsystem.component.ConfirmDialog
 import com.culinary.core.designsystem.component.ArchiveProse
 import com.culinary.core.designsystem.component.ArchiveYieldRangeFields
 import com.culinary.core.designsystem.component.CulinaryButton
@@ -338,6 +341,10 @@ private fun RecipeEditorScreen(
     onDismissError: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    var showDiscard by remember { mutableStateOf(false) }
+    val imeVisible = WindowInsets.isImeVisible
+    BackHandler(enabled = state.isDirty && !imeVisible) { showDiscard = true }
+    BackHandler(enabled = !state.isDirty && !imeVisible) { onCancel() }
     Column(modifier = modifier.fillMaxSize()) {
         ArchiveEditorTopBar(
             title =
@@ -348,8 +355,8 @@ private fun RecipeEditorScreen(
                 },
             isSaving = state.isSaving,
             canSave = !state.isLoading && (state.isDirty || state.isNew),
-            onBack = onCancel,
-            onCancel = onCancel,
+            onBack = { if (state.isDirty) showDiscard = true else onCancel() },
+            onCancel = { if (state.isDirty) showDiscard = true else onCancel() },
             onSave = onSave,
         )
         state.error?.let { message ->
@@ -405,6 +412,20 @@ private fun RecipeEditorScreen(
                 onMoveStep = onMoveStep,
             )
         }
+    }
+    if (showDiscard) {
+        ConfirmDialog(
+            title = "放弃未保存的修改？",
+            message = "当前编辑内容尚未保存，离开后这些修改将丢失。",
+            confirmLabel = "放弃修改",
+            dismissLabel = "继续编辑",
+            onConfirm = {
+                showDiscard = false
+                onCancel()
+            },
+            onDismiss = { showDiscard = false },
+            destructive = true,
+        )
     }
 }
 
