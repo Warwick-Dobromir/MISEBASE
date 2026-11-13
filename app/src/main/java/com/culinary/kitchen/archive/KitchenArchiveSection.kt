@@ -6,7 +6,7 @@ import com.culinary.core.data.kitchen.KitchenArchiveKind
 import com.culinary.core.data.kitchen.KitchenReferenceType
 import com.culinary.kitchen.KitchenCategory
 
-/** 六个资料库的统一路由与标题配置。 */
+/** 厨房可见资料库仅保留酱汁、食材、菜谱。 */
 enum class KitchenArchiveSection(
     val routeValue: String,
     val kind: KitchenArchiveKind,
@@ -38,30 +38,6 @@ enum class KitchenArchiveSection(
         subtitleRes = R.string.kitchen_library_subtitle_recipes,
         searchHintRes = R.string.kitchen_library_search_recipes,
         newLabelRes = R.string.kitchen_library_new_recipe,
-    ),
-    TECHNIQUES(
-        routeValue = "techniques",
-        kind = KitchenArchiveKind.TECHNIQUE,
-        titleRes = R.string.kitchen_library_title_techniques,
-        subtitleRes = R.string.kitchen_library_subtitle_techniques,
-        searchHintRes = R.string.kitchen_library_search_techniques,
-        newLabelRes = R.string.kitchen_library_new_technique,
-    ),
-    PRODUCTION_STANDARDS(
-        routeValue = "production-standards",
-        kind = KitchenArchiveKind.PRODUCTION_STANDARD,
-        titleRes = R.string.kitchen_library_title_production_standards,
-        subtitleRes = R.string.kitchen_library_subtitle_production_standards,
-        searchHintRes = R.string.kitchen_library_search_production_standards,
-        newLabelRes = R.string.kitchen_library_new_production_standard,
-    ),
-    STORAGE_STANDARDS(
-        routeValue = "storage-standards",
-        kind = KitchenArchiveKind.STORAGE_STANDARD,
-        titleRes = R.string.kitchen_library_title_storage_standards,
-        subtitleRes = R.string.kitchen_library_subtitle_storage_standards,
-        searchHintRes = R.string.kitchen_library_search_storage_standards,
-        newLabelRes = R.string.kitchen_library_new_storage_standard,
     ),
     ;
 
@@ -112,9 +88,6 @@ fun KitchenCategory.toArchiveSection(): KitchenArchiveSection =
         KitchenCategory.SAUCES -> KitchenArchiveSection.SAUCES
         KitchenCategory.INGREDIENTS -> KitchenArchiveSection.INGREDIENTS
         KitchenCategory.RECIPES -> KitchenArchiveSection.RECIPES
-        KitchenCategory.TECHNIQUES -> KitchenArchiveSection.TECHNIQUES
-        KitchenCategory.PRODUCTION_STANDARDS -> KitchenArchiveSection.PRODUCTION_STANDARDS
-        KitchenCategory.STORAGE_STANDARDS -> KitchenArchiveSection.STORAGE_STANDARDS
     }
 
 /** 菜谱分类在数据层保存为枚举名，展示时统一映射为中文。 */
