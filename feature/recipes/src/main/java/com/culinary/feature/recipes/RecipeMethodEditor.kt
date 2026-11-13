@@ -137,6 +137,6 @@ private fun StepImageEditor(
         onPick = pick,
         onClear = if (step.image != null || step.pendingImage != null) onClear else null,
         emptyLabel = "上传步骤图片",
-        aspectRatio = 16f / 10f,
+        aspectRatio = 4f / 3f,
     )
 }
