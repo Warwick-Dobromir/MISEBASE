@@ -84,7 +84,7 @@ internal fun RecipeMethodEditor(
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier =
                         Modifier
-                            .size(24.dp)
+                            .size(20.dp)
                             .clickable { onRemoveStep(step.key) }
                             .padding(2.dp),
                 )
@@ -131,7 +131,6 @@ private fun StepImageEditor(
     onClear: () -> Unit,
 ) {
     val pick = rememberRecipeImagePicker(onPicked)
-    Spacer(modifier = Modifier.height(CulinarySpacing.xs))
     ArchiveEditorImageBox(
         imageBytes = bytes,
         onPick = pick,
