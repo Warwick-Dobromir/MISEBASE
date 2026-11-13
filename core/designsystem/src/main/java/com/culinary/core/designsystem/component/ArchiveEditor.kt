@@ -518,6 +518,8 @@ fun ArchiveEditorImageBox(
     modifier: Modifier = Modifier,
     aspectRatio: Float = 16f / 9f,
     showActions: Boolean = true,
+    replaceLabel: String = "替换",
+    deleteLabel: String = "删除",
 ) {
     val bitmap = remember(imageBytes) { imageBytes?.toImageBitmapOrNull() }
     Box(
@@ -568,14 +570,14 @@ fun ArchiveEditorImageBox(
                 horizontalArrangement = Arrangement.spacedBy(CulinarySpacing.sm),
             ) {
                 Text(
-                    text = "替换",
+                    text = replaceLabel,
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier.clickable(onClick = onPick).padding(4.dp),
                 )
                 if (onClear != null) {
                     Text(
-                        text = "删除",
+                        text = deleteLabel,
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.error,
                         modifier = Modifier.clickable(onClick = onClear).padding(4.dp),

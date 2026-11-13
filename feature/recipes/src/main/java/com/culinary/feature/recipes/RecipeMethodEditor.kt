@@ -16,6 +16,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.culinary.core.designsystem.component.ArchiveEditorDragHandle
 import com.culinary.core.designsystem.component.ArchiveEditorImageBox
 import com.culinary.core.designsystem.component.ArchiveEditorInlineField
 import com.culinary.core.designsystem.component.ArchiveEditorSectionHeader
@@ -43,13 +44,13 @@ internal fun RecipeMethodEditor(
     onStepImage: (String, PendingRecipeImage) -> Unit,
     onClearStepImage: (String) -> Unit,
     onRemoveStep: (String) -> Unit,
+    onMoveStep: (Int, Int) -> Unit,
 ) {
     Column(modifier = Modifier.fillMaxWidth()) {
         ArchiveEditorSectionHeader(
             index = "02",
             english = "METHOD",
             title = "制作工艺",
-            subtitle = "${state.steps.size} 步 · 每步可独立设置制作时间",
         )
         state.steps.forEachIndexed { index, step ->
             CulinaryRule()
@@ -57,17 +58,23 @@ internal fun RecipeMethodEditor(
                 modifier = Modifier.fillMaxWidth().padding(top = CulinarySpacing.sm),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
+                ArchiveEditorDragHandle(
+                    onMove = { offset ->
+                        val target = index + offset
+                        if (target in state.steps.indices) onMoveStep(index, target)
+                    },
+                )
                 Text(
                     text = "%02d".format(index + 1),
                     style = CulinaryTextStyles.numeralS,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(horizontal = CulinarySpacing.xs),
                 )
-                Spacer(modifier = Modifier.width(CulinarySpacing.xs))
                 ArchiveEditorInlineField(
                     value = step.title,
                     onValueChange = { onStepTitleChange(step.key, it) },
                     placeholder = "步骤标题",
-                    textStyle = MaterialTheme.typography.bodyLarge,
+                    textStyle = MaterialTheme.typography.titleMedium,
                     modifier = Modifier.weight(1f),
                 )
                 Spacer(modifier = Modifier.width(CulinarySpacing.xs))
@@ -77,11 +84,18 @@ internal fun RecipeMethodEditor(
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier =
                         Modifier
-                            .size(24.dp)
+                            .size(20.dp)
                             .clickable { onRemoveStep(step.key) }
                             .padding(2.dp),
                 )
             }
+            Spacer(modifier = Modifier.height(CulinarySpacing.xs))
+            StepImageEditor(
+                step = step,
+                bytes = stepImageBytes[step.key],
+                onPicked = { onStepImage(step.key, it) },
+                onClear = { onClearStepImage(step.key) },
+            )
             Spacer(modifier = Modifier.height(CulinarySpacing.xs))
             ArchiveEditorInlineField(
                 value = step.body,
@@ -94,13 +108,7 @@ internal fun RecipeMethodEditor(
             KitchenTimeSegmentsField(
                 seconds = step.timeSeconds,
                 onSecondsChange = { onStepTimeChange(step.key, it) },
-                modifier = Modifier.padding(top = CulinarySpacing.sm),
-            )
-            StepImageEditor(
-                step = step,
-                bytes = stepImageBytes[step.key],
-                onPicked = { onStepImage(step.key, it) },
-                onClear = { onClearStepImage(step.key) },
+                modifier = Modifier.padding(top = CulinarySpacing.xs),
             )
             Spacer(modifier = Modifier.height(CulinarySpacing.sm))
         }
@@ -123,12 +131,11 @@ private fun StepImageEditor(
     onClear: () -> Unit,
 ) {
     val pick = rememberRecipeImagePicker(onPicked)
-    Spacer(modifier = Modifier.height(CulinarySpacing.xs))
     ArchiveEditorImageBox(
         imageBytes = bytes,
         onPick = pick,
         onClear = if (step.image != null || step.pendingImage != null) onClear else null,
         emptyLabel = "上传步骤图片",
-        aspectRatio = 16f / 10f,
+        aspectRatio = 4f / 3f,
     )
 }

@@ -1,5 +1,6 @@
 package com.culinary.feature.recipes
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -14,8 +15,9 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
@@ -24,10 +26,8 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
@@ -36,22 +36,19 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.culinary.core.designsystem.component.ArchiveEditorDragHandle
 import com.culinary.core.designsystem.component.ArchiveEditorImageBox
 import com.culinary.core.designsystem.component.ArchiveEditorInlineField
 import com.culinary.core.designsystem.component.ArchiveEditorNotesBox
 import com.culinary.core.designsystem.component.ArchiveEditorSectionHeader
 import com.culinary.core.designsystem.component.ArchiveEditorTopBar
+import com.culinary.core.designsystem.component.ConfirmDialog
 import com.culinary.core.designsystem.component.ArchiveProse
 import com.culinary.core.designsystem.component.ArchiveYieldRangeFields
-import com.culinary.core.designsystem.component.CulinaryButton
-import com.culinary.core.designsystem.component.CulinaryButtonVariant
 import com.culinary.core.designsystem.component.CulinaryRule
 import com.culinary.core.designsystem.component.CulinaryTextButton
-import com.culinary.core.designsystem.component.CulinaryTextField
 import com.culinary.core.designsystem.component.ErrorBanner
 import com.culinary.core.designsystem.component.LoadingRows
-import com.culinary.core.designsystem.component.StatusBadge
-import com.culinary.core.designsystem.component.StatusTone
 import com.culinary.core.designsystem.component.formatArchiveTimestamp
 import com.culinary.core.designsystem.icon.CulinaryIcons
 import com.culinary.core.designsystem.theme.CulinarySpacing
@@ -75,6 +72,7 @@ fun RecipeEditorRoute(
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     var picker by remember { mutableStateOf(EditorPicker.NONE) }
+    var lineUnitKey by remember { mutableStateOf<String?>(null) }
     val saved = state.savedRecipeId
 
     LaunchedEffect(saved) {
@@ -108,7 +106,13 @@ fun RecipeEditorRoute(
         onAddRelationSauce = { picker = EditorPicker.RELATION_SAUCE },
         onAddRelationRecipe = { picker = EditorPicker.RELATION_RECIPE },
         onRemoveRelation = viewModel::removeRelation,
+        onMoveRelation = viewModel::moveRelation,
         onLineAmountChange = viewModel::onLineAmountChange,
+        onOpenLineUnit = { key ->
+            lineUnitKey = key
+            picker = EditorPicker.LINE_UNIT
+        },
+        onMoveLine = viewModel::moveLine,
         onToggleOptional = viewModel::toggleOptional,
         onRemoveLine = viewModel::removeLine,
         onAddStep = viewModel::addStep,
@@ -118,6 +122,7 @@ fun RecipeEditorRoute(
         onStepImage = viewModel::setStepImage,
         onClearStepImage = viewModel::clearStepImage,
         onRemoveStep = viewModel::removeStep,
+        onMoveStep = viewModel::moveStep,
         onSave = viewModel::save,
         onCancel = onCancelled,
         onDismissError = viewModel::clearError,
@@ -127,6 +132,12 @@ fun RecipeEditorRoute(
     RecipeEditorDialogs(
         state = state,
         active = picker,
+        lineUnitKey = lineUnitKey,
+        onSelectLineUnit = { unit ->
+            lineUnitKey?.let { viewModel.onLineUnitChange(it, unit) }
+            lineUnitKey = null
+            picker = EditorPicker.NONE
+        },
         onSelectYieldUnit = {
             viewModel.onYieldUnitChange(it)
             picker = EditorPicker.NONE
@@ -171,6 +182,7 @@ private enum class EditorPicker {
     NONE,
     YIELD_UNIT,
     MIN_RANGE_UNIT,
+    LINE_UNIT,
     CATEGORY,
     ARCHIVE_CATEGORY,
     INGREDIENT,
@@ -184,6 +196,8 @@ private enum class EditorPicker {
 private fun RecipeEditorDialogs(
     state: RecipeEditorUiState,
     active: EditorPicker,
+    lineUnitKey: String?,
+    onSelectLineUnit: (UnitModel) -> Unit,
     onSelectYieldUnit: (UnitModel) -> Unit,
     onSelectMinRangeUnit: (UnitModel) -> Unit,
     onSelectCategory: (RecipeCategory) -> Unit,
@@ -210,6 +224,14 @@ private fun RecipeEditorDialogs(
                 units = state.units,
                 selectedId = state.minRangeUnit?.id?.value,
                 onSelect = onSelectMinRangeUnit,
+                onDismiss = onDismiss,
+            )
+
+        EditorPicker.LINE_UNIT ->
+            UnitPickerDialog(
+                units = state.units,
+                selectedId = state.lines.firstOrNull { it.key == lineUnitKey }?.unit?.id?.value,
+                onSelect = onSelectLineUnit,
                 onDismiss = onDismiss,
             )
 
@@ -293,7 +315,10 @@ private fun RecipeEditorScreen(
     onAddRelationSauce: () -> Unit,
     onAddRelationRecipe: () -> Unit,
     onRemoveRelation: (String) -> Unit,
+    onMoveRelation: (Int, Int) -> Unit,
     onLineAmountChange: (String, String) -> Unit,
+    onOpenLineUnit: (String) -> Unit,
+    onMoveLine: (Int, Int) -> Unit,
     onToggleOptional: (String) -> Unit,
     onRemoveLine: (String) -> Unit,
     onAddStep: () -> Unit,
@@ -303,11 +328,16 @@ private fun RecipeEditorScreen(
     onStepImage: (String, PendingRecipeImage) -> Unit,
     onClearStepImage: (String) -> Unit,
     onRemoveStep: (String) -> Unit,
+    onMoveStep: (Int, Int) -> Unit,
     onSave: () -> Unit,
     onCancel: () -> Unit,
     onDismissError: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    var showDiscard by remember { mutableStateOf(false) }
+    val imeVisible = WindowInsets.isImeVisible
+    BackHandler(enabled = state.isDirty && !imeVisible) { showDiscard = true }
+    BackHandler(enabled = !state.isDirty && !imeVisible) { onCancel() }
     Column(modifier = modifier.fillMaxSize()) {
         ArchiveEditorTopBar(
             title =
@@ -318,8 +348,8 @@ private fun RecipeEditorScreen(
                 },
             isSaving = state.isSaving,
             canSave = !state.isLoading && (state.isDirty || state.isNew),
-            onBack = onCancel,
-            onCancel = onCancel,
+            onBack = { if (state.isDirty) showDiscard = true else onCancel() },
+            onCancel = { if (state.isDirty) showDiscard = true else onCancel() },
             onSave = onSave,
         )
         state.error?.let { message ->
@@ -359,7 +389,10 @@ private fun RecipeEditorScreen(
                 onAddRelationSauce = onAddRelationSauce,
                 onAddRelationRecipe = onAddRelationRecipe,
                 onRemoveRelation = onRemoveRelation,
+                onMoveRelation = onMoveRelation,
                 onLineAmountChange = onLineAmountChange,
+                onOpenLineUnit = onOpenLineUnit,
+                onMoveLine = onMoveLine,
                 onToggleOptional = onToggleOptional,
                 onRemoveLine = onRemoveLine,
                 onAddStep = onAddStep,
@@ -369,8 +402,23 @@ private fun RecipeEditorScreen(
                 onStepImage = onStepImage,
                 onClearStepImage = onClearStepImage,
                 onRemoveStep = onRemoveStep,
+                onMoveStep = onMoveStep,
             )
         }
+    }
+    if (showDiscard) {
+        ConfirmDialog(
+            title = "放弃未保存的修改？",
+            message = "当前编辑内容尚未保存，离开后这些修改将丢失。",
+            confirmLabel = "放弃修改",
+            dismissLabel = "继续编辑",
+            onConfirm = {
+                showDiscard = false
+                onCancel()
+            },
+            onDismiss = { showDiscard = false },
+            destructive = true,
+        )
     }
 }
 
@@ -402,7 +450,10 @@ internal fun RecipeEditorForm(
     onAddRelationSauce: () -> Unit = {},
     onAddRelationRecipe: () -> Unit = {},
     onRemoveRelation: (String) -> Unit = {},
+    onMoveRelation: (Int, Int) -> Unit = { _, _ -> },
     onLineAmountChange: (String, String) -> Unit,
+    onOpenLineUnit: (String) -> Unit = {},
+    onMoveLine: (Int, Int) -> Unit = { _, _ -> },
     onToggleOptional: (String) -> Unit,
     onRemoveLine: (String) -> Unit,
     onAddStep: () -> Unit = {},
@@ -412,6 +463,7 @@ internal fun RecipeEditorForm(
     onStepImage: (String, PendingRecipeImage) -> Unit = { _, _ -> },
     onClearStepImage: (String) -> Unit = {},
     onRemoveStep: (String) -> Unit = {},
+    onMoveStep: (Int, Int) -> Unit = { _, _ -> },
 ) {
     Column(
         modifier =
@@ -428,9 +480,6 @@ internal fun RecipeEditorForm(
             onDescriptionChange = onDescriptionChange,
             onOpenCategoryPicker = onOpenCategoryPicker,
             onOpenArchiveCategoryPicker = onOpenArchiveCategoryPicker,
-        )
-        RecipeYieldRangeSection(
-            state = state,
             onYieldAmountChange = onYieldAmountChange,
             onOpenYieldUnit = onOpenYieldUnit,
             onMinRangeAmountChange = onMinRangeAmountChange,
@@ -448,6 +497,8 @@ internal fun RecipeEditorForm(
             onAddRecipe = onAddRecipe,
             onAddSauce = onAddSauce,
             onLineAmountChange = onLineAmountChange,
+            onOpenLineUnit = onOpenLineUnit,
+            onMoveLine = onMoveLine,
             onToggleOptional = onToggleOptional,
             onRemoveLine = onRemoveLine,
         )
@@ -464,6 +515,7 @@ internal fun RecipeEditorForm(
             onStepImage = onStepImage,
             onClearStepImage = onClearStepImage,
             onRemoveStep = onRemoveStep,
+            onMoveStep = onMoveStep,
         )
         RecipeApplicationSection(
             state = state,
@@ -477,6 +529,7 @@ internal fun RecipeEditorForm(
             onAddSauce = onAddRelationSauce,
             onAddRecipe = onAddRelationRecipe,
             onRemove = onRemoveRelation,
+            onMove = onMoveRelation,
         )
         RecipeNotesSection(
             state = state,
@@ -496,105 +549,112 @@ private fun RecipeBasics(
     onDescriptionChange: (String) -> Unit,
     onOpenCategoryPicker: () -> Unit,
     onOpenArchiveCategoryPicker: () -> Unit,
-) {
-    ArchiveEditorSectionHeader(
-        index = "",
-        english = "CLASSIFICATION",
-        title = "档案信息",
-        subtitle = if (state.isNew) "新菜谱默认保存并发布首版，之后编辑生成待发布修改。" else "修改保存为待发布版本，不覆盖当前正式版本。",
-        showRule = false,
-    )
-    ArchiveEditorInlineField(
-        value = state.englishName,
-        onValueChange = onEnglishNameChange,
-        placeholder = "English name",
-        textStyle = CulinaryTextStyles.pageTitle,
-        modifier = Modifier.fillMaxWidth(),
-    )
-    Spacer(modifier = Modifier.height(CulinarySpacing.xxs))
-    ArchiveEditorInlineField(
-        value = state.name,
-        onValueChange = onNameChange,
-        placeholder = "中文名称",
-        textStyle = MaterialTheme.typography.headlineSmall,
-        modifier = Modifier.fillMaxWidth(),
-    )
-    Spacer(modifier = Modifier.height(CulinarySpacing.xs))
-    ArchiveEditorInlineField(
-        value = state.description,
-        onValueChange = onDescriptionChange,
-        placeholder = "描述这道菜的风格、来源与用途……",
-        textStyle = MaterialTheme.typography.bodySmall,
-        singleLine = false,
-        minLines = 2,
-        modifier = Modifier.fillMaxWidth(),
-    )
-    Spacer(modifier = Modifier.height(CulinarySpacing.md))
-    val categoryPath =
-        state.categories
-            .firstOrNull { it.id == state.archiveCategoryId }
-            ?.pathLabel
-            .orEmpty()
-            .ifBlank { "未分类" }
-    Column(verticalArrangement = Arrangement.spacedBy(CulinarySpacing.xs)) {
-        CulinaryButton(
-            text =
-                stringResource(R.string.recipes_category_label) +
-                    "：" + recipeCategoryLabel(state.category),
-            onClick = onOpenCategoryPicker,
-            variant = CulinaryButtonVariant.Secondary,
-            icon = CulinaryIcons.ChevronDown,
-        )
-        CulinaryButton(
-            text = "分类归属：$categoryPath",
-            onClick = onOpenArchiveCategoryPicker,
-            variant = CulinaryButtonVariant.Secondary,
-            icon = CulinaryIcons.ChevronDown,
-        )
-    }
-}
-
-@Composable
-private fun RecipeYieldRangeSection(
-    state: RecipeEditorUiState,
     onYieldAmountChange: (String) -> Unit,
     onOpenYieldUnit: () -> Unit,
     onMinRangeAmountChange: (String) -> Unit,
     onOpenMinRangeUnit: () -> Unit,
     onServingsChange: (String) -> Unit,
 ) {
-    ArchiveEditorSectionHeader(
-        index = "",
-        english = "YIELD / MIN. RANGE",
-        title = "产量与制作范围",
-    )
-    ArchiveYieldRangeFields(
-        yieldAmount = state.yieldAmount,
-        yieldUnit = state.yieldUnit?.symbol.orEmpty(),
-        minRangeAmount = state.minRangeAmount,
-        minRangeUnit = state.minRangeUnit?.symbol.orEmpty(),
-        onYieldAmountChange = onYieldAmountChange,
-        onYieldUnitClick = onOpenYieldUnit,
-        onMinRangeAmountChange = onMinRangeAmountChange,
-        onMinRangeUnitClick = onOpenMinRangeUnit,
-    )
-    Spacer(modifier = Modifier.height(CulinarySpacing.md))
-    Row(verticalAlignment = Alignment.CenterVertically) {
+    val categoryPath = state.categories.firstOrNull { it.id == state.archiveCategoryId }
+        ?.pathLabel.orEmpty().ifBlank { "未分类" }
+    Column(modifier = Modifier.fillMaxWidth().padding(top = CulinarySpacing.lg)) {
         Text(
-            text = stringResource(R.string.recipes_servings_label),
-            style = MaterialTheme.typography.labelMedium,
+            text = "RECIPE · $categoryPath",
+            style = CulinaryTextStyles.eyebrow,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.weight(1f),
         )
+        Spacer(modifier = Modifier.height(CulinarySpacing.sm))
         ArchiveEditorInlineField(
-            value = state.servings,
-            onValueChange = onServingsChange,
-            placeholder = "1",
-            textStyle = CulinaryTextStyles.numeralS,
-            keyboardType = KeyboardType.Number,
-            textAlign = androidx.compose.ui.text.style.TextAlign.End,
-            modifier = Modifier.width(120.dp),
+            value = state.englishName,
+            onValueChange = onEnglishNameChange,
+            placeholder = "English name",
+            textStyle = CulinaryTextStyles.pageTitle,
+            modifier = Modifier.fillMaxWidth(),
         )
+        Spacer(modifier = Modifier.height(CulinarySpacing.xxs))
+        ArchiveEditorInlineField(
+            value = state.name,
+            onValueChange = onNameChange,
+            placeholder = "中文名称",
+            textStyle = MaterialTheme.typography.headlineSmall,
+            modifier = Modifier.fillMaxWidth(),
+        )
+        Spacer(modifier = Modifier.height(CulinarySpacing.xs))
+        ArchiveEditorInlineField(
+            value = state.description,
+            onValueChange = onDescriptionChange,
+            placeholder = "描述这道菜的风格、来源与用途……",
+            textStyle = MaterialTheme.typography.bodySmall,
+            singleLine = false,
+            minLines = 2,
+            modifier = Modifier.fillMaxWidth(),
+        )
+        Spacer(modifier = Modifier.height(CulinarySpacing.lg))
+        Text(
+            text = "CLASSIFICATION / 分类归属",
+            style = CulinaryTextStyles.eyebrow,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(vertical = CulinarySpacing.xs),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = "菜谱类型",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.weight(1f),
+            )
+            CulinaryTextButton(
+                text = recipeCategoryLabel(state.category),
+                onClick = onOpenCategoryPicker,
+            )
+        }
+        CulinaryRule()
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(vertical = CulinarySpacing.xs),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = "分类路径",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.weight(1f),
+            )
+            CulinaryTextButton(
+                text = categoryPath,
+                onClick = onOpenArchiveCategoryPicker,
+            )
+        }
+        Spacer(modifier = Modifier.height(CulinarySpacing.md))
+        ArchiveYieldRangeFields(
+            yieldAmount = state.yieldAmount,
+            yieldUnit = state.yieldUnit?.symbol.orEmpty(),
+            minRangeAmount = state.minRangeAmount,
+            minRangeUnit = state.minRangeUnit?.symbol.orEmpty(),
+            onYieldAmountChange = onYieldAmountChange,
+            onYieldUnitClick = onOpenYieldUnit,
+            onMinRangeAmountChange = onMinRangeAmountChange,
+            onMinRangeUnitClick = onOpenMinRangeUnit,
+        )
+        Spacer(modifier = Modifier.height(CulinarySpacing.md))
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                text = stringResource(R.string.recipes_servings_label),
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.weight(1f),
+            )
+            ArchiveEditorInlineField(
+                value = state.servings,
+                onValueChange = onServingsChange,
+                placeholder = "1",
+                textStyle = CulinaryTextStyles.numeralS,
+                keyboardType = KeyboardType.Number,
+                textAlign = androidx.compose.ui.text.style.TextAlign.End,
+                modifier = Modifier.width(120.dp),
+            )
+        }
     }
 }
 
@@ -604,21 +664,28 @@ private fun RecipeHeroSection(
     onPicked: (PendingRecipeImage) -> Unit,
     onClear: () -> Unit,
 ) {
-    ArchiveEditorSectionHeader(
-        index = "",
-        english = "HERO MEDIA",
-        title = "成品图片",
-    )
-    val pick = rememberRecipeImagePicker(onPicked)
-    val preview =
-        state.heroImagePending?.bytes
-            ?: state.heroImage?.let { state.imageBytes[it.id] }
-    ArchiveEditorImageBox(
-        imageBytes = preview,
-        onPick = pick,
-        onClear = if (state.heroImage != null || state.heroImagePending != null) onClear else null,
-        emptyLabel = "上传成品图片",
-    )
+    Column(modifier = Modifier.fillMaxWidth().padding(top = CulinarySpacing.xl)) {
+        Text(
+            text = "HERO MEDIA",
+            style = CulinaryTextStyles.eyebrow,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Spacer(modifier = Modifier.height(CulinarySpacing.xxs))
+        Text(
+            text = "成品图片",
+            style = CulinaryTextStyles.sectionTitle,
+            color = MaterialTheme.colorScheme.onSurface,
+        )
+        Spacer(modifier = Modifier.height(CulinarySpacing.sm))
+        val pick = rememberRecipeImagePicker(onPicked)
+        ArchiveEditorImageBox(
+            imageBytes = state.heroImagePending?.bytes
+                ?: state.heroImage?.let { state.imageBytes[it.id] },
+            onPick = pick,
+            onClear = if (state.heroImage != null || state.heroImagePending != null) onClear else null,
+            emptyLabel = "上传成品图片",
+        )
+    }
 }
 
 @Composable
@@ -628,6 +695,8 @@ private fun RecipeComponentsEditor(
     onAddRecipe: () -> Unit,
     onAddSauce: () -> Unit,
     onLineAmountChange: (String, String) -> Unit,
+    onOpenLineUnit: (String) -> Unit,
+    onMoveLine: (Int, Int) -> Unit,
     onToggleOptional: (String) -> Unit,
     onRemoveLine: (String) -> Unit,
 ) {
@@ -635,12 +704,17 @@ private fun RecipeComponentsEditor(
         index = "01",
         english = "INGREDIENTS",
         title = stringResource(R.string.recipes_ingredients_title),
-        subtitle = stringResource(R.string.recipes_components, state.lines.size),
+        subtitle = "基础配方",
     )
-    state.lines.forEach { line ->
+    state.lines.forEachIndexed { index, line ->
         RecipeLineRowEditor(
             line = line,
             onAmountChange = { onLineAmountChange(line.key, it) },
+            onUnitClick = { onOpenLineUnit(line.key) },
+            onMove = { direction ->
+                val target = index + direction
+                if (target in state.lines.indices) onMoveLine(index, target)
+            },
             onToggleOptional = { onToggleOptional(line.key) },
             onRemove = { onRemoveLine(line.key) },
         )
@@ -654,40 +728,32 @@ private fun RecipeComponentsEditor(
     }
     Row(
         modifier = Modifier.padding(top = CulinarySpacing.xs),
-        horizontalArrangement = Arrangement.spacedBy(CulinarySpacing.xs),
+        horizontalArrangement = Arrangement.spacedBy(CulinarySpacing.md),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        CulinaryButton(
-            text = stringResource(R.string.recipes_add_ingredient),
-            onClick = onAddIngredient,
-            variant = CulinaryButtonVariant.Secondary,
-            icon = CulinaryIcons.Add,
-        )
-        CulinaryButton(
-            text = stringResource(R.string.recipes_add_recipe),
-            onClick = onAddRecipe,
-            variant = CulinaryButtonVariant.Secondary,
-            icon = CulinaryIcons.Add,
-        )
+        CulinaryTextButton(text = "+ 食材", onClick = onAddIngredient)
+        CulinaryTextButton(text = "+ 子菜谱", onClick = onAddRecipe)
+        CulinaryTextButton(text = "+ 酱汁", onClick = onAddSauce)
     }
-    CulinaryButton(
-        text = stringResource(R.string.recipes_add_sauce),
-        onClick = onAddSauce,
-        variant = CulinaryButtonVariant.Secondary,
-        icon = CulinaryIcons.Add,
-        modifier = Modifier.padding(top = CulinarySpacing.xs),
-    )
 }
 
 @Composable
 private fun RecipeLineRowEditor(
     line: RecipeLineEditor,
     onAmountChange: (String) -> Unit,
+    onUnitClick: () -> Unit,
+    onMove: (Int) -> Unit,
     onToggleOptional: () -> Unit,
     onRemove: () -> Unit,
 ) {
-    Column(modifier = Modifier.fillMaxWidth().padding(vertical = CulinarySpacing.sm)) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Column(modifier = Modifier.weight(1f)) {
+    Column(modifier = Modifier.fillMaxWidth()) {
+        CulinaryRule()
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(vertical = CulinarySpacing.sm),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            ArchiveEditorDragHandle(onMove = onMove)
+            Column(modifier = Modifier.weight(1f).padding(start = CulinarySpacing.xs)) {
                 Text(
                     text = line.name,
                     style = MaterialTheme.typography.bodyLarge,
@@ -695,39 +761,45 @@ private fun RecipeLineRowEditor(
                 )
                 Text(
                     text = recipeLineKindLabel(line),
-                    style = MaterialTheme.typography.labelSmall,
+                    style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
-            CulinaryTextField(
-                value = line.amount,
-                onValueChange = onAmountChange,
-                label = { Text(text = stringResource(R.string.recipes_amount)) },
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                trailingIcon = { Text(text = line.unit.symbol) },
-                fillWidth = false,
-                modifier = Modifier.width(132.dp),
-            )
-            CulinaryTextButton(
-                text = stringResource(R.string.recipes_remove_line),
-                onClick = onRemove,
+            Column(horizontalAlignment = Alignment.End) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    ArchiveEditorInlineField(
+                        value = line.amount,
+                        onValueChange = onAmountChange,
+                        placeholder = "0",
+                        textStyle = CulinaryTextStyles.numeralS,
+                        textAlign = androidx.compose.ui.text.style.TextAlign.End,
+                        keyboardType = KeyboardType.Decimal,
+                        modifier = Modifier.width(58.dp),
+                    )
+                    Text(
+                        text = line.unit.symbol,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier
+                            .clickable(onClick = onUnitClick)
+                            .padding(start = 4.dp, end = 4.dp, top = 8.dp, bottom = 8.dp),
+                    )
+                }
+                Text(
+                    text = stringResource(R.string.recipes_optional),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = if (line.isOptional) MaterialTheme.colorScheme.secondary
+                    else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                    modifier = Modifier.clickable(onClick = onToggleOptional).padding(4.dp),
+                )
+            }
+            Icon(
+                imageVector = CulinaryIcons.Close,
+                contentDescription = stringResource(R.string.recipes_remove_line),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(20.dp).clickable(onClick = onRemove).padding(2.dp),
             )
         }
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            StatusBadge(
-                text =
-                    stringResource(
-                        if (line.isOptional) R.string.recipes_optional_on else R.string.recipes_optional_off,
-                    ),
-                tone = if (line.isOptional) StatusTone.Warning else StatusTone.Neutral,
-            )
-            CulinaryTextButton(
-                text = stringResource(R.string.recipes_optional),
-                onClick = onToggleOptional,
-            )
-        }
-        CulinaryRule()
     }
 }
 
@@ -820,6 +892,7 @@ private fun RecipeRelationsSection(
     onAddSauce: () -> Unit,
     onAddRecipe: () -> Unit,
     onRemove: (String) -> Unit,
+    onMove: (Int, Int) -> Unit,
 ) {
     ArchiveEditorSectionHeader(
         index = "04",
@@ -833,11 +906,18 @@ private fun RecipeRelationsSection(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     } else {
-        state.relations.forEach { relation ->
+        state.relations.forEachIndexed { index, relation ->
             Row(
                 modifier = Modifier.fillMaxWidth().padding(vertical = CulinarySpacing.xs),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
+                ArchiveEditorDragHandle(
+                    onMove = { offset ->
+                        val target = index + offset
+                        if (target in state.relations.indices) onMove(index, target)
+                    },
+                )
+                Spacer(modifier = Modifier.width(CulinarySpacing.xs))
                 Text(
                     text = relation.name,
                     style = MaterialTheme.typography.bodyLarge,
@@ -888,7 +968,10 @@ private fun RecipeNotesSection(
     val noteImages = state.noteImages.mapNotNull { it to state.imageBytes[it.id] } +
         state.noteImagesPending.map { null to it.bytes }
     if (noteImages.isNotEmpty()) {
-        Row(horizontalArrangement = Arrangement.spacedBy(CulinarySpacing.xs)) {
+        Row(
+            modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(CulinarySpacing.sm),
+        ) {
             noteImages.forEachIndexed { index, (_, bytes) ->
                 if (bytes != null) {
                     RecipeNoteThumbnail(
@@ -927,7 +1010,7 @@ private fun RecipeNoteThumbnail(
             bitmap = bitmap.asImageBitmap(),
             contentDescription = null,
             contentScale = androidx.compose.ui.layout.ContentScale.Crop,
-            modifier = Modifier.size(96.dp),
+            modifier = Modifier.size(88.dp),
         )
         Icon(
             imageVector = CulinaryIcons.Close,

@@ -1,5 +1,11 @@
 package com.culinary.feature.sauces
 
+import com.culinary.core.designsystem.component.ArchiveEditorDragHandle
+import com.culinary.core.designsystem.component.ArchiveEditorImageBox
+import com.culinary.core.designsystem.component.ArchiveEditorInlineField
+import com.culinary.core.designsystem.component.ArchiveEditorNotesBox
+import com.culinary.core.designsystem.component.ArchiveEditorSectionHeader
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
@@ -57,7 +63,7 @@ internal fun SauceHeaderSection(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Spacer(modifier = Modifier.height(CulinarySpacing.sm))
-        EditorInlineField(
+        ArchiveEditorInlineField(
             value = state.englishName,
             onValueChange = actions.onEnglishNameChange,
             placeholder = "Beurre Blanc",
@@ -65,7 +71,7 @@ internal fun SauceHeaderSection(
             modifier = Modifier.fillMaxWidth(),
         )
         Spacer(modifier = Modifier.height(CulinarySpacing.xxs))
-        EditorInlineField(
+        ArchiveEditorInlineField(
             value = state.name,
             onValueChange = actions.onNameChange,
             placeholder = "中文名称",
@@ -73,7 +79,7 @@ internal fun SauceHeaderSection(
             modifier = Modifier.fillMaxWidth(),
         )
         Spacer(modifier = Modifier.height(CulinarySpacing.xs))
-        EditorInlineField(
+        ArchiveEditorInlineField(
             value = state.description,
             onValueChange = actions.onDescriptionChange,
             placeholder = "描述这款酱汁的风格与用途……",
@@ -220,7 +226,7 @@ internal fun SauceHeroSection(
         )
         Spacer(modifier = Modifier.height(CulinarySpacing.sm))
         val pick = rememberSauceImagePicker { actions.onHeroPicked(it) }
-        EditorImageBox(
+        ArchiveEditorImageBox(
             imageBytes = state.heroImagePending?.bytes ?: state.heroImage?.let { state.imageBytes[it.id] },
             onPick = pick,
             onClear =
@@ -230,9 +236,11 @@ internal fun SauceHeroSection(
                     null
                 },
             emptyLabel = stringResource(R.string.sauces_hero_upload),
+            replaceLabel = stringResource(R.string.sauces_image_replace),
+            deleteLabel = stringResource(R.string.sauces_image_delete),
         )
         Spacer(modifier = Modifier.height(CulinarySpacing.xs))
-        EditorInlineField(
+        ArchiveEditorInlineField(
             value = state.heroCaption,
             onValueChange = actions.onHeroCaptionChange,
             placeholder = stringResource(R.string.sauces_hero_caption_hint),
@@ -248,7 +256,7 @@ internal fun SauceIngredientsSection(
     actions: SauceEditorActions,
 ) {
     var showPicker by remember { mutableStateOf(false) }
-    SauceSectionHeader(
+    ArchiveEditorSectionHeader(
         index = "01",
         english = "INGREDIENTS",
         title = stringResource(R.string.sauces_editor_ingredients),
@@ -309,7 +317,7 @@ private fun SauceIngredientRow(
             modifier = Modifier.fillMaxWidth().padding(vertical = CulinarySpacing.sm),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            DragHandle(onMove = onMove)
+            ArchiveEditorDragHandle(onMove = onMove)
             Column(modifier = Modifier.weight(1f).padding(start = CulinarySpacing.xs)) {
                 if (line.isReadOnly) {
                     Text(
@@ -323,14 +331,14 @@ private fun SauceIngredientRow(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 } else {
-                    EditorInlineField(
+                    ArchiveEditorInlineField(
                         value = line.name,
                         onValueChange = onNameChange,
                         placeholder = stringResource(R.string.sauces_editor_ingredient_name),
                         textStyle = MaterialTheme.typography.bodyLarge,
                         modifier = Modifier.fillMaxWidth(),
                     )
-                    EditorInlineField(
+                    ArchiveEditorInlineField(
                         value = line.nameEn,
                         onValueChange = onNameEnChange,
                         placeholder = "English name",
@@ -341,7 +349,7 @@ private fun SauceIngredientRow(
             }
             Column(horizontalAlignment = Alignment.End) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    EditorInlineField(
+                    ArchiveEditorInlineField(
                         value = line.amount,
                         onValueChange = onAmountChange,
                         placeholder = "0",
@@ -387,7 +395,7 @@ internal fun SauceMethodSection(
     state: SauceEditorUiState,
     actions: SauceEditorActions,
 ) {
-    SauceSectionHeader(
+    ArchiveEditorSectionHeader(
         index = "02",
         english = "METHOD",
         title = stringResource(R.string.sauces_editor_method),
@@ -441,14 +449,14 @@ private fun SauceStepRow(
             modifier = Modifier.fillMaxWidth().padding(top = CulinarySpacing.sm),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            DragHandle(onMove = onMove)
+            ArchiveEditorDragHandle(onMove = onMove)
             Text(
                 text = "%02d".format(index + 1),
                 style = CulinaryTextStyles.numeralS,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(horizontal = CulinarySpacing.xs),
             )
-            EditorInlineField(
+            ArchiveEditorInlineField(
                 value = step.title,
                 onValueChange = onTitleChange,
                 placeholder = stringResource(R.string.sauces_editor_step_title),
@@ -463,15 +471,17 @@ private fun SauceStepRow(
             )
         }
         Spacer(modifier = Modifier.height(CulinarySpacing.xs))
-        EditorImageBox(
+        ArchiveEditorImageBox(
             imageBytes = imageBytes,
             onPick = pick,
             onClear = if (imageBytes != null) onClearImage else null,
             emptyLabel = stringResource(R.string.sauces_step_upload),
+            replaceLabel = stringResource(R.string.sauces_image_replace),
+            deleteLabel = stringResource(R.string.sauces_image_delete),
             aspectRatio = 4f / 3f,
         )
         Spacer(modifier = Modifier.height(CulinarySpacing.xs))
-        EditorInlineField(
+        ArchiveEditorInlineField(
             value = step.body,
             onValueChange = onBodyChange,
             placeholder = stringResource(R.string.sauces_editor_step_body),
@@ -494,12 +504,12 @@ internal fun SauceApplicationSection(
     state: SauceEditorUiState,
     actions: SauceEditorActions,
 ) {
-    SauceSectionHeader(
+    ArchiveEditorSectionHeader(
         index = "03",
         english = "APPLICATION",
         title = stringResource(R.string.sauces_application),
     )
-    EditorInlineField(
+    ArchiveEditorInlineField(
         value = state.application,
         onValueChange = actions.onApplicationChange,
         placeholder = stringResource(R.string.sauces_application_hint),
@@ -517,7 +527,7 @@ internal fun SauceRelationsSection(
     actions: SauceEditorActions,
 ) {
     var showPicker by remember { mutableStateOf(false) }
-    SauceSectionHeader(
+    ArchiveEditorSectionHeader(
         index = "04",
         english = "RELATED SAUCES",
         title = stringResource(R.string.sauces_relations_title),
@@ -527,7 +537,7 @@ internal fun SauceRelationsSection(
             modifier = Modifier.fillMaxWidth().padding(vertical = CulinarySpacing.xs),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            DragHandle(onMove = { delta -> actions.onMoveRelation(index, index + delta) })
+            ArchiveEditorDragHandle(onMove = { delta -> actions.onMoveRelation(index, index + delta) })
             Column(
                 modifier =
                     Modifier
@@ -602,7 +612,7 @@ internal fun SauceNotesSection(
     state: SauceEditorUiState,
     actions: SauceEditorActions,
 ) {
-    SauceSectionHeader(
+    ArchiveEditorSectionHeader(
         index = "05",
         english = "NOTES",
         title = stringResource(R.string.sauces_notes),
@@ -613,7 +623,7 @@ internal fun SauceNotesSection(
         color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
     Spacer(modifier = Modifier.height(CulinarySpacing.sm))
-    NotesField(
+    ArchiveEditorNotesBox(
         value = state.notes,
         onValueChange = actions.onNotesChange,
         placeholder = stringResource(R.string.sauces_notes_placeholder),

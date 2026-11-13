@@ -2,23 +2,23 @@ pluginManagement {
     // 约定插件以 included build 形式提供（R01 §4.1）。
     includeBuild("build-logic")
     repositories {
-        // 镜像优先、官方回退（R02 §6.3）。镜像只解决可达性，不降低版本校验。
+        // 官方仓库优先，镜像作为回退；避免镜像缺失插件标记时阻断后续仓库解析。
+        gradlePluginPortal()
+        mavenCentral()
+        google()
         maven("https://maven.aliyun.com/repository/google")
         maven("https://maven.aliyun.com/repository/gradle-plugin")
         maven("https://maven.aliyun.com/repository/public")
-        gradlePluginPortal()
-        google()
-        mavenCentral()
     }
 }
 
 dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
     repositories {
+        mavenCentral()
+        google()
         maven("https://maven.aliyun.com/repository/google")
         maven("https://maven.aliyun.com/repository/public")
-        google()
-        mavenCentral()
     }
 }
 
