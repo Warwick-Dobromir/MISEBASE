@@ -58,7 +58,6 @@ fun ArchiveLibraryRoute(
     section: KitchenArchiveSection,
     onAdd: () -> Unit,
     onOpenEntry: (KitchenArchiveEntry) -> Unit,
-    onCreateCategory: (String?, String) -> Unit = { _, _ -> },
     onBack: () -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: ArchiveLibraryViewModel = hiltViewModel(),
@@ -82,7 +81,7 @@ internal fun ArchiveLibraryScreen(
     state: ArchiveLibraryUiState,
     onAdd: () -> Unit,
     onOpenEntry: (KitchenArchiveEntry) -> Unit,
-    onCreateCategory: (String?, String) -> Unit,
+    onCreateCategory: (String?, String) -> Unit = { _, _ -> },
     onBack: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
@@ -198,6 +197,7 @@ internal fun ArchiveLibraryScreen(
                     onLoadMore = { visibleLimit += 20 },
                     onOpenEntry = onOpenEntry,
                     onAdd = onAdd,
+                    modifier = Modifier.weight(1f),
                 )
             }
             return@Column
@@ -605,6 +605,7 @@ private fun LegacyFlatList(
     onLoadMore: () -> Unit,
     onOpenEntry: (KitchenArchiveEntry) -> Unit,
     onAdd: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     if (entries.isEmpty()) {
         EmptyState(
@@ -613,10 +614,11 @@ private fun LegacyFlatList(
             description = stringResource(R.string.kitchen_directory_empty_body),
             actionLabel = stringResource(R.string.kitchen_directory_add),
             onAction = onAdd,
+            modifier = modifier,
         )
         return
     }
-    LazyColumn(modifier = Modifier.fillMaxSize()) {
+    LazyColumn(modifier = modifier.fillMaxSize()) {
         items(entries.take(limit), key = { it.id }) { entry ->
             EntryRow(entry = entry, onClick = { onOpenEntry(entry) })
         }
