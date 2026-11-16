@@ -28,6 +28,9 @@ interface RecipeRepository {
 
     suspend fun save(recipe: Recipe): Outcome<RecipeId>
 
+    /** 归档档案；保留版本、组成行和图片。 */
+    suspend fun archive(id: RecipeId): Outcome<Unit>
+
     suspend fun saveDraft(version: RecipeVersion): RecipeVersionId
 
     /**
