@@ -104,7 +104,7 @@ internal fun IngredientEditorForm(
     state: IngredientEditorUiState,
     onNameChange: (String) -> Unit,
     onCategoryChange: (String) -> Unit,
-    onCategorySelect: (Int, String?) -> Unit,
+    onCategorySelect: (Int, String?) -> Unit = { _, _ -> },
     onDescriptionChange: (String) -> Unit,
     onEnglishNameChange: (String) -> Unit,
     onExampleProductsChange: (String) -> Unit,
