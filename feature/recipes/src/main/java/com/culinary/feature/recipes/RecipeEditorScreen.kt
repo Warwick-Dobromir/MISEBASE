@@ -512,8 +512,7 @@ internal fun RecipeEditorForm(
             Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = CulinarySpacing.pageHorizontal)
-                .padding(bottom = CulinarySpacing.xl),
+                .padding(horizontal = CulinarySpacing.pageHorizontal),
     ) {
         RecipeBasics(
             state = state,
@@ -843,14 +842,23 @@ private fun RecipeComponentsEditor(
             modifier = Modifier.padding(vertical = CulinarySpacing.sm),
         )
     }
-    Row(
-        modifier = Modifier.padding(top = CulinarySpacing.xs),
-        horizontalArrangement = Arrangement.spacedBy(CulinarySpacing.md),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        CulinaryTextButton(text = "+ 食材", onClick = onAddIngredient)
-        CulinaryTextButton(text = "+ 子菜谱", onClick = onAddRecipe)
-        CulinaryTextButton(text = "+ 酱汁", onClick = onAddSauce)
+    var showAddMenu by remember { mutableStateOf(false) }
+    Box(modifier = Modifier.padding(top = CulinarySpacing.xxs)) {
+        CulinaryTextButton(text = "＋ 添加组成项", onClick = { showAddMenu = true })
+        DropdownMenu(expanded = showAddMenu, onDismissRequest = { showAddMenu = false }) {
+            DropdownMenuItem(
+                text = { Text("食材") },
+                onClick = { showAddMenu = false; onAddIngredient() },
+            )
+            DropdownMenuItem(
+                text = { Text("子菜谱") },
+                onClick = { showAddMenu = false; onAddRecipe() },
+            )
+            DropdownMenuItem(
+                text = { Text("酱汁") },
+                onClick = { showAddMenu = false; onAddSauce() },
+            )
+        }
     }
 }
 
@@ -1067,12 +1075,19 @@ private fun RecipeRelationsSection(
             modifier = Modifier.padding(vertical = CulinarySpacing.sm),
         )
     }
-    Row(
-        modifier = Modifier.padding(top = CulinarySpacing.xs),
-        horizontalArrangement = Arrangement.spacedBy(CulinarySpacing.md),
-    ) {
-        CulinaryTextButton(text = "+ 关联酱汁", onClick = onAddSauce)
-        CulinaryTextButton(text = "+ 关联菜谱", onClick = onAddRecipe)
+    var showAddMenu by remember { mutableStateOf(false) }
+    Box(modifier = Modifier.padding(top = CulinarySpacing.xxs)) {
+        CulinaryTextButton(text = "＋ 添加关联", onClick = { showAddMenu = true })
+        DropdownMenu(expanded = showAddMenu, onDismissRequest = { showAddMenu = false }) {
+            DropdownMenuItem(
+                text = { Text("关联酱汁") },
+                onClick = { showAddMenu = false; onAddSauce() },
+            )
+            DropdownMenuItem(
+                text = { Text("关联菜谱") },
+                onClick = { showAddMenu = false; onAddRecipe() },
+            )
+        }
     }
 }
 
