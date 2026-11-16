@@ -98,6 +98,20 @@ class RecipeRepositoryImpl
                 Outcome.failure(DbErrorMapper.map(e))
             }
 
+        override suspend fun archive(id: RecipeId): Outcome<Unit> =
+            try {
+                val changed = recipeDao.archive(id.value, clock.now().toEpochMilli())
+                if (changed == 0) {
+                    Outcome.failure(CulinaryError.NotFound(entity = "recipe", id = id.value))
+                } else {
+                    Outcome.success(Unit)
+                }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Throwable) {
+                Outcome.failure(DbErrorMapper.map(e))
+            }
+
         override suspend fun saveDraft(version: RecipeVersion): RecipeVersionId {
             val now = clock.now().toEpochMilli()
             val existing = versionDao.findById(version.id.value)
