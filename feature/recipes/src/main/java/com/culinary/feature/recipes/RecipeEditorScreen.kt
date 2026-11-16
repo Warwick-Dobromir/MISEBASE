@@ -1247,7 +1247,7 @@ private fun UnitPickerDialog(
 ) {
     PickerDialog(
         title = stringResource(R.string.recipes_unit_picker_title),
-        items = units.map { "${it.name}（${it.symbol}）" to (it.id.value == selectedId) },
+        items = units.map { PickerItem(label = "${it.name}（${it.symbol}）", selected = it.id.value == selectedId) },
         onSelect = { index -> onSelect(units[index]) },
         onDismiss = onDismiss,
         cancelLabel = stringResource(R.string.recipes_cancel),
@@ -1262,7 +1262,7 @@ private fun IngredientPickerDialog(
 ) {
     PickerDialog(
         title = stringResource(R.string.recipes_ingredient_picker_title),
-        items = ingredients.map { it.name to false },
+        items = ingredients.map { PickerItem(label = it.name, subtitle = it.englishName) },
         onSelect = { index -> onSelect(ingredients[index]) },
         onDismiss = onDismiss,
         cancelLabel = stringResource(R.string.recipes_cancel),
@@ -1286,7 +1286,7 @@ private fun RecipePickerDialog(
                     } else {
                         option.recipe.name + " · v" + version.versionNo
                     }
-                label to false
+                PickerItem(label = label, subtitle = option.recipe.englishName)
             },
         onSelect = { index -> onSelect(options[index]) },
         onDismiss = onDismiss,
@@ -1311,7 +1311,7 @@ private fun SaucePickerDialog(
                     } else {
                         option.sauce.name + " · v" + version.versionNo
                     }
-                label to false
+                PickerItem(label = label, subtitle = option.sauce.englishName)
             },
         onSelect = { index -> onSelect(options[index]) },
         onDismiss = onDismiss,
@@ -1334,7 +1334,7 @@ private fun CapacityPickerDialog(
     val current = selected.trim().uppercase()
     PickerDialog(
         title = stringResource(R.string.recipes_minimum_capacity),
-        items = options.map { (value, label) -> label to (value == current) },
+        items = options.map { (value, label) -> PickerItem(label = label, selected = value == current) },
         onSelect = { index -> onSelect(options[index].first) },
         onDismiss = onDismiss,
         cancelLabel = stringResource(R.string.recipes_cancel),
@@ -1351,7 +1351,7 @@ private fun ArchiveCategoryPickerDialog(
     val options = categories.filterNot { it.isTest }.sortedBy { it.pathLabel }
     PickerDialog(
         title = "选择分类归属",
-        items = options.map { it.pathLabel to (it.id == selectedId) },
+        items = options.map { PickerItem(label = it.pathLabel, selected = it.id == selectedId) },
         onSelect = { index -> onSelect(options[index].id) },
         onDismiss = onDismiss,
         cancelLabel = stringResource(R.string.recipes_cancel),
@@ -1367,18 +1367,24 @@ private fun CategoryPickerDialog(
     val categories = RecipeCategory.entries
     PickerDialog(
         title = stringResource(R.string.recipes_category_picker_title),
-        items = categories.map { recipeCategoryLabel(it) to (it == selected) },
+        items = categories.map { PickerItem(label = recipeCategoryLabel(it), selected = it == selected) },
         onSelect = { index -> onSelect(categories[index]) },
         onDismiss = onDismiss,
         cancelLabel = stringResource(R.string.recipes_cancel),
     )
 }
 
-/** 统一的选择弹窗：细线列表 + 选中对勾 + 文字取消。 */
+private data class PickerItem(
+    val label: String,
+    val subtitle: String? = null,
+    val selected: Boolean = false,
+)
+
+/** 统一的选择弹窗：细线列表 + 双行档案名称 + 选中对勾 + 文字取消。 */
 @Composable
 private fun PickerDialog(
     title: String,
-    items: List<Pair<String, Boolean>>,
+    items: List<PickerItem>,
     onSelect: (Int) -> Unit,
     onDismiss: () -> Unit,
     cancelLabel: String,
@@ -1391,7 +1397,7 @@ private fun PickerDialog(
                 Text(text = stringResource(R.string.recipes_picker_empty))
             } else {
                 Column(modifier = Modifier.heightIn(max = 420.dp).verticalScroll(rememberScrollState())) {
-                    items.forEachIndexed { index, (label, selected) ->
+                    items.forEachIndexed { index, item ->
                         Row(
                             modifier =
                                 Modifier
@@ -1400,13 +1406,21 @@ private fun PickerDialog(
                                     .padding(vertical = CulinarySpacing.sm),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
-                            Text(
-                                text = label,
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = MaterialTheme.colorScheme.onSurface,
-                                modifier = Modifier.weight(1f),
-                            )
-                            if (selected) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = item.label,
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                )
+                                item.subtitle?.takeIf { it.isNotBlank() }?.let { subtitle ->
+                                    Text(
+                                        text = subtitle,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                }
+                            }
+                            if (item.selected) {
                                 Icon(
                                     imageVector = CulinaryIcons.Check,
                                     contentDescription = null,
