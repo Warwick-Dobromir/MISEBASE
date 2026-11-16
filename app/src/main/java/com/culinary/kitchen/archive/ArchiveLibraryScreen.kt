@@ -6,7 +6,6 @@ import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -158,14 +157,21 @@ internal fun ArchiveLibraryScreen(
         }
         CulinaryRule()
         state.categoryError?.let { message ->
-            ErrorBanner(message = message, modifier = Modifier.padding(horizontal = CulinarySpacing.pageHorizontal))
+            ErrorBanner(
+                message = message,
+                modifier = Modifier.padding(horizontal = CulinarySpacing.pageHorizontal),
+            )
         }
         state.categoryMessage?.let { message ->
             Text(
                 text = message,
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.secondary,
-                modifier = Modifier.padding(horizontal = CulinarySpacing.pageHorizontal, vertical = CulinarySpacing.xxs),
+                modifier =
+                    Modifier.padding(
+                        horizontal = CulinarySpacing.pageHorizontal,
+                        vertical = CulinarySpacing.xxs,
+                    ),
             )
         }
         if (state.isLoading) {
@@ -224,7 +230,10 @@ internal fun ArchiveLibraryScreen(
                     CategoryRow(
                         category = category,
                         onClick = { currentCategoryId = category.id },
-                        onAddChild = { newSubcategoryParentId = category.id; newSubcategoryName = "" },
+                        onAddChild = {
+                            newSubcategoryParentId = category.id
+                            newSubcategoryName = ""
+                        },
                     )
                 }
             }
