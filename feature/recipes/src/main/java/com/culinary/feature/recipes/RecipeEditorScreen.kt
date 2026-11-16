@@ -323,7 +323,7 @@ private fun RecipeEditorScreen(
     onRemoveNoteImage: (Int) -> Unit,
     onOpenCategoryPicker: () -> Unit,
     onOpenArchiveCategoryPicker: () -> Unit,
-    onArchiveCategorySelect: (String) -> Unit,
+    onArchiveCategorySelect: (String?) -> Unit,
     onYieldAmountChange: (String) -> Unit,
     onOpenYieldUnit: () -> Unit,
     onMinRangeAmountChange: (String) -> Unit,
@@ -397,7 +397,7 @@ private fun RecipeEditorScreen(
                 onNoteImage = onNoteImage,
                 onRemoveNoteImage = onRemoveNoteImage,
                 onOpenArchiveCategoryPicker = onOpenArchiveCategoryPicker,
-            onArchiveCategorySelect = onArchiveCategorySelect,
+                onArchiveCategorySelect = onArchiveCategorySelect,
                 onCuisineChange = onCuisineChange,
                 onPrepMinutesChange = onPrepMinutesChange,
                 onCookMinutesChange = onCookMinutesChange,
@@ -433,8 +433,8 @@ private fun RecipeEditorScreen(
     }
     if (showDiscard) {
         ConfirmDialog(
-            title = "放弃未保存的修改？",
-            message = "当前编辑内容尚未保存，离开后这些修改将丢失。",
+            title = "放弃未保存修改？",
+            message = "当前编辑内容尚未保存，离开后这些修改会丢失。",
             confirmLabel = "放弃修改",
             dismissLabel = "继续编辑",
             onConfirm = {
@@ -447,9 +447,9 @@ private fun RecipeEditorScreen(
     }
     if (showArchive) {
         ConfirmDialog(
-            title = "归档菜谱？",
-            message = "归档后菜谱将从正常列表中移出，历史版本与关联记录会保留。",
-            confirmLabel = "归档",
+            title = "删除此菜谱档案？",
+            message = "档案将被归档，不再出现在新建引用中；历史版本、图片和关联关系保留。",
+            confirmLabel = "归档档案",
             dismissLabel = "取消",
             onConfirm = {
                 showArchive = false
@@ -476,7 +476,7 @@ internal fun RecipeEditorForm(
     onNoteImage: (PendingRecipeImage) -> Unit = {},
     onRemoveNoteImage: (Int) -> Unit = {},
     onOpenArchiveCategoryPicker: () -> Unit = {},
-    onArchiveCategorySelect: (String) -> Unit = {},
+    onArchiveCategorySelect: (String?) -> Unit = {},
     onCuisineChange: (String) -> Unit = {},
     onPrepMinutesChange: (String) -> Unit = {},
     onCookMinutesChange: (String) -> Unit = {},
@@ -512,8 +512,7 @@ internal fun RecipeEditorForm(
             Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = CulinarySpacing.pageHorizontal)
-                .padding(bottom = CulinarySpacing.xl),
+                .padding(horizontal = CulinarySpacing.pageHorizontal),
     ) {
         RecipeBasics(
             state = state,
@@ -582,6 +581,7 @@ internal fun RecipeEditorForm(
             onRemoveNoteImage = onRemoveNoteImage,
         )
         RecipeEditorFooter(state, onArchive = onArchive)
+        Spacer(modifier = Modifier.height(CulinarySpacing.spacious))
     }
 }
 
@@ -593,7 +593,7 @@ private fun RecipeBasics(
     onDescriptionChange: (String) -> Unit,
     onOpenCategoryPicker: () -> Unit,
     onOpenArchiveCategoryPicker: () -> Unit,
-    onArchiveCategorySelect: (String) -> Unit,
+    onArchiveCategorySelect: (String?) -> Unit,
     onYieldAmountChange: (String) -> Unit,
     onOpenYieldUnit: () -> Unit,
     onMinRangeAmountChange: (String) -> Unit,
@@ -656,7 +656,7 @@ private fun RecipeBasics(
 private fun RecipeClassificationSelector(
     state: RecipeEditorUiState,
     onOpenRecipeType: () -> Unit,
-    onSelectCategory: (String) -> Unit,
+    onSelectCategory: (String?) -> Unit,
 ) {
     val path = buildList {
         var current = state.categories.firstOrNull { it.id == state.archiveCategoryId }
@@ -718,7 +718,7 @@ private fun RecipeCategoryLevelField(
     level: Int,
     selectedId: String?,
     options: List<ArchiveCategory>,
-    onSelect: (String) -> Unit,
+    onSelect: (String?) -> Unit,
 ) {
     var expanded by remember { mutableStateOf(false) }
     val selected = options.firstOrNull { it.id == selectedId }
@@ -746,7 +746,7 @@ private fun RecipeCategoryLevelField(
                         text = "清除",
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.clickable { onSelect(selected.parentId ?: "") },
+                        modifier = Modifier.clickable { onSelect(selected.parentId) },
                     )
                 }
                 Icon(
@@ -843,14 +843,32 @@ private fun RecipeComponentsEditor(
             modifier = Modifier.padding(vertical = CulinarySpacing.sm),
         )
     }
-    Row(
-        modifier = Modifier.padding(top = CulinarySpacing.xs),
-        horizontalArrangement = Arrangement.spacedBy(CulinarySpacing.md),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        CulinaryTextButton(text = "+ 食材", onClick = onAddIngredient)
-        CulinaryTextButton(text = "+ 子菜谱", onClick = onAddRecipe)
-        CulinaryTextButton(text = "+ 酱汁", onClick = onAddSauce)
+    var showAddMenu by remember { mutableStateOf(false) }
+    Box(modifier = Modifier.padding(top = CulinarySpacing.xxs)) {
+        CulinaryTextButton(text = "＋ 添加组成项", onClick = { showAddMenu = true })
+        DropdownMenu(expanded = showAddMenu, onDismissRequest = { showAddMenu = false }) {
+            DropdownMenuItem(
+                text = { Text("食材") },
+                onClick = {
+                    showAddMenu = false
+                    onAddIngredient()
+                },
+            )
+            DropdownMenuItem(
+                text = { Text("子菜谱") },
+                onClick = {
+                    showAddMenu = false
+                    onAddRecipe()
+                },
+            )
+            DropdownMenuItem(
+                text = { Text("酱汁") },
+                onClick = {
+                    showAddMenu = false
+                    onAddSauce()
+                },
+            )
+        }
     }
 }
 
@@ -1067,12 +1085,19 @@ private fun RecipeRelationsSection(
             modifier = Modifier.padding(vertical = CulinarySpacing.sm),
         )
     }
-    Row(
-        modifier = Modifier.padding(top = CulinarySpacing.xs),
-        horizontalArrangement = Arrangement.spacedBy(CulinarySpacing.md),
-    ) {
-        CulinaryTextButton(text = "+ 关联酱汁", onClick = onAddSauce)
-        CulinaryTextButton(text = "+ 关联菜谱", onClick = onAddRecipe)
+    var showAddMenu by remember { mutableStateOf(false) }
+    Box(modifier = Modifier.padding(top = CulinarySpacing.xxs)) {
+        CulinaryTextButton(text = "＋ 添加关联", onClick = { showAddMenu = true })
+        DropdownMenu(expanded = showAddMenu, onDismissRequest = { showAddMenu = false }) {
+            DropdownMenuItem(
+                text = { Text("关联酱汁") },
+                onClick = { showAddMenu = false; onAddSauce() },
+            )
+            DropdownMenuItem(
+                text = { Text("关联菜谱") },
+                onClick = { showAddMenu = false; onAddRecipe() },
+            )
+        }
     }
 }
 
@@ -1100,13 +1125,21 @@ private fun RecipeNotesSection(
         onValueChange = onNotesChange,
         placeholder = "记录研发说明、实验结论与调整记录……",
     )
+    Spacer(modifier = Modifier.height(CulinarySpacing.xs))
     val pickNoteImage = rememberRecipeImagePicker(onNoteImage)
-    Spacer(modifier = Modifier.height(CulinarySpacing.sm))
+    Row(horizontalArrangement = Arrangement.spacedBy(CulinarySpacing.md)) {
+        CulinaryTextButton(text = "添加文本", onClick = onAddTextNote)
+        CulinaryTextButton(text = "+ 上传研发照片", onClick = pickNoteImage)
+    }
     val noteImages = state.noteImagesPending.map { null to it.bytes } +
         state.noteImages.mapNotNull { it to state.imageBytes[it.id] }
     if (noteImages.isNotEmpty()) {
         Row(
-            modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState())
+                    .padding(top = CulinarySpacing.xs),
             horizontalArrangement = Arrangement.spacedBy(CulinarySpacing.sm),
         ) {
             noteImages.forEachIndexed { index, (_, bytes) ->
@@ -1118,11 +1151,6 @@ private fun RecipeNotesSection(
                 }
             }
         }
-        Spacer(modifier = Modifier.height(CulinarySpacing.xs))
-    }
-    Row(horizontalArrangement = Arrangement.spacedBy(CulinarySpacing.md)) {
-        CulinaryTextButton(text = "添加文本", onClick = onAddTextNote)
-        CulinaryTextButton(text = "+ 上传研发照片", onClick = pickNoteImage)
     }
     state.seedNote.takeIf { it.isNotBlank() }?.let { seed ->
         Spacer(modifier = Modifier.height(CulinarySpacing.sm))
@@ -1200,7 +1228,7 @@ private fun RecipeEditorFooter(
             )
             if (state.recipeId != null) {
                 Text(
-                    text = "删除归档",
+                    text = "删除此菜谱档案",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.error.copy(alpha = 0.72f),
                     modifier = Modifier.clickable(onClick = onArchive).padding(4.dp),
@@ -1219,7 +1247,13 @@ private fun UnitPickerDialog(
 ) {
     PickerDialog(
         title = stringResource(R.string.recipes_unit_picker_title),
-        items = units.map { "${it.name}（${it.symbol}）" to (it.id.value == selectedId) },
+        items =
+            units.map { unit ->
+                PickerItem(
+                    label = "${unit.name}（${unit.symbol}）",
+                    selected = unit.id.value == selectedId,
+                )
+            },
         onSelect = { index -> onSelect(units[index]) },
         onDismiss = onDismiss,
         cancelLabel = stringResource(R.string.recipes_cancel),
@@ -1234,7 +1268,7 @@ private fun IngredientPickerDialog(
 ) {
     PickerDialog(
         title = stringResource(R.string.recipes_ingredient_picker_title),
-        items = ingredients.map { it.name to false },
+        items = ingredients.map { PickerItem(label = it.name, subtitle = it.englishName) },
         onSelect = { index -> onSelect(ingredients[index]) },
         onDismiss = onDismiss,
         cancelLabel = stringResource(R.string.recipes_cancel),
@@ -1258,7 +1292,7 @@ private fun RecipePickerDialog(
                     } else {
                         option.recipe.name + " · v" + version.versionNo
                     }
-                label to false
+                PickerItem(label = label, subtitle = option.recipe.englishName)
             },
         onSelect = { index -> onSelect(options[index]) },
         onDismiss = onDismiss,
@@ -1283,7 +1317,7 @@ private fun SaucePickerDialog(
                     } else {
                         option.sauce.name + " · v" + version.versionNo
                     }
-                label to false
+                PickerItem(label = label, subtitle = option.sauce.englishName)
             },
         onSelect = { index -> onSelect(options[index]) },
         onDismiss = onDismiss,
@@ -1306,7 +1340,10 @@ private fun CapacityPickerDialog(
     val current = selected.trim().uppercase()
     PickerDialog(
         title = stringResource(R.string.recipes_minimum_capacity),
-        items = options.map { (value, label) -> label to (value == current) },
+        items =
+            options.map { (value, label) ->
+                PickerItem(label = label, selected = value == current)
+            },
         onSelect = { index -> onSelect(options[index].first) },
         onDismiss = onDismiss,
         cancelLabel = stringResource(R.string.recipes_cancel),
@@ -1323,7 +1360,10 @@ private fun ArchiveCategoryPickerDialog(
     val options = categories.filterNot { it.isTest }.sortedBy { it.pathLabel }
     PickerDialog(
         title = "选择分类归属",
-        items = options.map { it.pathLabel to (it.id == selectedId) },
+        items =
+            options.map { category ->
+                PickerItem(label = category.pathLabel, selected = category.id == selectedId)
+            },
         onSelect = { index -> onSelect(options[index].id) },
         onDismiss = onDismiss,
         cancelLabel = stringResource(R.string.recipes_cancel),
@@ -1339,38 +1379,45 @@ private fun CategoryPickerDialog(
     val categories = RecipeCategory.entries
     PickerDialog(
         title = stringResource(R.string.recipes_category_picker_title),
-        items = categories.map { recipeCategoryLabel(it) to (it == selected) },
+        items =
+            categories.map { category ->
+                PickerItem(label = recipeCategoryLabel(category), selected = category == selected)
+            },
         onSelect = { index -> onSelect(categories[index]) },
         onDismiss = onDismiss,
         cancelLabel = stringResource(R.string.recipes_cancel),
     )
 }
 
-/** 统一的选择弹窗：细线列表 + 选中对勾 + 文字取消。 */
+private data class PickerItem(
+    val label: String,
+    val subtitle: String? = null,
+    val selected: Boolean = false,
+)
+
+/** 统一的选择弹窗：细线列表 + 双行档案名称 + 选中对勾 + 文字取消。 */
 @Composable
 private fun PickerDialog(
     title: String,
-    items: List<Pair<String, Boolean>>,
+    items: List<PickerItem>,
     onSelect: (Int) -> Unit,
     onDismiss: () -> Unit,
     cancelLabel: String,
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        shape = MaterialTheme.shapes.large,
-        containerColor = MaterialTheme.colorScheme.surface,
-        title = {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.headlineSmall,
-            )
-        },
+        title = { Text(text = title) },
         text = {
             if (items.isEmpty()) {
                 Text(text = stringResource(R.string.recipes_picker_empty))
             } else {
-                Column(modifier = Modifier.heightIn(max = 420.dp).verticalScroll(rememberScrollState())) {
-                    items.forEachIndexed { index, (label, selected) ->
+                Column(
+                    modifier =
+                        Modifier
+                            .heightIn(max = 420.dp)
+                            .verticalScroll(rememberScrollState()),
+                ) {
+                    items.forEachIndexed { index, item ->
                         Row(
                             modifier =
                                 Modifier
@@ -1379,17 +1426,25 @@ private fun PickerDialog(
                                     .padding(vertical = CulinarySpacing.sm),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
-                            Text(
-                                text = label,
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = MaterialTheme.colorScheme.onSurface,
-                                modifier = Modifier.weight(1f),
-                            )
-                            if (selected) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = item.label,
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                )
+                                item.subtitle?.takeIf { it.isNotBlank() }?.let { subtitle ->
+                                    Text(
+                                        text = subtitle,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                }
+                            }
+                            if (item.selected) {
                                 Icon(
                                     imageVector = CulinaryIcons.Check,
                                     contentDescription = null,
-                                    modifier = Modifier.size(20.dp),
+                                    modifier = Modifier.size(18.dp),
                                     tint = MaterialTheme.colorScheme.secondary,
                                 )
                             }
@@ -1401,10 +1456,7 @@ private fun PickerDialog(
         },
         confirmButton = {
             TextButton(onClick = onDismiss) {
-                Text(
-                    text = cancelLabel,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+                Text(text = cancelLabel)
             }
         },
     )

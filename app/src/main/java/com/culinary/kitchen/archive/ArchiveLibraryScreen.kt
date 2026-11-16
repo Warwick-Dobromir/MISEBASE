@@ -81,7 +81,7 @@ internal fun ArchiveLibraryScreen(
     onAdd: () -> Unit,
     onOpenEntry: (KitchenArchiveEntry) -> Unit,
     onBack: () -> Unit = {},
-    onCreateSubcategory: (String, String) -> Unit = { _, _ -> },
+    onCreateSubcategory: (String?, String) -> Unit = { _, _ -> },
     modifier: Modifier = Modifier,
 ) {
     var currentCategoryId by rememberSaveable(section) { mutableStateOf<String?>(null) }
@@ -89,6 +89,7 @@ internal fun ArchiveLibraryScreen(
     var query by rememberSaveable(section) { mutableStateOf("") }
     var visibleLimit by rememberSaveable(section) { mutableIntStateOf(20) }
     var newSubcategoryParentId by rememberSaveable(section) { mutableStateOf<String?>(null) }
+    var showNewSubcategoryDialog by rememberSaveable(section) { mutableStateOf(false) }
     var newSubcategoryName by rememberSaveable(section) { mutableStateOf("") }
 
     val categories = state.categories
@@ -194,17 +195,6 @@ internal fun ArchiveLibraryScreen(
             )
             return@Column
         }
-        if (categories.isEmpty()) {
-            LegacyFlatList(
-                entries = entries,
-                limit = visibleLimit,
-                onLoadMore = { visibleLimit += 20 },
-                onOpenEntry = onOpenEntry,
-                onAdd = onAdd,
-            )
-            return@Column
-        }
-
         LazyColumn(modifier = Modifier.fillMaxSize()) {
             item {
                 ArchiveContextHeader(
@@ -219,11 +209,10 @@ internal fun ArchiveLibraryScreen(
                     childCount = children.size,
                     directCount = directEntries.size,
                     onAdd = if (!showingSearch && currentCategoryId == null) onAdd else null,
-                    onCreateSubcategory = currentCategory?.let { category ->
-                        {
-                            newSubcategoryParentId = category.id
-                            newSubcategoryName = ""
-                        }
+                    onCreateSubcategory = {
+                        newSubcategoryParentId = currentCategory?.id
+                        newSubcategoryName = ""
+                        showNewSubcategoryDialog = true
                     },
                     onBack = {
                         if (currentCategory == null) onBack() else currentCategoryId = currentCategory.parentId
@@ -239,6 +228,7 @@ internal fun ArchiveLibraryScreen(
                         onAddChild = {
                             newSubcategoryParentId = category.id
                             newSubcategoryName = ""
+                            showNewSubcategoryDialog = true
                         },
                     )
                 }
@@ -252,6 +242,7 @@ internal fun ArchiveLibraryScreen(
                         onAddChild = {
                             newSubcategoryParentId = category.id
                             newSubcategoryName = ""
+                            showNewSubcategoryDialog = true
                         },
                     )
                 }
@@ -294,14 +285,17 @@ internal fun ArchiveLibraryScreen(
     }
 
     val parentForDialog = categories.firstOrNull { it.id == newSubcategoryParentId }
-    if (parentForDialog != null) {
+    if (showNewSubcategoryDialog) {
         AlertDialog(
-            onDismissRequest = { newSubcategoryParentId = null },
+            onDismissRequest = { showNewSubcategoryDialog = false },
             title = { Text("新建子库") },
             text = {
                 Column {
                     Text(
-                        text = "所属分类：${categoryPath(parentForDialog, categories).joinToString(" / ")}",
+                        text =
+                            parentForDialog?.let { parent ->
+                                "所属分类：${categoryPath(parent, categories).joinToString(" / ")}"
+                            } ?: "所属资料库：${section.title()}",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -317,14 +311,20 @@ internal fun ArchiveLibraryScreen(
             confirmButton = {
                 TextButton(
                     onClick = {
-                        onCreateSubcategory(parentForDialog.id, newSubcategoryName)
+                        onCreateSubcategory(newSubcategoryParentId, newSubcategoryName)
                         newSubcategoryParentId = null
+                        showNewSubcategoryDialog = false
                     },
                     enabled = newSubcategoryName.isNotBlank(),
                 ) { Text("创建") }
             },
             dismissButton = {
-                TextButton(onClick = { newSubcategoryParentId = null }) { Text("取消") }
+                TextButton(
+                    onClick = {
+                        newSubcategoryParentId = null
+                        showNewSubcategoryDialog = false
+                    },
+                ) { Text("取消") }
             },
         )
     }

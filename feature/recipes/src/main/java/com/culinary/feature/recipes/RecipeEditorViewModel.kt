@@ -312,7 +312,7 @@ class RecipeEditorViewModel
                 state.copy(notes = "${state.notes}$separator· ")
             }
 
-        fun onArchiveCategorySelect(categoryId: String) = mutateArchive { it.copy(archiveCategoryId = categoryId) }
+        fun onArchiveCategorySelect(categoryId: String?) = mutateArchive { it.copy(archiveCategoryId = categoryId) }
 
         fun addSauceRelation(option: SauceOption) {
             mutateArchive { state ->

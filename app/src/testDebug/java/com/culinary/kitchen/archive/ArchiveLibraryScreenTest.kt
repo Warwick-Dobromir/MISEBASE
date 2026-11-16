@@ -76,6 +76,82 @@ class ArchiveLibraryScreenTest {
     }
 
     @Test
+    fun `library root can create its first subcategory without creating a root category editor`() {
+        var createdParent: String? = "not-called"
+        var createdName = ""
+        show(
+            categories = emptyList(),
+            onCreateSubcategory = { parentId, name ->
+                createdParent = parentId
+                createdName = name
+            },
+        )
+
+        compose.onNodeWithText("＋ 新建子库").performClick()
+        compose.onNodeWithText("所属资料库：酱汁库").assertIsDisplayed()
+        compose.onNode(hasSetTextAction()).performTextInput("基础酱汁")
+        compose.onNodeWithText("创建").performClick()
+
+        assertThat(createdParent).isNull()
+        assertThat(createdName).isEqualTo("基础酱汁")
+    }
+
+    @Test
+    fun `ingredient library root can create its first subcategory`() {
+        var createdParent: String? = "not-called"
+        show(
+            section = KitchenArchiveSection.INGREDIENTS,
+            categories = emptyList(),
+            onCreateSubcategory = { parentId, _ -> createdParent = parentId },
+        )
+
+        compose.onNodeWithText("＋ 新建子库").performClick()
+        compose.onNodeWithText("所属资料库：食材库").assertIsDisplayed()
+        compose.onNode(hasSetTextAction()).performTextInput("乳制品与蛋类")
+        compose.onNodeWithText("创建").performClick()
+
+        assertThat(createdParent).isNull()
+    }
+
+    @Test
+    fun `recipe library root can create its first subcategory`() {
+        var createdParent: String? = "not-called"
+        show(
+            section = KitchenArchiveSection.RECIPES,
+            categories = emptyList(),
+            onCreateSubcategory = { parentId, _ -> createdParent = parentId },
+        )
+
+        compose.onNodeWithText("＋ 新建子库").performClick()
+        compose.onNodeWithText("所属资料库：菜谱库").assertIsDisplayed()
+        compose.onNode(hasSetTextAction()).performTextInput("主菜")
+        compose.onNodeWithText("创建").performClick()
+
+        assertThat(createdParent).isNull()
+    }
+
+    @Test
+    fun `nested subcategory can create another level under the selected parent`() {
+        var createdParent: String? = null
+        var createdName = ""
+        show(
+            onCreateSubcategory = { parentId, name ->
+                createdParent = parentId
+                createdName = name
+            },
+        )
+
+        compose.onNodeWithText("酱汁基础").performClick()
+        compose.onNodeWithText("＋ 新建子库").performClick()
+        compose.onNodeWithText("所属分类：酱汁基础").assertIsDisplayed()
+        compose.onNode(hasSetTextAction()).performTextInput("冷酱")
+        compose.onNodeWithText("创建").performClick()
+
+        assertThat(createdParent).isEqualTo("base")
+        assertThat(createdName).isEqualTo("冷酱")
+    }
+
+    @Test
     fun `library search shows result with category path and is isolated to section`() {
         show()
 
@@ -86,16 +162,20 @@ class ArchiveLibraryScreenTest {
     }
 
     private fun show(
+        section: KitchenArchiveSection = KitchenArchiveSection.SAUCES,
+        categories: List<KitchenArchiveCategory> = this.categories,
         onAdd: () -> Unit = {},
         onOpenEntry: (KitchenArchiveEntry) -> Unit = {},
+        onCreateSubcategory: (String?, String) -> Unit = { _, _ -> },
     ) {
         compose.setContent {
             CulinaryTheme {
                 ArchiveLibraryScreen(
-                    section = KitchenArchiveSection.SAUCES,
+                    section = section,
                     state = ArchiveLibraryUiState(entries = entries, categories = categories, isLoading = false),
                     onAdd = onAdd,
                     onOpenEntry = onOpenEntry,
+                    onCreateSubcategory = onCreateSubcategory,
                 )
             }
         }

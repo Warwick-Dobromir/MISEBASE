@@ -48,9 +48,9 @@ class ArchiveLibraryViewModel
             KitchenArchiveSection.fromRoute(savedStateHandle.get<String>(LIBRARY_TAB_ARG))
                 ?: KitchenArchiveSection.SAUCES
 
-        /** 在当前库的指定分类下新建子库；不允许在厨房母界面创建根库。 */
+        /** 在当前资料库根目录或指定分类下新建子库；厨房首页不提供分类编辑入口。 */
         fun createSubcategory(
-            parentId: String,
+            parentId: String?,
             name: String,
         ) {
             val trimmed = name.trim()

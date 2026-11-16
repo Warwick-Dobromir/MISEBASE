@@ -81,6 +81,7 @@ fun RecipeDetailRoute(
         onEdit = onEdit,
         onPublish = viewModel::publish,
         onRetry = viewModel::load,
+        onDismissError = viewModel::clearError,
         onOpenRelation = onOpenRelation,
         onBack = onBack,
         onStartTimer = onStartTimer,
@@ -95,6 +96,7 @@ private fun RecipeDetailScreen(
     onEdit: (String) -> Unit,
     onPublish: (RecipeVersionId) -> Unit,
     onRetry: () -> Unit,
+    onDismissError: () -> Unit,
     onOpenRelation: (KitchenRecordKind, String) -> Unit,
     modifier: Modifier = Modifier,
     onBack: () -> Unit = {},
@@ -126,6 +128,7 @@ private fun RecipeDetailScreen(
                     state = state,
                     onEdit = onEdit,
                     onPublish = onPublish,
+                    onDismissError = onDismissError,
                     onOpenRelation = onOpenRelation,
                     onBack = onBack,
                     onStartTimer = onStartTimer,
@@ -141,6 +144,7 @@ internal fun RecipeDetailContent(
     state: RecipeDetailUiState,
     onEdit: (String) -> Unit,
     onPublish: (RecipeVersionId) -> Unit,
+    onDismissError: () -> Unit,
     onOpenRelation: (KitchenRecordKind, String) -> Unit,
     onBack: () -> Unit = {},
     onStartTimer: (Int) -> Unit = {},
@@ -274,7 +278,7 @@ internal fun RecipeDetailContent(
             } else {
                 ArchiveProse(application)
             }
-            Spacer(modifier = Modifier.height(CulinarySpacing.lg))
+            Spacer(modifier = Modifier.height(CulinarySpacing.xl))
 
             ArchiveModuleHeader(number = "04", english = "RELATED RECORDS", chinese = "关联档案")
             if (state.relations.isEmpty()) {
@@ -319,7 +323,7 @@ internal fun RecipeDetailContent(
                 Spacer(modifier = Modifier.height(CulinarySpacing.sm))
                 Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     Text(
-                        text = "待发布修改 v" + latestDraft.versionNo,
+                        text = "待发布修改",
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.weight(1f),
@@ -331,7 +335,10 @@ internal fun RecipeDetailContent(
                             } else {
                                 stringResource(R.string.recipes_publish, latestDraft.versionNo)
                             },
-                        onClick = { onPublish(latestDraft.id) },
+                        onClick = {
+                            onDismissError()
+                            onPublish(latestDraft.id)
+                        },
                     )
                 }
                 Spacer(modifier = Modifier.height(CulinarySpacing.lg))
