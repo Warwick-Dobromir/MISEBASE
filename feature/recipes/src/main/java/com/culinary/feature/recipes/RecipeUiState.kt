@@ -132,6 +132,7 @@ data class RecipeEditorUiState(
     val isSaving: Boolean = false,
     val error: String? = null,
     val savedRecipeId: String? = null,
+    val archived: Boolean = false,
     val editingVersionNo: Int? = null,
     /** 已存在的未发布草稿；再次保存时更新它，避免重复创建草稿。 */
     val editingDraftId: String? = null,
