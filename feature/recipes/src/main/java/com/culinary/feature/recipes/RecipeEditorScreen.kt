@@ -814,6 +814,8 @@ private fun RecipeHeroSection(
             onPick = pick,
             onClear = if (state.heroImage != null || state.heroImagePending != null) onClear else null,
             emptyLabel = "上传成品图片",
+            replaceLabel = "替换图片",
+            deleteLabel = "删除图片",
         )
     }
 }
@@ -1101,6 +1103,12 @@ private fun RecipeNotesSection(
         english = "NOTES",
         title = stringResource(R.string.recipes_notes),
     )
+    Text(
+        text = "记录研发说明、实验结论与调整记录……",
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
+    Spacer(modifier = Modifier.height(CulinarySpacing.sm))
     ArchiveEditorNotesBox(
         value = state.notes,
         onValueChange = onNotesChange,
@@ -1108,8 +1116,8 @@ private fun RecipeNotesSection(
     )
     val pickNoteImage = rememberRecipeImagePicker(onNoteImage)
     Spacer(modifier = Modifier.height(CulinarySpacing.sm))
-    val noteImages = state.noteImages.mapNotNull { it to state.imageBytes[it.id] } +
-        state.noteImagesPending.map { null to it.bytes }
+    val noteImages = state.noteImagesPending.map { null to it.bytes } +
+        state.noteImages.mapNotNull { it to state.imageBytes[it.id] }
     if (noteImages.isNotEmpty()) {
         Row(
             modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
