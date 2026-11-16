@@ -1385,14 +1385,7 @@ private fun PickerDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        shape = MaterialTheme.shapes.large,
-        containerColor = MaterialTheme.colorScheme.surface,
-        title = {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.headlineSmall,
-            )
-        },
+        title = { Text(text = title) },
         text = {
             if (items.isEmpty()) {
                 Text(text = stringResource(R.string.recipes_picker_empty))
@@ -1429,10 +1422,7 @@ private fun PickerDialog(
         },
         confirmButton = {
             TextButton(onClick = onDismiss) {
-                Text(
-                    text = cancelLabel,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+                Text(text = cancelLabel)
             }
         },
     )
