@@ -114,12 +114,13 @@ internal fun RecipeMethodEditor(
         }
         if (state.steps.isEmpty()) {
             Text(
-                text = "暂未添加制作步骤",
+                text = "还没有制作步骤，点击下方添加。",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(vertical = CulinarySpacing.sm),
             )
         }
-        CulinaryTextButton(text = "+ 添加步骤", onClick = onAddStep)
+        CulinaryTextButton(text = "+ 添加新步骤", onClick = onAddStep)
     }
 }
 
@@ -135,7 +136,9 @@ private fun StepImageEditor(
         imageBytes = bytes,
         onPick = pick,
         onClear = if (step.image != null || step.pendingImage != null) onClear else null,
-        emptyLabel = "上传步骤图片",
+        emptyLabel = "上传步骤图",
+        replaceLabel = "替换",
+        deleteLabel = "删除",
         aspectRatio = 4f / 3f,
     )
 }
