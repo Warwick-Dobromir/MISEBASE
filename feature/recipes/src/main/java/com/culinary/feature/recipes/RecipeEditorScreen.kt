@@ -772,6 +772,8 @@ private fun RecipeHeroSection(
             onPick = pick,
             onClear = if (state.heroImage != null || state.heroImagePending != null) onClear else null,
             emptyLabel = "上传成品图片",
+            replaceLabel = "替换",
+            deleteLabel = "删除",
         )
     }
 }
@@ -810,8 +812,9 @@ private fun RecipeComponentsEditor(
     if (state.lines.isEmpty()) {
         Text(
             text = "暂未添加食材",
-            style = MaterialTheme.typography.bodyMedium,
+            style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(vertical = CulinarySpacing.sm),
         )
     }
     var showAddComponentOptions by remember { mutableStateOf(false) }
@@ -1098,7 +1101,7 @@ private fun RecipeNotesSection(
         title = stringResource(R.string.recipes_notes),
     )
     Text(
-        text = "记录研发说明、实验结论与调整记录。",
+        text = "记录个人调整、失败原因、风味变化及实际测试结果。",
         style = MaterialTheme.typography.bodySmall,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
@@ -1106,7 +1109,7 @@ private fun RecipeNotesSection(
     ArchiveEditorNotesBox(
         value = state.notes,
         onValueChange = onNotesChange,
-        placeholder = "记录研发说明、实验结论与调整记录……",
+        placeholder = "记录本次研发的观察与结论……",
     )
     Spacer(modifier = Modifier.height(CulinarySpacing.xs))
     val pickNoteImage = rememberRecipeImagePicker(onNoteImage)
