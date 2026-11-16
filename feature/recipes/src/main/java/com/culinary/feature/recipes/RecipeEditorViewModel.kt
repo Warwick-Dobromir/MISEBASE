@@ -308,7 +308,7 @@ class RecipeEditorViewModel
 
         fun addTextNote() =
             mutateArchive { state ->
-                val separator = if (state.notes.isBlank()) "" else "\\n"
+                val separator = if (state.notes.isBlank()) "" else "\n"
                 state.copy(notes = "${state.notes}$separator· ")
             }
 
