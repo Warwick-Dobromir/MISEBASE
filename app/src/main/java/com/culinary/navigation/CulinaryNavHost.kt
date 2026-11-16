@@ -516,7 +516,10 @@ private fun NavGraphBuilder.recipeGraph(navController: NavHostController) {
         )
     }
     composable(RecipesRoutes.EDIT) {
-        RecipeEditorRoute(onSaved = { navController.popBackStack() })
+        RecipeEditorRoute(
+            onSaved = { navController.popBackStack() },
+            onOpenRelation = navController::openKitchenRelated,
+        )
     }
 }
 
