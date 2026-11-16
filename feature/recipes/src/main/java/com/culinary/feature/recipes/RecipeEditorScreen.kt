@@ -433,8 +433,8 @@ private fun RecipeEditorScreen(
     }
     if (showDiscard) {
         ConfirmDialog(
-            title = "放弃未保存的修改？",
-            message = "当前编辑内容尚未保存，离开后这些修改将丢失。",
+            title = "放弃未保存修改？",
+            message = "当前编辑内容尚未保存，离开后这些修改会丢失。",
             confirmLabel = "放弃修改",
             dismissLabel = "继续编辑",
             onConfirm = {
@@ -447,9 +447,9 @@ private fun RecipeEditorScreen(
     }
     if (showArchive) {
         ConfirmDialog(
-            title = "归档菜谱？",
-            message = "归档后菜谱将从正常列表中移出，历史版本与关联记录会保留。",
-            confirmLabel = "归档",
+            title = "删除此菜谱档案？",
+            message = "档案将被归档，不再出现在新建引用中；历史版本、图片和关联关系保留。",
+            confirmLabel = "归档档案",
             dismissLabel = "取消",
             onConfirm = {
                 showArchive = false
