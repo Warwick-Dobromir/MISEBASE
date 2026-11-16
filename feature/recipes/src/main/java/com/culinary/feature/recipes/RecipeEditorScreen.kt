@@ -92,6 +92,7 @@ fun RecipeEditorRoute(
         onEnglishNameChange = viewModel::onEnglishNameChange,
         onDescriptionChange = viewModel::onDescriptionChange,
         onNotesChange = viewModel::onNotesChange,
+        onAddTextNote = viewModel::addTextNote,
         onHeroPicked = viewModel::setHeroImage,
         onHeroClear = viewModel::clearHeroImage,
         onNoteImage = viewModel::addNoteImage,
@@ -303,6 +304,7 @@ private fun RecipeEditorScreen(
     onEnglishNameChange: (String) -> Unit,
     onDescriptionChange: (String) -> Unit,
     onNotesChange: (String) -> Unit,
+    onAddTextNote: () -> Unit = {},
     onCuisineChange: (String) -> Unit,
     onPrepMinutesChange: (String) -> Unit,
     onCookMinutesChange: (String) -> Unit,
@@ -378,6 +380,7 @@ private fun RecipeEditorScreen(
                 onEnglishNameChange = onEnglishNameChange,
                 onDescriptionChange = onDescriptionChange,
                 onNotesChange = onNotesChange,
+                onAddTextNote = onAddTextNote,
                 onHeroPicked = onHeroPicked,
                 onHeroClear = onHeroClear,
                 onNoteImage = onNoteImage,
@@ -441,6 +444,7 @@ internal fun RecipeEditorForm(
     onEnglishNameChange: (String) -> Unit = {},
     onDescriptionChange: (String) -> Unit = {},
     onNotesChange: (String) -> Unit = {},
+    onAddTextNote: () -> Unit = {},
     onHeroPicked: (PendingRecipeImage) -> Unit = {},
     onHeroClear: () -> Unit = {},
     onNoteImage: (PendingRecipeImage) -> Unit = {},
@@ -497,7 +501,6 @@ internal fun RecipeEditorForm(
             onOpenYieldUnit = onOpenYieldUnit,
             onMinRangeAmountChange = onMinRangeAmountChange,
             onOpenMinRangeUnit = onOpenMinRangeUnit,
-            onServingsChange = onServingsChange,
         )
         RecipeHeroSection(
             state = state,
@@ -536,6 +539,7 @@ internal fun RecipeEditorForm(
             onPrepMinutesChange = onPrepMinutesChange,
             onCookMinutesChange = onCookMinutesChange,
             onAllergenNotesChange = onAllergenNotesChange,
+            onServingsChange = onServingsChange,
         )
         RecipeRelationsSection(
             state = state,
@@ -567,7 +571,6 @@ private fun RecipeBasics(
     onOpenYieldUnit: () -> Unit,
     onMinRangeAmountChange: (String) -> Unit,
     onOpenMinRangeUnit: () -> Unit,
-    onServingsChange: (String) -> Unit,
 ) {
     Column(modifier = Modifier.fillMaxWidth().padding(top = CulinarySpacing.lg)) {
         Text(
@@ -618,24 +621,7 @@ private fun RecipeBasics(
             onMinRangeAmountChange = onMinRangeAmountChange,
             onMinRangeUnitClick = onOpenMinRangeUnit,
         )
-        Spacer(modifier = Modifier.height(CulinarySpacing.md))
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(
-                text = stringResource(R.string.recipes_servings_label),
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.weight(1f),
-            )
-            ArchiveEditorInlineField(
-                value = state.servings,
-                onValueChange = onServingsChange,
-                placeholder = "1",
-                textStyle = CulinaryTextStyles.numeralS,
-                keyboardType = KeyboardType.Number,
-                textAlign = androidx.compose.ui.text.style.TextAlign.End,
-                modifier = Modifier.width(120.dp),
-            )
-        }
+
     }
 }
 
@@ -921,6 +907,7 @@ private fun RecipeApplicationSection(
     onPrepMinutesChange: (String) -> Unit,
     onCookMinutesChange: (String) -> Unit,
     onAllergenNotesChange: (String) -> Unit,
+    onServingsChange: (String) -> Unit,
 ) {
     ArchiveEditorSectionHeader(
         index = "03",
@@ -985,6 +972,24 @@ private fun RecipeApplicationSection(
         minLines = 2,
         modifier = Modifier.fillMaxWidth(),
     )
+    Spacer(modifier = Modifier.height(CulinarySpacing.md))
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Text(
+            text = stringResource(R.string.recipes_servings_label),
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.weight(1f),
+        )
+        ArchiveEditorInlineField(
+            value = state.servings,
+            onValueChange = onServingsChange,
+            placeholder = "1",
+            textStyle = CulinaryTextStyles.numeralS,
+            keyboardType = KeyboardType.Number,
+            textAlign = androidx.compose.ui.text.style.TextAlign.End,
+            modifier = Modifier.width(120.dp),
+        )
+    }
 }
 
 @Composable
@@ -1055,12 +1060,19 @@ private fun RecipeNotesSection(
     onNotesChange: (String) -> Unit,
     onNoteImage: (PendingRecipeImage) -> Unit,
     onRemoveNoteImage: (Int) -> Unit,
+    onAddTextNote: () -> Unit,
 ) {
     ArchiveEditorSectionHeader(
         index = "05",
         english = "NOTES",
         title = stringResource(R.string.recipes_notes),
     )
+    Text(
+        text = "记录研发说明、实验结论与调整记录。",
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
+    Spacer(modifier = Modifier.height(CulinarySpacing.sm))
     ArchiveEditorNotesBox(
         value = state.notes,
         onValueChange = onNotesChange,
@@ -1086,7 +1098,10 @@ private fun RecipeNotesSection(
         }
         Spacer(modifier = Modifier.height(CulinarySpacing.xs))
     }
-    CulinaryTextButton(text = "+ 上传研发照片", onClick = pickNoteImage)
+    Row(horizontalArrangement = Arrangement.spacedBy(CulinarySpacing.md)) {
+        CulinaryTextButton(text = "+ 添加文字备注", onClick = onAddTextNote)
+        CulinaryTextButton(text = "+ 上传研发照片", onClick = pickNoteImage)
+    }
     state.seedNote.takeIf { it.isNotBlank() }?.let { seed ->
         Spacer(modifier = Modifier.height(CulinarySpacing.sm))
         Text(
