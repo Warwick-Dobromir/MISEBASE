@@ -397,7 +397,7 @@ private fun RecipeEditorScreen(
                 onNoteImage = onNoteImage,
                 onRemoveNoteImage = onRemoveNoteImage,
                 onOpenArchiveCategoryPicker = onOpenArchiveCategoryPicker,
-            onArchiveCategorySelect = onArchiveCategorySelect,
+                onArchiveCategorySelect = onArchiveCategorySelect,
                 onCuisineChange = onCuisineChange,
                 onPrepMinutesChange = onPrepMinutesChange,
                 onCookMinutesChange = onCookMinutesChange,
