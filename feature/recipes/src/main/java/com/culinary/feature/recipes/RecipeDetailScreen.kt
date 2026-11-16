@@ -323,7 +323,7 @@ internal fun RecipeDetailContent(
                 Spacer(modifier = Modifier.height(CulinarySpacing.sm))
                 Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     Text(
-                        text = "待发布修改 v" + latestDraft.versionNo,
+                        text = "待发布修改",
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.weight(1f),
