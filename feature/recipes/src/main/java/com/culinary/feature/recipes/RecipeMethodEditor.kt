@@ -135,7 +135,7 @@ private fun StepImageEditor(
     ArchiveEditorImageBox(
         imageBytes = bytes,
         onPick = pick,
-        onClear = if (step.image != null || step.pendingImage != null) onClear else null,
+        onClear = if (bytes != null) onClear else null,
         emptyLabel = "上传步骤图片",
         replaceLabel = "替换图片",
         deleteLabel = "删除图片",
