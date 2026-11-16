@@ -681,21 +681,21 @@ private fun RecipeClassificationSelector(
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            return
-        }
-        var level = 0
-        while (level <= path.size) {
-            val parentId = if (level == 0) null else path.getOrNull(level - 1)?.id
-            val options = state.categories.filter { it.parentId == parentId && !it.isTest }
-            if (options.isEmpty()) break
-            RecipeCategoryLevelField(
-                level = level,
-                selectedId = path.getOrNull(level)?.id,
-                options = options,
-                onSelect = onSelectCategory,
-            )
-            level++
-            if (level > 32) break
+        } else {
+            var level = 0
+            while (level <= path.size) {
+                val parentId = if (level == 0) null else path.getOrNull(level - 1)?.id
+                val options = state.categories.filter { it.parentId == parentId && !it.isTest }
+                if (options.isEmpty()) break
+                RecipeCategoryLevelField(
+                    level = level,
+                    selectedId = path.getOrNull(level)?.id,
+                    options = options,
+                    onSelect = onSelectCategory,
+                )
+                level++
+                if (level > 32) break
+            }
         }
     }
 }
