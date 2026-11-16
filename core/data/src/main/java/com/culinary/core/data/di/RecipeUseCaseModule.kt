@@ -7,6 +7,7 @@ import com.culinary.core.domain.repository.RecipeImageRepository
 import com.culinary.core.domain.repository.RecipeRepository
 import com.culinary.core.domain.repository.SauceRepository
 import com.culinary.core.domain.transaction.TransactionRunner
+import com.culinary.core.domain.usecase.recipe.ArchiveRecipeUseCase
 import com.culinary.core.domain.usecase.recipe.ExpandRecipeUseCase
 import com.culinary.core.domain.usecase.recipe.GetRecipeDetailUseCase
 import com.culinary.core.domain.usecase.recipe.ListRecipeOptionsUseCase
@@ -90,6 +91,13 @@ object RecipeUseCaseModule {
     @Singleton
     fun provideSaveRecipeRelationsUseCase(repository: KitchenRelationRepository): SaveRecipeRelationsUseCase =
         SaveRecipeRelationsUseCase(repository)
+
+    @Provides
+    @Singleton
+    fun provideArchiveRecipeUseCase(
+        repository: RecipeRepository,
+        transactionRunner: TransactionRunner,
+    ): ArchiveRecipeUseCase = ArchiveRecipeUseCase(repository, transactionRunner)
 
     @Provides
     @Singleton
