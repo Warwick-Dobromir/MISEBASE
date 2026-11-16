@@ -29,7 +29,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import com.culinary.core.domain.model.Unit as UnitModel
 
-/** 菜谱页面 Compose UI：列表分类、详情组成/展开、编辑器入口。 */
+/** 菜谱页面 Compose UI：列表分类、详情组成与编辑器入口。 */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [34])
 class RecipesUiTest {
@@ -65,7 +65,7 @@ class RecipesUiTest {
     }
 
     @Test
-    fun `detail shows components optional marker and expansion`() {
+    fun `detail shows components and optional marker without recipe-only expansion controls`() {
         val recipe = recipe()
         val version = version(recipe)
         val detail =
@@ -89,20 +89,6 @@ class RecipesUiTest {
             RecipeDetailUiState(
                 detail = detail,
                 isLoading = false,
-                targetServings = "4",
-                expanded =
-                    ExpandedRecipe(
-                        baseServings = 2,
-                        targetServings = 4,
-                        lines =
-                            listOf(
-                                ExpandedRecipeLine(
-                                    label = "低筋面粉",
-                                    quantity = Quantity(200.0, gram()),
-                                    isOptional = false,
-                                ),
-                            ),
-                    ),
             )
 
         compose.setContent {
@@ -112,8 +98,6 @@ class RecipesUiTest {
                     state = state,
                     onEdit = {},
                     onPublish = {},
-                    onServingsChange = {},
-                    onExpand = {},
                     onOpenRelation = { _, _ -> },
                 )
             }
@@ -122,11 +106,11 @@ class RecipesUiTest {
         compose.onNodeWithText("MIN. RANGE").assertIsDisplayed()
         compose.onAllNodesWithText("低筋面粉").onFirst().performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("可选").performScrollTo().assertIsDisplayed()
-        compose.onAllNodesWithText("展开").onFirst().assertExists()
+        compose.onNodeWithText("展开").assertDoesNotExist()
     }
 
     @Test
-    fun `editor exposes servings and component actions`() {
+    fun `editor matches sauce structure and exposes component actions`() {
         compose.setContent {
             CulinaryTheme {
                 RecipeEditorForm(
@@ -143,7 +127,6 @@ class RecipesUiTest {
                     onOpenCategoryPicker = {},
                     onYieldAmountChange = {},
                     onOpenYieldUnit = {},
-                    onServingsChange = {},
                     onAddIngredient = {},
                     onAddRecipe = {},
                     onAddSauce = {},
@@ -155,7 +138,7 @@ class RecipesUiTest {
         }
 
         compose.onNodeWithText("最小制作范围", substring = true).performScrollTo().assertIsDisplayed()
-        compose.onNodeWithText("基准份数").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("基准份数").assertDoesNotExist()
         compose.onNodeWithText("适用范围").performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("添加食材").performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("添加子菜谱").performScrollTo().assertIsDisplayed()
