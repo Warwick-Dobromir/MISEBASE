@@ -114,7 +114,6 @@ fun RecipeEditorRoute(
         onOpenYieldUnit = { picker = EditorPicker.YIELD_UNIT },
         onMinRangeAmountChange = viewModel::onMinRangeAmountChange,
         onOpenMinRangeUnit = { picker = EditorPicker.MIN_RANGE_UNIT },
-        onServingsChange = viewModel::onServingsChange,
         onAddIngredient = { picker = EditorPicker.INGREDIENT },
         onAddRecipe = { picker = EditorPicker.RECIPE },
         onAddSauce = { picker = EditorPicker.SAUCE },
@@ -327,7 +326,6 @@ private fun RecipeEditorScreen(
     onOpenYieldUnit: () -> Unit,
     onMinRangeAmountChange: (String) -> Unit,
     onOpenMinRangeUnit: () -> Unit,
-    onServingsChange: (String) -> Unit,
     onAddIngredient: () -> Unit,
     onAddRecipe: () -> Unit,
     onAddSauce: () -> Unit,
@@ -406,7 +404,6 @@ private fun RecipeEditorScreen(
                 onOpenYieldUnit = onOpenYieldUnit,
                 onMinRangeAmountChange = onMinRangeAmountChange,
                 onOpenMinRangeUnit = onOpenMinRangeUnit,
-                onServingsChange = onServingsChange,
                 onAddIngredient = onAddIngredient,
                 onAddRecipe = onAddRecipe,
                 onAddSauce = onAddSauce,
@@ -484,7 +481,6 @@ internal fun RecipeEditorForm(
     onOpenYieldUnit: () -> Unit,
     onMinRangeAmountChange: (String) -> Unit = {},
     onOpenMinRangeUnit: () -> Unit = {},
-    onServingsChange: (String) -> Unit,
     onAddIngredient: () -> Unit,
     onAddRecipe: () -> Unit,
     onAddSauce: () -> Unit,
@@ -527,7 +523,6 @@ internal fun RecipeEditorForm(
             onOpenYieldUnit = onOpenYieldUnit,
             onMinRangeAmountChange = onMinRangeAmountChange,
             onOpenMinRangeUnit = onOpenMinRangeUnit,
-            onServingsChange = onServingsChange,
         )
         RecipeHeroSection(
             state = state,
@@ -598,7 +593,6 @@ private fun RecipeBasics(
     onOpenYieldUnit: () -> Unit,
     onMinRangeAmountChange: (String) -> Unit,
     onOpenMinRangeUnit: () -> Unit,
-    onServingsChange: (String) -> Unit,
 ) {
     Column(modifier = Modifier.fillMaxWidth().padding(top = CulinarySpacing.lg)) {
         Text(
@@ -649,24 +643,6 @@ private fun RecipeBasics(
             onMinRangeAmountChange = onMinRangeAmountChange,
             onMinRangeUnitClick = onOpenMinRangeUnit,
         )
-        Spacer(modifier = Modifier.height(CulinarySpacing.md))
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(
-                text = stringResource(R.string.recipes_servings_label),
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.weight(1f),
-            )
-            ArchiveEditorInlineField(
-                value = state.servings,
-                onValueChange = onServingsChange,
-                placeholder = "1",
-                textStyle = CulinaryTextStyles.numeralS,
-                keyboardType = KeyboardType.Number,
-                textAlign = androidx.compose.ui.text.style.TextAlign.End,
-                modifier = Modifier.width(120.dp),
-            )
-        }
     }
 }
 
