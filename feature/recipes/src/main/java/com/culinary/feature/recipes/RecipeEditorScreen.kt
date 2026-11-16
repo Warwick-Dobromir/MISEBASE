@@ -581,6 +581,7 @@ internal fun RecipeEditorForm(
             onRemoveNoteImage = onRemoveNoteImage,
         )
         RecipeEditorFooter(state, onArchive = onArchive)
+        Spacer(modifier = Modifier.height(CulinarySpacing.spacious))
     }
 }
 
@@ -848,15 +849,24 @@ private fun RecipeComponentsEditor(
         DropdownMenu(expanded = showAddMenu, onDismissRequest = { showAddMenu = false }) {
             DropdownMenuItem(
                 text = { Text("食材") },
-                onClick = { showAddMenu = false; onAddIngredient() },
+                onClick = {
+                    showAddMenu = false
+                    onAddIngredient()
+                },
             )
             DropdownMenuItem(
                 text = { Text("子菜谱") },
-                onClick = { showAddMenu = false; onAddRecipe() },
+                onClick = {
+                    showAddMenu = false
+                    onAddRecipe()
+                },
             )
             DropdownMenuItem(
                 text = { Text("酱汁") },
-                onClick = { showAddMenu = false; onAddSauce() },
+                onClick = {
+                    showAddMenu = false
+                    onAddSauce()
+                },
             )
         }
     }
