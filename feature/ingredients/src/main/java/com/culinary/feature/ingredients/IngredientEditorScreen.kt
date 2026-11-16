@@ -13,6 +13,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -38,6 +40,8 @@ import com.culinary.core.designsystem.component.PageHeader
 import com.culinary.core.designsystem.component.SectionHeader
 import com.culinary.core.designsystem.icon.CulinaryIcons
 import com.culinary.core.designsystem.theme.CulinarySpacing
+import com.culinary.core.designsystem.theme.CulinaryTextStyles
+import com.culinary.core.domain.model.ArchiveCategory
 
 /** 食材编辑器路由：名称、分类、默认单位、描述。 */
 @Composable
@@ -69,6 +73,7 @@ fun IngredientEditorRoute(
                 state = state,
                 onNameChange = viewModel::onNameChange,
                 onCategoryChange = viewModel::onCategoryChange,
+                onCategorySelect = viewModel::onCategorySelect,
                 onDescriptionChange = viewModel::onDescriptionChange,
                 onEnglishNameChange = viewModel::onEnglishNameChange,
                 onExampleProductsChange = viewModel::onExampleProductsChange,
@@ -99,6 +104,7 @@ internal fun IngredientEditorForm(
     state: IngredientEditorUiState,
     onNameChange: (String) -> Unit,
     onCategoryChange: (String) -> Unit,
+    onCategorySelect: (Int, String?) -> Unit,
     onDescriptionChange: (String) -> Unit,
     onEnglishNameChange: (String) -> Unit,
     onExampleProductsChange: (String) -> Unit,
@@ -133,11 +139,10 @@ internal fun IngredientEditorForm(
                 singleLine = true,
             )
             Spacer(modifier = Modifier.height(CulinarySpacing.field))
-            CulinaryTextField(
-                value = state.category,
-                onValueChange = onCategoryChange,
-                label = { Text(text = stringResource(R.string.ingredients_category_label)) },
-                singleLine = true,
+            IngredientClassificationSelector(
+                state = state,
+                onCategorySelect = onCategorySelect,
+                onLegacyCategoryChange = onCategoryChange,
             )
             SectionHeader(title = stringResource(R.string.ingredients_default_unit))
             UnitSelectionRow(
@@ -197,6 +202,106 @@ internal fun IngredientEditorForm(
                 modifier = Modifier.fillMaxWidth(),
             )
         }
+    }
+}
+
+
+@Composable
+private fun IngredientClassificationSelector(
+    state: IngredientEditorUiState,
+    onCategorySelect: (Int, String?) -> Unit,
+    onLegacyCategoryChange: (String) -> Unit,
+) {
+    val formal = state.categories.filter { !it.isTest }
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Text(
+            text = "CLASSIFICATION / 分类归属",
+            style = CulinaryTextStyles.eyebrow,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Spacer(modifier = Modifier.height(CulinarySpacing.xs))
+        if (formal.isEmpty()) {
+            CulinaryTextField(
+                value = state.category,
+                onValueChange = onLegacyCategoryChange,
+                label = { Text(text = stringResource(R.string.ingredients_category_label)) },
+                singleLine = true,
+            )
+            return
+        }
+        var level = 0
+        while (level <= state.categoryPathIds.size) {
+            val parentId = if (level == 0) null else state.categoryPathIds.getOrNull(level - 1)
+            val options = formal.filter { it.parentId == parentId }
+            if (options.isEmpty()) break
+            IngredientCategoryLevelField(
+                level = level,
+                selectedId = state.categoryPathIds.getOrNull(level),
+                options = options,
+                onSelect = { id -> onCategorySelect(level, id) },
+            )
+            level++
+            if (level > 32) break
+        }
+    }
+}
+
+@Composable
+private fun IngredientCategoryLevelField(
+    level: Int,
+    selectedId: String?,
+    options: List<ArchiveCategory>,
+    onSelect: (String?) -> Unit,
+) {
+    var expanded by remember { mutableStateOf(false) }
+    val selected = options.firstOrNull { it.id == selectedId }
+    Column(modifier = Modifier.fillMaxWidth().padding(top = CulinarySpacing.xs)) {
+        Text(
+            text = "LEVEL ${(level + 1).toString().padStart(2, '0')}",
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        androidx.compose.foundation.layout.Box(modifier = Modifier.fillMaxWidth()) {
+            Row(
+                modifier = Modifier.fillMaxWidth().clickable { expanded = true }
+                    .padding(vertical = CulinarySpacing.xs),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = selected?.name ?: "选择分类",
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = if (selected == null) MaterialTheme.colorScheme.onSurfaceVariant
+                    else MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.weight(1f),
+                )
+                if (selected != null) {
+                    Text(
+                        text = "清除",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.clickable { onSelect(null) },
+                    )
+                }
+                Icon(
+                    imageVector = CulinaryIcons.ChevronDown,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(start = CulinarySpacing.xs).size(14.dp),
+                )
+            }
+            DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+                options.forEach { category ->
+                    DropdownMenuItem(
+                        text = { Text(category.name) },
+                        onClick = {
+                            expanded = false
+                            onSelect(category.id)
+                        },
+                    )
+                }
+            }
+        }
+        CulinaryRule()
     }
 }
 
