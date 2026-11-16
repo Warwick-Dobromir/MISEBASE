@@ -519,6 +519,7 @@ private fun NavGraphBuilder.recipeGraph(navController: NavHostController) {
         RecipeEditorRoute(
             onSaved = { navController.popBackStack() },
             onOpenRelation = navController::openKitchenRelated,
+            onArchived = { navController.popBackStack() },
         )
     }
 }
