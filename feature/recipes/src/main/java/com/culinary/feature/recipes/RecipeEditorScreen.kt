@@ -386,6 +386,7 @@ private fun RecipeEditorScreen(
         } else {
             RecipeEditorForm(
                 state = state,
+                onArchive = { showArchive = true },
                 onNameChange = onNameChange,
                 onEnglishNameChange = onEnglishNameChange,
                 onDescriptionChange = onDescriptionChange,
@@ -463,6 +464,7 @@ private fun RecipeEditorScreen(
 @Composable
 internal fun RecipeEditorForm(
     state: RecipeEditorUiState,
+    onArchive: () -> Unit = {},
     onNameChange: (String) -> Unit,
     onOpenCategoryPicker: () -> Unit,
     onEnglishNameChange: (String) -> Unit = {},
@@ -579,7 +581,7 @@ internal fun RecipeEditorForm(
             onNoteImage = onNoteImage,
             onRemoveNoteImage = onRemoveNoteImage,
         )
-        RecipeEditorFooter(state, onArchive = { showArchive = true })
+        RecipeEditorFooter(state, onArchive = onArchive)
     }
 }
 
