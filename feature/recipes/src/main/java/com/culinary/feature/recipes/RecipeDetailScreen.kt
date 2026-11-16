@@ -7,9 +7,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -25,7 +23,6 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInParent
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
@@ -44,16 +41,12 @@ import com.culinary.core.designsystem.component.ArchiveVersionHistory
 import com.culinary.core.designsystem.component.ArchiveVersionItem
 import com.culinary.core.designsystem.component.ArchiveWideImage
 import com.culinary.core.designsystem.component.ArchiveYieldRange
-import com.culinary.core.designsystem.component.CulinaryButton
-import com.culinary.core.designsystem.component.CulinaryButtonVariant
 import com.culinary.core.designsystem.component.CulinaryLinkText
 import com.culinary.core.designsystem.component.CulinaryRule
-import com.culinary.core.designsystem.component.CulinaryTextField
 import com.culinary.core.designsystem.component.ErrorBanner
 import com.culinary.core.designsystem.component.LoadingRows
 import com.culinary.core.designsystem.component.formatArchiveTimestamp
 import com.culinary.core.designsystem.theme.CulinarySpacing
-import com.culinary.core.domain.model.ExpandedRecipe
 import com.culinary.core.domain.model.KitchenRecordKind
 import com.culinary.core.domain.model.KitchenRelatedRecord
 import com.culinary.core.domain.model.KitchenStep
@@ -88,8 +81,6 @@ fun RecipeDetailRoute(
         state = state,
         onEdit = onEdit,
         onPublish = viewModel::publish,
-        onServingsChange = viewModel::onTargetServingsChange,
-        onExpand = viewModel::expand,
         onRetry = viewModel::load,
         onOpenRelation = onOpenRelation,
         onBack = onBack,
@@ -104,8 +95,6 @@ private fun RecipeDetailScreen(
     state: RecipeDetailUiState,
     onEdit: (String) -> Unit,
     onPublish: (RecipeVersionId) -> Unit,
-    onServingsChange: (String) -> Unit,
-    onExpand: () -> Unit,
     onRetry: () -> Unit,
     onOpenRelation: (KitchenRecordKind, String) -> Unit,
     modifier: Modifier = Modifier,
@@ -138,8 +127,6 @@ private fun RecipeDetailScreen(
                     state = state,
                     onEdit = onEdit,
                     onPublish = onPublish,
-                    onServingsChange = onServingsChange,
-                    onExpand = onExpand,
                     onOpenRelation = onOpenRelation,
                     onBack = onBack,
                     onStartTimer = onStartTimer,
@@ -155,8 +142,6 @@ internal fun RecipeDetailContent(
     state: RecipeDetailUiState,
     onEdit: (String) -> Unit,
     onPublish: (RecipeVersionId) -> Unit,
-    onServingsChange: (String) -> Unit,
-    onExpand: () -> Unit,
     onOpenRelation: (KitchenRecordKind, String) -> Unit,
     onBack: () -> Unit = {},
     onStartTimer: (Int) -> Unit = {},
