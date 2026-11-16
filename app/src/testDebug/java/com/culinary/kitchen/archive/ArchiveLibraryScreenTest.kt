@@ -76,6 +76,50 @@ class ArchiveLibraryScreenTest {
     }
 
     @Test
+    fun `creates a child library under the selected root category`() {
+        var createdParent: String? = null
+        var createdName: String? = null
+        show(
+            onCreateCategory = { parentId, name ->
+                createdParent = parentId
+                createdName = name
+            },
+        )
+
+        compose.onNodeWithText("酱汁基础").performClick()
+        compose.onNodeWithText("新建子库").performClick()
+        compose.onNodeWithText("子库名称").performTextInput("浓缩底汁")
+        compose.onNodeWithText("创建").performClick()
+
+        assertThat(createdParent).isEqualTo("base")
+        assertThat(createdName).isEqualTo("浓缩底汁")
+    }
+
+    @Test
+    fun `creates another nested level from a child library`() {
+        var createdParent: String? = null
+        show(
+            categoriesOverride =
+                listOf(
+                    category("base", null, "酱汁基础", 0, descendant = 3, childCount = 1),
+                    category("basic", "base", "基础酱汁", 0, descendant = 2, childCount = 1),
+                    category("deep", "basic", "浓缩底汁", 0, descendant = 1, childCount = 1),
+                    category("deeper", "deep", "牛骨浓缩", 0, descendant = 0),
+                ),
+            onCreateCategory = { parentId, _ -> createdParent = parentId },
+        )
+
+        compose.onNodeWithText("酱汁基础").performClick()
+        compose.onNodeWithText("基础酱汁").performClick()
+        compose.onNodeWithText("浓缩底汁").performClick()
+        compose.onNodeWithText("新建子库").performClick()
+        compose.onNodeWithText("子库名称").performTextInput("二次浓缩")
+        compose.onNodeWithText("创建").performClick()
+
+        assertThat(createdParent).isEqualTo("deep")
+    }
+
+    @Test
     fun `library search shows result with category path and is isolated to section`() {
         show()
 
@@ -88,14 +132,17 @@ class ArchiveLibraryScreenTest {
     private fun show(
         onAdd: () -> Unit = {},
         onOpenEntry: (KitchenArchiveEntry) -> Unit = {},
+        categoriesOverride: List<KitchenArchiveCategory> = categories,
+        onCreateCategory: (String?, String) -> Unit = { _, _ -> },
     ) {
         compose.setContent {
             CulinaryTheme {
                 ArchiveLibraryScreen(
                     section = KitchenArchiveSection.SAUCES,
-                    state = ArchiveLibraryUiState(entries = entries, categories = categories, isLoading = false),
+                    state = ArchiveLibraryUiState(entries = entries, categories = categoriesOverride, isLoading = false),
                     onAdd = onAdd,
                     onOpenEntry = onOpenEntry,
+                    onCreateCategory = onCreateCategory,
                 )
             }
         }
