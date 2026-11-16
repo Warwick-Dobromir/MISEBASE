@@ -4,7 +4,12 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.culinary.core.common.Outcome
+import com.culinary.core.domain.model.ArchiveLibrary
 import com.culinary.core.domain.model.IngredientId
+import com.culinary.core.domain.model.KitchenRecordKind
+import com.culinary.core.domain.usecase.archive.AssignArchiveCategoryUseCase
+import com.culinary.core.domain.usecase.archive.GetArchiveCategoryForRecordUseCase
+import com.culinary.core.domain.usecase.archive.ListArchiveCategoriesUseCase
 import com.culinary.core.domain.usecase.ingredient.GetIngredientDetailUseCase
 import com.culinary.core.domain.usecase.ingredient.SaveIngredientInput
 import com.culinary.core.domain.usecase.ingredient.SaveIngredientUseCase
@@ -27,6 +32,9 @@ class IngredientEditorViewModel
         private val getIngredientDetail: GetIngredientDetailUseCase,
         private val saveIngredient: SaveIngredientUseCase,
         private val listUnits: ListUnitsUseCase,
+        private val listArchiveCategories: ListArchiveCategoriesUseCase = ListArchiveCategoriesUseCase(),
+        private val getArchiveCategoryForRecord: GetArchiveCategoryForRecordUseCase = GetArchiveCategoryForRecordUseCase(),
+        private val assignArchiveCategory: AssignArchiveCategoryUseCase = AssignArchiveCategoryUseCase(),
     ) : ViewModel() {
         private val routeId: String? =
             savedStateHandle
@@ -44,18 +52,29 @@ class IngredientEditorViewModel
             viewModelScope.launch {
                 _uiState.update { it.copy(isLoading = true, error = null) }
                 val units = runCatching { listUnits() }.getOrDefault(emptyList())
+                val categories =
+                    runCatching { listArchiveCategories(ArchiveLibrary.INGREDIENT).first() }
+                        .getOrDefault(emptyList())
                 _uiState.update {
-                    it.copy(units = units, defaultUnit = it.defaultUnit ?: units.firstOrNull())
+                    it.copy(
+                        units = units,
+                        categories = categories,
+                        defaultUnit = it.defaultUnit ?: units.firstOrNull(),
+                    )
                 }
                 if (routeId != null) {
                     when (val result = getIngredientDetail(IngredientId(routeId))) {
-                        is Outcome.Success ->
+                        is Outcome.Success -> {
+                            val assignedCategory =
+                                runCatching {
+                                    getArchiveCategoryForRecord(KitchenRecordKind.INGREDIENT, routeId)
+                                }.getOrNull()
+                            val categoryPath = buildIngredientCategoryPath(assignedCategory?.id, categories)
                             _uiState.update {
                                 it.copy(
                                     name = result.value.ingredient.name,
-                                    category =
-                                        result.value.ingredient.category
-                                            .orEmpty(),
+                                    category = assignedCategory?.name ?: result.value.ingredient.category.orEmpty(),
+                                    categoryPathIds = categoryPath,
                                     description =
                                         result.value.ingredient.description
                                             .orEmpty(),
@@ -75,6 +94,7 @@ class IngredientEditorViewModel
                                     isLoading = false,
                                 )
                             }
+                        }
 
                         is Outcome.Failure ->
                             _uiState.update {
@@ -95,7 +115,16 @@ class IngredientEditorViewModel
         }
 
         fun onCategoryChange(value: String) {
-            _uiState.update { it.copy(category = value) }
+            _uiState.update { it.copy(category = value, categoryPathIds = emptyList()) }
+        }
+
+        fun onCategorySelect(level: Int, categoryId: String?) {
+            _uiState.update { state ->
+                val base = state.categoryPathIds.take(level.coerceAtLeast(0))
+                val next = if (categoryId == null) base else base + categoryId
+                val leafName = next.lastOrNull()?.let { id -> state.categories.firstOrNull { it.id == id }?.name }.orEmpty()
+                state.copy(category = leafName, categoryPathIds = next, error = null)
+            }
         }
 
         fun onDescriptionChange(value: String) {
@@ -150,7 +179,24 @@ class IngredientEditorViewModel
                         ),
                     )
                 when (result) {
-                    is Outcome.Success -> _uiState.update { it.copy(isSaving = false, saved = true) }
+                    is Outcome.Success -> {
+                        val categoryId = state.categoryPathIds.lastOrNull()
+                        if (categoryId != null) {
+                            when (
+                                val assignment =
+                                    assignArchiveCategory(KitchenRecordKind.INGREDIENT, result.value.value, categoryId)
+                            ) {
+                                is Outcome.Failure -> {
+                                    _uiState.update {
+                                        it.copy(isSaving = false, error = IngredientErrorMessages.describe(assignment.error))
+                                    }
+                                    return@launch
+                                }
+                                is Outcome.Success -> Unit
+                            }
+                        }
+                        _uiState.update { it.copy(isSaving = false, saved = true) }
+                    }
                     is Outcome.Failure ->
                         _uiState.update {
                             it.copy(
@@ -162,3 +208,19 @@ class IngredientEditorViewModel
             }
         }
     }
+
+
+private fun buildIngredientCategoryPath(
+    categoryId: String?,
+    categories: List<com.culinary.core.domain.model.ArchiveCategory>,
+): List<String> {
+    val byId = categories.associateBy { it.id }
+    val path = mutableListOf<String>()
+    var current = categoryId?.let(byId::get)
+    var depth = 0
+    while (current != null && depth++ < 32) {
+        path += current.id
+        current = current.parentId?.let(byId::get)
+    }
+    return path.asReversed()
+}
