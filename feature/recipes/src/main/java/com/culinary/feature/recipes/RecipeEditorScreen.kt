@@ -601,7 +601,10 @@ private fun RecipeBasics(
 ) {
     Column(modifier = Modifier.fillMaxWidth().padding(top = CulinarySpacing.lg)) {
         Text(
-            text = "RECIPE · " + (state.categories.firstOrNull { it.id == state.archiveCategoryId }?.pathLabel?.ifBlank { null } ?: "未分类"),
+            text =
+                state.categories.firstOrNull { it.id == state.archiveCategoryId }?.pathLabel
+                    ?.ifBlank { null }
+                    ?: "RECIPE · 菜谱档案",
             style = CulinaryTextStyles.eyebrow,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -627,8 +630,6 @@ private fun RecipeBasics(
             onValueChange = onDescriptionChange,
             placeholder = "描述这道菜的风格、来源与用途……",
             textStyle = MaterialTheme.typography.bodySmall,
-            singleLine = false,
-            minLines = 2,
             modifier = Modifier.fillMaxWidth(),
         )
         Spacer(modifier = Modifier.height(CulinarySpacing.lg))
