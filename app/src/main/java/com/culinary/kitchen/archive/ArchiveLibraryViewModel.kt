@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.culinary.core.data.kitchen.KitchenArchiveCategory
 import com.culinary.core.data.kitchen.KitchenArchiveEntry
+import com.culinary.core.data.kitchen.KitchenArchiveKind
 import com.culinary.core.data.kitchen.KitchenArchiveReader
 import com.culinary.core.common.Outcome
 import com.culinary.core.domain.model.ArchiveLibrary
