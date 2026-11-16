@@ -76,6 +76,7 @@ fun RecipeEditorRoute(
     onSaved: () -> Unit,
     onCancelled: () -> Unit = onSaved,
     onOpenRelation: (KitchenRecordKind, String) -> Unit = { _, _ -> },
+    onArchived: () -> Unit = onCancelled,
     modifier: Modifier = Modifier,
     viewModel: RecipeEditorViewModel = hiltViewModel(),
 ) {
@@ -83,9 +84,13 @@ fun RecipeEditorRoute(
     var picker by remember { mutableStateOf(EditorPicker.NONE) }
     var lineUnitKey by remember { mutableStateOf<String?>(null) }
     val saved = state.savedRecipeId
+    val archived = state.archived
 
     LaunchedEffect(saved) {
         if (saved != null) onSaved()
+    }
+    LaunchedEffect(archived) {
+        if (archived) onArchived()
     }
 
     RecipeEditorScreen(
@@ -135,6 +140,7 @@ fun RecipeEditorRoute(
         onRemoveStep = viewModel::removeStep,
         onMoveStep = viewModel::moveStep,
         onSave = viewModel::save,
+        onArchive = viewModel::archive,
         onCancel = onCancelled,
         onDismissError = viewModel::clearError,
         modifier = modifier,
@@ -344,11 +350,13 @@ private fun RecipeEditorScreen(
     onRemoveStep: (String) -> Unit,
     onMoveStep: (Int, Int) -> Unit,
     onSave: () -> Unit,
+    onArchive: () -> Unit,
     onCancel: () -> Unit,
     onDismissError: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var showDiscard by remember { mutableStateOf(false) }
+    var showArchive by remember { mutableStateOf(false) }
     val imeVisible = WindowInsets.isImeVisible
     BackHandler(enabled = state.isDirty && !imeVisible) { showDiscard = true }
     BackHandler(enabled = !state.isDirty && !imeVisible) { onCancel() }
@@ -433,6 +441,20 @@ private fun RecipeEditorScreen(
                 onCancel()
             },
             onDismiss = { showDiscard = false },
+            destructive = true,
+        )
+    }
+    if (showArchive) {
+        ConfirmDialog(
+            title = "归档菜谱？",
+            message = "归档后菜谱将从正常列表中移出，历史版本与关联记录会保留。",
+            confirmLabel = "归档",
+            dismissLabel = "取消",
+            onConfirm = {
+                showArchive = false
+                onArchive()
+            },
+            onDismiss = { showArchive = false },
             destructive = true,
         )
     }
@@ -557,7 +579,7 @@ internal fun RecipeEditorForm(
             onNoteImage = onNoteImage,
             onRemoveNoteImage = onRemoveNoteImage,
         )
-        RecipeEditorFooter(state)
+        RecipeEditorFooter(state, onArchive = { showArchive = true })
     }
 }
 
@@ -1154,29 +1176,40 @@ private fun RecipeNoteThumbnail(
 }
 
 @Composable
-private fun RecipeEditorFooter(state: RecipeEditorUiState) {
-    Spacer(modifier = Modifier.height(CulinarySpacing.lg))
-    CulinaryRule()
-    Spacer(modifier = Modifier.height(CulinarySpacing.sm))
-    val status =
-        when {
-            state.isSaving -> "正在保存…"
-            state.isNew || !state.hasPublishedVersion -> "尚未保存"
-            state.isDirty -> "修改尚未保存"
-            else -> "已保存"
+private fun RecipeEditorFooter(
+    state: RecipeEditorUiState,
+    onArchive: () -> Unit,
+) {
+    Column(modifier = Modifier.fillMaxWidth().padding(top = CulinarySpacing.xl)) {
+        CulinaryRule()
+        Spacer(modifier = Modifier.height(CulinarySpacing.md))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text =
+                    if (state.updatedAtEpochMillis == null) {
+                        "尚未保存"
+                    } else {
+                        stringResource(
+                            R.string.recipes_last_updated,
+                            formatArchiveTimestamp(state.updatedAtEpochMillis) ?: "—",
+                        )
+                    },
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.weight(1f),
+            )
+            if (state.recipeId != null) {
+                Text(
+                    text = "删除归档",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error.copy(alpha = 0.72f),
+                    modifier = Modifier.clickable(onClick = onArchive).padding(4.dp),
+                )
+            }
         }
-    Text(
-        text = status,
-        style = MaterialTheme.typography.labelMedium,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-    )
-    formatArchiveTimestamp(state.updatedAtEpochMillis)?.let { updated ->
-        Text(
-            text = stringResource(R.string.recipes_last_updated, updated),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(top = CulinarySpacing.xxs),
-        )
     }
 }
 
