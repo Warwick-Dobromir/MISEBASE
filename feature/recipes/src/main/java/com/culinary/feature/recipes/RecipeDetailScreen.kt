@@ -274,7 +274,7 @@ internal fun RecipeDetailContent(
             } else {
                 ArchiveProse(application)
             }
-            Spacer(modifier = Modifier.height(CulinarySpacing.lg))
+            Spacer(modifier = Modifier.height(CulinarySpacing.xl))
 
             ArchiveModuleHeader(number = "04", english = "RELATED RECORDS", chinese = "关联档案")
             if (state.relations.isEmpty()) {
