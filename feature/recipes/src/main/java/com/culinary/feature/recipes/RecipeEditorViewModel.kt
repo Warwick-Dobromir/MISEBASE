@@ -17,6 +17,7 @@ import com.culinary.core.domain.usecase.archive.AssignArchiveCategoryUseCase
 import com.culinary.core.domain.usecase.archive.GetArchiveCategoryForRecordUseCase
 import com.culinary.core.domain.usecase.archive.ListArchiveCategoriesUseCase
 import com.culinary.core.domain.usecase.ingredient.ListIngredientsUseCase
+import com.culinary.core.domain.usecase.recipe.ArchiveRecipeUseCase
 import com.culinary.core.domain.usecase.recipe.GetRecipeDetailUseCase
 import com.culinary.core.domain.usecase.recipe.ListRecipeOptionsUseCase
 import com.culinary.core.domain.model.KitchenRecordKind
@@ -62,6 +63,7 @@ class RecipeEditorViewModel
     constructor(
         savedStateHandle: SavedStateHandle,
         private val getRecipeDetail: GetRecipeDetailUseCase,
+        private val archiveRecipe: ArchiveRecipeUseCase,
         private val saveRecipe: SaveRecipeUseCase,
         private val saveRecipeDraft: SaveRecipeDraftUseCase,
         private val publishStoredRecipeVersion: PublishStoredRecipeVersionUseCase,
@@ -583,6 +585,16 @@ class RecipeEditorViewModel
         }
 
         /** 统一保存：新档案自动发布首版；已有正式版本只保存待发布修改。 */
+        fun archive() {
+            val id = _uiState.value.recipeId?.let(::RecipeId) ?: return
+            viewModelScope.launch {
+                when (val result = archiveRecipe(id)) {
+                    is Outcome.Success -> _uiState.update { it.copy(archived = true) }
+                    is Outcome.Failure -> _uiState.update { it.copy(error = RecipeErrorMessages.describe(result.error)) }
+                }
+            }
+        }
+
         fun save() {
             val state = _uiState.value
             save(publish = state.isNew || !state.hasPublishedVersion)
