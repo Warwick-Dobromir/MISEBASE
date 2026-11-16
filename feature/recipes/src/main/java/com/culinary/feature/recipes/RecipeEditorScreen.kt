@@ -571,7 +571,7 @@ private fun RecipeBasics(
 ) {
     Column(modifier = Modifier.fillMaxWidth().padding(top = CulinarySpacing.lg)) {
         Text(
-            text = "RECIPE · $categoryPath",
+            text = "RECIPE · " + (state.categories.firstOrNull { it.id == state.archiveCategoryId }?.pathLabel?.ifBlank { null } ?: "未分类"),
             style = CulinaryTextStyles.eyebrow,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
