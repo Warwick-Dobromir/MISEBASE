@@ -59,7 +59,6 @@ import com.culinary.feature.inventory.InventoryDetailRoute
 import com.culinary.feature.inventory.InventoryHomeRoute
 import com.culinary.feature.inventory.InventoryLedgerRoute
 import com.culinary.feature.inventory.InventoryManagementRoute
-import com.culinary.feature.inventory.InventoryRoute
 import com.culinary.feature.inventory.InventoryRoutes
 import com.culinary.feature.inventory.IssueRoute
 import com.culinary.feature.inventory.LedgerV9Route
