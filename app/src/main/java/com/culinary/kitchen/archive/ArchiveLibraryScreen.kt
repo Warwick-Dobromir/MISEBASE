@@ -578,9 +578,6 @@ private fun KitchenArchiveSection.title(): String =
         KitchenArchiveSection.SAUCES -> "酱汁库"
         KitchenArchiveSection.INGREDIENTS -> "食材库"
         KitchenArchiveSection.RECIPES -> "菜谱库"
-        KitchenArchiveSection.TECHNIQUES -> "烹饪技术"
-        KitchenArchiveSection.PRODUCTION_STANDARDS -> "制作标准"
-        KitchenArchiveSection.STORAGE_STANDARDS -> "储存标准"
     }
 
 private fun categoryPath(
