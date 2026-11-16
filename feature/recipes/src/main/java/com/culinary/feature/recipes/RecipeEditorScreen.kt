@@ -569,8 +569,6 @@ private fun RecipeBasics(
     onOpenMinRangeUnit: () -> Unit,
     onServingsChange: (String) -> Unit,
 ) {
-    val categoryPath = state.categories.firstOrNull { it.id == state.archiveCategoryId }
-        ?.pathLabel.orEmpty().ifBlank { "未分类" }
     Column(modifier = Modifier.fillMaxWidth().padding(top = CulinarySpacing.lg)) {
         Text(
             text = "RECIPE · $categoryPath",
@@ -677,6 +675,14 @@ private fun RecipeClassificationSelector(
             )
         }
         CulinaryRule()
+        if (state.categories.isEmpty()) {
+            Text(
+                text = "分类数据尚未加载。",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            return
+        }
         var level = 0
         while (level <= path.size) {
             val parentId = if (level == 0) null else path.getOrNull(level - 1)?.id
