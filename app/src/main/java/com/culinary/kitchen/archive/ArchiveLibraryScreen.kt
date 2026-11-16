@@ -58,7 +58,7 @@ fun ArchiveLibraryRoute(
     section: KitchenArchiveSection,
     onAdd: () -> Unit,
     onOpenEntry: (KitchenArchiveEntry) -> Unit,
-    onCreateCategory: (String?, String) -> Unit,
+    onCreateCategory: (String?, String) -> Unit = { _, _ -> },
     onBack: () -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: ArchiveLibraryViewModel = hiltViewModel(),
@@ -182,13 +182,24 @@ internal fun ArchiveLibraryScreen(
             return@Column
         }
         if (categories.isEmpty()) {
-            LegacyFlatList(
-                entries = entries,
-                limit = visibleLimit,
-                onLoadMore = { visibleLimit += 20 },
-                onOpenEntry = onOpenEntry,
-                onAdd = onAdd,
-            )
+            Column(modifier = Modifier.fillMaxSize()) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = CulinarySpacing.pageHorizontal),
+                    horizontalArrangement = Arrangement.End,
+                ) {
+                    CulinaryTextButton(
+                        text = "新建子库",
+                        onClick = { showCreateCategory = true; newCategoryName = "" },
+                    )
+                }
+                LegacyFlatList(
+                    entries = entries,
+                    limit = visibleLimit,
+                    onLoadMore = { visibleLimit += 20 },
+                    onOpenEntry = onOpenEntry,
+                    onAdd = onAdd,
+                )
+            }
             return@Column
         }
 
