@@ -88,8 +88,6 @@ fun RecipeDetailRoute(
         state = state,
         onEdit = onEdit,
         onPublish = viewModel::publish,
-        onServingsChange = viewModel::onTargetServingsChange,
-        onExpand = viewModel::expand,
         onRetry = viewModel::load,
         onOpenRelation = onOpenRelation,
         onBack = onBack,
@@ -104,8 +102,6 @@ private fun RecipeDetailScreen(
     state: RecipeDetailUiState,
     onEdit: (String) -> Unit,
     onPublish: (RecipeVersionId) -> Unit,
-    onServingsChange: (String) -> Unit,
-    onExpand: () -> Unit,
     onRetry: () -> Unit,
     onOpenRelation: (KitchenRecordKind, String) -> Unit,
     modifier: Modifier = Modifier,
@@ -138,8 +134,6 @@ private fun RecipeDetailScreen(
                     state = state,
                     onEdit = onEdit,
                     onPublish = onPublish,
-                    onServingsChange = onServingsChange,
-                    onExpand = onExpand,
                     onOpenRelation = onOpenRelation,
                     onBack = onBack,
                     onStartTimer = onStartTimer,
@@ -155,8 +149,6 @@ internal fun RecipeDetailContent(
     state: RecipeDetailUiState,
     onEdit: (String) -> Unit,
     onPublish: (RecipeVersionId) -> Unit,
-    onServingsChange: (String) -> Unit,
-    onExpand: () -> Unit,
     onOpenRelation: (KitchenRecordKind, String) -> Unit,
     onBack: () -> Unit = {},
     onStartTimer: (Int) -> Unit = {},
@@ -228,11 +220,6 @@ internal fun RecipeDetailContent(
                     }
                 }
             }
-            ExpansionBlock(
-                state = state,
-                onServingsChange = onServingsChange,
-                onExpand = onExpand,
-            )
             Spacer(modifier = Modifier.height(CulinarySpacing.xl))
 
             ArchiveModuleHeader(number = "02", english = "METHOD", chinese = "制作工艺")
@@ -277,31 +264,23 @@ internal fun RecipeDetailContent(
 
             val application =
                 listOfNotNull(
-                    recipe.cuisine?.takeIf { it.isNotBlank() }?.let { "适用菜系" to it },
-                    recipe.prepMinutes?.let { "准备时间" to "$it 分钟" },
-                    recipe.cookMinutes?.let { "烹饪时间" to "$it 分钟" },
-                    recipe.allergenNotes?.takeIf { it.isNotBlank() }?.let { "过敏原与适用提示" to it },
+                    recipe.cuisine?.takeIf { it.isNotBlank() }?.let { "适用菜系：$it" },
+                    recipe.prepMinutes?.let { "准备时间：$it 分钟" },
+                    recipe.cookMinutes?.let { "烹饪时间：$it 分钟" },
+                    recipe.allergenNotes?.takeIf { it.isNotBlank() }?.let { "过敏原与适用提示：$it" },
                     recipe.ingredientSummary
                         ?.takeIf { it.isNotBlank() && it != recipe.description }
-                        ?.let { "原料摘要" to it },
-                )
+                        ?.let { "原料摘要：$it" },
+                ).joinToString("\n")
             ArchiveModuleHeader(number = "03", english = "APPLICATION", chinese = "适用范围")
-            if (application.isEmpty()) {
+            if (application.isBlank()) {
                 Text(
                     text = "暂未填写适用范围",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             } else {
-                application.forEach { (label, value) ->
-                    Text(
-                        text = label,
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                    ArchiveProse(value)
-                    Spacer(modifier = Modifier.height(CulinarySpacing.sm))
-                }
+                ArchiveProse(application)
             }
             Spacer(modifier = Modifier.height(CulinarySpacing.lg))
 
@@ -418,108 +397,6 @@ private fun componentKindLabel(component: RecipeComponentView): String =
     }
 
 /** 按份数展开：默认收起，点击后才显示输入，避免把编辑控件堆在展示页。 */
-@Composable
-private fun ExpansionBlock(
-    state: RecipeDetailUiState,
-    onServingsChange: (String) -> Unit,
-    onExpand: () -> Unit,
-) {
-    var open by remember { androidx.compose.runtime.mutableStateOf(state.expanded != null) }
-    Spacer(modifier = Modifier.height(CulinarySpacing.sm))
-    CulinaryLinkText(
-        text = if (open) "收起配方" else "按份数展开配方",
-        onClick = { open = !open },
-    )
-    if (!open) return
-    Spacer(modifier = Modifier.height(CulinarySpacing.xs))
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        CulinaryTextField(
-            value = state.targetServings,
-            onValueChange = onServingsChange,
-            label = { Text(text = stringResource(R.string.recipes_servings_label)) },
-            singleLine = true,
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-            fillWidth = false,
-            modifier = Modifier.width(132.dp),
-        )
-        Spacer(modifier = Modifier.width(CulinarySpacing.xs))
-        CulinaryButton(
-            text =
-                stringResource(
-                    if (state.isExpanding) R.string.recipes_expanding else R.string.recipes_expand,
-                ),
-            onClick = onExpand,
-            variant = CulinaryButtonVariant.Secondary,
-            enabled = !state.isExpanding,
-            loading = state.isExpanding,
-        )
-    }
-    state.expansionError?.let { message ->
-        Text(
-            text = message,
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.error,
-            modifier = Modifier.padding(top = CulinarySpacing.xs),
-        )
-    }
-    state.expanded?.let { expanded -> ExpandedLines(expanded) }
-}
-
-@Composable
-private fun ExpandedLines(expanded: ExpandedRecipe) {
-    Text(
-        text =
-            stringResource(
-                R.string.recipes_expanded,
-                expanded.targetServings.toString(),
-                expanded.baseServings.toString(),
-            ),
-        style = MaterialTheme.typography.titleSmall,
-        color = MaterialTheme.colorScheme.onSurface,
-        modifier = Modifier.padding(top = CulinarySpacing.sm),
-    )
-    if (expanded.lines.isEmpty()) {
-        Text(
-            text = stringResource(R.string.recipes_expansion_empty),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        return
-    }
-    expanded.lines.forEach { line ->
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(vertical = CulinarySpacing.xxs),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = line.label,
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurface,
-                )
-                if (line.isOptional) {
-                    Text(
-                        text = stringResource(R.string.recipes_optional),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-            }
-            Text(
-                text = formatRecipeAmount(line.quantity.amount) + " " + line.quantity.unit.symbol,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurface,
-            )
-        }
-    }
-    Text(
-        text = stringResource(R.string.recipes_expansion_hint),
-        style = MaterialTheme.typography.labelSmall,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-        modifier = Modifier.padding(top = CulinarySpacing.xs),
-    )
-}
-
 @Composable
 private fun categoryEyebrow(
     recipe: Recipe,
