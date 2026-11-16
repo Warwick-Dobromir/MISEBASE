@@ -637,7 +637,7 @@ private fun RecipeBasics(
             onOpenRecipeType = onOpenCategoryPicker,
             onSelectCategory = onArchiveCategorySelect,
         )
-        Spacer(modifier = Modifier.height(CulinarySpacing.md))
+        Spacer(modifier = Modifier.height(CulinarySpacing.lg))
         ArchiveYieldRangeFields(
             yieldAmount = state.yieldAmount,
             yieldUnit = state.yieldUnit?.symbol.orEmpty(),
@@ -837,8 +837,9 @@ private fun RecipeComponentsEditor(
     if (state.lines.isEmpty()) {
         Text(
             text = "暂未添加食材",
-            style = MaterialTheme.typography.bodyMedium,
+            style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(vertical = CulinarySpacing.sm),
         )
     }
     Row(
