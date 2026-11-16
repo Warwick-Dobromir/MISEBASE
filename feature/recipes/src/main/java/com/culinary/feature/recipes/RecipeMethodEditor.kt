@@ -117,6 +117,7 @@ internal fun RecipeMethodEditor(
                 text = "暂未添加制作步骤",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(vertical = CulinarySpacing.sm),
             )
         }
         CulinaryTextButton(text = "+ 添加步骤", onClick = onAddStep)
@@ -136,6 +137,8 @@ private fun StepImageEditor(
         onPick = pick,
         onClear = if (step.image != null || step.pendingImage != null) onClear else null,
         emptyLabel = "上传步骤图片",
+        replaceLabel = "替换图片",
+        deleteLabel = "删除图片",
         aspectRatio = 4f / 3f,
     )
 }
