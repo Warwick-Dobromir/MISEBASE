@@ -272,8 +272,8 @@ internal fun RecipeDetailContent(
                         CulinaryRule()
                     }
                 }
-                Spacer(modifier = Modifier.height(CulinarySpacing.xl))
             }
+            Spacer(modifier = Modifier.height(CulinarySpacing.xl))
 
             val application =
                 listOfNotNull(
