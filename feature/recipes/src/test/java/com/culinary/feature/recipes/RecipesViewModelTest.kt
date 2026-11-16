@@ -34,6 +34,7 @@ import com.culinary.core.domain.repository.UnitRepository
 import com.culinary.core.domain.transaction.TransactionRunner
 import com.culinary.core.domain.usecase.ingredient.ListIngredientsUseCase
 import com.culinary.core.domain.usecase.kitchen.ObserveKitchenRelationsUseCase
+import com.culinary.core.domain.usecase.recipe.ArchiveRecipeUseCase
 import com.culinary.core.domain.usecase.recipe.ExpandRecipeUseCase
 import com.culinary.core.domain.usecase.recipe.GetRecipeDetailUseCase
 import com.culinary.core.domain.usecase.recipe.ListRecipeOptionsUseCase
@@ -444,6 +445,7 @@ class RecipesViewModelTest {
                     mapOf(RecipesRoutes.ARG_RECIPE_ID to (id ?: RecipesRoutes.NEW_ID)),
                 ),
             getRecipeDetail = getDetail,
+            archiveRecipe = ArchiveRecipeUseCase(recipes, tx),
             saveRecipe = saveRecipe,
             saveRecipeDraft = saveDraft,
             publishStoredRecipeVersion = publishStored,
@@ -553,6 +555,14 @@ class RecipesViewModelTest {
             recipes.removeAll { it.id == recipe.id }
             recipes += recipe
             return Outcome.success(recipe.id)
+        }
+
+        override suspend fun archive(id: RecipeId): Outcome<Unit> {
+            val recipe = recipes.firstOrNull { it.id == id }
+                ?: return Outcome.failure(CulinaryError.NotFound("recipe", id.value))
+            recipes.removeAll { it.id == id }
+            recipes += recipe.copy(status = EntityStatus.ARCHIVED)
+            return Outcome.success(Unit)
         }
 
         override suspend fun saveDraft(version: RecipeVersion): RecipeVersionId {
