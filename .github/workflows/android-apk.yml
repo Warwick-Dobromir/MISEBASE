@@ -13,7 +13,6 @@ jobs:
   apk:
     runs-on: ubuntu-latest
     env:
-      MISEBASE_RELEASE_STORE_FILE: ${{ runner.temp }}/release.keystore
       MISEBASE_RELEASE_STORE_PASSWORD: ${{ secrets.MISEBASE_RELEASE_STORE_PASSWORD }}
       MISEBASE_RELEASE_KEY_ALIAS: ${{ secrets.MISEBASE_RELEASE_KEY_ALIAS }}
       MISEBASE_RELEASE_KEY_PASSWORD: ${{ secrets.MISEBASE_RELEASE_KEY_PASSWORD }}
@@ -23,6 +22,7 @@ jobs:
 
       - name: Require original release signing secrets
         env:
+          MISEBASE_RELEASE_STORE_FILE: ${{ runner.temp }}/release.keystore
           KEYSTORE_BASE64: ${{ secrets.MISEBASE_RELEASE_KEYSTORE_BASE64 }}
         run: |
           test -n "$KEYSTORE_BASE64" || { echo "Missing MISEBASE_RELEASE_KEYSTORE_BASE64"; exit 1; }
@@ -42,6 +42,8 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
 
       - name: Build APK with original MISEBASE release key
+        env:
+          MISEBASE_RELEASE_STORE_FILE: ${{ runner.temp }}/release.keystore
         run: ./gradlew :app:assembleDebug -PdebugWithReleaseSigning=true --no-daemon
 
       - name: Publish APK as downloadable release asset
