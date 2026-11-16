@@ -8,8 +8,6 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performScrollTo
 import com.culinary.core.designsystem.theme.CulinaryTheme
 import com.culinary.core.domain.model.EntityStatus
-import com.culinary.core.domain.model.ExpandedRecipe
-import com.culinary.core.domain.model.ExpandedRecipeLine
 import com.culinary.core.domain.model.Quantity
 import com.culinary.core.domain.model.Recipe
 import com.culinary.core.domain.model.RecipeCategory
