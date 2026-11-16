@@ -99,6 +99,7 @@ fun RecipeEditorRoute(
         onEnglishNameChange = viewModel::onEnglishNameChange,
         onDescriptionChange = viewModel::onDescriptionChange,
         onNotesChange = viewModel::onNotesChange,
+        onAddTextNote = viewModel::addTextNote,
         onHeroPicked = viewModel::setHeroImage,
         onHeroClear = viewModel::clearHeroImage,
         onNoteImage = viewModel::addNoteImage,
@@ -311,6 +312,7 @@ private fun RecipeEditorScreen(
     onEnglishNameChange: (String) -> Unit,
     onDescriptionChange: (String) -> Unit,
     onNotesChange: (String) -> Unit,
+    onAddTextNote: () -> Unit,
     onCuisineChange: (String) -> Unit,
     onPrepMinutesChange: (String) -> Unit,
     onCookMinutesChange: (String) -> Unit,
@@ -389,6 +391,7 @@ private fun RecipeEditorScreen(
                 onEnglishNameChange = onEnglishNameChange,
                 onDescriptionChange = onDescriptionChange,
                 onNotesChange = onNotesChange,
+                onAddTextNote = onAddTextNote,
                 onHeroPicked = onHeroPicked,
                 onHeroClear = onHeroClear,
                 onNoteImage = onNoteImage,
@@ -467,6 +470,7 @@ internal fun RecipeEditorForm(
     onEnglishNameChange: (String) -> Unit = {},
     onDescriptionChange: (String) -> Unit = {},
     onNotesChange: (String) -> Unit = {},
+    onAddTextNote: () -> Unit = {},
     onHeroPicked: (PendingRecipeImage) -> Unit = {},
     onHeroClear: () -> Unit = {},
     onNoteImage: (PendingRecipeImage) -> Unit = {},
@@ -573,6 +577,7 @@ internal fun RecipeEditorForm(
         RecipeNotesSection(
             state = state,
             onNotesChange = onNotesChange,
+            onAddTextNote = onAddTextNote,
             onNoteImage = onNoteImage,
             onRemoveNoteImage = onRemoveNoteImage,
         )
@@ -1073,6 +1078,7 @@ private fun RecipeRelationsSection(
 private fun RecipeNotesSection(
     state: RecipeEditorUiState,
     onNotesChange: (String) -> Unit,
+    onAddTextNote: () -> Unit,
     onNoteImage: (PendingRecipeImage) -> Unit,
     onRemoveNoteImage: (Int) -> Unit,
 ) {
@@ -1112,7 +1118,10 @@ private fun RecipeNotesSection(
         }
         Spacer(modifier = Modifier.height(CulinarySpacing.xs))
     }
-    CulinaryTextButton(text = "+ 上传研发照片", onClick = pickNoteImage)
+    Row(horizontalArrangement = Arrangement.spacedBy(CulinarySpacing.md)) {
+        CulinaryTextButton(text = "添加文本", onClick = onAddTextNote)
+        CulinaryTextButton(text = "+ 上传研发照片", onClick = pickNoteImage)
+    }
     state.seedNote.takeIf { it.isNotBlank() }?.let { seed ->
         Spacer(modifier = Modifier.height(CulinarySpacing.sm))
         Text(
