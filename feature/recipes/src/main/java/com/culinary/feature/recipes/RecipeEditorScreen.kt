@@ -476,7 +476,7 @@ internal fun RecipeEditorForm(
     onNoteImage: (PendingRecipeImage) -> Unit = {},
     onRemoveNoteImage: (Int) -> Unit = {},
     onOpenArchiveCategoryPicker: () -> Unit = {},
-    onArchiveCategorySelect: (String) -> Unit = {},
+    onArchiveCategorySelect: (String?) -> Unit = {},
     onCuisineChange: (String) -> Unit = {},
     onPrepMinutesChange: (String) -> Unit = {},
     onCookMinutesChange: (String) -> Unit = {},
@@ -656,7 +656,7 @@ private fun RecipeBasics(
 private fun RecipeClassificationSelector(
     state: RecipeEditorUiState,
     onOpenRecipeType: () -> Unit,
-    onSelectCategory: (String) -> Unit,
+    onSelectCategory: (String?) -> Unit,
 ) {
     val path = buildList {
         var current = state.categories.firstOrNull { it.id == state.archiveCategoryId }
@@ -718,7 +718,7 @@ private fun RecipeCategoryLevelField(
     level: Int,
     selectedId: String?,
     options: List<ArchiveCategory>,
-    onSelect: (String) -> Unit,
+    onSelect: (String?) -> Unit,
 ) {
     var expanded by remember { mutableStateOf(false) }
     val selected = options.firstOrNull { it.id == selectedId }
@@ -746,7 +746,7 @@ private fun RecipeCategoryLevelField(
                         text = "清除",
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.clickable { onSelect(selected.parentId ?: "") },
+                        modifier = Modifier.clickable { onSelect(selected.parentId) },
                     )
                 }
                 Icon(
