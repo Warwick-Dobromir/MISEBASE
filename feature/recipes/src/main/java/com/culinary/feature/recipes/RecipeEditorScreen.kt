@@ -2,6 +2,7 @@ package com.culinary.feature.recipes
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -343,7 +344,7 @@ private fun RecipeEditorScreen(
     val imeVisible = WindowInsets.isImeVisible
     BackHandler(enabled = state.isDirty && !imeVisible) { showDiscard = true }
     BackHandler(enabled = !state.isDirty && !imeVisible) { onCancel() }
-    Column(modifier = modifier.fillMaxSize()) {
+    Column(modifier = modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         ArchiveEditorTopBar(
             title =
                 if (state.isNew) {
