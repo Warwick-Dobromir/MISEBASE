@@ -292,8 +292,10 @@ internal fun ArchiveLibraryScreen(
             text = {
                 Column {
                     Text(
-                        text = parentForDialog?.let { "所属分类：${categoryPath(it, categories).joinToString(" / ")}" }
-                            ?: "所属资料库：${section.title()}",
+                        text =
+                            parentForDialog?.let { parent ->
+                                "所属分类：${categoryPath(parent, categories).joinToString(" / ")}"
+                            } ?: "所属资料库：${section.title()}",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -317,7 +319,12 @@ internal fun ArchiveLibraryScreen(
                 ) { Text("创建") }
             },
             dismissButton = {
-                TextButton(onClick = { newSubcategoryParentId = null; showNewSubcategoryDialog = false }) { Text("取消") }
+                TextButton(
+                    onClick = {
+                        newSubcategoryParentId = null
+                        showNewSubcategoryDialog = false
+                    },
+                ) { Text("取消") }
             },
         )
     }
