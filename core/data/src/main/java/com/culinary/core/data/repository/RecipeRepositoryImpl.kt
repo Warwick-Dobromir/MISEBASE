@@ -104,7 +104,7 @@ class RecipeRepositoryImpl
                 if (changed == 0) {
                     Outcome.failure(CulinaryError.NotFound(entity = "recipe", id = id.value))
                 } else {
-                    Outcome.success(Unit)
+                    Outcome.success(kotlin.Unit)
                 }
             } catch (e: CancellationException) {
                 throw e
