@@ -1108,13 +1108,17 @@ private fun RecipeNotesSection(
         onValueChange = onNotesChange,
         placeholder = "记录研发说明、实验结论与调整记录……",
     )
+    Spacer(modifier = Modifier.height(CulinarySpacing.xs))
     val pickNoteImage = rememberRecipeImagePicker(onNoteImage)
-    Spacer(modifier = Modifier.height(CulinarySpacing.sm))
+    Row(horizontalArrangement = Arrangement.spacedBy(CulinarySpacing.md)) {
+        CulinaryTextButton(text = "+ 添加文字备注", onClick = onAddTextNote)
+        CulinaryTextButton(text = "+ 上传研发照片", onClick = pickNoteImage)
+    }
     val noteImages = state.noteImages.mapNotNull { it to state.imageBytes[it.id] } +
         state.noteImagesPending.map { null to it.bytes }
     if (noteImages.isNotEmpty()) {
         Row(
-            modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+            modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(top = CulinarySpacing.xs),
             horizontalArrangement = Arrangement.spacedBy(CulinarySpacing.sm),
         ) {
             noteImages.forEachIndexed { index, (_, bytes) ->
@@ -1126,11 +1130,6 @@ private fun RecipeNotesSection(
                 }
             }
         }
-        Spacer(modifier = Modifier.height(CulinarySpacing.xs))
-    }
-    Row(horizontalArrangement = Arrangement.spacedBy(CulinarySpacing.md)) {
-        CulinaryTextButton(text = "+ 添加文字备注", onClick = onAddTextNote)
-        CulinaryTextButton(text = "+ 上传研发照片", onClick = pickNoteImage)
     }
     state.seedNote.takeIf { it.isNotBlank() }?.let { seed ->
         Spacer(modifier = Modifier.height(CulinarySpacing.sm))
