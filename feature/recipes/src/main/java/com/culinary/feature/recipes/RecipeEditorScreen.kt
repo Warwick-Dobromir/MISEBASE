@@ -1247,7 +1247,13 @@ private fun UnitPickerDialog(
 ) {
     PickerDialog(
         title = stringResource(R.string.recipes_unit_picker_title),
-        items = units.map { PickerItem(label = "${it.name}（${it.symbol}）", selected = it.id.value == selectedId) },
+        items =
+            units.map { unit ->
+                PickerItem(
+                    label = "${unit.name}（${unit.symbol}）",
+                    selected = unit.id.value == selectedId,
+                )
+            },
         onSelect = { index -> onSelect(units[index]) },
         onDismiss = onDismiss,
         cancelLabel = stringResource(R.string.recipes_cancel),
@@ -1334,7 +1340,10 @@ private fun CapacityPickerDialog(
     val current = selected.trim().uppercase()
     PickerDialog(
         title = stringResource(R.string.recipes_minimum_capacity),
-        items = options.map { (value, label) -> PickerItem(label = label, selected = value == current) },
+        items =
+            options.map { (value, label) ->
+                PickerItem(label = label, selected = value == current)
+            },
         onSelect = { index -> onSelect(options[index].first) },
         onDismiss = onDismiss,
         cancelLabel = stringResource(R.string.recipes_cancel),
@@ -1351,7 +1360,10 @@ private fun ArchiveCategoryPickerDialog(
     val options = categories.filterNot { it.isTest }.sortedBy { it.pathLabel }
     PickerDialog(
         title = "选择分类归属",
-        items = options.map { PickerItem(label = it.pathLabel, selected = it.id == selectedId) },
+        items =
+            options.map { category ->
+                PickerItem(label = category.pathLabel, selected = category.id == selectedId)
+            },
         onSelect = { index -> onSelect(options[index].id) },
         onDismiss = onDismiss,
         cancelLabel = stringResource(R.string.recipes_cancel),
@@ -1367,7 +1379,10 @@ private fun CategoryPickerDialog(
     val categories = RecipeCategory.entries
     PickerDialog(
         title = stringResource(R.string.recipes_category_picker_title),
-        items = categories.map { PickerItem(label = recipeCategoryLabel(it), selected = it == selected) },
+        items =
+            categories.map { category ->
+                PickerItem(label = recipeCategoryLabel(category), selected = category == selected)
+            },
         onSelect = { index -> onSelect(categories[index]) },
         onDismiss = onDismiss,
         cancelLabel = stringResource(R.string.recipes_cancel),
@@ -1396,7 +1411,12 @@ private fun PickerDialog(
             if (items.isEmpty()) {
                 Text(text = stringResource(R.string.recipes_picker_empty))
             } else {
-                Column(modifier = Modifier.heightIn(max = 420.dp).verticalScroll(rememberScrollState())) {
+                Column(
+                    modifier =
+                        Modifier
+                            .heightIn(max = 420.dp)
+                            .verticalScroll(rememberScrollState()),
+                ) {
                     items.forEachIndexed { index, item ->
                         Row(
                             modifier =
@@ -1424,7 +1444,7 @@ private fun PickerDialog(
                                 Icon(
                                     imageVector = CulinaryIcons.Check,
                                     contentDescription = null,
-                                    modifier = Modifier.size(20.dp),
+                                    modifier = Modifier.size(18.dp),
                                     tint = MaterialTheme.colorScheme.secondary,
                                 )
                             }
