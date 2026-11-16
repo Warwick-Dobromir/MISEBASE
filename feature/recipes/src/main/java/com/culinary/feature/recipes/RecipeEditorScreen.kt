@@ -23,6 +23,8 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -100,6 +102,7 @@ fun RecipeEditorRoute(
         onAllergenNotesChange = viewModel::onAllergenNotesChange,
         onOpenCategoryPicker = { picker = EditorPicker.CATEGORY },
         onOpenArchiveCategoryPicker = { picker = EditorPicker.ARCHIVE_CATEGORY },
+        onArchiveCategorySelect = { viewModel.onArchiveCategorySelect(it) },
         onYieldAmountChange = viewModel::onYieldAmountChange,
         onOpenYieldUnit = { picker = EditorPicker.YIELD_UNIT },
         onMinRangeAmountChange = viewModel::onMinRangeAmountChange,
@@ -310,6 +313,7 @@ private fun RecipeEditorScreen(
     onRemoveNoteImage: (Int) -> Unit,
     onOpenCategoryPicker: () -> Unit,
     onOpenArchiveCategoryPicker: () -> Unit,
+    onArchiveCategorySelect: (String) -> Unit,
     onYieldAmountChange: (String) -> Unit,
     onOpenYieldUnit: () -> Unit,
     onMinRangeAmountChange: (String) -> Unit,
@@ -379,6 +383,7 @@ private fun RecipeEditorScreen(
                 onNoteImage = onNoteImage,
                 onRemoveNoteImage = onRemoveNoteImage,
                 onOpenArchiveCategoryPicker = onOpenArchiveCategoryPicker,
+            onArchiveCategorySelect = onArchiveCategorySelect,
                 onCuisineChange = onCuisineChange,
                 onPrepMinutesChange = onPrepMinutesChange,
                 onCookMinutesChange = onCookMinutesChange,
@@ -441,6 +446,7 @@ internal fun RecipeEditorForm(
     onNoteImage: (PendingRecipeImage) -> Unit = {},
     onRemoveNoteImage: (Int) -> Unit = {},
     onOpenArchiveCategoryPicker: () -> Unit = {},
+    onArchiveCategorySelect: (String) -> Unit = {},
     onCuisineChange: (String) -> Unit = {},
     onPrepMinutesChange: (String) -> Unit = {},
     onCookMinutesChange: (String) -> Unit = {},
@@ -486,6 +492,7 @@ internal fun RecipeEditorForm(
             onDescriptionChange = onDescriptionChange,
             onOpenCategoryPicker = onOpenCategoryPicker,
             onOpenArchiveCategoryPicker = onOpenArchiveCategoryPicker,
+            onArchiveCategorySelect = onArchiveCategorySelect,
             onYieldAmountChange = onYieldAmountChange,
             onOpenYieldUnit = onOpenYieldUnit,
             onMinRangeAmountChange = onMinRangeAmountChange,
@@ -555,6 +562,7 @@ private fun RecipeBasics(
     onDescriptionChange: (String) -> Unit,
     onOpenCategoryPicker: () -> Unit,
     onOpenArchiveCategoryPicker: () -> Unit,
+    onArchiveCategorySelect: (String) -> Unit,
     onYieldAmountChange: (String) -> Unit,
     onOpenYieldUnit: () -> Unit,
     onMinRangeAmountChange: (String) -> Unit,
@@ -596,42 +604,11 @@ private fun RecipeBasics(
             modifier = Modifier.fillMaxWidth(),
         )
         Spacer(modifier = Modifier.height(CulinarySpacing.lg))
-        Text(
-            text = "CLASSIFICATION / 分类归属",
-            style = CulinaryTextStyles.eyebrow,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        RecipeClassificationSelector(
+            state = state,
+            onOpenRecipeType = onOpenCategoryPicker,
+            onSelectCategory = onArchiveCategorySelect,
         )
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(vertical = CulinarySpacing.xs),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                text = "菜谱类型",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.weight(1f),
-            )
-            CulinaryTextButton(
-                text = recipeCategoryLabel(state.category),
-                onClick = onOpenCategoryPicker,
-            )
-        }
-        CulinaryRule()
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(vertical = CulinarySpacing.xs),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                text = "分类路径",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.weight(1f),
-            )
-            CulinaryTextButton(
-                text = categoryPath,
-                onClick = onOpenArchiveCategoryPicker,
-            )
-        }
         Spacer(modifier = Modifier.height(CulinarySpacing.md))
         ArchiveYieldRangeFields(
             yieldAmount = state.yieldAmount,
@@ -661,6 +638,118 @@ private fun RecipeBasics(
                 modifier = Modifier.width(120.dp),
             )
         }
+    }
+}
+
+@Composable
+private fun RecipeClassificationSelector(
+    state: RecipeEditorUiState,
+    onOpenRecipeType: () -> Unit,
+    onSelectCategory: (String) -> Unit,
+) {
+    val path = buildList {
+        var current = state.categories.firstOrNull { it.id == state.archiveCategoryId }
+        while (current != null && size < 32) {
+            add(0, current)
+            current = current.parentId?.let { id -> state.categories.firstOrNull { it.id == id } }
+        }
+    }
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Text(
+            text = "CLASSIFICATION / 分类归属",
+            style = CulinaryTextStyles.eyebrow,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Spacer(modifier = Modifier.height(CulinarySpacing.xs))
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(vertical = CulinarySpacing.xs),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = "菜谱类型",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.weight(1f),
+            )
+            CulinaryTextButton(
+                text = recipeCategoryLabel(state.category),
+                onClick = onOpenRecipeType,
+            )
+        }
+        CulinaryRule()
+        var level = 0
+        while (level <= path.size) {
+            val parentId = if (level == 0) null else path.getOrNull(level - 1)?.id
+            val options = state.categories.filter { it.parentId == parentId && !it.isTest }
+            if (options.isEmpty()) break
+            RecipeCategoryLevelField(
+                level = level,
+                selectedId = path.getOrNull(level)?.id,
+                options = options,
+                onSelect = onSelectCategory,
+            )
+            level++
+            if (level > 32) break
+        }
+    }
+}
+
+@Composable
+private fun RecipeCategoryLevelField(
+    level: Int,
+    selectedId: String?,
+    options: List<ArchiveCategory>,
+    onSelect: (String) -> Unit,
+) {
+    var expanded by remember { mutableStateOf(false) }
+    val selected = options.firstOrNull { it.id == selectedId }
+    Column(modifier = Modifier.fillMaxWidth().padding(top = CulinarySpacing.xs)) {
+        Text(
+            text = "LEVEL " + (level + 1).toString().padStart(2, '0'),
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Box(modifier = Modifier.fillMaxWidth()) {
+            Row(
+                modifier = Modifier.fillMaxWidth().clickable { expanded = true }
+                    .padding(vertical = CulinarySpacing.xs),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = selected?.name ?: "选择分类",
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = if (selected == null) MaterialTheme.colorScheme.onSurfaceVariant
+                    else MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.weight(1f),
+                )
+                if (selected != null) {
+                    Text(
+                        text = "清除",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.clickable { onSelect(selected.parentId ?: "") },
+                    )
+                }
+                Icon(
+                    imageVector = CulinaryIcons.ChevronDown,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(start = CulinarySpacing.xs).size(14.dp),
+                )
+            }
+            DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+                options.forEach { category ->
+                    DropdownMenuItem(
+                        text = { Text(category.name) },
+                        onClick = {
+                            expanded = false
+                            onSelect(category.id)
+                        },
+                    )
+                }
+            }
+        }
+        CulinaryRule()
     }
 }
 
