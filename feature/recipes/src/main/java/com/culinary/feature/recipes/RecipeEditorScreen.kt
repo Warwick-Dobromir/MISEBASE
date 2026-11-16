@@ -64,6 +64,7 @@ import com.culinary.core.domain.model.Ingredient
 import com.culinary.core.domain.model.ArchiveCategory
 import com.culinary.core.domain.model.PendingRecipeImage
 import com.culinary.core.domain.model.RecipeCategory
+import com.culinary.core.domain.model.KitchenRecordKind
 import com.culinary.core.domain.model.RecipeComponentKind
 import com.culinary.core.domain.usecase.recipe.RecipeOption
 import com.culinary.core.domain.usecase.sauce.SauceOption
@@ -74,6 +75,7 @@ import com.culinary.core.domain.model.Unit as UnitModel
 fun RecipeEditorRoute(
     onSaved: () -> Unit,
     onCancelled: () -> Unit = onSaved,
+    onOpenRelation: (KitchenRecordKind, String) -> Unit = { _, _ -> },
     modifier: Modifier = Modifier,
     viewModel: RecipeEditorViewModel = hiltViewModel(),
 ) {
@@ -114,6 +116,7 @@ fun RecipeEditorRoute(
         onAddRelationSauce = { picker = EditorPicker.RELATION_SAUCE },
         onAddRelationRecipe = { picker = EditorPicker.RELATION_RECIPE },
         onRemoveRelation = viewModel::removeRelation,
+        onOpenRelation = onOpenRelation,
         onMoveRelation = viewModel::moveRelation,
         onLineAmountChange = viewModel::onLineAmountChange,
         onOpenLineUnit = { key ->
@@ -325,6 +328,7 @@ private fun RecipeEditorScreen(
     onAddRelationSauce: () -> Unit,
     onAddRelationRecipe: () -> Unit,
     onRemoveRelation: (String) -> Unit,
+    onOpenRelation: (KitchenRecordKind, String) -> Unit,
     onMoveRelation: (Int, Int) -> Unit,
     onLineAmountChange: (String, String) -> Unit,
     onOpenLineUnit: (String) -> Unit,
@@ -400,6 +404,7 @@ private fun RecipeEditorScreen(
                 onAddRelationSauce = onAddRelationSauce,
                 onAddRelationRecipe = onAddRelationRecipe,
                 onRemoveRelation = onRemoveRelation,
+                onOpenRelation = onOpenRelation,
                 onMoveRelation = onMoveRelation,
                 onLineAmountChange = onLineAmountChange,
                 onOpenLineUnit = onOpenLineUnit,
@@ -462,6 +467,7 @@ internal fun RecipeEditorForm(
     onAddRelationSauce: () -> Unit = {},
     onAddRelationRecipe: () -> Unit = {},
     onRemoveRelation: (String) -> Unit = {},
+    onOpenRelation: (KitchenRecordKind, String) -> Unit = { _, _ -> },
     onMoveRelation: (Int, Int) -> Unit = { _, _ -> },
     onLineAmountChange: (String, String) -> Unit,
     onOpenLineUnit: (String) -> Unit = {},
@@ -542,6 +548,7 @@ internal fun RecipeEditorForm(
             onAddSauce = onAddRelationSauce,
             onAddRecipe = onAddRelationRecipe,
             onRemove = onRemoveRelation,
+            onOpenRelation = onOpenRelation,
             onMove = onMoveRelation,
         )
         RecipeNotesSection(
@@ -993,6 +1000,7 @@ private fun RecipeRelationsSection(
     onAddSauce: () -> Unit,
     onAddRecipe: () -> Unit,
     onRemove: (String) -> Unit,
+    onOpenRelation: (KitchenRecordKind, String) -> Unit,
     onMove: (Int, Int) -> Unit,
 ) {
     ArchiveEditorSectionHeader(
@@ -1000,49 +1008,59 @@ private fun RecipeRelationsSection(
         english = "RELATED RECORDS",
         title = "关联档案",
     )
+    state.relations.forEachIndexed { index, relation ->
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(vertical = CulinarySpacing.xs),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            ArchiveEditorDragHandle(onMove = { delta -> onMove(index, index + delta) })
+            Column(
+                modifier =
+                    Modifier
+                        .weight(1f)
+                        .clickable { onOpenRelation(relation.targetKind, relation.targetId) }
+                        .padding(horizontal = CulinarySpacing.xs, vertical = 4.dp),
+            ) {
+                Text(
+                    text = relation.name,
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+                Text(
+                    text = relation.relationLabel,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            Text(
+                text = "↗",
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier =
+                    Modifier
+                        .clickable { onOpenRelation(relation.targetKind, relation.targetId) }
+                        .padding(horizontal = CulinarySpacing.xs, vertical = 4.dp),
+            )
+            Icon(
+                imageVector = CulinaryIcons.Close,
+                contentDescription = "移除关联档案",
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(20.dp).clickable { onRemove(relation.targetId) }.padding(2.dp),
+            )
+        }
+        CulinaryRule()
+    }
     if (state.relations.isEmpty()) {
         Text(
             text = "暂未添加关联档案",
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(vertical = CulinarySpacing.sm),
         )
-    } else {
-        state.relations.forEachIndexed { index, relation ->
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(vertical = CulinarySpacing.xs),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                ArchiveEditorDragHandle(
-                    onMove = { offset ->
-                        val target = index + offset
-                        if (target in state.relations.indices) onMove(index, target)
-                    },
-                )
-                Spacer(modifier = Modifier.width(CulinarySpacing.xs))
-                Text(
-                    text = relation.name,
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.weight(1f),
-                )
-                Text(
-                    text = relation.relationLabel,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                Icon(
-                    imageVector = CulinaryIcons.Close,
-                    contentDescription = "移除关联档案",
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(20.dp).clickable { onRemove(relation.targetId) }.padding(2.dp),
-                )
-            }
-            CulinaryRule()
-        }
     }
     Row(
         modifier = Modifier.padding(top = CulinarySpacing.xs),
-        horizontalArrangement = Arrangement.spacedBy(CulinarySpacing.xs),
+        horizontalArrangement = Arrangement.spacedBy(CulinarySpacing.md),
     ) {
         CulinaryTextButton(text = "+ 关联酱汁", onClick = onAddSauce)
         CulinaryTextButton(text = "+ 关联菜谱", onClick = onAddRecipe)
