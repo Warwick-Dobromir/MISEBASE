@@ -17,7 +17,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -42,6 +44,7 @@ import com.culinary.core.designsystem.component.CulinaryIconButton
 import com.culinary.core.designsystem.component.CulinaryRule
 import com.culinary.core.designsystem.component.CulinarySearchField
 import com.culinary.core.designsystem.component.CulinaryTextButton
+import com.culinary.core.designsystem.component.CulinaryTextField
 import com.culinary.core.designsystem.component.EmptyState
 import com.culinary.core.designsystem.component.ErrorBanner
 import com.culinary.core.designsystem.component.LoadingRows
@@ -66,6 +69,7 @@ fun ArchiveLibraryRoute(
         onAdd = onAdd,
         onOpenEntry = onOpenEntry,
         onBack = onBack,
+        onCreateSubcategory = viewModel::createSubcategory,
         modifier = modifier,
     )
 }
@@ -78,12 +82,15 @@ internal fun ArchiveLibraryScreen(
     onAdd: () -> Unit,
     onOpenEntry: (KitchenArchiveEntry) -> Unit,
     onBack: () -> Unit = {},
+    onCreateSubcategory: (String, String) -> Unit = { _, _ -> },
     modifier: Modifier = Modifier,
 ) {
     var currentCategoryId by rememberSaveable(section) { mutableStateOf<String?>(null) }
     var searchOpen by rememberSaveable(section) { mutableStateOf(false) }
     var query by rememberSaveable(section) { mutableStateOf("") }
     var visibleLimit by rememberSaveable(section) { mutableIntStateOf(20) }
+    var newSubcategoryParentId by rememberSaveable(section) { mutableStateOf<String?>(null) }
+    var newSubcategoryName by rememberSaveable(section) { mutableStateOf("") }
 
     val categories = state.categories
     val entries = state.entries.filter { it.kind == section.kind }
@@ -150,6 +157,17 @@ internal fun ArchiveLibraryScreen(
             )
         }
         CulinaryRule()
+        state.categoryError?.let { message ->
+            ErrorBanner(message = message, modifier = Modifier.padding(horizontal = CulinarySpacing.pageHorizontal))
+        }
+        state.categoryMessage?.let { message ->
+            Text(
+                text = message,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.secondary,
+                modifier = Modifier.padding(horizontal = CulinarySpacing.pageHorizontal, vertical = CulinarySpacing.xxs),
+            )
+        }
         if (state.isLoading) {
             LoadingRows()
             return@Column
@@ -206,6 +224,7 @@ internal fun ArchiveLibraryScreen(
                     CategoryRow(
                         category = category,
                         onClick = { currentCategoryId = category.id },
+                        onAddChild = { newSubcategoryParentId = category.id; newSubcategoryName = "" },
                     )
                 }
             }
@@ -253,6 +272,42 @@ internal fun ArchiveLibraryScreen(
                 }
             }
         }
+    }
+
+    val parentForDialog = categories.firstOrNull { it.id == newSubcategoryParentId }
+    if (parentForDialog != null) {
+        AlertDialog(
+            onDismissRequest = { newSubcategoryParentId = null },
+            title = { Text("新建子库") },
+            text = {
+                Column {
+                    Text(
+                        text = "所属分类：${categoryPath(parentForDialog, categories).joinToString(" / ")}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Spacer(modifier = Modifier.height(CulinarySpacing.sm))
+                    CulinaryTextField(
+                        value = newSubcategoryName,
+                        onValueChange = { newSubcategoryName = it },
+                        label = { Text("子库名称") },
+                        singleLine = true,
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        onCreateSubcategory(parentForDialog.id, newSubcategoryName)
+                        newSubcategoryParentId = null
+                    },
+                    enabled = newSubcategoryName.isNotBlank(),
+                ) { Text("创建") }
+            },
+            dismissButton = {
+                TextButton(onClick = { newSubcategoryParentId = null }) { Text("取消") }
+            },
+        )
     }
 }
 
@@ -383,6 +438,7 @@ private fun SectionLabel(text: String) {
 private fun CategoryRow(
     category: KitchenArchiveCategory,
     onClick: () -> Unit,
+    onAddChild: () -> Unit,
 ) {
     Row(
         modifier =
@@ -426,6 +482,7 @@ private fun CategoryRow(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
+        CulinaryTextButton(text = "＋ 新建子库", onClick = onAddChild)
         Text(
             text = category.descendantCount.toString(),
             style = MaterialTheme.typography.bodySmall,
