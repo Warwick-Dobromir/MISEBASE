@@ -219,6 +219,12 @@ internal fun ArchiveLibraryScreen(
                     childCount = children.size,
                     directCount = directEntries.size,
                     onAdd = if (!showingSearch && currentCategoryId == null) onAdd else null,
+                    onCreateSubcategory = currentCategory?.let { category ->
+                        {
+                            newSubcategoryParentId = category.id
+                            newSubcategoryName = ""
+                        }
+                    },
                     onBack = {
                         if (currentCategory == null) onBack() else currentCategoryId = currentCategory.parentId
                     },
@@ -375,6 +381,7 @@ private fun ArchiveContextHeader(
     childCount: Int,
     directCount: Int,
     onAdd: (() -> Unit)?,
+    onCreateSubcategory: (() -> Unit)?,
     onBack: () -> Unit,
 ) {
     Column(modifier = Modifier.padding(horizontal = CulinarySpacing.pageHorizontal)) {
@@ -414,6 +421,9 @@ private fun ArchiveContextHeader(
                     onClick = action,
                     icon = CulinaryIcons.Add,
                 )
+            }
+            onCreateSubcategory?.let { action ->
+                CulinaryTextButton(text = "＋ 新建子库", onClick = action)
             }
         }
         if (categoryPath.isNotEmpty()) {
