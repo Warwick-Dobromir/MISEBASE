@@ -1024,9 +1024,11 @@ private fun RecipeRelationsSection(
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
-                CulinaryTextButton(
-                    text = "移除",
-                    onClick = { onRemove(relation.targetId) },
+                Icon(
+                    imageVector = CulinaryIcons.Close,
+                    contentDescription = "移除关联档案",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(20.dp).clickable { onRemove(relation.targetId) }.padding(2.dp),
                 )
             }
             CulinaryRule()
@@ -1100,12 +1102,17 @@ private fun RecipeNoteThumbnail(
             android.graphics.BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
         }
     if (bitmap == null) return
-    Box {
+    Box(
+        modifier =
+            Modifier
+                .size(88.dp)
+                .background(MaterialTheme.colorScheme.surfaceContainerLow),
+    ) {
         androidx.compose.foundation.Image(
             bitmap = bitmap.asImageBitmap(),
             contentDescription = null,
             contentScale = androidx.compose.ui.layout.ContentScale.Crop,
-            modifier = Modifier.size(88.dp),
+            modifier = Modifier.fillMaxWidth().height(88.dp),
         )
         Icon(
             imageVector = CulinaryIcons.Close,
@@ -1114,6 +1121,7 @@ private fun RecipeNoteThumbnail(
             modifier =
                 Modifier
                     .align(Alignment.TopEnd)
+                    .background(MaterialTheme.colorScheme.surface)
                     .size(20.dp)
                     .clickable(onClick = onRemove)
                     .padding(2.dp),
