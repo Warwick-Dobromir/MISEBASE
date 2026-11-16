@@ -553,6 +553,7 @@ internal fun RecipeEditorForm(
             onNotesChange = onNotesChange,
             onNoteImage = onNoteImage,
             onRemoveNoteImage = onRemoveNoteImage,
+            onAddTextNote = onAddTextNote,
         )
         RecipeEditorFooter(state)
     }
@@ -610,7 +611,7 @@ private fun RecipeBasics(
             onOpenRecipeType = onOpenCategoryPicker,
             onSelectCategory = onArchiveCategorySelect,
         )
-        Spacer(modifier = Modifier.height(CulinarySpacing.md))
+        Spacer(modifier = Modifier.height(CulinarySpacing.lg))
         ArchiveYieldRangeFields(
             yieldAmount = state.yieldAmount,
             yieldUnit = state.yieldUnit?.symbol.orEmpty(),
@@ -645,22 +646,6 @@ private fun RecipeClassificationSelector(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Spacer(modifier = Modifier.height(CulinarySpacing.xs))
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(vertical = CulinarySpacing.xs),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                text = "菜谱类型",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.weight(1f),
-            )
-            CulinaryTextButton(
-                text = recipeCategoryLabel(state.category),
-                onClick = onOpenRecipeType,
-            )
-        }
-        CulinaryRule()
         if (state.categories.isEmpty()) {
             Text(
                 text = "分类数据尚未加载。",
@@ -682,6 +667,22 @@ private fun RecipeClassificationSelector(
                 level++
                 if (level > 32) break
             }
+        }
+        Spacer(modifier = Modifier.height(CulinarySpacing.xs))
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(vertical = CulinarySpacing.xs),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = "菜谱类型",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.weight(1f),
+            )
+            CulinaryTextButton(
+                text = recipeCategoryLabel(state.category),
+                onClick = onOpenRecipeType,
+            )
         }
     }
 }
@@ -813,14 +814,28 @@ private fun RecipeComponentsEditor(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
-    Row(
-        modifier = Modifier.padding(top = CulinarySpacing.xs),
-        horizontalArrangement = Arrangement.spacedBy(CulinarySpacing.md),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        CulinaryTextButton(text = "+ 食材", onClick = onAddIngredient)
-        CulinaryTextButton(text = "+ 子菜谱", onClick = onAddRecipe)
-        CulinaryTextButton(text = "+ 酱汁", onClick = onAddSauce)
+    var showAddComponentOptions by remember { mutableStateOf(false) }
+    CulinaryTextButton(
+        text = "+ 添加组成项",
+        onClick = { showAddComponentOptions = true },
+        modifier = Modifier.padding(top = CulinarySpacing.xxs),
+    )
+    if (showAddComponentOptions) {
+        AlertDialog(
+            onDismissRequest = { showAddComponentOptions = false },
+            title = { Text("添加组成项") },
+            text = {
+                Column {
+                    TextButton(onClick = { showAddComponentOptions = false; onAddIngredient() }) { Text("食材") }
+                    TextButton(onClick = { showAddComponentOptions = false; onAddRecipe() }) { Text("子菜谱") }
+                    TextButton(onClick = { showAddComponentOptions = false; onAddSauce() }) { Text("酱汁") }
+                }
+            },
+            confirmButton = {},
+            dismissButton = {
+                TextButton(onClick = { showAddComponentOptions = false }) { Text("取消") }
+            },
+        )
     }
 }
 
@@ -1045,12 +1060,27 @@ private fun RecipeRelationsSection(
             CulinaryRule()
         }
     }
-    Row(
-        modifier = Modifier.padding(top = CulinarySpacing.xs),
-        horizontalArrangement = Arrangement.spacedBy(CulinarySpacing.xs),
-    ) {
-        CulinaryTextButton(text = "+ 关联酱汁", onClick = onAddSauce)
-        CulinaryTextButton(text = "+ 关联菜谱", onClick = onAddRecipe)
+    var showRelationOptions by remember { mutableStateOf(false) }
+    CulinaryTextButton(
+        text = "+ 添加关联档案",
+        onClick = { showRelationOptions = true },
+        modifier = Modifier.padding(top = CulinarySpacing.xxs),
+    )
+    if (showRelationOptions) {
+        AlertDialog(
+            onDismissRequest = { showRelationOptions = false },
+            title = { Text("添加关联档案") },
+            text = {
+                Column {
+                    TextButton(onClick = { showRelationOptions = false; onAddSauce() }) { Text("关联酱汁") }
+                    TextButton(onClick = { showRelationOptions = false; onAddRecipe() }) { Text("关联菜谱") }
+                }
+            },
+            confirmButton = {},
+            dismissButton = {
+                TextButton(onClick = { showRelationOptions = false }) { Text("取消") }
+            },
+        )
     }
 }
 
@@ -1152,28 +1182,24 @@ private fun RecipeNoteThumbnail(
 
 @Composable
 private fun RecipeEditorFooter(state: RecipeEditorUiState) {
-    Spacer(modifier = Modifier.height(CulinarySpacing.lg))
-    CulinaryRule()
-    Spacer(modifier = Modifier.height(CulinarySpacing.sm))
-    val status =
-        when {
-            state.isSaving -> "正在保存…"
-            state.isNew || !state.hasPublishedVersion -> "尚未保存"
-            state.isDirty -> "修改尚未保存"
-            else -> "已保存"
+    Column(modifier = Modifier.fillMaxWidth().padding(top = CulinarySpacing.xl)) {
+        CulinaryRule()
+        Spacer(modifier = Modifier.height(CulinarySpacing.md))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text =
+                    if (state.updatedAtEpochMillis == null) {
+                        "尚未保存"
+                    } else {
+                        "最后更新 " + (formatArchiveTimestamp(state.updatedAtEpochMillis) ?: "—")
+                    },
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
-    Text(
-        text = status,
-        style = MaterialTheme.typography.labelMedium,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-    )
-    formatArchiveTimestamp(state.updatedAtEpochMillis)?.let { updated ->
-        Text(
-            text = stringResource(R.string.recipes_last_updated, updated),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(top = CulinarySpacing.xxs),
-        )
     }
 }
 
