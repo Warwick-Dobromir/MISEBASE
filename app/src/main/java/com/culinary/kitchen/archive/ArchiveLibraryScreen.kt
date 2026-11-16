@@ -195,17 +195,6 @@ internal fun ArchiveLibraryScreen(
             )
             return@Column
         }
-        if (categories.isEmpty()) {
-            LegacyFlatList(
-                entries = entries,
-                limit = visibleLimit,
-                onLoadMore = { visibleLimit += 20 },
-                onOpenEntry = onOpenEntry,
-                onAdd = onAdd,
-            )
-            return@Column
-        }
-
         LazyColumn(modifier = Modifier.fillMaxSize()) {
             item {
                 ArchiveContextHeader(
