@@ -243,7 +243,10 @@ internal fun ArchiveLibraryScreen(
                     CategoryRow(
                         category = category,
                         onClick = { currentCategoryId = category.id },
-                        onAddChild = { newSubcategoryParentId = category.id; newSubcategoryName = "" },
+                        onAddChild = {
+                            newSubcategoryParentId = category.id
+                            newSubcategoryName = ""
+                        },
                     )
                 }
             }
