@@ -56,7 +56,7 @@
     <string name="recipes_prep_minutes">准备时间（分钟）</string>
     <string name="recipes_cook_minutes">烹饪时间（分钟）</string>
     <string name="recipes_notes">研发备注</string>
-    <string name="recipes_last_updated">最后更新 %1$s</string>
+    <string name="recipes_last_updated">最后更新 · %1$s</string>
     <string name="recipes_yield_amount">产量</string>
     <string name="recipes_servings_label">基准份数</string>
     <string name="recipes_add_ingredient">添加食材</string>
