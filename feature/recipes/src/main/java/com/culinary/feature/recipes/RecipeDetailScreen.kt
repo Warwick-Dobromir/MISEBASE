@@ -228,11 +228,6 @@ internal fun RecipeDetailContent(
                     }
                 }
             }
-            ExpansionBlock(
-                state = state,
-                onServingsChange = onServingsChange,
-                onExpand = onExpand,
-            )
             Spacer(modifier = Modifier.height(CulinarySpacing.xl))
 
             ArchiveModuleHeader(number = "02", english = "METHOD", chinese = "制作工艺")
@@ -284,26 +279,19 @@ internal fun RecipeDetailContent(
                     recipe.ingredientSummary
                         ?.takeIf { it.isNotBlank() && it != recipe.description }
                         ?.let { "原料摘要" to it },
-                )
+                ).joinToString("\n\n") { (label, value) -> "$label\n$value" }
+                    .takeIf { it.isNotBlank() }
             ArchiveModuleHeader(number = "03", english = "APPLICATION", chinese = "适用范围")
-            if (application.isEmpty()) {
+            if (application == null) {
                 Text(
                     text = "暂未填写适用范围",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             } else {
-                application.forEach { (label, value) ->
-                    Text(
-                        text = label,
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                    ArchiveProse(value)
-                    Spacer(modifier = Modifier.height(CulinarySpacing.sm))
-                }
+                ArchiveProse(application)
             }
-            Spacer(modifier = Modifier.height(CulinarySpacing.lg))
+            Spacer(modifier = Modifier.height(CulinarySpacing.xl))
 
             ArchiveModuleHeader(number = "04", english = "RELATED RECORDS", chinese = "关联档案")
             if (state.relations.isEmpty()) {
@@ -416,109 +404,6 @@ private fun componentKindLabel(component: RecipeComponentView): String =
         RecipeComponentKind.RECIPE -> "子菜谱 v" + (component.referencedVersionNo ?: 0)
         RecipeComponentKind.SAUCE -> "酱汁 v" + (component.referencedVersionNo ?: 0)
     }
-
-/** 按份数展开：默认收起，点击后才显示输入，避免把编辑控件堆在展示页。 */
-@Composable
-private fun ExpansionBlock(
-    state: RecipeDetailUiState,
-    onServingsChange: (String) -> Unit,
-    onExpand: () -> Unit,
-) {
-    var open by remember { androidx.compose.runtime.mutableStateOf(state.expanded != null) }
-    Spacer(modifier = Modifier.height(CulinarySpacing.sm))
-    CulinaryLinkText(
-        text = if (open) "收起配方" else "按份数展开配方",
-        onClick = { open = !open },
-    )
-    if (!open) return
-    Spacer(modifier = Modifier.height(CulinarySpacing.xs))
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        CulinaryTextField(
-            value = state.targetServings,
-            onValueChange = onServingsChange,
-            label = { Text(text = stringResource(R.string.recipes_servings_label)) },
-            singleLine = true,
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-            fillWidth = false,
-            modifier = Modifier.width(132.dp),
-        )
-        Spacer(modifier = Modifier.width(CulinarySpacing.xs))
-        CulinaryButton(
-            text =
-                stringResource(
-                    if (state.isExpanding) R.string.recipes_expanding else R.string.recipes_expand,
-                ),
-            onClick = onExpand,
-            variant = CulinaryButtonVariant.Secondary,
-            enabled = !state.isExpanding,
-            loading = state.isExpanding,
-        )
-    }
-    state.expansionError?.let { message ->
-        Text(
-            text = message,
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.error,
-            modifier = Modifier.padding(top = CulinarySpacing.xs),
-        )
-    }
-    state.expanded?.let { expanded -> ExpandedLines(expanded) }
-}
-
-@Composable
-private fun ExpandedLines(expanded: ExpandedRecipe) {
-    Text(
-        text =
-            stringResource(
-                R.string.recipes_expanded,
-                expanded.targetServings.toString(),
-                expanded.baseServings.toString(),
-            ),
-        style = MaterialTheme.typography.titleSmall,
-        color = MaterialTheme.colorScheme.onSurface,
-        modifier = Modifier.padding(top = CulinarySpacing.sm),
-    )
-    if (expanded.lines.isEmpty()) {
-        Text(
-            text = stringResource(R.string.recipes_expansion_empty),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        return
-    }
-    expanded.lines.forEach { line ->
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(vertical = CulinarySpacing.xxs),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = line.label,
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurface,
-                )
-                if (line.isOptional) {
-                    Text(
-                        text = stringResource(R.string.recipes_optional),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-            }
-            Text(
-                text = formatRecipeAmount(line.quantity.amount) + " " + line.quantity.unit.symbol,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurface,
-            )
-        }
-    }
-    Text(
-        text = stringResource(R.string.recipes_expansion_hint),
-        style = MaterialTheme.typography.labelSmall,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-        modifier = Modifier.padding(top = CulinarySpacing.xs),
-    )
-}
 
 @Composable
 private fun categoryEyebrow(
