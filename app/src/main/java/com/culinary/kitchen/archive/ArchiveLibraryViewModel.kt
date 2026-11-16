@@ -50,7 +50,7 @@ class ArchiveLibraryViewModel
 
         /** 在当前库的指定分类下新建子库；不允许在厨房母界面创建根库。 */
         fun createSubcategory(
-            parentId: String,
+            parentId: String?,
             name: String,
         ) {
             val trimmed = name.trim()
