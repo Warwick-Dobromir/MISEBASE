@@ -3,11 +3,11 @@ package com.culinary.kitchen.archive
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.culinary.core.common.Outcome
 import com.culinary.core.data.kitchen.KitchenArchiveCategory
 import com.culinary.core.data.kitchen.KitchenArchiveEntry
 import com.culinary.core.data.kitchen.KitchenArchiveKind
 import com.culinary.core.data.kitchen.KitchenArchiveReader
-import com.culinary.core.common.Outcome
 import com.culinary.core.domain.model.ArchiveLibrary
 import com.culinary.core.domain.repository.ArchiveCategoryRepository
 import com.culinary.navigation.LIBRARY_TAB_ARG
@@ -21,7 +21,10 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-data class ArchiveCategoryFeedback(val message: String? = null, val error: String? = null)
+data class ArchiveCategoryFeedback(
+    val message: String? = null,
+    val error: String? = null,
+)
 
 data class ArchiveLibraryUiState(
     val entries: List<KitchenArchiveEntry> = emptyList(),
@@ -45,12 +48,14 @@ class ArchiveLibraryViewModel
             KitchenArchiveSection.fromRoute(savedStateHandle.get<String>(LIBRARY_TAB_ARG))
                 ?: KitchenArchiveSection.SAUCES
 
-
         /** 在当前库的指定分类下新建子库；不允许在厨房母界面创建根库。 */
-        fun createSubcategory(parentId: String, name: String) {
+        fun createSubcategory(
+            parentId: String,
+            name: String,
+        ) {
             val trimmed = name.trim()
             if (trimmed.isEmpty()) {
-                _categoryMessageState()
+                setCategoryFeedback()
                 return
             }
             viewModelScope.launch {
@@ -70,16 +75,16 @@ class ArchiveLibraryViewModel
                         )
                 ) {
                     is Outcome.Success ->
-                        _categoryMessageState(message = "已新建子库「${result.value.name}」")
+                        setCategoryFeedback(message = "已新建子库「${result.value.name}」")
                     is Outcome.Failure ->
-                        _categoryMessageState(error = "新建子库失败：${result.error}")
+                        setCategoryFeedback(error = "新建子库失败：${result.error}")
                 }
             }
         }
 
         private val categoryFeedback = MutableStateFlow<ArchiveCategoryFeedback?>(null)
 
-        private fun _categoryMessageState(
+        private fun setCategoryFeedback(
             message: String? = null,
             error: String? = null,
         ) {
