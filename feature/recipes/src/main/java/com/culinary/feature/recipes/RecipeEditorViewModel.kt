@@ -304,6 +304,12 @@ class RecipeEditorViewModel
 
         fun onNotesChange(value: String) = mutateArchive { it.copy(notes = value) }
 
+        fun addTextNote() =
+            mutateArchive { state ->
+                val marks = if (state.notes.isBlank()) "" else "\n"
+                state.copy(notes = "${state.notes}${marks}· ")
+            }
+
         fun onArchiveCategorySelect(categoryId: String) = mutateArchive { it.copy(archiveCategoryId = categoryId) }
 
         fun addSauceRelation(option: SauceOption) {
