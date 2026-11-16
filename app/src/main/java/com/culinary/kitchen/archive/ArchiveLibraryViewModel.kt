@@ -11,12 +11,16 @@ import com.culinary.core.domain.model.ArchiveLibrary
 import com.culinary.core.domain.repository.ArchiveCategoryRepository
 import com.culinary.navigation.LIBRARY_TAB_ARG
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 import javax.inject.Inject
+
+data class ArchiveCategoryFeedback(val message: String? = null, val error: String? = null)
 
 data class ArchiveLibraryUiState(
     val entries: List<KitchenArchiveEntry> = emptyList(),
@@ -72,20 +76,28 @@ class ArchiveLibraryViewModel
             }
         }
 
+        private val categoryFeedback = MutableStateFlow<ArchiveCategoryFeedback?>(null)
+
         private fun _categoryMessageState(
             message: String? = null,
             error: String? = null,
         ) {
-            // 更新前清除旧反馈；目录内容由 reader 的 Room Flow 自动刷新。
-            _uiState.value = _uiState.value.copy(categoryMessage = message, categoryError = error)
+            categoryFeedback.value = ArchiveCategoryFeedback(message = message, error = error)
         }
 
         val uiState: StateFlow<ArchiveLibraryUiState> =
             combine(
                 reader.observeEntries(),
                 reader.observeCategories(section.kind),
-            ) { entries, categories ->
-                ArchiveLibraryUiState(entries = entries, categories = categories, isLoading = false)
+                categoryFeedback,
+            ) { entries, categories, feedback ->
+                ArchiveLibraryUiState(
+                    entries = entries,
+                    categories = categories,
+                    isLoading = false,
+                    categoryMessage = feedback?.message,
+                    categoryError = feedback?.error,
+                )
             }.catch {
                 emit(ArchiveLibraryUiState(isLoading = false, loadFailed = true))
             }.stateIn(
