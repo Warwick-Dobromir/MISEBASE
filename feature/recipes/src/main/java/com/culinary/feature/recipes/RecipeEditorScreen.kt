@@ -1228,7 +1228,7 @@ private fun RecipeEditorFooter(
             )
             if (state.recipeId != null) {
                 Text(
-                    text = "删除归档",
+                    text = "删除此菜谱档案",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.error.copy(alpha = 0.72f),
                     modifier = Modifier.clickable(onClick = onArchive).padding(4.dp),
