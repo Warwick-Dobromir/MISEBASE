@@ -323,7 +323,7 @@ private fun RecipeEditorScreen(
     onRemoveNoteImage: (Int) -> Unit,
     onOpenCategoryPicker: () -> Unit,
     onOpenArchiveCategoryPicker: () -> Unit,
-    onArchiveCategorySelect: (String) -> Unit,
+    onArchiveCategorySelect: (String?) -> Unit,
     onYieldAmountChange: (String) -> Unit,
     onOpenYieldUnit: () -> Unit,
     onMinRangeAmountChange: (String) -> Unit,
