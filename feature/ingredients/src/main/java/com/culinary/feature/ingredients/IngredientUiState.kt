@@ -1,6 +1,7 @@
 package com.culinary.feature.ingredients
 
 import com.culinary.core.common.CulinaryError
+import com.culinary.core.domain.model.ArchiveCategory
 import com.culinary.core.domain.model.IngredientDetail
 import com.culinary.core.domain.model.KitchenRelatedRecord
 import com.culinary.core.domain.model.Unit as UnitModel
@@ -43,6 +44,8 @@ data class IngredientEditorUiState(
     val exampleProducts: String = "",
     val storageNotes: String = "",
     val allergenNotes: String = "",
+    val categories: List<ArchiveCategory> = emptyList(),
+    val categoryPathIds: List<String> = emptyList(),
     val defaultUnit: UnitModel? = null,
     val units: List<UnitModel> = emptyList(),
     val isLoading: Boolean = true,
