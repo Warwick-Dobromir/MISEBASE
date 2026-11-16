@@ -76,6 +76,27 @@ class ArchiveLibraryScreenTest {
     }
 
     @Test
+    fun `library root can create its first subcategory without creating a root category editor`() {
+        var createdParent: String? = "not-called"
+        var createdName = ""
+        show(
+            categories = emptyList(),
+            onCreateSubcategory = { parentId, name ->
+                createdParent = parentId
+                createdName = name
+            },
+        )
+
+        compose.onNodeWithText("＋ 新建子库").performClick()
+        compose.onNodeWithText("所属资料库：酱汁库").assertIsDisplayed()
+        compose.onNode(hasSetTextAction()).performTextInput("基础酱汁")
+        compose.onNodeWithText("创建").performClick()
+
+        assertThat(createdParent).isNull()
+        assertThat(createdName).isEqualTo("基础酱汁")
+    }
+
+    @Test
     fun `library search shows result with category path and is isolated to section`() {
         show()
 
@@ -86,8 +107,10 @@ class ArchiveLibraryScreenTest {
     }
 
     private fun show(
+        categories: List<KitchenArchiveCategory> = this.categories,
         onAdd: () -> Unit = {},
         onOpenEntry: (KitchenArchiveEntry) -> Unit = {},
+        onCreateSubcategory: (String?, String) -> Unit = { _, _ -> },
     ) {
         compose.setContent {
             CulinaryTheme {
@@ -96,6 +119,7 @@ class ArchiveLibraryScreenTest {
                     state = ArchiveLibraryUiState(entries = entries, categories = categories, isLoading = false),
                     onAdd = onAdd,
                     onOpenEntry = onOpenEntry,
+                    onCreateSubcategory = onCreateSubcategory,
                 )
             }
         }
