@@ -98,7 +98,7 @@ class RecipeRepositoryImpl
                 Outcome.failure(DbErrorMapper.map(e))
             }
 
-        override suspend fun archive(id: RecipeId): Outcome<Unit> =
+        override suspend fun archive(id: RecipeId): Outcome<kotlin.Unit> =
             try {
                 val changed = recipeDao.archive(id.value, clock.now().toEpochMilli())
                 if (changed == 0) {
