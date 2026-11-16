@@ -17,7 +17,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -55,6 +58,7 @@ fun ArchiveLibraryRoute(
     section: KitchenArchiveSection,
     onAdd: () -> Unit,
     onOpenEntry: (KitchenArchiveEntry) -> Unit,
+    onCreateCategory: (String?, String) -> Unit,
     onBack: () -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: ArchiveLibraryViewModel = hiltViewModel(),
@@ -65,6 +69,7 @@ fun ArchiveLibraryRoute(
         state = state,
         onAdd = onAdd,
         onOpenEntry = onOpenEntry,
+        onCreateCategory = viewModel::createCategory,
         onBack = onBack,
         modifier = modifier,
     )
@@ -77,6 +82,7 @@ internal fun ArchiveLibraryScreen(
     state: ArchiveLibraryUiState,
     onAdd: () -> Unit,
     onOpenEntry: (KitchenArchiveEntry) -> Unit,
+    onCreateCategory: (String?, String) -> Unit,
     onBack: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
@@ -84,6 +90,8 @@ internal fun ArchiveLibraryScreen(
     var searchOpen by rememberSaveable(section) { mutableStateOf(false) }
     var query by rememberSaveable(section) { mutableStateOf("") }
     var visibleLimit by rememberSaveable(section) { mutableIntStateOf(20) }
+    var showCreateCategory by rememberSaveable(section) { mutableStateOf(false) }
+    var newCategoryName by rememberSaveable(section) { mutableStateOf("") }
 
     val categories = state.categories
     val entries = state.entries.filter { it.kind == section.kind }
@@ -154,6 +162,9 @@ internal fun ArchiveLibraryScreen(
             LoadingRows()
             return@Column
         }
+        state.categoryCreateError?.let { message ->
+            ErrorBanner(message = message, modifier = Modifier.padding(horizontal = CulinarySpacing.pageHorizontal))
+        }
         if (state.loadFailed) {
             ErrorBanner(
                 message = stringResource(R.string.kitchen_library_load_failed),
@@ -195,6 +206,7 @@ internal fun ArchiveLibraryScreen(
                     childCount = children.size,
                     directCount = directEntries.size,
                     onAdd = if (!showingSearch && currentCategoryId == null) onAdd else null,
+                    onAddCategory = if (!showingSearch) { { showCreateCategory = true; newCategoryName = "" } } else null,
                     onBack = {
                         if (currentCategory == null) onBack() else currentCategoryId = currentCategory.parentId
                     },
@@ -254,6 +266,32 @@ internal fun ArchiveLibraryScreen(
             }
         }
     }
+    if (showCreateCategory) {
+        AlertDialog(
+            onDismissRequest = { showCreateCategory = false },
+            title = { Text("新建子库") },
+            text = {
+                OutlinedTextField(
+                    value = newCategoryName,
+                    onValueChange = { newCategoryName = it },
+                    singleLine = true,
+                    label = { Text("子库名称") },
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    enabled = newCategoryName.isNotBlank(),
+                    onClick = {
+                        onCreateCategory(currentCategoryId, newCategoryName.trim())
+                        showCreateCategory = false
+                    },
+                ) { Text("创建") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showCreateCategory = false }) { Text("取消") }
+            },
+        )
+    }
 }
 
 @Composable
@@ -307,6 +345,7 @@ private fun ArchiveContextHeader(
     childCount: Int,
     directCount: Int,
     onAdd: (() -> Unit)?,
+    onAddCategory: (() -> Unit)?,
     onBack: () -> Unit,
 ) {
     Column(modifier = Modifier.padding(horizontal = CulinarySpacing.pageHorizontal)) {
@@ -340,6 +379,9 @@ private fun ArchiveContextHeader(
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.weight(1f),
             )
+            onAddCategory?.let { action ->
+                CulinaryTextButton(text = "新建子库", onClick = action)
+            }
             onAdd?.let { action ->
                 CulinaryButton(
                     text = stringResource(section.newLabelRes),
