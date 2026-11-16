@@ -131,6 +131,27 @@ class ArchiveLibraryScreenTest {
     }
 
     @Test
+    fun `nested subcategory can create another level under the selected parent`() {
+        var createdParent: String? = null
+        var createdName = ""
+        show(
+            onCreateSubcategory = { parentId, name ->
+                createdParent = parentId
+                createdName = name
+            },
+        )
+
+        compose.onNodeWithText("酱汁基础").performClick()
+        compose.onNodeWithText("＋ 新建子库").performClick()
+        compose.onNodeWithText("所属分类：酱汁基础").assertIsDisplayed()
+        compose.onNode(hasSetTextAction()).performTextInput("冷酱")
+        compose.onNodeWithText("创建").performClick()
+
+        assertThat(createdParent).isEqualTo("base")
+        assertThat(createdName).isEqualTo("冷酱")
+    }
+
+    @Test
     fun `library search shows result with category path and is isolated to section`() {
         show()
 
