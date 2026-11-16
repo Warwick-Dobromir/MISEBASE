@@ -81,7 +81,7 @@ internal fun ArchiveLibraryScreen(
     onAdd: () -> Unit,
     onOpenEntry: (KitchenArchiveEntry) -> Unit,
     onBack: () -> Unit = {},
-    onCreateSubcategory: (String, String) -> Unit = { _, _ -> },
+    onCreateSubcategory: (String?, String) -> Unit = { _, _ -> },
     modifier: Modifier = Modifier,
 ) {
     var currentCategoryId by rememberSaveable(section) { mutableStateOf<String?>(null) }
