@@ -3,6 +3,7 @@ package com.culinary.core.data.kitchen
 import com.culinary.core.database.dao.ArchiveCategoryAssignmentDao
 import com.culinary.core.database.dao.ArchiveCategoryDao
 import com.culinary.core.database.entity.ArchiveCategoryEntity
+import com.culinary.core.domain.model.ARCHIVE_CATEGORY_TEST_BATCH
 import com.culinary.core.domain.model.Ingredient
 import com.culinary.core.domain.model.KitchenReference
 import com.culinary.core.domain.model.KitchenReferenceKind
@@ -136,6 +137,7 @@ class DefaultKitchenArchiveReader
                 name = name,
                 subtitle = flavorProfile ?: usageNotes,
                 legacyCategory = family,
+                recordTestBatch = seedVersion.takeIf { it == ARCHIVE_CATEGORY_TEST_BATCH },
                 searchText =
                     listOfNotNull(
                         name,
@@ -165,6 +167,7 @@ class DefaultKitchenArchiveReader
                 name = name,
                 subtitle = description ?: exampleProducts ?: storageNotes,
                 legacyCategory = category,
+                recordTestBatch = seedVersion.takeIf { it == ARCHIVE_CATEGORY_TEST_BATCH },
                 searchText =
                     listOfNotNull(
                         name,
@@ -190,6 +193,7 @@ class DefaultKitchenArchiveReader
                 name = name,
                 subtitle = description,
                 legacyCategory = category,
+                recordTestBatch = seedVersion.takeIf { it == ARCHIVE_CATEGORY_TEST_BATCH },
                 searchText = listOfNotNull(name, category, description, englishName, seedNote).joinToString(" "),
                 categoryById = categoryById,
                 assignments = assignments,
@@ -205,6 +209,7 @@ class DefaultKitchenArchiveReader
                 name = name,
                 subtitle = englishName,
                 legacyCategory = category.name,
+                recordTestBatch = seedVersion.takeIf { it == ARCHIVE_CATEGORY_TEST_BATCH },
                 searchText =
                     listOfNotNull(
                         name,
@@ -223,6 +228,7 @@ class DefaultKitchenArchiveReader
             name: String,
             subtitle: String?,
             legacyCategory: String?,
+            recordTestBatch: String?,
             searchText: String,
             categoryById: Map<String, ArchiveCategoryEntity>,
             assignments: Map<Pair<String, String>, com.culinary.core.database.entity.ArchiveCategoryAssignmentEntity>,
@@ -238,7 +244,7 @@ class DefaultKitchenArchiveReader
                 searchText = listOfNotNull(searchText, category?.name).joinToString(" "),
                 categoryId = category?.id,
                 categoryPath = category?.let { buildPath(it, categoryById) }.orEmpty(),
-                testBatch = category?.testBatch,
+                testBatch = recordTestBatch ?: category?.testBatch,
             )
         }
 
