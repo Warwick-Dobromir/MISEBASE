@@ -307,6 +307,10 @@ internal fun ArchiveLibraryScreen(
                         deleteMode = sorting,
                         onClick = { currentCategoryId = category.id },
                         onLongPress = { beginSorting() },
+                        onRename = {
+                            renameTargetId = category.id
+                            renameName = category.name
+                        },
                         onMove = { delta ->
                             val from = workingOrder.indexOf(category.id)
                             val to = (from + delta).coerceIn(0, workingOrder.lastIndex)
@@ -588,7 +592,6 @@ private fun ArchiveContextHeader(
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.size(40.dp).clickable(onClick = onBack).padding(11.dp),
             )
-            Spacer(modifier = Modifier.weight(1f))
             Text(
                 text = parentName,
                 style = MaterialTheme.typography.bodySmall,
@@ -659,6 +662,7 @@ private fun CategoryRow(
     deleteMode: Boolean,
     onClick: () -> Unit,
     onLongPress: () -> Unit,
+    onRename: () -> Unit,
     onMove: (Int) -> Unit,
     onAddChild: () -> Unit,
     onDelete: () -> Unit,
@@ -699,6 +703,7 @@ private fun CategoryRow(
                             interactionSource = interactionSource,
                             indication = null,
                             onClick = onClick,
+                            onDoubleClick = onRename,
                             onLongClick = onLongPress,
                         )
                         .shadow(if (pressed) 3.dp else 0.dp, RectangleShape)
