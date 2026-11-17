@@ -284,6 +284,7 @@ internal fun ArchiveLibraryScreen(
                         currentCategory?.let { category -> categoryPath(category, categories) }.orEmpty(),
                     childCount = children.size,
                     directCount = directEntries.size,
+                    sorting = sorting,
                     onAdd = if (!showingSearch && currentCategoryId == null) onAdd else null,
                     onCreateSubcategory = {
                         newSubcategoryParentId = currentCategory?.id
@@ -571,10 +572,11 @@ private fun ArchiveContextHeader(
     categoryPath: List<String>,
     childCount: Int,
     directCount: Int,
+    sorting: Boolean,
     onAdd: (() -> Unit)?,
     onCreateSubcategory: (() -> Unit)?,
     onBack: () -> Unit,
- ) {
+) {
     Column(modifier = Modifier.padding(horizontal = CulinarySpacing.pageHorizontal)) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(top = CulinarySpacing.sm),
