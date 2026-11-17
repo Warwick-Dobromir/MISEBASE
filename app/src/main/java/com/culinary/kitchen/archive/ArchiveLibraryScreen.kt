@@ -56,6 +56,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import kotlinx.coroutines.delay
 import com.culinary.R
 import com.culinary.core.data.kitchen.KitchenArchiveCategory
 import com.culinary.core.data.kitchen.KitchenArchiveEntry
@@ -718,6 +719,28 @@ private fun CategoryRow(
             onLongPress()
         }
     }
+    // 按住边缘时持续缓慢滚动，而不是依赖手指继续移动产生新的拖动事件。
+    LaunchedEffect(dragging, sorting) {
+        while (dragging && sorting) {
+            val viewport = listState.layoutInfo
+            val draggedCenter = viewport.visibleItemsInfo
+                .firstOrNull { it.key == category.id }
+                ?.let { it.offset + rowHeightPx / 2f + dragOffsetY }
+            if (draggedCenter != null) {
+                val edge = 72f
+                val delta = when {
+                    draggedCenter < viewport.viewportStartOffset + edge -> -2.5f
+                    draggedCenter > viewport.viewportEndOffset - edge -> 2.5f
+                    else -> 0f
+                }
+                if (delta != 0f) {
+                    val consumed = listState.scrollBy(delta)
+                    dragOffsetY += consumed
+                }
+            }
+            delay(16)
+        }
+    }
 
     Row(
         modifier = Modifier
@@ -772,20 +795,6 @@ private fun CategoryRow(
                                 while (dragOffsetY <= -threshold) {
                                     currentOnMove(-1)
                                     dragOffsetY += threshold
-                                }
-                                // 靠近可视区域上下边缘时，随拖动方向小幅滚动列表。
-                                val viewport = listState.layoutInfo
-                                val draggedCenter = viewport.visibleItemsInfo
-                                    .firstOrNull { it.key == category.id }
-                                    ?.let { it.offset + rowHeightPx / 2f + dragOffsetY }
-                                if (draggedCenter != null) {
-                                    val edge = 72f
-                                    when {
-                                        draggedCenter < viewport.viewportStartOffset + edge ->
-                                            listState.scrollBy(-3f)
-                                        draggedCenter > viewport.viewportEndOffset - edge ->
-                                            listState.scrollBy(3f)
-                                    }
                                 }
                             },
                         )
