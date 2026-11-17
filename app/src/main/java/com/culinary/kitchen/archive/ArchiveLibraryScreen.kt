@@ -126,7 +126,6 @@ internal fun ArchiveLibraryScreen(
     var pendingSave by rememberSaveable(section, currentCategoryId) { mutableStateOf(false) }
     var submittedOrder by rememberSaveable(section, currentCategoryId) { mutableStateOf(emptyList<String>()) }
     var showSortExitDialog by rememberSaveable(section) { mutableStateOf(false) }
-    var sortExitHasUnsavedChanges by rememberSaveable(section) { mutableStateOf(false) }
     var lastSortSaveVersion by rememberSaveable(section) { mutableIntStateOf(state.categorySortSaveVersion) }
     val sortSnackbarHostState = remember { SnackbarHostState() }
 
@@ -197,7 +196,6 @@ internal fun ArchiveLibraryScreen(
     }
     fun requestSortReturn() {
         if (sortDirty) {
-            sortExitHasUnsavedChanges = true
             showSortExitDialog = true
         } else {
             finishSorting()
@@ -393,8 +391,7 @@ internal fun ArchiveLibraryScreen(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier
                         .clickable {
-                            sortExitHasUnsavedChanges = true
-                            showSortExitDialog = true
+                                            showSortExitDialog = true
                         }
                         .padding(horizontal = CulinarySpacing.md, vertical = CulinarySpacing.sm),
                 )
