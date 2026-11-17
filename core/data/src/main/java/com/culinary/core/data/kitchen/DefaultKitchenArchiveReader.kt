@@ -41,10 +41,10 @@ class DefaultKitchenArchiveReader
                 val libraryCategories = categories.filter { it.library == library.name }
                 val categoryById = libraryCategories.associateBy { it.id }
                 val activeEntryKeys = entries
-                    .filter { it.testBatch == null }
+                    .filter { it.kind.name == library.name && it.testBatch == null }
                     .mapTo(mutableSetOf()) { it.kind.name to it.id }
                 val validAssignments = assignments.filter { assignment ->
-                    assignment.recordKind to assignment.recordId in activeEntryKeys &&
+                    (assignment.recordKind to assignment.recordId) in activeEntryKeys &&
                         categoryById[assignment.categoryId]?.testBatch == null
                 }
                 val directCounts = validAssignments.groupingBy { it.categoryId }.eachCount()
