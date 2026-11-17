@@ -320,7 +320,13 @@ internal fun ArchiveLibraryScreen(
                 )
             }
             if (displayedChildren.isNotEmpty()) {
-                if (!sorting) item { SectionLabel(stringResource(R.string.kitchen_directory_subcategories)) }
+                if (!sorting) item {
+                    SectionLabel(
+                        text = stringResource(R.string.kitchen_directory_subcategories),
+                        showSortControl = currentCategoryId != null,
+                        onSort = { beginSorting() },
+                    )
+                }
                 items(displayedChildren, key = { it.id }) { category ->
                     CategoryRow(
                         category = category,
@@ -344,11 +350,6 @@ internal fun ArchiveLibraryScreen(
                                     add(to, removeAt(from))
                                 }
                             }
-                        },
-                        onAddChild = {
-                            newSubcategoryParentId = category.id
-                            newSubcategoryName = ""
-                            showNewSubcategoryDialog = true
                         },
                         onDelete = { deleteTargetId = category.id },
                     )
@@ -686,7 +687,6 @@ private fun CategoryRow(
     listState: LazyListState,
     onRename: () -> Unit,
     onMove: (Int) -> Unit,
-    onAddChild: () -> Unit,
     onDelete: () -> Unit,
 ) {
     val actionInteractionSource = remember(category.id) { MutableInteractionSource() }
@@ -833,7 +833,7 @@ private fun CategoryRow(
                 .clickable(
                     interactionSource = actionInteractionSource,
                     indication = null,
-                    onClick = if (deleteMode) onDelete else onAddChild,
+                    onClick = onDelete,
                 )
                 .shadow(if (actionPressed) 3.dp else 0.dp, RectangleShape)
                 .padding(horizontal = CulinarySpacing.xs, vertical = CulinarySpacing.sm),
@@ -841,9 +841,6 @@ private fun CategoryRow(
         ) {
             if (deleteMode) {
                 Icon(CulinaryIcons.Trash, contentDescription = "删除子库", tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(20.dp))
-            } else {
-                Text("＋ 新建子库", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.secondary)
-            }
         }
         if (!sorting) {
             Text(category.descendantCount.toString(), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
