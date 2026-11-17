@@ -34,9 +34,9 @@ class ArchiveCategorySeeder
                     db.beginTransaction()
                     try {
                         seedFormalCategories(db)
-                        if (testState(db) != TEST_STATE_DISABLED) {
-                            seedTestCategories(db)
-                        }
+                        // 正式启动时清除历史测试分类及其测试档案，且不再自动回填。
+                        deleteTestData(db)
+                        putMetadata(db, TEST_STATE_KEY, TEST_STATE_DISABLED)
                         db.setTransactionSuccessful()
                         Outcome.success(Unit)
                     } finally {

@@ -41,16 +41,49 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
 
+      - name: Run unit tests
+        run: ./gradlew testDebugUnitTest --no-daemon
+
       - name: Build APK with original MISEBASE release key
         env:
           MISEBASE_RELEASE_STORE_FILE: ${{ runner.temp }}/release.keystore
         run: ./gradlew :app:assembleDebug -PdebugWithReleaseSigning=true --no-daemon
 
-      - name: Publish APK as downloadable release asset
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: mobile-build-signed-${{ github.run_number }}
-          name: MISEBASE Android Signed ${{ github.run_number }}
-          draft: false
-          prerelease: true
-          files: app/build/outputs/apk/debug/app-debug.apk
+      - name: Verify original MISEBASE signing certificate
+        run: |
+          set -euo pipefail
+          APK="app/build/outputs/apk/debug/app-debug.apk"
+          test -s "$APK"
+          ACTUAL="$(apksigner verify --print-certs "$APK" | sed -n 's/^Signer #1 certificate SHA-256 digest: //p' | tr -d ': ' | tr '[:upper:]' '[:lower:]')"
+          EXPECTED="$(printf '%s' '5C:A4:19:59:D9:F4:50:CD:C8:51:DC:B9:F0:52:AC:91:30:AA:EA:B7:1C:64:06:21:73:A6:99:35:50:56:AF:61' | tr -d ': ' | tr '[:upper:]' '[:lower:]')"
+          test -n "$ACTUAL"
+          test "$ACTUAL" = "$EXPECTED"
+          echo "Verified original signing certificate: $ACTUAL"
+
+      - name: Replace latest APK and remove the other 21 releases
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          KEEP_TAG="mobile-build-signed-52"
+          export KEEP_TAG
+          APK="app/build/outputs/apk/debug/app-debug.apk"
+          test -s "$APK"
+          gh release view "$KEEP_TAG" >/dev/null
+
+          # Replace the asset on the existing latest release only after tests,
+          # build, and original-certificate verification have all succeeded.
+          gh release upload "$KEEP_TAG" "$APK" --clobber
+
+          # Point the retained tag at the exact source commit used for this APK.
+          gh api "repos/${GITHUB_REPOSITORY}/git/refs/tags/${KEEP_TAG}" \
+            --method PATCH --field sha="${GITHUB_SHA}" --field force=true >/dev/null
+
+          # Delete every other release/tag only after the replacement asset is live.
+          gh api --paginate "repos/${GITHUB_REPOSITORY}/releases?per_page=100" \
+            --jq '.[] | select(.tag_name != env.KEEP_TAG) | .tag_name' |
+          while IFS= read -r old_tag; do
+            [ -n "$old_tag" ] || continue
+            echo "Removing old release: $old_tag"
+            gh release delete "$old_tag" --yes --cleanup-tag
+          done

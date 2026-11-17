@@ -383,7 +383,7 @@ private fun TimerBlock(
         return
     }
     Text(
-        text = stringResource(R.string.cooking_adjust_hint),
+        text = if (state.hasStarted) "计时已启动，时间已锁定" else stringResource(R.string.cooking_adjust_hint),
         style = MaterialTheme.typography.bodySmall,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
         textAlign = TextAlign.Center,
@@ -395,7 +395,7 @@ private fun TimerBlock(
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        RoundControl(text = "−", onClick = { onAdjust(-1) })
+        RoundControl(text = "−", onClick = { onAdjust(-1) }, enabled = !state.hasStarted)
         Spacer(modifier = Modifier.width(CulinarySpacing.lg))
         RoundControl(
             text = if (state.isRunning) "❚❚" else "▶",
@@ -403,7 +403,7 @@ private fun TimerBlock(
             emphasized = true,
         )
         Spacer(modifier = Modifier.width(CulinarySpacing.lg))
-        RoundControl(text = "+", onClick = { onAdjust(1) })
+        RoundControl(text = "+", onClick = { onAdjust(1) }, enabled = !state.hasStarted)
     }
     Spacer(modifier = Modifier.height(CulinarySpacing.xs))
     Text(
@@ -429,6 +429,7 @@ private fun RoundControl(
     text: String,
     onClick: () -> Unit,
     emphasized: Boolean = false,
+    enabled: Boolean = true,
 ) {
     Box(
         modifier =
@@ -441,7 +442,7 @@ private fun RoundControl(
                     } else {
                         MaterialTheme.colorScheme.surfaceContainerHigh
                     },
-                ).clickable(role = Role.Button, onClick = onClick),
+                ).clickable(enabled = enabled, role = Role.Button, onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
         Text(

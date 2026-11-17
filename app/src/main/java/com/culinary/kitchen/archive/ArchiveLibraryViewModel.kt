@@ -82,6 +82,38 @@ class ArchiveLibraryViewModel
             }
         }
 
+        fun renameSubcategory(id: String, name: String) {
+            val trimmed = name.trim()
+            if (trimmed.isEmpty()) {
+                setCategoryFeedback(error = "分类名称不能为空")
+                return
+            }
+            viewModelScope.launch {
+                when (val result = categoryRepository.renameCategory(id, trimmed)) {
+                    is Outcome.Success -> setCategoryFeedback(message = "已重命名为「${result.value.name}」")
+                    is Outcome.Failure -> setCategoryFeedback(error = "重命名失败：${result.error}")
+                }
+            }
+        }
+
+        fun deleteSubcategory(id: String) {
+            viewModelScope.launch {
+                when (val result = categoryRepository.deleteCategory(id)) {
+                    is Outcome.Success -> setCategoryFeedback(message = "子库已删除")
+                    is Outcome.Failure -> setCategoryFeedback(error = "删除失败：${result.error}")
+                }
+            }
+        }
+
+        fun reorderSubcategories(orderedIds: List<String>) {
+            viewModelScope.launch {
+                when (val result = categoryRepository.reorderCategories(orderedIds)) {
+                    is Outcome.Success -> setCategoryFeedback(message = null)
+                    is Outcome.Failure -> setCategoryFeedback(error = "排序失败：${result.error}")
+                }
+            }
+        }
+
         private val categoryFeedback = MutableStateFlow<ArchiveCategoryFeedback?>(null)
 
         private fun setCategoryFeedback(

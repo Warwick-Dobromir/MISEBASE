@@ -243,6 +243,25 @@ class ArchiveCategoryRepositoryImpl
 
         override suspend fun reorderCategories(orderedIds: List<String>): Outcome<Unit> =
             write {
+                if (orderedIds.isEmpty()) return@write Outcome.success(Unit)
+                if (orderedIds.distinct().size != orderedIds.size) {
+                    return@write invalid("orderedIds", "duplicate category ids are not allowed")
+                }
+                val all = categoryDao.listAll()
+                val selected = orderedIds.map { id ->
+                    all.firstOrNull { it.id == id } ?: return@write missing(id)
+                }
+                val first = selected.first()
+                if (first.parentId == null) {
+                    return@write invalid("orderedIds", "root categories are fixed and cannot be reordered")
+                }
+                if (selected.any { it.library != first.library || it.parentId != first.parentId }) {
+                    return@write invalid("orderedIds", "only categories with the same parent can be reordered")
+                }
+                val siblings = all.filter { it.library == first.library && it.parentId == first.parentId }
+                if (orderedIds.toSet() != siblings.map { it.id }.toSet()) {
+                    return@write invalid("orderedIds", "the complete sibling list is required")
+                }
                 val now = clock.now().toEpochMilli()
                 orderedIds.forEachIndexed { index, categoryId ->
                     categoryDao.updateSortOrder(id = categoryId, sortOrder = index, updatedAt = now)
@@ -256,6 +275,9 @@ class ArchiveCategoryRepositoryImpl
                 all.firstOrNull { it.id == id } ?: return@write missing(id)
                 if (all.any { it.parentId == id }) {
                     return@write invalid("id", "category still has child categories")
+                }
+                if (assignmentDao.listByCategory(id).isNotEmpty()) {
+                    return@write invalid("id", "category still has assigned records")
                 }
                 categoryDao.deleteById(id)
                 Outcome.success(Unit)
