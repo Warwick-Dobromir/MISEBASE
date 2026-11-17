@@ -279,12 +279,15 @@ class ArchiveCategorySeeder
                         "SELECT 1 FROM archive_category child " +
                             "JOIN archive_category parent ON child.parent_id = parent.id " +
                             "WHERE parent.name LIKE '测试%' AND child.name NOT LIKE '测试%' LIMIT 1",
-                    ).useRows { it.moveToFirst() }
+                    )
+                        .useRows { it.moveToFirst() }
                 if (!hasNonTestChild) break
                 db.execSQL(
                     "UPDATE archive_category SET parent_id = " +
-                        "(SELECT parent_id FROM archive_category parent WHERE parent.id = archive_category.parent_id) " +
-                        "WHERE parent_id IN (SELECT id FROM archive_category WHERE name LIKE '测试%') " +
+                        "(SELECT parent_id FROM archive_category parent " +
+                        "WHERE parent.id = archive_category.parent_id) " +
+                        "WHERE parent_id IN " +
+                        "(SELECT id FROM archive_category WHERE name LIKE '测试%') " +
                         "AND name NOT LIKE '测试%'",
                 )
             }

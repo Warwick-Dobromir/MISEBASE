@@ -82,7 +82,10 @@ class ArchiveLibraryViewModel
             }
         }
 
-        fun renameSubcategory(id: String, name: String) {
+        fun renameSubcategory(
+            id: String,
+            name: String,
+        ) {
             val trimmed = name.trim()
             if (trimmed.isEmpty()) {
                 setCategoryFeedback(error = "分类名称不能为空")
@@ -90,8 +93,10 @@ class ArchiveLibraryViewModel
             }
             viewModelScope.launch {
                 when (val result = categoryRepository.renameCategory(id, trimmed)) {
-                    is Outcome.Success -> setCategoryFeedback(message = "已重命名为「${result.value.name}」")
-                    is Outcome.Failure -> setCategoryFeedback(error = "重命名失败：${result.error}")
+                    is Outcome.Success ->
+                        setCategoryFeedback(message = "已重命名为「${result.value.name}」")
+                    is Outcome.Failure ->
+                        setCategoryFeedback(error = "重命名失败：${result.error}")
                 }
             }
         }

@@ -32,8 +32,8 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -42,7 +42,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.culinary.R
 import com.culinary.core.data.kitchen.KitchenArchiveCategory
 import com.culinary.core.data.kitchen.KitchenArchiveEntry
-import com.culinary.core.designsystem.component.CulinaryButton
 import com.culinary.core.designsystem.component.CulinaryIconButton
 import com.culinary.core.designsystem.component.CulinaryRule
 import com.culinary.core.designsystem.component.CulinarySearchField
@@ -246,16 +245,18 @@ internal fun ArchiveLibraryScreen(
                             renameName = category.name
                         },
                         onToggleDeleteMode = {
-                            deleteModeCategoryId = if (deleteModeCategoryId == category.id) null else category.id
+                            deleteModeCategoryId =
+                                if (deleteModeCategoryId == category.id) null else category.id
                         },
                         onDelete = { deleteTargetId = category.id },
                         onMove = { direction ->
                             val from = formalChildren.indexOfFirst { it.id == category.id }
                             val to = from + direction
                             if (from >= 0 && to in formalChildren.indices) {
-                                val ordered = formalChildren.toMutableList().apply {
-                                    add(to, removeAt(from))
-                                }
+                                val ordered =
+                                    formalChildren.toMutableList().apply {
+                                        add(to, removeAt(from))
+                                    }
                                 onReorderSubcategories(ordered.map { it.id })
                             }
                         },
@@ -564,10 +565,13 @@ private fun CategoryRow(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(
-            modifier = Modifier.weight(1f).combinedClickable(
-                onClick = onClick,
-                onLongClick = if (canManage) onRename else null,
-            ),
+            modifier =
+                Modifier
+                    .weight(1f)
+                    .combinedClickable(
+                        onClick = onClick,
+                        onLongClick = if (canManage) onRename else null,
+                    ),
         ) {
             Text(
                 text = category.name,
@@ -582,11 +586,12 @@ private fun CategoryRow(
                 )
             }
             Text(
-                text = stringResource(
-                    R.string.kitchen_directory_category_meta,
-                    category.childCount,
-                    category.directCount,
-                ),
+                text =
+                    stringResource(
+                        R.string.kitchen_directory_category_meta,
+                        category.childCount,
+                        category.directCount,
+                    ),
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -596,10 +601,11 @@ private fun CategoryRow(
                 imageVector = CulinaryIcons.Sort,
                 contentDescription = "长按拖动排序",
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier
-                    .size(28.dp)
-                    .padding(4.dp)
-                    .pointerInput(category.id) {
+                modifier =
+                    Modifier
+                        .size(28.dp)
+                        .padding(4.dp)
+                        .pointerInput(category.id) {
                         var distance = 0f
                         detectDragGesturesAfterLongPress(
                             onDragStart = { distance = 0f },
@@ -626,25 +632,27 @@ private fun CategoryRow(
                 imageVector = CulinaryIcons.Trash,
                 contentDescription = "删除子库；长按取消",
                 tint = MaterialTheme.colorScheme.error,
-                modifier = Modifier
-                    .size(40.dp)
-                    .combinedClickable(
-                        onClick = onDelete,
-                        onLongClick = onToggleDeleteMode,
-                    )
-                    .padding(10.dp),
+                modifier =
+                    Modifier
+                        .size(40.dp)
+                        .combinedClickable(
+                            onClick = onDelete,
+                            onLongClick = onToggleDeleteMode,
+                        )
+                        .padding(10.dp),
             )
         } else {
             Text(
                 text = "＋ 新建子库",
                 style = MaterialTheme.typography.labelLarge,
                 color = MaterialTheme.colorScheme.secondary,
-                modifier = Modifier
-                    .combinedClickable(
-                        onClick = onAddChild,
-                        onLongClick = if (canManage) onToggleDeleteMode else null,
-                    )
-                    .padding(horizontal = CulinarySpacing.xs, vertical = CulinarySpacing.sm),
+                modifier =
+                    Modifier
+                        .combinedClickable(
+                            onClick = onAddChild,
+                            onLongClick = if (canManage) onToggleDeleteMode else null,
+                        )
+                        .padding(horizontal = CulinarySpacing.xs, vertical = CulinarySpacing.sm),
             )
         }
         Text(

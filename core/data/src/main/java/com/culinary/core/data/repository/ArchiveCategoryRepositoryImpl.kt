@@ -248,9 +248,10 @@ class ArchiveCategoryRepositoryImpl
                     return@write invalid("orderedIds", "duplicate category ids are not allowed")
                 }
                 val all = categoryDao.listAll()
-                val selected = orderedIds.map { id ->
-                    all.firstOrNull { it.id == id } ?: return@write missing(id)
-                }
+                val selected =
+                    orderedIds.map { id ->
+                        all.firstOrNull { it.id == id } ?: return@write missing(id)
+                    }
                 val first = selected.first()
                 if (first.parentId == null) {
                     return@write invalid("orderedIds", "root categories are fixed and cannot be reordered")
