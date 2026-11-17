@@ -782,9 +782,9 @@ private fun CategoryRow(
                                     val edge = 72f
                                     when {
                                         draggedCenter < viewport.viewportStartOffset + edge ->
-                                            listState.scrollBy(-18f)
+                                            listState.scrollBy(-3f)
                                         draggedCenter > viewport.viewportEndOffset - edge ->
-                                            listState.scrollBy(18f)
+                                            listState.scrollBy(3f)
                                     }
                                 }
                             },
