@@ -2,6 +2,11 @@ package com.culinary.kitchen.archive
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.background
@@ -702,6 +707,13 @@ private fun CategoryRow(
     var dragOffsetY by remember(category.id) { mutableFloatStateOf(0f) }
     var rowHeightPx by remember(category.id) { mutableIntStateOf(0) }
     val currentOnMove by rememberUpdatedState(onMove)
+    val jiggleTransition = rememberInfiniteTransition(label = "category-long-press-jiggle")
+    val jigglePhase by jiggleTransition.animateFloat(
+        initialValue = -1f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(animation = tween(85), repeatMode = RepeatMode.Reverse),
+        label = "category-jiggle-phase",
+    )
 
     // 按住边缘时持续缓慢滚动，而不是依赖手指继续移动产生新的拖动事件。
     LaunchedEffect(dragging, sorting) {
@@ -711,10 +723,12 @@ private fun CategoryRow(
                 .firstOrNull { it.key == category.id }
                 ?.let { it.offset + rowHeightPx / 2f + dragOffsetY }
             if (draggedCenter != null) {
-                val edge = 72f
+                val edge = 104f
+                val topDistance = draggedCenter - viewport.viewportStartOffset
+                val bottomDistance = viewport.viewportEndOffset - draggedCenter
                 val delta = when {
-                    draggedCenter < viewport.viewportStartOffset + edge -> -2.5f
-                    draggedCenter > viewport.viewportEndOffset - edge -> 2.5f
+                    topDistance < edge -> -(6f + (1f - (topDistance / edge).coerceIn(0f, 1f)) * 18f)
+                    bottomDistance < edge -> 6f + (1f - (bottomDistance / edge).coerceIn(0f, 1f)) * 18f
                     else -> 0f
                 }
                 if (delta != 0f) {
@@ -739,7 +753,7 @@ private fun CategoryRow(
                 }
                 scaleX = scale
                 scaleY = scale
-                translationX = 0f
+                translationX = if (longPressFeedback && !sorting) jigglePhase * 2.2f else 0f
                 translationY = if (selectedScale) dragOffsetY else 0f
             }
             .shadow(
