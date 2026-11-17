@@ -791,10 +791,11 @@ private fun CategoryRow(
                         )
                     }
                 } else {
-                    Modifier.clickable(
+                    Modifier.combinedClickable(
                         interactionSource = interactionSource,
                         indication = null,
                         onClick = onClick,
+                        onLongClick = onLongPress,
                     )
                 },
             )
