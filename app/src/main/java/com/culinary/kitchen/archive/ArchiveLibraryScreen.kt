@@ -2,6 +2,14 @@ package com.culinary.kitchen.archive
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandIn
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.shrinkOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
@@ -10,6 +18,8 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.background
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.ui.draw.shadow
@@ -41,6 +51,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -130,6 +141,7 @@ internal fun ArchiveLibraryScreen(
     var sorting by rememberSaveable(section) { mutableStateOf(false) }
     var longPressFeedback by remember { mutableStateOf(false) }
     val categoryListState = rememberLazyListState()
+    val isScrolled by remember { derivedStateOf { categoryListState.firstVisibleItemIndex > 0 || categoryListState.firstVisibleItemScrollOffset > 72 } }
     var workingOrder by rememberSaveable(section, currentCategoryId) { mutableStateOf(emptyList<String>()) }
     var savedOrder by rememberSaveable(section, currentCategoryId) { mutableStateOf(emptyList<String>()) }
     var pendingSave by rememberSaveable(section, currentCategoryId) { mutableStateOf(false) }
@@ -222,28 +234,34 @@ internal fun ArchiveLibraryScreen(
     }
     BackHandler(enabled = !searchOpen && !sorting && currentCategoryId == null) { onBack() }
 
+    Box(modifier = modifier.fillMaxSize()) {
     Column(
-        modifier =
-            modifier
-                .fillMaxSize()
-                .background(MaterialTheme.colorScheme.background),
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background),
     ) {
-        ArchiveBrandHeader(
-            section = section,
-            isSearchOpen = searchOpen,
-            sorting = sorting,
-            onSearch = { searchOpen = true },
-            onCloseSearch = { searchOpen = false },
-            onSaveSort = {
-                if (sorting && !pendingSave && sortDirty) {
-                    submittedOrder = workingOrder
-                    pendingSave = true
-                    onReorderSubcategories(submittedOrder)
-                }
-            },
-        )
         AnimatedVisibility(
-            visible = searchOpen,
+            visible = !isScrolled,
+            enter = fadeIn() + slideInVertically(initialOffsetY = { -it / 3 }),
+            exit = fadeOut() + slideOutVertically(targetOffsetY = { -it / 3 }),
+        ) {
+            ArchiveBrandHeader(
+                section = section,
+                isSearchOpen = searchOpen,
+                sorting = sorting,
+                onSearch = { searchOpen = true },
+                onCloseSearch = { searchOpen = false },
+                onSaveSort = {
+                    if (sorting && !pendingSave && sortDirty) {
+                        submittedOrder = workingOrder
+                        pendingSave = true
+                        onReorderSubcategories(submittedOrder)
+                    }
+                },
+            )
+        }
+        AnimatedVisibility(
+            visible = searchOpen && !isScrolled,
             enter = slideInHorizontally(initialOffsetX = { it }),
             exit = slideOutHorizontally(targetOffsetX = { it }),
         ) {
@@ -421,6 +439,55 @@ internal fun ArchiveLibraryScreen(
             hostState = sortSnackbarHostState,
             modifier = Modifier.fillMaxWidth(),
         )
+    }
+    AnimatedVisibility(
+        visible = isScrolled && !searchOpen,
+        modifier = Modifier.align(Alignment.TopEnd).padding(top = 10.dp, end = 16.dp),
+        enter = fadeIn() + scaleIn(initialScale = 0.82f),
+        exit = fadeOut() + scaleOut(targetScale = 0.82f),
+    ) {
+        Box(
+            modifier = Modifier
+                .size(40.dp)
+                .shadow(8.dp, CircleShape)
+                .background(MaterialTheme.colorScheme.surface, CircleShape)
+                .clickable { searchOpen = true },
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                imageVector = CulinaryIcons.Search,
+                contentDescription = stringResource(R.string.kitchen_search_global_hint),
+                tint = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.size(18.dp),
+            )
+        }
+    }
+    AnimatedVisibility(
+        visible = isScrolled && searchOpen,
+        modifier = Modifier.align(Alignment.TopEnd).padding(top = 8.dp, end = 12.dp),
+        enter = expandIn(expandFrom = Alignment.TopEnd) + fadeIn(),
+        exit = shrinkOut(shrinkTowards = Alignment.TopEnd) + fadeOut(),
+    ) {
+        Row(
+            modifier = Modifier
+                .sizeIn(maxWidth = 340.dp)
+                .shadow(12.dp, RoundedCornerShape(24.dp))
+                .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(24.dp))
+                .padding(10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            CulinarySearchField(
+                value = query,
+                onValueChange = { query = it },
+                placeholder = stringResource(R.string.kitchen_search_global_hint),
+                modifier = Modifier.weight(1f),
+            )
+            CulinaryTextButton(
+                text = stringResource(R.string.kitchen_search_close),
+                onClick = { searchOpen = false },
+            )
+        }
+    }
     }
 
     if (showSortExitDialog) {
