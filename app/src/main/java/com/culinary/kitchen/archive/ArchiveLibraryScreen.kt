@@ -10,11 +10,8 @@ import androidx.compose.animation.scaleOut
 import androidx.compose.animation.shrinkOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.keyframes
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.background
@@ -789,13 +786,25 @@ private fun CategoryRow(
     var dragOffsetY by remember(category.id) { mutableFloatStateOf(0f) }
     var rowHeightPx by remember(category.id) { mutableIntStateOf(0) }
     val currentOnMove by rememberUpdatedState(onMove)
-    val jiggleTransition = rememberInfiniteTransition(label = "category-long-press-jiggle")
-    val jigglePhase by jiggleTransition.animateFloat(
-        initialValue = -1f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(animation = tween(85), repeatMode = RepeatMode.Reverse),
-        label = "category-jiggle-phase",
-    )
+    val jiggleOffset = remember(category.id) { Animatable(0f) }
+    LaunchedEffect(longPressFeedback) {
+        if (longPressFeedback && !sorting) {
+            jiggleOffset.snapTo(0f)
+            jiggleOffset.animateTo(
+                targetValue = 0f,
+                animationSpec = keyframes {
+                    durationMillis = 240
+                    -2.5f at 40
+                    2.5f at 80
+                    -1.5f at 120
+                    1f at 160
+                    0f at 240
+                },
+            )
+        } else {
+            jiggleOffset.snapTo(0f)
+        }
+    }
 
     // 按住边缘时持续缓慢滚动，而不是依赖手指继续移动产生新的拖动事件。
     LaunchedEffect(dragging, sorting) {
@@ -835,7 +844,7 @@ private fun CategoryRow(
                 }
                 scaleX = scale
                 scaleY = scale
-                translationX = if (longPressFeedback && !sorting) jigglePhase * 2.2f else 0f
+                translationX = if (longPressFeedback && !sorting) jiggleOffset.value else 0f
                 translationY = if (selectedScale) dragOffsetY else 0f
             }
             .shadow(
