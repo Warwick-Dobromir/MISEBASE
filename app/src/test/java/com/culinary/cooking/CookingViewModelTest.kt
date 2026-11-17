@@ -271,8 +271,7 @@ class CookingViewModelTest {
     private fun step(title: String, seconds: Int): KitchenStep =
         KitchenStep(id = title, title = title, body = "$title 说明", timeSeconds = seconds)
 
-    private fun gram(): UnitModel =
-        UnitModel(UnitId("g"), "g", "克", "g", UnitDimension.MASS, 1.0, true, false, 0)
+    private fun gram(): UnitModel = UnitModel(UnitId("g"), "g", "克", "g", UnitDimension.MASS, 1.0, true, false, 0)
 
     private class FakeCookingAlert : CookingAlert {
         var plays: Int = 0
