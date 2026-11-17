@@ -83,6 +83,14 @@ class ArchiveCategoryRepositoryImpl
                             ),
                         )
                     }
+                    if (categoryDao.listByParent(category.library, categoryId).isNotEmpty()) {
+                        return@write Outcome.failure(
+                            CulinaryError.Validation(
+                                field = "archive_category",
+                                rule = "records can only be assigned to a leaf category",
+                            ),
+                        )
+                    }
                     val now = clock.now().toEpochMilli()
                     val existing = assignmentDao.findByRecord(kind.name, recordId)
                     if (existing == null) {
@@ -253,9 +261,6 @@ class ArchiveCategoryRepositoryImpl
                         all.firstOrNull { it.id == id } ?: return@write missing(id)
                     }
                 val first = selected.first()
-                if (first.parentId == null) {
-                    return@write invalid("orderedIds", "root categories are fixed and cannot be reordered")
-                }
                 if (selected.any { it.library != first.library || it.parentId != first.parentId }) {
                     return@write invalid("orderedIds", "only categories with the same parent can be reordered")
                 }
