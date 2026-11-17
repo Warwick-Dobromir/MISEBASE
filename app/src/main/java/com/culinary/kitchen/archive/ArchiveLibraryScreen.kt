@@ -5,7 +5,6 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.ui.draw.shadow
@@ -328,7 +327,7 @@ internal fun ArchiveLibraryScreen(
                         modifier = Modifier.fillMaxWidth().padding(horizontal = CulinarySpacing.pageHorizontal, vertical = CulinarySpacing.md),
                         horizontalArrangement = androidx.compose.foundation.layout.Arrangement.End,
                     ) {
-                        CulinaryTextButton(text = "取消", onClick = { requestSortReturn() })
+                        CulinaryTextButton(text = "取消", onClick = { sortExitHasUnsavedChanges = true; showSortExitDialog = true })
                     }
                 }
             }
@@ -625,11 +624,13 @@ private fun ArchiveContextHeader(
             )
         }
         Spacer(modifier = Modifier.height(CulinarySpacing.xs))
-        Text(
-            text = stringResource(R.string.kitchen_directory_counts, childCount, directCount),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
+        if (!sorting) {
+            Text(
+                text = stringResource(R.string.kitchen_directory_counts, childCount, directCount),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
     }
 }
 
