@@ -33,18 +33,40 @@ class DefaultKitchenArchiveReader
         private val assignmentDao: ArchiveCategoryAssignmentDao,
     ) : KitchenArchiveReader {
         override fun observeCategories(library: KitchenArchiveKind): Flow<List<KitchenArchiveCategory>> =
-            combine(categoryDao.observeAllActive(), assignmentDao.observeAll()) { categories, assignments ->
+            combine(categoryDao.observeAllActive(), assignmentDao.observeAll(), observeEntries()) {
+                categories,
+                assignments,
+                entries,
+                ->
                 val libraryCategories = categories.filter { it.library == library.name }
-                val directCounts = assignments.groupingBy { it.categoryId }.eachCount()
-                val childrenByParent = libraryCategories.groupBy { it.parentId }
                 val categoryById = libraryCategories.associateBy { it.id }
-
-                fun descendants(categoryId: String): Int {
-                    val direct = directCounts[categoryId] ?: 0
-                    val children = childrenByParent[categoryId].orEmpty()
-                    return direct + children.sumOf { descendants(it.id) }
+                val activeEntryKeys = entries
+                    .filter { it.testBatch == null }
+                    .mapTo(mutableSetOf()) { it.kind.name to it.id }
+                val validAssignments = assignments.filter { assignment ->
+                    assignment.recordKind to assignment.recordId in activeEntryKeys &&
+                        categoryById[assignment.categoryId]?.testBatch == null
                 }
+                val directCounts = validAssignments.groupingBy { it.categoryId }.eachCount()
+                val childrenByParent = libraryCategories.filterNot { it.testBatch != null }.groupBy { it.parentId }
+
+                // 迭代遍历并记录已访问节点，避免深层分类递归溢出及异常环路重复计数。
+                fun descendants(categoryId: String): Int {
+                    val visited = mutableSetOf<String>()
+                    val pending = ArrayDeque<String>()
+                    pending.addLast(categoryId)
+                    var total = 0
+                    while (pending.isNotEmpty()) {
+                        val id = pending.removeLast()
+                        if (!visited.add(id)) continue
+                        total += directCounts[id] ?: 0
+                        childrenByParent[id].orEmpty().forEach { child -> pending.addLast(child.id) }
+                    }
+                    return total
+                }
+
                 libraryCategories
+                    .filterNot { it.testBatch != null }
                     .sortedWith(compareBy({ it.sortOrder }, { it.name }))
                     .map { entity ->
                         KitchenArchiveCategory(
@@ -226,8 +248,8 @@ class DefaultKitchenArchiveReader
         ): List<String> {
             val path = mutableListOf<String>()
             var cursor: ArchiveCategoryEntity? = category
-            var guard = 0
-            while (cursor != null && guard++ < 32) {
+            val visited = mutableSetOf<String>()
+            while (cursor != null && visited.add(cursor.id)) {
                 path.add(0, cursor.name)
                 cursor = cursor.parentId?.let(categoryById::get)
             }
