@@ -745,12 +745,19 @@ private fun SectionLabel(
                 modifier = Modifier.weight(1f).padding(vertical = CulinarySpacing.xs),
             )
             if (showSortControl) {
-                Icon(
-                    imageVector = CulinaryIcons.Sort,
-                    contentDescription = "排列下级分类",
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(18.dp).clickable(onClick = onSort),
-                )
+                Box(
+                    modifier = Modifier
+                        .sizeIn(minWidth = 40.dp, minHeight = 40.dp)
+                        .clickable(onClick = onSort),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        imageVector = CulinaryIcons.Sort,
+                        contentDescription = "排列下级分类",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(16.dp),
+                    )
+                }
             }
         }
     }
