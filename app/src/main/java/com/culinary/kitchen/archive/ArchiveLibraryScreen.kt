@@ -803,12 +803,25 @@ private fun CategoryRow(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = category.name,
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurface,
-                modifier = if (sorting) Modifier.clickable(onClick = onRename) else Modifier,
-            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = category.name,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = if (sorting) Modifier.clickable(onClick = onRename) else Modifier,
+                )
+                if (sorting) {
+                    Text(
+                        text = "✎",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.secondary,
+                        modifier = Modifier
+                            .padding(start = CulinarySpacing.xs)
+                            .graphicsLayer { rotationZ = -45f }
+                            .clickable(onClick = onRename),
+                    )
+                }
+            }
             category.englishName?.takeIf { it.isNotBlank() }?.let {
                 Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
@@ -836,17 +849,7 @@ private fun CategoryRow(
                 Text("＋ 新建子库", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.secondary)
             }
         }
-        if (sorting) {
-            Text(
-                text = "✎",
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.secondary,
-                modifier = Modifier
-                    .graphicsLayer { rotationZ = -45f }
-                    .clickable(onClick = onRename)
-                    .padding(horizontal = CulinarySpacing.sm),
-            )
-        } else {
+        if (!sorting) {
             Text(category.descendantCount.toString(), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Icon(CulinaryIcons.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(16.dp).padding(start = 4.dp))
         }
