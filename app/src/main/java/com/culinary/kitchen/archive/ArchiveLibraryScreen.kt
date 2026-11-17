@@ -4,8 +4,6 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
-import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
@@ -48,6 +46,8 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
@@ -689,28 +689,12 @@ private fun CategoryRow(
 ) {
     val actionInteractionSource = remember(category.id) { MutableInteractionSource() }
     val actionPressed by actionInteractionSource.collectIsPressedAsState()
-    val groupJiggleX = remember(category.id) { Animatable(0f) }
+    val haptic = LocalHapticFeedback.current
     var dragging by remember(category.id) { mutableStateOf(false) }
     var dragOffsetY by remember(category.id) { mutableFloatStateOf(0f) }
     var rowHeightPx by remember(category.id) { mutableIntStateOf(0) }
     val currentOnMove by rememberUpdatedState(onMove)
 
-    // 每行使用稳定的微小相位差与轻度不对称摆幅；位移始终有界，不累积漂移。
-    LaunchedEffect(longPressFeedback, sorting, category.id) {
-        if (longPressFeedback && !sorting) {
-            val stableHash = category.id.hashCode() and 0x7fffffff
-            val phaseDelay = (stableHash % 55).toLong()
-            val asymmetry = (stableHash % 5) * 0.12f
-            delay(phaseDelay)
-            while (true) {
-                groupJiggleX.animateTo(2.4f + asymmetry, animationSpec = tween(durationMillis = 82))
-                groupJiggleX.animateTo(-2.0f - asymmetry, animationSpec = tween(durationMillis = 108))
-                groupJiggleX.animateTo(0f, animationSpec = tween(durationMillis = 42))
-            }
-        } else {
-            groupJiggleX.snapTo(0f)
-        }
-    }
     // 按住边缘时持续缓慢滚动，而不是依赖手指继续移动产生新的拖动事件。
     LaunchedEffect(dragging, sorting) {
         while (dragging && sorting) {
@@ -747,7 +731,7 @@ private fun CategoryRow(
                 }
                 scaleX = scale
                 scaleY = scale
-                translationX = if (!sorting) groupJiggleX.value else 0f
+                translationX = 0f
                 translationY = if (selectedScale) dragOffsetY else 0f
             }
             .shadow(
@@ -803,6 +787,7 @@ private fun CategoryRow(
                             },
                             onLongPress = {
                                 longPressRecognized = true
+                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                                 onLongPressStart()
                             },
                         )
@@ -827,7 +812,7 @@ private fun CategoryRow(
                         text = "✎",
                         style = MaterialTheme.typography.titleMedium,
                         color = MaterialTheme.colorScheme.secondary,
-                        modifier = Modifier.padding(start = CulinarySpacing.xs),
+                        modifier = Modifier.padding(start = CulinarySpacing.xs).graphicsLayer { scaleX = -1f },
                     )
                 }
             }
