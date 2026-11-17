@@ -15,6 +15,7 @@ import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
+import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -26,6 +27,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
@@ -119,6 +122,9 @@ internal fun ArchiveLibraryScreen(
     var deleteTargetId by rememberSaveable(section) { mutableStateOf<String?>(null) }
     var deleteModeCategoryId by rememberSaveable(section) { mutableStateOf<String?>(null) }
     var sorting by rememberSaveable(section) { mutableStateOf(false) }
+    var longPressFeedback by remember { mutableStateOf(false) }
+    var longPressOriginId by remember { mutableStateOf<String?>(null) }
+    val categoryListState = rememberLazyListState()
     var workingOrder by rememberSaveable(section, currentCategoryId) { mutableStateOf(emptyList<String>()) }
     var savedOrder by rememberSaveable(section, currentCategoryId) { mutableStateOf(emptyList<String>()) }
     var pendingSave by rememberSaveable(section, currentCategoryId) { mutableStateOf(false) }
@@ -179,6 +185,8 @@ internal fun ArchiveLibraryScreen(
         }
     }
     fun beginSorting() {
+        longPressFeedback = false
+        longPressOriginId = null
         if (!sorting) {
             val ids = children.map { it.id }
             workingOrder = ids
@@ -283,7 +291,7 @@ internal fun ArchiveLibraryScreen(
             )
             return@Column
         }
-        LazyColumn(modifier = Modifier.weight(1f)) {
+        LazyColumn(state = categoryListState, modifier = Modifier.weight(1f)) {
             item {
                 ArchiveContextHeader(
                     section = section,
@@ -318,7 +326,13 @@ internal fun ArchiveLibraryScreen(
                         sorting = sorting,
                         deleteMode = sorting,
                         onClick = { currentCategoryId = category.id },
-                        onLongPress = { beginSorting() },
+                        onLongPress = {
+                            longPressOriginId = category.id
+                            longPressFeedback = true
+                        },
+                        longPressFeedback = longPressFeedback,
+                        isLongPressOrigin = longPressOriginId == category.id,
+                        listState = categoryListState,
                         onRename = {
                             renameTargetId = category.id
                             renameName = category.name
@@ -667,6 +681,9 @@ private fun CategoryRow(
     deleteMode: Boolean,
     onClick: () -> Unit,
     onLongPress: () -> Unit,
+    longPressFeedback: Boolean,
+    isLongPressOrigin: Boolean,
+    listState: LazyListState,
     onRename: () -> Unit,
     onMove: (Int) -> Unit,
     onAddChild: () -> Unit,
@@ -677,25 +694,28 @@ private fun CategoryRow(
     val actionInteractionSource = remember(category.id) { MutableInteractionSource() }
     val actionPressed by actionInteractionSource.collectIsPressedAsState()
     val pressScale = remember(category.id) { Animatable(1f) }
-    var longPressDetected by remember(category.id) { mutableStateOf(false) }
+    val groupJiggleX = remember(category.id) { Animatable(0f) }
     var dragging by remember(category.id) { mutableStateOf(false) }
     var dragOffsetY by remember(category.id) { mutableFloatStateOf(0f) }
     var rowHeightPx by remember(category.id) { mutableIntStateOf(0) }
     val currentOnMove by rememberUpdatedState(onMove)
 
-    // 普通目录页：只在手指仍按住时播放有限次数的轻微反馈；松手后才切入排序模式。
-    LaunchedEffect(longPressDetected, pressed, sorting) {
-        if (!sorting && longPressDetected) {
-            if (pressed) {
-                repeat(3) {
-                    pressScale.animateTo(1.045f, animationSpec = tween(durationMillis = 90))
-                    pressScale.animateTo(1f, animationSpec = tween(durationMillis = 90))
-                }
-            } else {
-                pressScale.snapTo(1f)
-                longPressDetected = false
-                onLongPress()
+    // 长按任一分类时，当前列表的所有可见分类同步轻微横向震动；松手后停止并进入排序。
+    LaunchedEffect(longPressFeedback, sorting) {
+        if (longPressFeedback && !sorting) {
+            repeat(3) {
+                groupJiggleX.animateTo(3.5f, animationSpec = tween(durationMillis = 45))
+                groupJiggleX.animateTo(-3.5f, animationSpec = tween(durationMillis = 75))
+                groupJiggleX.animateTo(0f, animationSpec = tween(durationMillis = 45))
             }
+        } else {
+            groupJiggleX.snapTo(0f)
+        }
+    }
+    LaunchedEffect(longPressFeedback, pressed, sorting, isLongPressOrigin) {
+        if (longPressFeedback && isLongPressOrigin && !pressed && !sorting) {
+            pressScale.snapTo(1f)
+            onLongPress()
         }
     }
 
@@ -712,6 +732,7 @@ private fun CategoryRow(
                 }
                 scaleX = scale
                 scaleY = scale
+                translationX = if (!sorting) groupJiggleX.value else 0f
                 translationY = if (selectedScale) dragOffsetY else 0f
             }
             .shadow(
@@ -741,9 +762,9 @@ private fun CategoryRow(
                             onDrag = { change, amount ->
                                 change.consume()
                                 dragOffsetY += amount.y
-                                // 每跨过当前行高度的一半才交换一次；交换后抵消该行位移，
-                                // 使被拖动项始终留在手指附近，而不是按固定像素阈值跳走。
-                                val threshold = (rowHeightPx * 0.55f).coerceAtLeast(1f)
+                                // 以整行实际高度作为换位补偿，抵消列表重排造成的布局位移，
+                                // 选中项的视觉位置因此连续跟随手指，不会一次跨越多行。
+                                val threshold = rowHeightPx.toFloat().coerceAtLeast(1f)
                                 while (dragOffsetY >= threshold) {
                                     currentOnMove(1)
                                     dragOffsetY -= threshold
@@ -752,16 +773,28 @@ private fun CategoryRow(
                                     currentOnMove(-1)
                                     dragOffsetY += threshold
                                 }
+                                // 靠近可视区域上下边缘时，随拖动方向小幅滚动列表。
+                                val viewport = listState.layoutInfo
+                                val draggedCenter = viewport.visibleItemsInfo
+                                    .firstOrNull { it.key == category.id }
+                                    ?.let { it.offset + rowHeightPx / 2f + dragOffsetY }
+                                if (draggedCenter != null) {
+                                    val edge = 72f
+                                    when {
+                                        draggedCenter < viewport.viewportStartOffset + edge ->
+                                            listState.scrollBy(-18f)
+                                        draggedCenter > viewport.viewportEndOffset - edge ->
+                                            listState.scrollBy(18f)
+                                    }
+                                }
                             },
                         )
                     }
                 } else {
-                    Modifier.combinedClickable(
+                    Modifier.clickable(
                         interactionSource = interactionSource,
                         indication = null,
                         onClick = onClick,
-                        onDoubleClick = onRename,
-                        onLongClick = { longPressDetected = true },
                     )
                 },
             )
@@ -769,7 +802,12 @@ private fun CategoryRow(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(modifier = Modifier.weight(1f)) {
-            Text(category.name, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
+            Text(
+                text = category.name,
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = if (sorting) Modifier.clickable(onClick = onRename) else Modifier,
+            )
             category.englishName?.takeIf { it.isNotBlank() }?.let {
                 Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
@@ -797,7 +835,17 @@ private fun CategoryRow(
                 Text("＋ 新建子库", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.secondary)
             }
         }
-        if (!sorting) {
+        if (sorting) {
+            Text(
+                text = "✎",
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.secondary,
+                modifier = Modifier
+                    .graphicsLayer { rotationZ = -45f }
+                    .clickable(onClick = onRename)
+                    .padding(horizontal = CulinarySpacing.sm),
+            )
+        } else {
             Text(category.descendantCount.toString(), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Icon(CulinaryIcons.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(16.dp).padding(start = 4.dp))
         }
