@@ -695,12 +695,17 @@ private fun CategoryRow(
     var rowHeightPx by remember(category.id) { mutableIntStateOf(0) }
     val currentOnMove by rememberUpdatedState(onMove)
 
-    // 长按成立后持续轻微震动；只有手指正常松开时才结束反馈并进入排序。
-    LaunchedEffect(longPressFeedback, sorting) {
+    // 每行使用稳定的微小相位差与轻度不对称摆幅；位移始终有界，不累积漂移。
+    LaunchedEffect(longPressFeedback, sorting, category.id) {
         if (longPressFeedback && !sorting) {
+            val stableHash = category.id.hashCode() and 0x7fffffff
+            val phaseDelay = (stableHash % 55).toLong()
+            val asymmetry = (stableHash % 5) * 0.12f
+            delay(phaseDelay)
             while (true) {
-                groupJiggleX.animateTo(3.5f, animationSpec = tween(durationMillis = 90))
-                groupJiggleX.animateTo(-3.5f, animationSpec = tween(durationMillis = 90))
+                groupJiggleX.animateTo(2.4f + asymmetry, animationSpec = tween(durationMillis = 82))
+                groupJiggleX.animateTo(-2.0f - asymmetry, animationSpec = tween(durationMillis = 108))
+                groupJiggleX.animateTo(0f, animationSpec = tween(durationMillis = 42))
             }
         } else {
             groupJiggleX.snapTo(0f)
@@ -808,22 +813,21 @@ private fun CategoryRow(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(modifier = Modifier.weight(1f)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            Row(
+                modifier = if (sorting) Modifier.clickable(onClick = onRename) else Modifier,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
                 Text(
                     text = category.name,
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.onSurface,
-                    modifier = if (sorting) Modifier.clickable(onClick = onRename) else Modifier,
                 )
                 if (sorting) {
                     Text(
                         text = "✎",
                         style = MaterialTheme.typography.titleMedium,
                         color = MaterialTheme.colorScheme.secondary,
-                        modifier = Modifier
-                            .padding(start = CulinarySpacing.xs)
-                            .graphicsLayer { rotationZ = -45f }
-                            .clickable(onClick = onRename),
+                        modifier = Modifier.padding(start = CulinarySpacing.xs),
                     )
                 }
             }
