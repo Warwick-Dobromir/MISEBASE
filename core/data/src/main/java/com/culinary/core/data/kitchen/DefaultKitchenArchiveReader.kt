@@ -51,19 +51,27 @@ class DefaultKitchenArchiveReader
                 val directCounts = validAssignments.groupingBy { it.categoryId }.eachCount()
                 val childrenByParent = libraryCategories.filterNot { it.testBatch != null }.groupBy { it.parentId }
 
-                // 迭代遍历并记录已访问节点，避免深层分类递归溢出及异常环路重复计数。
-                fun descendants(categoryId: String): Int {
-                    val visited = mutableSetOf<String>()
-                    val pending = ArrayDeque<String>()
-                    pending.addLast(categoryId)
-                    var total = 0
+                // 一次迭代后序遍历整棵树，避免递归溢出和逐节点重复遍历。
+                val descendantCounts = mutableMapOf<String, Int>()
+                val visited = mutableSetOf<String>()
+                libraryCategories.filterNot { it.testBatch != null }.forEach { start ->
+                    if (start.id in visited) return@forEach
+                    val pending = ArrayDeque<Pair<String, Boolean>>()
+                    pending.addLast(start.id to false)
                     while (pending.isNotEmpty()) {
-                        val id = pending.removeLast()
-                        if (!visited.add(id)) continue
-                        total += directCounts[id] ?: 0
-                        childrenByParent[id].orEmpty().forEach { child -> pending.addLast(child.id) }
+                        val (id, expanded) = pending.removeLast()
+                        if (expanded) {
+                            val childTotal = childrenByParent[id].orEmpty().sumOf { child ->
+                                descendantCounts[child.id] ?: 0
+                            }
+                            descendantCounts[id] = (directCounts[id] ?: 0) + childTotal
+                        } else if (visited.add(id)) {
+                            pending.addLast(id to true)
+                            childrenByParent[id].orEmpty().asReversed().forEach { child ->
+                                if (child.id !in visited) pending.addLast(child.id to false)
+                            }
+                        }
                     }
-                    return total
                 }
 
                 libraryCategories
@@ -79,7 +87,7 @@ class DefaultKitchenArchiveReader
                             sortOrder = entity.sortOrder,
                             testBatch = entity.testBatch,
                             directCount = directCounts[entity.id] ?: 0,
-                            descendantCount = descendants(entity.id),
+                            descendantCount = descendantCounts[entity.id] ?: (directCounts[entity.id] ?: 0),
                             childCount = childrenByParent[entity.id].orEmpty().size,
                         )
                     }
