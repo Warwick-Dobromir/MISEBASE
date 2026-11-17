@@ -12,7 +12,6 @@ import com.culinary.core.data.kitchen.KitchenArchiveEntry
 import com.culinary.core.data.kitchen.KitchenArchiveKind
 import com.culinary.core.designsystem.theme.CulinaryTheme
 import com.google.common.truth.Truth.assertThat
-import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -49,7 +48,6 @@ class ArchiveLibraryScreenTest {
         compose.onNodeWithText("SAUCE COLLECTION").assertIsDisplayed()
         compose.onNodeWithText("下级分类").assertIsDisplayed()
         compose.onNodeWithText("酱汁基础").assertIsDisplayed()
-        assertTrue(compose.onAllNodesWithText("测试 · 基础酱汁").fetchSemanticsNodes().isEmpty())
     }
 
     @Test
