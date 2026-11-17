@@ -4,11 +4,7 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -41,6 +37,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -50,6 +47,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -674,60 +672,97 @@ private fun CategoryRow(
     onAddChild: () -> Unit,
     onDelete: () -> Unit,
 ) {
-    val interactionSource = androidx.compose.runtime.remember { MutableInteractionSource() }
+    val interactionSource = remember(category.id) { MutableInteractionSource() }
     val pressed by interactionSource.collectIsPressedAsState()
-    val actionInteractionSource = androidx.compose.runtime.remember { MutableInteractionSource() }
+    val actionInteractionSource = remember(category.id) { MutableInteractionSource() }
     val actionPressed by actionInteractionSource.collectIsPressedAsState()
-    val sortMotion = rememberInfiniteTransition()
-    val sortWobble by sortMotion.animateFloat(
-        initialValue = -1.25f,
-        targetValue = 1.25f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 105, easing = LinearEasing),
-            repeatMode = RepeatMode.Reverse,
-        ),
-    )
-    var dragDistance by rememberSaveable(category.id) { mutableIntStateOf(0) }
+    val pressScale = remember(category.id) { Animatable(1f) }
+    var longPressDetected by remember(category.id) { mutableStateOf(false) }
+    var dragging by remember(category.id) { mutableStateOf(false) }
+    var dragOffsetY by remember(category.id) { mutableFloatStateOf(0f) }
+    var rowHeightPx by remember(category.id) { mutableIntStateOf(0) }
+    val currentOnMove by rememberUpdatedState(onMove)
+
+    // 普通目录页：只在手指仍按住时播放有限次数的轻微反馈；松手后才切入排序模式。
+    LaunchedEffect(longPressDetected, pressed, sorting) {
+        if (!sorting && longPressDetected) {
+            if (pressed) {
+                repeat(3) {
+                    pressScale.animateTo(1.045f, animationSpec = tween(durationMillis = 90))
+                    pressScale.animateTo(1f, animationSpec = tween(durationMillis = 90))
+                }
+            } else {
+                pressScale.snapTo(1f)
+                longPressDetected = false
+                onLongPress()
+            }
+        }
+    }
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .onSizeChanged { rowHeightPx = it.height }
             .graphicsLayer {
-                rotationZ = if (sorting) sortWobble else 0f
-                scaleX = if (sorting) 1.008f else 1f
-                scaleY = if (sorting) 1.008f else 1f
+                val selectedScale = sorting && dragging
+                val scale = when {
+                    selectedScale -> 1.045f
+                    sorting -> 1f
+                    else -> pressScale.value
+                }
+                scaleX = scale
+                scaleY = scale
+                translationY = if (selectedScale) dragOffsetY else 0f
             }
+            .shadow(
+                elevation = when {
+                    sorting && dragging -> 7.dp
+                    !sorting && pressed -> 2.dp
+                    else -> 0.dp
+                },
+                shape = RectangleShape,
+            )
             .then(
                 if (sorting) {
                     Modifier.pointerInput(category.id, sorting) {
                         detectDragGesturesAfterLongPress(
-                            onDragStart = { dragDistance = 0 },
-                            onDragEnd = { dragDistance = 0 },
-                            onDragCancel = { dragDistance = 0 },
+                            onDragStart = {
+                                dragging = true
+                                dragOffsetY = 0f
+                            },
+                            onDragEnd = {
+                                dragging = false
+                                dragOffsetY = 0f
+                            },
+                            onDragCancel = {
+                                dragging = false
+                                dragOffsetY = 0f
+                            },
                             onDrag = { change, amount ->
                                 change.consume()
-                                dragDistance += amount.y.toInt()
-                                val threshold = 28.dp.toPx().toInt().coerceAtLeast(1)
-                                while (dragDistance >= threshold) {
-                                    onMove(1)
-                                    dragDistance -= threshold
+                                dragOffsetY += amount.y
+                                // 每跨过当前行高度的一半才交换一次；交换后抵消该行位移，
+                                // 使被拖动项始终留在手指附近，而不是按固定像素阈值跳走。
+                                val threshold = (rowHeightPx * 0.55f).coerceAtLeast(1f)
+                                while (dragOffsetY >= threshold) {
+                                    currentOnMove(1)
+                                    dragOffsetY -= threshold
                                 }
-                                while (dragDistance <= -threshold) {
-                                    onMove(-1)
-                                    dragDistance += threshold
+                                while (dragOffsetY <= -threshold) {
+                                    currentOnMove(-1)
+                                    dragOffsetY += threshold
                                 }
                             },
                         )
                     }
                 } else {
-                    Modifier
-                        .combinedClickable(
-                            interactionSource = interactionSource,
-                            indication = null,
-                            onClick = onClick,
-                            onDoubleClick = onRename,
-                            onLongClick = onLongPress,
-                        )
-                        .shadow(if (pressed) 3.dp else 0.dp, RectangleShape)
+                    Modifier.combinedClickable(
+                        interactionSource = interactionSource,
+                        indication = null,
+                        onClick = onClick,
+                        onDoubleClick = onRename,
+                        onLongClick = { longPressDetected = true },
+                    )
                 },
             )
             .padding(horizontal = CulinarySpacing.pageHorizontal, vertical = CulinarySpacing.md),
