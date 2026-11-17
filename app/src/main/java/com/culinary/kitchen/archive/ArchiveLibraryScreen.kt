@@ -593,7 +593,7 @@ private fun ArchiveContextHeader(
     parentName: String,
     categoryPath: List<String>,
     childCount: Int,
-    directCount: Int,
+    recursiveCount: Int,
     sorting: Boolean,
     onAdd: (() -> Unit)?,
     onCreateSubcategory: (() -> Unit)?,
@@ -652,7 +652,7 @@ private fun ArchiveContextHeader(
         Spacer(modifier = Modifier.height(CulinarySpacing.xs))
         if (!sorting) {
             Text(
-                text = stringResource(R.string.kitchen_directory_counts, childCount, directCount),
+                text = stringResource(R.string.kitchen_directory_counts, childCount, recursiveCount),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
