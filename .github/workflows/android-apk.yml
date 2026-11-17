@@ -43,7 +43,7 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
 
       - name: Run unit tests
-        run: ./gradlew :app:testDebugUnitTest --tests "com.culinary.cooking.CookingViewModelTest" --no-daemon
+        run: ./gradlew :app:testDebugUnitTest --tests "com.culinary.cooking.CookingViewModelTest" --tests "com.culinary.kitchen.archive.ArchiveLibraryScreenTest" --no-daemon
 
       - name: Build APK with original MISEBASE release key
         env:
