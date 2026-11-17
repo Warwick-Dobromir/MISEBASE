@@ -268,10 +268,7 @@ class CookingViewModelTest {
             stepsJson = KitchenStepCodec.encode(steps),
         )
 
-    private fun step(
-        title: String,
-        seconds: Int,
-    ): KitchenStep =
+    private fun step(title: String, seconds: Int): KitchenStep =
         KitchenStep(id = title, title = title, body = "$title 说明", timeSeconds = seconds)
 
     private fun gram(): UnitModel =
@@ -348,8 +345,7 @@ class CookingViewModelTest {
 
         override suspend fun saveDraft(version: SauceVersion): Outcome<SauceVersionId> = Outcome.success(version.id)
 
-        override suspend fun savePublished(version: SauceVersion): Outcome<SauceVersionId> =
-            Outcome.success(version.id)
+        override suspend fun savePublished(version: SauceVersion): Outcome<SauceVersionId> = Outcome.success(version.id)
 
         override suspend fun archive(id: SauceId): Outcome<Unit> = Outcome.success(Unit)
     }
