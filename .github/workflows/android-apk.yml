@@ -80,13 +80,16 @@ jobs:
           test -s "$APK"
           gh release view "$KEEP_TAG" >/dev/null
 
-          # Replace the asset on the existing latest release only after tests,
-          # build, and original-certificate verification have all succeeded.
-          gh release upload "$KEEP_TAG" "$APK" --clobber
-
           # Point the retained tag at the exact source commit used for this APK.
           gh api "repos/${GITHUB_REPOSITORY}/git/refs/tags/${KEEP_TAG}" \
             --method PATCH --field sha="${GITHUB_SHA}" --field force=true >/dev/null
+
+          # Recreate the release so its Published timestamp reflects this build,
+          # instead of leaving yesterday's timestamp on a replaced asset.
+          gh release delete "$KEEP_TAG" --yes
+          gh release create "$KEEP_TAG" "$APK" \
+            --title "MISEBASE Android 安装包" \
+            --notes "Build commit: ${GITHUB_SHA}\nOriginal MISEBASE signing certificate verified."
 
           # Delete every other release/tag only after the replacement asset is live.
           gh api --paginate "repos/${GITHUB_REPOSITORY}/releases?per_page=100" \
