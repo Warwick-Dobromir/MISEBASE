@@ -290,10 +290,7 @@ class ArchiveCategoryRepositoryImpl
                 if (all.any { it.parentId == id }) {
                     return@write invalid("id", "category still has child categories")
                 }
-                if (assignmentDao.listByCategory(id).isNotEmpty()) {
-                    return@write invalid("id", "category still has assigned records")
-                }
-                categoryDao.deleteById(id)
+                categoryDao.archive(id, clock.now().toEpochMilli())
                 Outcome.success(Unit)
             }
 

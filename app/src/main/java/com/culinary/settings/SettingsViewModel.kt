@@ -10,6 +10,8 @@ import com.culinary.BuildConfig
 import com.culinary.core.common.ErrorCode
 import com.culinary.core.common.Outcome
 import com.culinary.core.data.kitchen.KitchenSeedImporter
+import com.culinary.core.data.recycle.RecycleBinItem
+import com.culinary.core.data.recycle.RecycleBinManager
 import com.culinary.core.data.settings.SettingsMaintenance
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -17,6 +19,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -35,6 +38,7 @@ class SettingsViewModel
         @ApplicationContext private val context: Context,
         private val maintenance: SettingsMaintenance,
         private val seedImporter: KitchenSeedImporter,
+        private val recycleBin: RecycleBinManager,
     ) : ViewModel() {
         private val _uiState =
             MutableStateFlow(
@@ -50,6 +54,11 @@ class SettingsViewModel
 
         init {
             refreshDiagnostics()
+            viewModelScope.launch {
+                recycleBin.observeItems().collect { items ->
+                    _uiState.update { it.copy(recycleBinItems = items) }
+                }
+            }
         }
 
         /** 读取数据库 schema 版本与文件大小；不修改任何数据。 */
@@ -227,6 +236,31 @@ class SettingsViewModel
             }
         }
 
+        fun restoreRecycleItem(item: RecycleBinItem) {
+            viewModelScope.launch {
+                try {
+                    withContext(Dispatchers.IO) { recycleBin.restore(item) }
+                    _uiState.update { it.copy(recycleBinMessage = "已恢复：" + item.title) }
+                } catch (error: Throwable) {
+                    _uiState.update { it.copy(recycleBinMessage = "恢复失败：" + (error.message ?: "数据关系校验未通过")) }
+                }
+            }
+        }
+
+        fun permanentlyDeleteRecycleItem(item: RecycleBinItem) {
+            viewModelScope.launch {
+                try {
+                    withContext(Dispatchers.IO) { recycleBin.permanentlyDelete(item) }
+                    _uiState.update { it.copy(recycleBinMessage = "已彻底删除：" + item.title) }
+                } catch (error: Throwable) {
+                    _uiState.update { it.copy(recycleBinMessage = "删除失败：" + (error.message ?: "该记录仍被其他数据引用")) }
+                }
+            }
+        }
+
+        fun clearRecycleBinMessage() {
+            _uiState.update { it.copy(recycleBinMessage = null) }
+        }
         fun showLicenses() {
             _uiState.update { it.copy(showLicenses = true) }
         }

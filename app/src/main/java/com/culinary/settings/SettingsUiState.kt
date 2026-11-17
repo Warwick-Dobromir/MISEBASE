@@ -1,6 +1,7 @@
 package com.culinary.settings
 
 import com.culinary.core.data.kitchen.KitchenSeedStatus
+import com.culinary.core.data.recycle.RecycleBinItem
 
 /**
  * 设置页 UI 状态。
@@ -23,6 +24,8 @@ data class SettingsUiState(
     val showLicenses: Boolean = false,
     val seedStatus: KitchenSeedStatus? = null,
     val seedAction: SeedActionState = SeedActionState.Idle,
+    val recycleBinItems: List<RecycleBinItem> = emptyList(),
+    val recycleBinMessage: String? = null,
 )
 
 sealed interface SeedActionState {

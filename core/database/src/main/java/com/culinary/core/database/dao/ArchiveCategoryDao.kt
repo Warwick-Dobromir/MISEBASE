@@ -25,6 +25,15 @@ interface ArchiveCategoryDao {
     @Query("SELECT * FROM archive_category WHERE status = 'ACTIVE' ORDER BY library, sort_order, name")
     fun observeAllActive(): Flow<List<ArchiveCategoryEntity>>
 
+    @Query("SELECT * FROM archive_category WHERE status = 'ARCHIVED' ORDER BY updated_at DESC")
+    fun observeArchived(): Flow<List<ArchiveCategoryEntity>>
+
+    @Query("UPDATE archive_category SET status = 'ARCHIVED', updated_at = :at, revision = revision + 1 WHERE id = :id")
+    suspend fun archive(id: String, at: Long): Int
+
+    @Query("UPDATE archive_category SET status = 'ACTIVE', updated_at = :at, revision = revision + 1 WHERE id = :id")
+    suspend fun restore(id: String, at: Long): Int
+
     @Query("SELECT * FROM archive_category WHERE status = 'ACTIVE' AND library = :library ORDER BY sort_order, name")
     suspend fun listActive(library: String): List<ArchiveCategoryEntity>
 
