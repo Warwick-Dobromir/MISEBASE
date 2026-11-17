@@ -451,8 +451,10 @@ private fun RoundControl(
             color =
                 if (emphasized) {
                     MaterialTheme.colorScheme.onSecondary
-                } else {
+                } else if (enabled) {
                     MaterialTheme.colorScheme.onSurface
+                } else {
+                    MaterialTheme.colorScheme.onSurfaceVariant
                 },
         )
     }

@@ -54,11 +54,16 @@ jobs:
           set -euo pipefail
           APK="app/build/outputs/apk/debug/app-debug.apk"
           test -s "$APK"
-          ACTUAL="$(apksigner verify --print-certs "$APK" | sed -n 's/^Signer #1 certificate SHA-256 digest: //p' | tr -d ': ' | tr '[:upper:]' '[:lower:]')"
+          APKSIGNER="$(find "$ANDROID_HOME/build-tools" -type f -name apksigner | sort -V | tail -n 1)"
+          AAPT="$(find "$ANDROID_HOME/build-tools" -type f -name aapt | sort -V | tail -n 1)"
+          test -x "$APKSIGNER"
+          test -x "$AAPT"
+          "$AAPT" dump badging "$APK" | grep -F "package: name='com.culinary' versionCode='11' versionName='1.1.0'"
+          ACTUAL="$("$APKSIGNER" verify --print-certs "$APK" | sed -n 's/^Signer #1 certificate SHA-256 digest: //p' | tr -d ': ' | tr '[:upper:]' '[:lower:]')"
           EXPECTED="$(printf '%s' '5C:A4:19:59:D9:F4:50:CD:C8:51:DC:B9:F0:52:AC:91:30:AA:EA:B7:1C:64:06:21:73:A6:99:35:50:56:AF:61' | tr -d ': ' | tr '[:upper:]' '[:lower:]')"
           test -n "$ACTUAL"
           test "$ACTUAL" = "$EXPECTED"
-          echo "Verified original signing certificate: $ACTUAL"
+          echo "Verified package, version, and original signing certificate: $ACTUAL"
 
       - name: Replace latest APK and remove the other 21 releases
         env:
@@ -66,7 +71,6 @@ jobs:
         run: |
           set -euo pipefail
           KEEP_TAG="mobile-build-signed-52"
-          export KEEP_TAG
           APK="app/build/outputs/apk/debug/app-debug.apk"
           test -s "$APK"
           gh release view "$KEEP_TAG" >/dev/null
@@ -81,9 +85,12 @@ jobs:
 
           # Delete every other release/tag only after the replacement asset is live.
           gh api --paginate "repos/${GITHUB_REPOSITORY}/releases?per_page=100" \
-            --jq '.[] | select(.tag_name != env.KEEP_TAG) | .tag_name' |
+            --jq '.[] | select(.tag_name != "mobile-build-signed-52") | .tag_name' |
           while IFS= read -r old_tag; do
             [ -n "$old_tag" ] || continue
             echo "Removing old release: $old_tag"
             gh release delete "$old_tag" --yes --cleanup-tag
           done
+          REMAINING="$(gh api --paginate "repos/${GITHUB_REPOSITORY}/releases?per_page=100" --jq 'length')"
+          test "$REMAINING" = "1"
+          gh release view "$KEEP_TAG" --json tagName,assets --jq '.tagName + " assets=" + (.assets | length | tostring)'
