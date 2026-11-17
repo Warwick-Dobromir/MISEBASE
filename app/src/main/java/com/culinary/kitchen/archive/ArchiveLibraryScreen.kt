@@ -160,6 +160,13 @@ internal fun ArchiveLibraryScreen(
     LaunchedEffect(state.categoryError) {
         if (state.categoryError != null && pendingSave) pendingSave = false
     }
+    LaunchedEffect(children.map { it.id }.toSet()) {
+        if (sorting) {
+            val validIds = children.map { it.id }.toSet()
+            workingOrder = workingOrder.filter { it in validIds }
+            savedOrder = savedOrder.filter { it in validIds }
+        }
+    }
     fun beginSorting() {
         if (!sorting) {
             val ids = children.map { it.id }
@@ -279,13 +286,6 @@ internal fun ArchiveLibraryScreen(
                         newSubcategoryParentId = currentCategory?.id
                         newSubcategoryName = ""
                         showNewSubcategoryDialog = true
-                    },
-                    sorting = sorting,
-                    onSaveSort = {
-                        if (sorting && !pendingSave && sortDirty) {
-                            pendingSave = true
-                            onReorderSubcategories(workingOrder)
-                        }
                     },
                     onBack = {
                         if (sorting) requestSortReturn()
@@ -561,9 +561,7 @@ private fun ArchiveContextHeader(
     onAdd: (() -> Unit)?,
     onCreateSubcategory: (() -> Unit)?,
     onBack: () -> Unit,
-    sorting: Boolean = false,
-    onSaveSort: () -> Unit = {},
-) {
+ ) {
     Column(modifier = Modifier.padding(horizontal = CulinarySpacing.pageHorizontal)) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(top = CulinarySpacing.sm),
@@ -576,14 +574,6 @@ private fun ArchiveContextHeader(
                 modifier = Modifier.size(40.dp).clickable(onClick = onBack).padding(11.dp),
             )
             Spacer(modifier = Modifier.weight(1f))
-            if (sorting) {
-                CulinaryIconButton(
-                    icon = CulinaryIcons.Check,
-                    contentDescription = "保存排序",
-                    onClick = onSaveSort,
-                    tint = MaterialTheme.colorScheme.onSurface,
-                )
-            }
             Text(
                 text = parentName,
                 style = MaterialTheme.typography.bodySmall,
