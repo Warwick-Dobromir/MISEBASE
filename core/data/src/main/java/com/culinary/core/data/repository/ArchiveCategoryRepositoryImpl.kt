@@ -264,7 +264,15 @@ class ArchiveCategoryRepositoryImpl
                 if (selected.any { it.library != first.library || it.parentId != first.parentId }) {
                     return@write invalid("orderedIds", "only categories with the same parent can be reordered")
                 }
-                val siblings = all.filter { it.library == first.library && it.parentId == first.parentId }
+                // 排序界面只展示 ACTIVE 分类；归档分类不得参与同级完整性校验。
+                if (selected.any { it.status != EntityStatusDb.ACTIVE }) {
+                    return@write invalid("orderedIds", "only active categories can be reordered")
+                }
+                val siblings = all.filter {
+                    it.status == EntityStatusDb.ACTIVE &&
+                        it.library == first.library &&
+                        it.parentId == first.parentId
+                }
                 if (orderedIds.toSet() != siblings.map { it.id }.toSet()) {
                     return@write invalid("orderedIds", "the complete sibling list is required")
                 }
