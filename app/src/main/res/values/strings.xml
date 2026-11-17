@@ -119,7 +119,7 @@
     <string name="kitchen_category_production_standards_eyebrow" translatable="false">PRODUCTION STANDARDS</string>
     <string name="kitchen_category_storage_standards">储存标准</string>
     <string name="kitchen_category_storage_standards_eyebrow" translatable="false">STORAGE STANDARDS</string>
-    <string name="kitchen_count">%1$d 项</string>
+    <string name="kitchen_count">共 %1$d 条档案</string>
     <string name="kitchen_count_unavailable">—</string>
     <string name="kitchen_count_error">分类数量暂时无法读取。</string>
     <!-- 厨房全局搜索 -->
@@ -296,7 +296,7 @@
     <string name="kitchen_directory_empty_title">此分类暂无内容</string>
     <string name="kitchen_directory_empty_body">可以在当前分类中新建档案。</string>
     <string name="kitchen_directory_add">新增档案</string>
-    <string name="kitchen_directory_counts">%1$d 个子分类 · %2$d 条直接档案</string>
+    <string name="kitchen_directory_counts">%1$d 个下级分类 · 共 %2$d 条档案</string>
     <string name="kitchen_directory_category_meta">%1$d 个子分类 · %2$d 条档案</string>
     <string name="kitchen_directory_test_badge">测试</string>
     <string name="kitchen_directory_test_section">测试分类 · 仅供验收，可清理</string>

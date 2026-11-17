@@ -3,6 +3,7 @@ package com.culinary.core.data.kitchen
 import com.culinary.core.database.dao.ArchiveCategoryAssignmentDao
 import com.culinary.core.database.dao.ArchiveCategoryDao
 import com.culinary.core.database.entity.ArchiveCategoryEntity
+import com.culinary.core.domain.model.ARCHIVE_CATEGORY_TEST_BATCH
 import com.culinary.core.domain.model.Ingredient
 import com.culinary.core.domain.model.KitchenReference
 import com.culinary.core.domain.model.KitchenReferenceKind
@@ -33,18 +34,48 @@ class DefaultKitchenArchiveReader
         private val assignmentDao: ArchiveCategoryAssignmentDao,
     ) : KitchenArchiveReader {
         override fun observeCategories(library: KitchenArchiveKind): Flow<List<KitchenArchiveCategory>> =
-            combine(categoryDao.observeAllActive(), assignmentDao.observeAll()) { categories, assignments ->
+            combine(categoryDao.observeAllActive(), assignmentDao.observeAll(), observeEntries()) {
+                categories,
+                assignments,
+                entries,
+                ->
                 val libraryCategories = categories.filter { it.library == library.name }
-                val directCounts = assignments.groupingBy { it.categoryId }.eachCount()
-                val childrenByParent = libraryCategories.groupBy { it.parentId }
                 val categoryById = libraryCategories.associateBy { it.id }
-
-                fun descendants(categoryId: String): Int {
-                    val direct = directCounts[categoryId] ?: 0
-                    val children = childrenByParent[categoryId].orEmpty()
-                    return direct + children.sumOf { descendants(it.id) }
+                val activeEntryKeys = entries
+                    .filter { it.kind.name == library.name && it.testBatch == null }
+                    .mapTo(mutableSetOf()) { it.kind.name to it.id }
+                val validAssignments = assignments.filter { assignment ->
+                    (assignment.recordKind to assignment.recordId) in activeEntryKeys &&
+                        categoryById[assignment.categoryId]?.testBatch == null
                 }
+                val directCounts = validAssignments.groupingBy { it.categoryId }.eachCount()
+                val childrenByParent = libraryCategories.filterNot { it.testBatch != null }.groupBy { it.parentId }
+
+                // 一次迭代后序遍历整棵树，避免递归溢出和逐节点重复遍历。
+                val descendantCounts = mutableMapOf<String, Int>()
+                val visited = mutableSetOf<String>()
+                libraryCategories.filterNot { it.testBatch != null }.forEach { start ->
+                    if (start.id in visited) return@forEach
+                    val pending = ArrayDeque<Pair<String, Boolean>>()
+                    pending.addLast(start.id to false)
+                    while (pending.isNotEmpty()) {
+                        val (id, expanded) = pending.removeLast()
+                        if (expanded) {
+                            val childTotal = childrenByParent[id].orEmpty().sumOf { child ->
+                                descendantCounts[child.id] ?: 0
+                            }
+                            descendantCounts[id] = (directCounts[id] ?: 0) + childTotal
+                        } else if (visited.add(id)) {
+                            pending.addLast(id to true)
+                            childrenByParent[id].orEmpty().asReversed().forEach { child ->
+                                if (child.id !in visited) pending.addLast(child.id to false)
+                            }
+                        }
+                    }
+                }
+
                 libraryCategories
+                    .filterNot { it.testBatch != null }
                     .sortedWith(compareBy({ it.sortOrder }, { it.name }))
                     .map { entity ->
                         KitchenArchiveCategory(
@@ -56,7 +87,7 @@ class DefaultKitchenArchiveReader
                             sortOrder = entity.sortOrder,
                             testBatch = entity.testBatch,
                             directCount = directCounts[entity.id] ?: 0,
-                            descendantCount = descendants(entity.id),
+                            descendantCount = descendantCounts[entity.id] ?: (directCounts[entity.id] ?: 0),
                             childCount = childrenByParent[entity.id].orEmpty().size,
                         )
                     }
@@ -114,6 +145,7 @@ class DefaultKitchenArchiveReader
                 name = name,
                 subtitle = flavorProfile ?: usageNotes,
                 legacyCategory = family,
+                recordTestBatch = seedVersion.takeIf { it == ARCHIVE_CATEGORY_TEST_BATCH },
                 searchText =
                     listOfNotNull(
                         name,
@@ -143,6 +175,7 @@ class DefaultKitchenArchiveReader
                 name = name,
                 subtitle = description ?: exampleProducts ?: storageNotes,
                 legacyCategory = category,
+                recordTestBatch = seedVersion.takeIf { it == ARCHIVE_CATEGORY_TEST_BATCH },
                 searchText =
                     listOfNotNull(
                         name,
@@ -168,6 +201,7 @@ class DefaultKitchenArchiveReader
                 name = name,
                 subtitle = description,
                 legacyCategory = category,
+                recordTestBatch = seedVersion.takeIf { it == ARCHIVE_CATEGORY_TEST_BATCH },
                 searchText = listOfNotNull(name, category, description, englishName, seedNote).joinToString(" "),
                 categoryById = categoryById,
                 assignments = assignments,
@@ -183,6 +217,7 @@ class DefaultKitchenArchiveReader
                 name = name,
                 subtitle = englishName,
                 legacyCategory = category.name,
+                recordTestBatch = seedVersion.takeIf { it == ARCHIVE_CATEGORY_TEST_BATCH },
                 searchText =
                     listOfNotNull(
                         name,
@@ -201,6 +236,7 @@ class DefaultKitchenArchiveReader
             name: String,
             subtitle: String?,
             legacyCategory: String?,
+            recordTestBatch: String?,
             searchText: String,
             categoryById: Map<String, ArchiveCategoryEntity>,
             assignments: Map<Pair<String, String>, com.culinary.core.database.entity.ArchiveCategoryAssignmentEntity>,
@@ -216,7 +252,7 @@ class DefaultKitchenArchiveReader
                 searchText = listOfNotNull(searchText, category?.name).joinToString(" "),
                 categoryId = category?.id,
                 categoryPath = category?.let { buildPath(it, categoryById) }.orEmpty(),
-                testBatch = category?.testBatch,
+                testBatch = recordTestBatch ?: category?.testBatch,
             )
         }
 
@@ -226,8 +262,8 @@ class DefaultKitchenArchiveReader
         ): List<String> {
             val path = mutableListOf<String>()
             var cursor: ArchiveCategoryEntity? = category
-            var guard = 0
-            while (cursor != null && guard++ < 32) {
+            val visited = mutableSetOf<String>()
+            while (cursor != null && visited.add(cursor.id)) {
                 path.add(0, cursor.name)
                 cursor = cursor.parentId?.let(categoryById::get)
             }

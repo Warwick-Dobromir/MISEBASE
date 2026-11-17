@@ -2,9 +2,21 @@ package com.culinary.kitchen.archive
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandIn
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.shrinkOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.keyframes
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.background
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.ui.draw.shadow
@@ -36,6 +48,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -125,16 +138,18 @@ internal fun ArchiveLibraryScreen(
     var sorting by rememberSaveable(section) { mutableStateOf(false) }
     var longPressFeedback by remember { mutableStateOf(false) }
     val categoryListState = rememberLazyListState()
+    val isScrolled by remember { derivedStateOf { categoryListState.firstVisibleItemIndex > 0 || categoryListState.firstVisibleItemScrollOffset > 72 } }
     var workingOrder by rememberSaveable(section, currentCategoryId) { mutableStateOf(emptyList<String>()) }
     var savedOrder by rememberSaveable(section, currentCategoryId) { mutableStateOf(emptyList<String>()) }
     var pendingSave by rememberSaveable(section, currentCategoryId) { mutableStateOf(false) }
+    var dragStartOrder by remember { mutableStateOf(emptyList<String>()) }
     var submittedOrder by rememberSaveable(section, currentCategoryId) { mutableStateOf(emptyList<String>()) }
     var showSortExitDialog by rememberSaveable(section) { mutableStateOf(false) }
     var lastSortSaveVersion by rememberSaveable(section) { mutableIntStateOf(state.categorySortSaveVersion) }
     val sortSnackbarHostState = remember { SnackbarHostState() }
 
     val categories = state.categories
-    val entries = state.entries.filter { it.kind == section.kind }
+    val entries = state.entries.filter { it.kind == section.kind && it.testBatch == null }
     val currentCategory = categories.firstOrNull { it.id == currentCategoryId }
     // 测试分类在数据库启动清理后不应再出现；页面同时不展示任何遗留测试节点。
     val children = categories.filter { it.parentId == currentCategoryId && !it.isTest }
@@ -144,6 +159,8 @@ internal fun ArchiveLibraryScreen(
     } else children
     val sortDirty = sorting && workingOrder != savedOrder
     val directEntries = entries.filter { entry -> entry.categoryId == currentCategoryId }
+    val recursiveCount = currentCategory?.descendantCount
+        ?: (categories.filter { it.parentId == null && !it.isTest }.sumOf { it.descendantCount } + directEntries.size)
     val searchResults =
         if (query.isBlank()) {
             emptyList()
@@ -214,28 +231,34 @@ internal fun ArchiveLibraryScreen(
     }
     BackHandler(enabled = !searchOpen && !sorting && currentCategoryId == null) { onBack() }
 
+    Box(modifier = modifier.fillMaxSize()) {
     Column(
-        modifier =
-            modifier
-                .fillMaxSize()
-                .background(MaterialTheme.colorScheme.background),
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background),
     ) {
-        ArchiveBrandHeader(
-            section = section,
-            isSearchOpen = searchOpen,
-            sorting = sorting,
-            onSearch = { searchOpen = true },
-            onCloseSearch = { searchOpen = false },
-            onSaveSort = {
-                if (sorting && !pendingSave && sortDirty) {
-                    submittedOrder = workingOrder
-                    pendingSave = true
-                    onReorderSubcategories(submittedOrder)
-                }
-            },
-        )
         AnimatedVisibility(
-            visible = searchOpen,
+            visible = !isScrolled || sorting,
+            enter = fadeIn() + slideInVertically(initialOffsetY = { -it / 3 }),
+            exit = fadeOut() + slideOutVertically(targetOffsetY = { -it / 3 }),
+        ) {
+            ArchiveBrandHeader(
+                section = section,
+                isSearchOpen = searchOpen,
+                sorting = sorting,
+                onSearch = { searchOpen = true },
+                onCloseSearch = { searchOpen = false },
+                onSaveSort = {
+                    if (sorting && !pendingSave && sortDirty) {
+                        submittedOrder = workingOrder
+                        pendingSave = true
+                        onReorderSubcategories(submittedOrder)
+                    }
+                },
+            )
+        }
+        AnimatedVisibility(
+            visible = searchOpen && !isScrolled,
             enter = slideInHorizontally(initialOffsetX = { it }),
             exit = slideOutHorizontally(targetOffsetX = { it }),
         ) {
@@ -251,7 +274,7 @@ internal fun ArchiveLibraryScreen(
                     ),
             )
         }
-        CulinaryRule()
+        if (!isScrolled || sorting) CulinaryRule()
         state.categoryError?.let { message ->
             ErrorBanner(
                 message = message,
@@ -302,7 +325,7 @@ internal fun ArchiveLibraryScreen(
                     categoryPath =
                         currentCategory?.let { category -> categoryPath(category, categories) }.orEmpty(),
                     childCount = children.size,
-                    directCount = directEntries.size,
+                    recursiveCount = recursiveCount,
                     sorting = sorting,
                     onAdd = if (!showingSearch && currentCategoryId == null) onAdd else null,
                     onCreateSubcategory = {
@@ -318,11 +341,18 @@ internal fun ArchiveLibraryScreen(
                 )
             }
             if (displayedChildren.isNotEmpty()) {
-                if (!sorting) item { SectionLabel(stringResource(R.string.kitchen_directory_subcategories)) }
+                if (!sorting) item {
+                    SectionLabel(
+                        text = stringResource(R.string.kitchen_directory_subcategories),
+                        showSortControl = currentCategoryId != null,
+                        onSort = { beginSorting() },
+                    )
+                }
                 items(displayedChildren, key = { it.id }) { category ->
                     CategoryRow(
                         category = category,
                         sorting = sorting,
+                        canSort = currentCategoryId != null,
                         deleteMode = sorting,
                         onClick = { currentCategoryId = category.id },
                         onLongPressStart = { longPressFeedback = true },
@@ -334,6 +364,8 @@ internal fun ArchiveLibraryScreen(
                             renameTargetId = category.id
                             renameName = category.name
                         },
+                        onDragStart = { dragStartOrder = workingOrder },
+                        onDragCancel = { workingOrder = dragStartOrder },
                         onMove = { delta ->
                             val from = workingOrder.indexOf(category.id)
                             val to = (from + delta).coerceIn(0, workingOrder.lastIndex)
@@ -342,11 +374,6 @@ internal fun ArchiveLibraryScreen(
                                     add(to, removeAt(from))
                                 }
                             }
-                        },
-                        onAddChild = {
-                            newSubcategoryParentId = category.id
-                            newSubcategoryName = ""
-                            showNewSubcategoryDialog = true
                         },
                         onDelete = { deleteTargetId = category.id },
                     )
@@ -410,6 +437,56 @@ internal fun ArchiveLibraryScreen(
             hostState = sortSnackbarHostState,
             modifier = Modifier.fillMaxWidth(),
         )
+    }
+    AnimatedVisibility(
+        visible = isScrolled && !searchOpen && !sorting,
+        modifier = Modifier.align(Alignment.TopEnd).padding(top = 10.dp, end = 16.dp),
+        enter = fadeIn() + scaleIn(initialScale = 0.82f),
+        exit = fadeOut() + scaleOut(targetScale = 0.82f),
+    ) {
+        Box(
+            modifier = Modifier
+                .size(40.dp)
+                .shadow(8.dp, CircleShape)
+                .background(MaterialTheme.colorScheme.surface, CircleShape)
+                .clickable { searchOpen = true },
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                imageVector = CulinaryIcons.Search,
+                contentDescription = stringResource(R.string.kitchen_search_global_hint),
+                tint = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.size(18.dp),
+            )
+        }
+    }
+    AnimatedVisibility(
+        visible = isScrolled && searchOpen,
+        modifier = Modifier.align(Alignment.TopEnd).padding(top = 8.dp, end = 12.dp),
+        enter = expandIn(expandFrom = Alignment.TopEnd) + fadeIn(),
+        exit = shrinkOut(shrinkTowards = Alignment.TopEnd) + fadeOut(),
+    ) {
+        Row(
+            modifier = Modifier
+                .sizeIn(maxWidth = 340.dp)
+                .fillMaxWidth(0.92f)
+                .shadow(12.dp, RoundedCornerShape(24.dp))
+                .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(24.dp))
+                .padding(10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            CulinarySearchField(
+                value = query,
+                onValueChange = { query = it },
+                placeholder = stringResource(R.string.kitchen_search_global_hint),
+                modifier = Modifier.weight(1f),
+            )
+            CulinaryTextButton(
+                text = stringResource(R.string.kitchen_search_close),
+                onClick = { searchOpen = false },
+            )
+        }
+    }
     }
 
     if (showSortExitDialog) {
@@ -551,18 +628,7 @@ private fun ArchiveBrandHeader(
                 .padding(horizontal = CulinarySpacing.pageHorizontal, vertical = CulinarySpacing.sm),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = "MISEBASE",
-                style = CulinaryTextStyles.eyebrow,
-                color = MaterialTheme.colorScheme.onSurface,
-            )
-            Text(
-                text = stringResource(section.subtitleRes),
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
+        Spacer(modifier = Modifier.weight(1f))
         if (sorting) {
             CulinaryTextButton(
                 text = "保存",
@@ -591,7 +657,7 @@ private fun ArchiveContextHeader(
     parentName: String,
     categoryPath: List<String>,
     childCount: Int,
-    directCount: Int,
+    recursiveCount: Int,
     sorting: Boolean,
     onAdd: (() -> Unit)?,
     onCreateSubcategory: (() -> Unit)?,
@@ -650,7 +716,7 @@ private fun ArchiveContextHeader(
         Spacer(modifier = Modifier.height(CulinarySpacing.xs))
         if (!sorting) {
             Text(
-                text = stringResource(R.string.kitchen_directory_counts, childCount, directCount),
+                text = stringResource(R.string.kitchen_directory_counts, childCount, recursiveCount),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -659,15 +725,39 @@ private fun ArchiveContextHeader(
 }
 
 @Composable
-private fun SectionLabel(text: String) {
+private fun SectionLabel(
+    text: String,
+    showSortControl: Boolean = false,
+    onSort: () -> Unit = {},
+) {
     Column(modifier = Modifier.fillMaxWidth().padding(top = CulinarySpacing.lg)) {
         CulinaryRule()
-        Text(
-            text = text,
-            style = CulinaryTextStyles.eyebrow,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(horizontal = CulinarySpacing.pageHorizontal, vertical = CulinarySpacing.sm),
-        )
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = CulinarySpacing.pageHorizontal, vertical = CulinarySpacing.xs),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = text,
+                style = CulinaryTextStyles.eyebrow,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.weight(1f).padding(vertical = CulinarySpacing.xs),
+            )
+            if (showSortControl) {
+                Box(
+                    modifier = Modifier
+                        .sizeIn(minWidth = 40.dp, minHeight = 40.dp)
+                        .clickable(onClick = onSort),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        imageVector = CulinaryIcons.Sort,
+                        contentDescription = "排列下级分类",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(16.dp),
+                    )
+                }
+            }
+        }
     }
 }
 
@@ -675,6 +765,7 @@ private fun SectionLabel(text: String) {
 private fun CategoryRow(
     category: KitchenArchiveCategory,
     sorting: Boolean,
+    canSort: Boolean,
     deleteMode: Boolean,
     onClick: () -> Unit,
     onLongPressStart: () -> Unit,
@@ -684,7 +775,8 @@ private fun CategoryRow(
     listState: LazyListState,
     onRename: () -> Unit,
     onMove: (Int) -> Unit,
-    onAddChild: () -> Unit,
+    onDragStart: () -> Unit,
+    onDragCancel: () -> Unit,
     onDelete: () -> Unit,
 ) {
     val actionInteractionSource = remember(category.id) { MutableInteractionSource() }
@@ -694,6 +786,25 @@ private fun CategoryRow(
     var dragOffsetY by remember(category.id) { mutableFloatStateOf(0f) }
     var rowHeightPx by remember(category.id) { mutableIntStateOf(0) }
     val currentOnMove by rememberUpdatedState(onMove)
+    val jiggleOffset = remember(category.id) { Animatable(0f) }
+    LaunchedEffect(longPressFeedback) {
+        if (longPressFeedback && !sorting) {
+            jiggleOffset.snapTo(0f)
+            jiggleOffset.animateTo(
+                targetValue = 0f,
+                animationSpec = keyframes {
+                    durationMillis = 240
+                    -2.5f at 40
+                    2.5f at 80
+                    -1.5f at 120
+                    1f at 160
+                    0f at 240
+                },
+            )
+        } else {
+            jiggleOffset.snapTo(0f)
+        }
+    }
 
     // 按住边缘时持续缓慢滚动，而不是依赖手指继续移动产生新的拖动事件。
     LaunchedEffect(dragging, sorting) {
@@ -703,10 +814,12 @@ private fun CategoryRow(
                 .firstOrNull { it.key == category.id }
                 ?.let { it.offset + rowHeightPx / 2f + dragOffsetY }
             if (draggedCenter != null) {
-                val edge = 72f
+                val edge = 104f
+                val topDistance = draggedCenter - viewport.viewportStartOffset
+                val bottomDistance = viewport.viewportEndOffset - draggedCenter
                 val delta = when {
-                    draggedCenter < viewport.viewportStartOffset + edge -> -2.5f
-                    draggedCenter > viewport.viewportEndOffset - edge -> 2.5f
+                    topDistance < edge -> -(6f + (1f - (topDistance / edge).coerceIn(0f, 1f)) * 18f)
+                    bottomDistance < edge -> 6f + (1f - (bottomDistance / edge).coerceIn(0f, 1f)) * 18f
                     else -> 0f
                 }
                 if (delta != 0f) {
@@ -731,7 +844,7 @@ private fun CategoryRow(
                 }
                 scaleX = scale
                 scaleY = scale
-                translationX = 0f
+                translationX = if (longPressFeedback && !sorting) jiggleOffset.value else 0f
                 translationY = if (selectedScale) dragOffsetY else 0f
             }
             .shadow(
@@ -746,6 +859,7 @@ private fun CategoryRow(
                     Modifier.pointerInput(category.id, sorting) {
                         detectDragGesturesAfterLongPress(
                             onDragStart = {
+                                onDragStart()
                                 dragging = true
                                 dragOffsetY = 0f
                             },
@@ -754,6 +868,7 @@ private fun CategoryRow(
                                 dragOffsetY = 0f
                             },
                             onDragCancel = {
+                                onDragCancel()
                                 dragging = false
                                 dragOffsetY = 0f
                             },
@@ -786,9 +901,11 @@ private fun CategoryRow(
                                 if (released && longPressRecognized) onLongPress()
                             },
                             onLongPress = {
-                                longPressRecognized = true
-                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                onLongPressStart()
+                                if (canSort) {
+                                    longPressRecognized = true
+                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                    onLongPressStart()
+                                }
                             },
                         )
                     }
@@ -825,22 +942,25 @@ private fun CategoryRow(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
-        Box(
-            modifier = Modifier
-                .sizeIn(minWidth = 48.dp, minHeight = 48.dp)
-                .clickable(
-                    interactionSource = actionInteractionSource,
-                    indication = null,
-                    onClick = if (deleteMode) onDelete else onAddChild,
+        if (deleteMode) {
+            Box(
+                modifier = Modifier
+                    .sizeIn(minWidth = 48.dp, minHeight = 48.dp)
+                    .clickable(
+                        interactionSource = actionInteractionSource,
+                        indication = null,
+                        onClick = onDelete,
+                    )
+                    .shadow(if (actionPressed) 3.dp else 0.dp, RectangleShape)
+                    .padding(horizontal = CulinarySpacing.xs, vertical = CulinarySpacing.sm),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    CulinaryIcons.Trash,
+                    contentDescription = "删除子库",
+                    tint = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.size(20.dp),
                 )
-                .shadow(if (actionPressed) 3.dp else 0.dp, RectangleShape)
-                .padding(horizontal = CulinarySpacing.xs, vertical = CulinarySpacing.sm),
-            contentAlignment = Alignment.Center,
-        ) {
-            if (deleteMode) {
-                Icon(CulinaryIcons.Trash, contentDescription = "删除子库", tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(20.dp))
-            } else {
-                Text("＋ 新建子库", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.secondary)
             }
         }
         if (!sorting) {
