@@ -662,15 +662,32 @@ private fun ArchiveContextHeader(
 }
 
 @Composable
-private fun SectionLabel(text: String) {
+private fun SectionLabel(
+    text: String,
+    showSortControl: Boolean = false,
+    onSort: () -> Unit = {},
+) {
     Column(modifier = Modifier.fillMaxWidth().padding(top = CulinarySpacing.lg)) {
         CulinaryRule()
-        Text(
-            text = text,
-            style = CulinaryTextStyles.eyebrow,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(horizontal = CulinarySpacing.pageHorizontal, vertical = CulinarySpacing.sm),
-        )
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = CulinarySpacing.pageHorizontal, vertical = CulinarySpacing.xs),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = text,
+                style = CulinaryTextStyles.eyebrow,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.weight(1f).padding(vertical = CulinarySpacing.xs),
+            )
+            if (showSortControl) {
+                Icon(
+                    imageVector = CulinaryIcons.Sort,
+                    contentDescription = "排列下级分类",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(18.dp).clickable(onClick = onSort),
+                )
+            }
+        }
     }
 }
 
