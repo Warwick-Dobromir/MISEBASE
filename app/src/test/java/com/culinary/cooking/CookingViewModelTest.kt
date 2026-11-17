@@ -182,7 +182,10 @@ class CookingViewModelTest {
             viewModel.confirmBlockingStep()
 
             assertThat(viewModel.uiState.value.index).isEqualTo(2)
-            assertThat(viewModel.uiState.value.current?.number).isEqualTo(3)
+            assertThat(
+                viewModel.uiState.value.current
+                    ?.number,
+            ).isEqualTo(3)
             assertThat(viewModel.uiState.value.blockingStep).isNull()
         }
 
@@ -268,7 +271,8 @@ class CookingViewModelTest {
     private fun step(
         title: String,
         seconds: Int,
-    ): KitchenStep = KitchenStep(id = title, title = title, body = "$title 说明", timeSeconds = seconds)
+    ): KitchenStep =
+        KitchenStep(id = title, title = title, body = "$title 说明", timeSeconds = seconds)
 
     private fun gram(): UnitModel =
         UnitModel(UnitId("g"), "g", "克", "g", UnitDimension.MASS, 1.0, true, false, 0)
@@ -288,7 +292,11 @@ class CookingViewModelTest {
         override fun observeActive(): Flow<List<Recipe>> = flowOf(listOf(recipe))
 
         override suspend fun get(id: RecipeId): Outcome<Recipe> =
-            if (id == recipe.id) Outcome.success(recipe) else Outcome.failure(CulinaryError.NotFound("recipe", id.value))
+            if (id == recipe.id) {
+                Outcome.success(recipe)
+            } else {
+                Outcome.failure(CulinaryError.NotFound("recipe", id.value))
+            }
 
         override suspend fun getVersion(id: RecipeVersionId): RecipeVersion? = version.takeIf { it.id == id }
 
@@ -304,7 +312,9 @@ class CookingViewModelTest {
 
         override suspend fun saveDraft(version: RecipeVersion): RecipeVersionId = version.id
 
-        override suspend fun savePublished(version: RecipeVersion): Outcome<RecipeVersionId> = Outcome.success(version.id)
+        override suspend fun savePublished(version: RecipeVersion): Outcome<RecipeVersionId> =
+            Outcome.success(version.id)
+
         override suspend fun archive(id: RecipeId): Outcome<Unit> = Outcome.success(Unit)
     }
 

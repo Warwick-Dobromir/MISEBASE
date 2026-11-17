@@ -1,7 +1,6 @@
 package com.culinary.kitchen.archive
 
 import androidx.compose.ui.test.assertIsDisplayed
-import org.junit.Assert.assertTrue
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -13,6 +12,7 @@ import com.culinary.core.data.kitchen.KitchenArchiveEntry
 import com.culinary.core.data.kitchen.KitchenArchiveKind
 import com.culinary.core.designsystem.theme.CulinaryTheme
 import com.google.common.truth.Truth.assertThat
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
