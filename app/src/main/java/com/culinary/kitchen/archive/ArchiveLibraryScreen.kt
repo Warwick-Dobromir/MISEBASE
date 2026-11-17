@@ -13,8 +13,8 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -124,7 +124,6 @@ internal fun ArchiveLibraryScreen(
     var deleteModeCategoryId by rememberSaveable(section) { mutableStateOf<String?>(null) }
     var sorting by rememberSaveable(section) { mutableStateOf(false) }
     var longPressFeedback by remember { mutableStateOf(false) }
-    var longPressOriginId by remember { mutableStateOf<String?>(null) }
     val categoryListState = rememberLazyListState()
     var workingOrder by rememberSaveable(section, currentCategoryId) { mutableStateOf(emptyList<String>()) }
     var savedOrder by rememberSaveable(section, currentCategoryId) { mutableStateOf(emptyList<String>()) }
@@ -187,7 +186,6 @@ internal fun ArchiveLibraryScreen(
     }
     fun beginSorting() {
         longPressFeedback = false
-        longPressOriginId = null
         if (!sorting) {
             val ids = children.map { it.id }
             workingOrder = ids
@@ -327,12 +325,10 @@ internal fun ArchiveLibraryScreen(
                         sorting = sorting,
                         deleteMode = sorting,
                         onClick = { currentCategoryId = category.id },
-                        onLongPress = {
-                            longPressOriginId = category.id
-                            longPressFeedback = true
-                        },
+                        onLongPressStart = { longPressFeedback = true },
+                        onLongPressEnd = { longPressFeedback = false },
+                        onLongPress = { beginSorting() },
                         longPressFeedback = longPressFeedback,
-                        isLongPressOrigin = longPressOriginId == category.id,
                         listState = categoryListState,
                         onRename = {
                             renameTargetId = category.id
@@ -681,42 +677,33 @@ private fun CategoryRow(
     sorting: Boolean,
     deleteMode: Boolean,
     onClick: () -> Unit,
+    onLongPressStart: () -> Unit,
+    onLongPressEnd: () -> Unit,
     onLongPress: () -> Unit,
     longPressFeedback: Boolean,
-    isLongPressOrigin: Boolean,
     listState: LazyListState,
     onRename: () -> Unit,
     onMove: (Int) -> Unit,
     onAddChild: () -> Unit,
     onDelete: () -> Unit,
 ) {
-    val interactionSource = remember(category.id) { MutableInteractionSource() }
-    val pressed by interactionSource.collectIsPressedAsState()
     val actionInteractionSource = remember(category.id) { MutableInteractionSource() }
     val actionPressed by actionInteractionSource.collectIsPressedAsState()
-    val pressScale = remember(category.id) { Animatable(1f) }
     val groupJiggleX = remember(category.id) { Animatable(0f) }
     var dragging by remember(category.id) { mutableStateOf(false) }
     var dragOffsetY by remember(category.id) { mutableFloatStateOf(0f) }
     var rowHeightPx by remember(category.id) { mutableIntStateOf(0) }
     val currentOnMove by rememberUpdatedState(onMove)
 
-    // 长按任一分类时，当前列表的所有可见分类同步轻微横向震动；松手后停止并进入排序。
+    // 长按成立后持续轻微震动；只有手指正常松开时才结束反馈并进入排序。
     LaunchedEffect(longPressFeedback, sorting) {
         if (longPressFeedback && !sorting) {
-            repeat(3) {
-                groupJiggleX.animateTo(3.5f, animationSpec = tween(durationMillis = 45))
-                groupJiggleX.animateTo(-3.5f, animationSpec = tween(durationMillis = 75))
-                groupJiggleX.animateTo(0f, animationSpec = tween(durationMillis = 45))
+            while (true) {
+                groupJiggleX.animateTo(3.5f, animationSpec = tween(durationMillis = 90))
+                groupJiggleX.animateTo(-3.5f, animationSpec = tween(durationMillis = 90))
             }
         } else {
             groupJiggleX.snapTo(0f)
-        }
-    }
-    LaunchedEffect(longPressFeedback, pressed, sorting, isLongPressOrigin) {
-        if (longPressFeedback && isLongPressOrigin && !pressed && !sorting) {
-            pressScale.snapTo(1f)
-            onLongPress()
         }
     }
     // 按住边缘时持续缓慢滚动，而不是依赖手指继续移动产生新的拖动事件。
@@ -751,7 +738,7 @@ private fun CategoryRow(
                 val scale = when {
                     selectedScale -> 1.045f
                     sorting -> 1f
-                    else -> pressScale.value
+                    else -> 1f
                 }
                 scaleX = scale
                 scaleY = scale
@@ -761,7 +748,6 @@ private fun CategoryRow(
             .shadow(
                 elevation = when {
                     sorting && dragging -> 7.dp
-                    !sorting && pressed -> 2.dp
                     else -> 0.dp
                 },
                 shape = RectangleShape,
@@ -800,12 +786,22 @@ private fun CategoryRow(
                         )
                     }
                 } else {
-                    Modifier.combinedClickable(
-                        interactionSource = interactionSource,
-                        indication = null,
-                        onClick = onClick,
-                        onLongClick = onLongPress,
-                    )
+                    Modifier.pointerInput(category.id, sorting) {
+                        var longPressRecognized = false
+                        detectTapGestures(
+                            onTap = { onClick() },
+                            onPress = {
+                                longPressRecognized = false
+                                val released = tryAwaitRelease()
+                                onLongPressEnd()
+                                if (released && longPressRecognized) onLongPress()
+                            },
+                            onLongPress = {
+                                longPressRecognized = true
+                                onLongPressStart()
+                            },
+                        )
+                    }
                 },
             )
             .padding(horizontal = CulinarySpacing.pageHorizontal, vertical = CulinarySpacing.md),
