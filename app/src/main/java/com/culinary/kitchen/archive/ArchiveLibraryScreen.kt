@@ -277,7 +277,7 @@ internal fun ArchiveLibraryScreen(
                     ),
             )
         }
-        CulinaryRule()
+        if (!isScrolled || sorting) CulinaryRule()
         state.categoryError?.let { message ->
             ErrorBanner(
                 message = message,
@@ -470,8 +470,8 @@ internal fun ArchiveLibraryScreen(
     ) {
         Row(
             modifier = Modifier
-                .fillMaxWidth(0.92f)
                 .sizeIn(maxWidth = 340.dp)
+                .fillMaxWidth(0.92f)
                 .shadow(12.dp, RoundedCornerShape(24.dp))
                 .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(24.dp))
                 .padding(10.dp),
