@@ -1,20 +1,12 @@
 package com.culinary.kitchen.archive
 
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.test.advanceEventTime
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.down
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.junit4.createComposeRule
-import androidx.compose.ui.test.longClick
-import androidx.compose.ui.test.moveBy
-import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
-import androidx.compose.ui.test.performTouchInput
-import androidx.compose.ui.test.up
 import com.culinary.core.data.kitchen.KitchenArchiveCategory
 import com.culinary.core.data.kitchen.KitchenArchiveEntry
 import com.culinary.core.data.kitchen.KitchenArchiveKind
@@ -158,76 +150,6 @@ class ArchiveLibraryScreenTest {
     }
 
     @Test
-    fun `long pressing a nested category opens rename dialog`() {
-        var renamedId = ""
-        var renamedName = ""
-        show(
-            onRenameSubcategory = { id, name ->
-                renamedId = id
-                renamedName = name
-            },
-        )
-
-        compose.onNodeWithText("酱汁基础").performClick()
-        compose.onNodeWithText("基础酱汁").performTouchInput { longClick() }
-        compose.onNodeWithText("重命名子库").assertIsDisplayed()
-        compose.onNode(hasSetTextAction()).performTextInput("改名后的分类")
-        compose.onNodeWithText("保存").performClick()
-
-        assertThat(renamedId).isEqualTo("basic")
-        assertThat(renamedName).isEqualTo("改名后的分类")
-    }
-
-    @Test
-    fun `long pressing the child action switches to delete and confirms deletion`() {
-        var deletedId = ""
-        val testCategories =
-            listOf(
-                category("base", null, "酱汁基础", 0, descendant = 1, childCount = 1),
-                category("empty-child", "base", "空子分类", 0),
-            )
-        show(
-            categories = testCategories,
-            onDeleteSubcategory = { deletedId = it },
-        )
-
-        compose.onNodeWithText("酱汁基础").performClick()
-        compose.onAllNodesWithText("＋ 新建子库")[1].performTouchInput { longClick() }
-        compose.onNodeWithContentDescription("删除子库").assertIsDisplayed()
-        compose.onNodeWithContentDescription("删除子库").performClick()
-        compose.onNodeWithText("确定删除「空子分类」？此操作不可撤销。").assertIsDisplayed()
-        compose.onNodeWithText("删除").performClick()
-
-        assertThat(deletedId).isEqualTo("empty-child")
-    }
-
-    @Test
-    fun `long pressing and dragging the sort handle reorders siblings`() {
-        var reordered = emptyList<String>()
-        val testCategories =
-            listOf(
-                category("base", null, "酱汁基础", 0, descendant = 2, childCount = 2),
-                category("first", "base", "第一分类", 0),
-                category("second", "base", "第二分类", 0),
-            )
-        show(
-            categories = testCategories,
-            onReorderSubcategories = { reordered = it },
-        )
-
-        compose.onNodeWithText("酱汁基础").performClick()
-        compose.onNodeWithContentDescription("长按并上下拖动排序").performTouchInput {
-            down(center)
-            advanceEventTime(600)
-            moveBy(Offset(0f, 120f))
-            up()
-        }
-
-        assertThat(reordered).isNotEmpty()
-        assertThat(reordered).containsExactly("second", "first").inOrder()
-    }
-
-    @Test
     fun `library search shows result with category path and is isolated to section`() {
         show()
 
@@ -243,9 +165,6 @@ class ArchiveLibraryScreenTest {
         onAdd: () -> Unit = {},
         onOpenEntry: (KitchenArchiveEntry) -> Unit = {},
         onCreateSubcategory: (String?, String) -> Unit = { _, _ -> },
-        onRenameSubcategory: (String, String) -> Unit = { _, _ -> },
-        onDeleteSubcategory: (String) -> Unit = {},
-        onReorderSubcategories: (List<String>) -> Unit = {},
     ) {
         compose.setContent {
             CulinaryTheme {
@@ -255,9 +174,6 @@ class ArchiveLibraryScreenTest {
                     onAdd = onAdd,
                     onOpenEntry = onOpenEntry,
                     onCreateSubcategory = onCreateSubcategory,
-                    onRenameSubcategory = onRenameSubcategory,
-                    onDeleteSubcategory = onDeleteSubcategory,
-                    onReorderSubcategories = onReorderSubcategories,
                 )
             }
         }
