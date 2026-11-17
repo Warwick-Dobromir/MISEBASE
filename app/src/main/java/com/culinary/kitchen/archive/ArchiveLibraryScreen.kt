@@ -606,25 +606,25 @@ private fun CategoryRow(
                         .size(28.dp)
                         .padding(4.dp)
                         .pointerInput(category.id) {
-                        var distance = 0f
-                        detectDragGesturesAfterLongPress(
-                            onDragStart = { distance = 0f },
-                            onDragEnd = { distance = 0f },
-                            onDragCancel = { distance = 0f },
-                            onDrag = { change, dragAmount ->
-                                change.consume()
-                                distance += dragAmount.y
-                                val threshold = 44.dp.toPx()
-                                if (distance >= threshold) {
-                                    currentOnMove(1)
-                                    distance -= threshold
-                                } else if (distance <= -threshold) {
-                                    currentOnMove(-1)
-                                    distance += threshold
-                                }
-                            },
-                        )
-                    },
+                            var distance = 0f
+                            detectDragGesturesAfterLongPress(
+                                onDragStart = { distance = 0f },
+                                onDragEnd = { distance = 0f },
+                                onDragCancel = { distance = 0f },
+                                onDrag = { change, dragAmount ->
+                                    change.consume()
+                                    distance += dragAmount.y
+                                    val threshold = 44.dp.toPx()
+                                    if (distance >= threshold) {
+                                        currentOnMove(1)
+                                        distance -= threshold
+                                    } else if (distance <= -threshold) {
+                                        currentOnMove(-1)
+                                        distance += threshold
+                                    }
+                                },
+                            )
+                        },
             )
         }
         if (deleteMode) {
@@ -638,8 +638,7 @@ private fun CategoryRow(
                         .combinedClickable(
                             onClick = onDelete,
                             onLongClick = onToggleDeleteMode,
-                        )
-                        .padding(10.dp),
+                        ).padding(10.dp),
             )
         } else {
             Text(
@@ -651,8 +650,7 @@ private fun CategoryRow(
                         .combinedClickable(
                             onClick = onAddChild,
                             onLongClick = if (canManage) onToggleDeleteMode else null,
-                        )
-                        .padding(horizontal = CulinarySpacing.xs, vertical = CulinarySpacing.sm),
+                        ).padding(horizontal = CulinarySpacing.xs, vertical = CulinarySpacing.sm),
             )
         }
         Text(

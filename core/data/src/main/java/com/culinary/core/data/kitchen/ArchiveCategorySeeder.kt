@@ -275,12 +275,12 @@ class ArchiveCategorySeeder
             )
             while (true) {
                 val hasNonTestChild =
-                    db.query(
-                        "SELECT 1 FROM archive_category child " +
-                            "JOIN archive_category parent ON child.parent_id = parent.id " +
-                            "WHERE parent.name LIKE '测试%' AND child.name NOT LIKE '测试%' LIMIT 1",
-                    )
-                        .useRows { it.moveToFirst() }
+                    db
+                        .query(
+                            "SELECT 1 FROM archive_category child " +
+                                "JOIN archive_category parent ON child.parent_id = parent.id " +
+                                "WHERE parent.name LIKE '测试%' AND child.name NOT LIKE '测试%' LIMIT 1",
+                        ).useRows { it.moveToFirst() }
                 if (!hasNonTestChild) break
                 db.execSQL(
                     "UPDATE archive_category SET parent_id = " +
