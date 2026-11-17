@@ -15,10 +15,10 @@ import javax.inject.Provider
 import javax.inject.Singleton
 
 /**
- * 分类正式数据与分类测试数据的启动 seed。
+ * 分类正式数据初始化与历史测试分类清理。
  *
- * 正式分类从现有档案分类字符串生成；测试分类/测试档案使用独立 batch 标记，
- * 不挂真实档案，并可单独清理。
+ * 正式分类从现有档案分类字符串生成；升级启动时删除遗留测试分类及其测试档案，
+ * 并保留所有正式档案与非测试分类。
  */
 @Singleton
 class ArchiveCategorySeeder
@@ -67,25 +67,6 @@ class ArchiveCategorySeeder
                     }
                 }.getOrElse {
                     Outcome.failure(CulinaryError.Data(message = "category test cleanup failed", cause = it))
-                }
-            }
-
-        suspend fun reseedTestData(): Outcome<Unit> =
-            withContext(Dispatchers.IO) {
-                runCatching {
-                    val db = databaseProvider.get().openHelper.writableDatabase
-                    db.beginTransaction()
-                    try {
-                        deleteTestData(db)
-                        seedTestCategories(db)
-                        putMetadata(db, TEST_STATE_KEY, TEST_STATE_SEEDED)
-                        db.setTransactionSuccessful()
-                        Outcome.success(Unit)
-                    } finally {
-                        db.endTransaction()
-                    }
-                }.getOrElse {
-                    Outcome.failure(CulinaryError.Data(message = "category test reseed failed", cause = it))
                 }
             }
 
@@ -252,144 +233,6 @@ class ArchiveCategorySeeder
             }
         }
 
-        @Suppress("LongMethod")
-        private fun seedTestCategories(db: SupportSQLiteDatabase) {
-            val now = clock.now().toEpochMilli()
-            val categories =
-                listOf(
-                    TestCategory("test-cat-sauce-basic", "SAUCE", null, "测试 · 基础酱汁", 100),
-                    TestCategory("test-cat-sauce-mother", "SAUCE", "test-cat-sauce-basic", "测试 · 法式母酱", 0),
-                    TestCategory(
-                        "test-cat-sauce-white",
-                        "SAUCE",
-                        "test-cat-sauce-mother",
-                        "测试 · 白色母酱",
-                        0,
-                    ),
-                    TestCategory("test-cat-sauce-brown", "SAUCE", "test-cat-sauce-mother", "测试 · 褐色母酱", 1),
-                    TestCategory("test-cat-sauce-fish", "SAUCE", "test-cat-sauce-mother", "测试 · 鱼类母酱", 2),
-                    TestCategory("test-cat-sauce-butter", "SAUCE", "test-cat-sauce-basic", "测试 · 黄油乳化酱", 1),
-                    TestCategory(
-                        "test-cat-sauce-butter-hot",
-                        "SAUCE",
-                        "test-cat-sauce-butter",
-                        "测试 · 热制黄油乳化酱",
-                        0,
-                    ),
-                    TestCategory(
-                        "test-cat-sauce-butter-cold",
-                        "SAUCE",
-                        "test-cat-sauce-butter",
-                        "测试 · 冷制黄油乳化酱",
-                        1,
-                    ),
-                    TestCategory("test-cat-sauce-empty", "SAUCE", null, "测试 · 空分类", 101),
-                    TestCategory("test-cat-ingredient", "INGREDIENT", null, "测试 · 食材分类", 100),
-                    TestCategory(
-                        "test-cat-ingredient-herb",
-                        "INGREDIENT",
-                        "test-cat-ingredient",
-                        "测试 · 香草与香料",
-                        0,
-                    ),
-                    TestCategory("test-cat-recipe", "RECIPE", null, "测试 · 菜谱分类", 100),
-                    TestCategory("test-cat-technique", "TECHNIQUE", null, "测试 · 技术分类", 100),
-                    TestCategory(
-                        "test-cat-technique-hot",
-                        "TECHNIQUE",
-                        "test-cat-technique",
-                        "测试 · 热加工",
-                        0,
-                    ),
-                    TestCategory("test-cat-production", "PRODUCTION_STANDARD", null, "测试 · 标准分类", 100),
-                    TestCategory("test-cat-storage", "STORAGE_STANDARD", null, "测试 · 储存分类", 100),
-                    TestCategory(
-                        "test-cat-storage-cold",
-                        "STORAGE_STANDARD",
-                        "test-cat-storage",
-                        "测试 · 冷藏",
-                        0,
-                    ),
-                )
-            categories.forEach { category ->
-                insertCategory(
-                    db = db,
-                    id = category.id,
-                    library = category.library,
-                    parentId = category.parentId,
-                    name = category.name,
-                    normalizedName = normalize(category.name),
-                    englishName = null,
-                    sortOrder = category.sortOrder,
-                    testBatch = TEST_BATCH,
-                    now = now,
-                )
-            }
-            insertTestSauce(
-                db = db,
-                id = "test-sauce-category-parent",
-                name = "测试 · 分类同时含子分类与档案",
-                family = "测试 · 法式母酱",
-                categoryId = "test-cat-sauce-mother",
-                now = now,
-            )
-            insertTestSauce(
-                db = db,
-                id = "test-sauce-category-leaf",
-                name = "测试 · 末级分类档案",
-                family = "测试 · 白色母酱",
-                categoryId = "test-cat-sauce-white",
-                now = now,
-            )
-            putMetadata(db, TEST_STATE_KEY, TEST_STATE_SEEDED)
-        }
-
-        private fun insertTestSauce(
-            db: SupportSQLiteDatabase,
-            id: String,
-            name: String,
-            family: String,
-            categoryId: String,
-            now: Long,
-        ) {
-            val exists =
-                db
-                    .query("SELECT 1 FROM sauce WHERE id = ? LIMIT 1", arrayOf(id))
-                    .useRows { it.moveToFirst() }
-            if (!exists) {
-                val unitId =
-                    db
-                        .query("SELECT id FROM unit WHERE code = 'g' LIMIT 1")
-                        .useRows { if (it.moveToFirst()) it.getString(0) else null }
-                        ?: return
-                db.execSQL(
-                    "INSERT INTO sauce (id,name,normalized_name,family,status,created_at,updated_at," +
-                        "revision,english_name,description,seed_id,seed_version,seed_note) " +
-                        "VALUES (?,?,?,?, 'ACTIVE', ?, ?, 1, ?, ?, ?, ?, ?)",
-                    arrayOf(
-                        id,
-                        name,
-                        normalize(name),
-                        family,
-                        now,
-                        now,
-                        "UI Category Test",
-                        "分类测试档案（可清理）",
-                        id,
-                        TEST_BATCH,
-                        TEST_BATCH,
-                    ),
-                )
-                db.execSQL(
-                    "INSERT INTO sauce_version (id,sauce_id,version_no,status,yield_qty,yield_unit_id," +
-                        "instructions_md,steps_json,is_current,created_at,published_at) " +
-                        "VALUES (?,?,1,'PUBLISHED',250,?,?,NULL,1,?,?)",
-                    arrayOf("$id-version", id, unitId, "分类测试档案", now, now),
-                )
-            }
-            insertAssignment(db, "SAUCE", id, categoryId)
-        }
-
         private fun deleteTestData(db: SupportSQLiteDatabase) {
             val sauceIds =
                 db
@@ -516,11 +359,6 @@ class ArchiveCategorySeeder
                 else -> raw
             }
 
-        private fun testState(db: SupportSQLiteDatabase): String? =
-            db
-                .query("SELECT value FROM app_metadata WHERE key = ?", arrayOf(TEST_STATE_KEY))
-                .useRows { cursor -> if (cursor.moveToFirst()) cursor.getString(0) else null }
-
         private fun putMetadata(
             db: SupportSQLiteDatabase,
             key: String,
@@ -534,18 +372,9 @@ class ArchiveCategorySeeder
 
         private fun <T> Cursor.useRows(block: (Cursor) -> T): T = use(block)
 
-        private data class TestCategory(
-            val id: String,
-            val library: String,
-            val parentId: String?,
-            val name: String,
-            val sortOrder: Int,
-        )
-
         private companion object {
             const val TEST_BATCH = "UI-CATEGORY-TEST-V1"
             const val TEST_STATE_KEY = "archive_category_test_state"
-            const val TEST_STATE_SEEDED = "seeded"
             const val TEST_STATE_DISABLED = "disabled"
         }
     }

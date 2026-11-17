@@ -23,8 +23,6 @@ data class SettingsUiState(
     val showLicenses: Boolean = false,
     val seedStatus: KitchenSeedStatus? = null,
     val seedAction: SeedActionState = SeedActionState.Idle,
-    val categoryTestRunning: Boolean = false,
-    val categoryTestMessage: String? = null,
 )
 
 sealed interface SeedActionState {

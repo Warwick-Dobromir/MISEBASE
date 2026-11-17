@@ -93,8 +93,6 @@ fun SettingsRoute(
         onDismissLicenses = viewModel::dismissLicenses,
         onReimportSeed = viewModel::reimportSeed,
         onClearSeed = viewModel::clearSeed,
-        onReseedCategoryTest = viewModel::reseedCategoryTest,
-        onClearCategoryTest = viewModel::clearCategoryTest,
         modifier = modifier,
     )
 }
@@ -113,8 +111,6 @@ internal fun SettingsScreen(
     onDismissLicenses: () -> Unit,
     onReimportSeed: () -> Unit,
     onClearSeed: () -> Unit,
-    onReseedCategoryTest: () -> Unit,
-    onClearCategoryTest: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var showSeedClearConfirm by remember { mutableStateOf(false) }
@@ -141,8 +137,6 @@ internal fun SettingsScreen(
                 state = state,
                 onReimport = onReimportSeed,
                 onClear = { showSeedClearConfirm = true },
-                onReseedCategoryTest = onReseedCategoryTest,
-                onClearCategoryTest = onClearCategoryTest,
             )
             DiagnosticsSection(state = state, onExportDiagnostics = onExportDiagnostics)
             AboutSection(state = state, onShowLicenses = onShowLicenses)
@@ -314,8 +308,6 @@ private fun SeedSection(
     state: SettingsUiState,
     onReimport: () -> Unit,
     onClear: () -> Unit,
-    onReseedCategoryTest: () -> Unit,
-    onClearCategoryTest: () -> Unit,
 ) {
     val status = state.seedStatus
     val running = state.seedAction is SeedActionState.Running
@@ -392,41 +384,6 @@ private fun SeedSection(
         modifier = Modifier.padding(top = CulinarySpacing.xs),
     )
     Spacer(modifier = Modifier.height(CulinarySpacing.md))
-    Text(
-        text = "分类测试数据",
-        style = MaterialTheme.typography.titleSmall,
-        color = MaterialTheme.colorScheme.onSurface,
-    )
-    Text(
-        text = "仅用于验证多级分类目录；不关联任何真实档案。",
-        style = MaterialTheme.typography.bodySmall,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-    )
-    Row(modifier = Modifier.fillMaxWidth()) {
-        CulinaryButton(
-            text = "重建分类测试",
-            onClick = onReseedCategoryTest,
-            variant = CulinaryButtonVariant.Secondary,
-            enabled = !state.categoryTestRunning,
-            modifier = Modifier.weight(1f),
-        )
-        Spacer(modifier = Modifier.width(CulinarySpacing.sm))
-        CulinaryButton(
-            text = "清理分类测试",
-            onClick = onClearCategoryTest,
-            variant = CulinaryButtonVariant.Danger,
-            enabled = !state.categoryTestRunning,
-            modifier = Modifier.weight(1f),
-        )
-    }
-    state.categoryTestMessage?.let {
-        Text(
-            text = it,
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(top = CulinarySpacing.xs),
-        )
-    }
 }
 
 @Composable
