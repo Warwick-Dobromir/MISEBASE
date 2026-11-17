@@ -114,6 +114,7 @@ internal fun ArchiveLibraryScreen(
     var workingOrder by rememberSaveable(section, currentCategoryId) { mutableStateOf(emptyList<String>()) }
     var savedOrder by rememberSaveable(section, currentCategoryId) { mutableStateOf(emptyList<String>()) }
     var pendingSave by rememberSaveable(section, currentCategoryId) { mutableStateOf(false) }
+    var submittedOrder by rememberSaveable(section, currentCategoryId) { mutableStateOf(emptyList<String>()) }
     var showSortExitDialog by rememberSaveable(section) { mutableStateOf(false) }
     var sortExitHasUnsavedChanges by rememberSaveable(section) { mutableStateOf(false) }
     var lastSortSaveVersion by rememberSaveable(section) { mutableIntStateOf(state.categorySortSaveVersion) }
@@ -152,7 +153,7 @@ internal fun ArchiveLibraryScreen(
         if (state.categorySortSaveVersion > lastSortSaveVersion) {
             lastSortSaveVersion = state.categorySortSaveVersion
             if (sorting && pendingSave) {
-                savedOrder = workingOrder
+                savedOrder = submittedOrder
                 pendingSave = false
             }
         }
@@ -165,6 +166,7 @@ internal fun ArchiveLibraryScreen(
             val validIds = children.map { it.id }.toSet()
             workingOrder = workingOrder.filter { it in validIds }
             savedOrder = savedOrder.filter { it in validIds }
+            submittedOrder = submittedOrder.filter { it in validIds }
         }
     }
     fun beginSorting() {
@@ -191,7 +193,7 @@ internal fun ArchiveLibraryScreen(
     BackHandler(enabled = !searchOpen && !sorting && currentCategoryId != null) {
         currentCategoryId = currentCategory?.parentId
     }
-    BackHandler(enabled = !searchOpen && currentCategoryId == null) { onBack() }
+    BackHandler(enabled = !searchOpen && !sorting && currentCategoryId == null) { onBack() }
 
     Column(
         modifier =
@@ -207,8 +209,9 @@ internal fun ArchiveLibraryScreen(
             onCloseSearch = { searchOpen = false },
             onSaveSort = {
                 if (sorting && !pendingSave && sortDirty) {
+                    submittedOrder = workingOrder
                     pendingSave = true
-                    onReorderSubcategories(workingOrder)
+                    onReorderSubcategories(submittedOrder)
                 }
             },
         )
@@ -236,7 +239,7 @@ internal fun ArchiveLibraryScreen(
                 modifier = Modifier.padding(horizontal = CulinarySpacing.pageHorizontal),
             )
         }
-        state.categoryMessage?.let { message ->
+        if (!sorting) state.categoryMessage?.let { message ->
             Text(
                 text = message,
                 style = MaterialTheme.typography.bodySmall,
