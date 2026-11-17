@@ -5,6 +5,11 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
@@ -106,6 +111,13 @@ internal fun ArchiveLibraryScreen(
     var renameName by rememberSaveable(section) { mutableStateOf("") }
     var deleteTargetId by rememberSaveable(section) { mutableStateOf<String?>(null) }
     var deleteModeCategoryId by rememberSaveable(section) { mutableStateOf<String?>(null) }
+    var sorting by rememberSaveable(section) { mutableStateOf(false) }
+    var workingOrder by rememberSaveable(section, currentCategoryId) { mutableStateOf(emptyList<String>()) }
+    var savedOrder by rememberSaveable(section, currentCategoryId) { mutableStateOf(emptyList<String>()) }
+    var pendingSave by rememberSaveable(section, currentCategoryId) { mutableStateOf(false) }
+    var showSortExitDialog by rememberSaveable(section) { mutableStateOf(false) }
+    var sortExitHasUnsavedChanges by rememberSaveable(section) { mutableStateOf(false) }
+    var lastSortSaveVersion by rememberSaveable(section) { mutableIntStateOf(state.categorySortSaveVersion) }
 
     val categories = state.categories
     val entries = state.entries.filter { it.kind == section.kind }
@@ -113,6 +125,10 @@ internal fun ArchiveLibraryScreen(
     // 测试分类在数据库启动清理后不应再出现；页面同时不展示任何遗留测试节点。
     val children = categories.filter { it.parentId == currentCategoryId && !it.isTest }
     val formalChildren = children
+    val displayedChildren = if (sorting && workingOrder.isNotEmpty()) {
+        workingOrder.mapNotNull { id -> children.firstOrNull { it.id == id } }
+    } else children
+    val sortDirty = sorting && workingOrder != savedOrder
     val directEntries = entries.filter { entry -> entry.categoryId == currentCategoryId }
     val searchResults =
         if (query.isBlank()) {
@@ -132,12 +148,41 @@ internal fun ArchiveLibraryScreen(
             currentCategoryId = null
         }
     }
-    LaunchedEffect(currentCategoryId, query, searchOpen) {
-        visibleLimit = 20
+    LaunchedEffect(currentCategoryId, query, searchOpen) { visibleLimit = 20 }
+    LaunchedEffect(state.categorySortSaveVersion) {
+        if (state.categorySortSaveVersion > lastSortSaveVersion) {
+            lastSortSaveVersion = state.categorySortSaveVersion
+            if (sorting && pendingSave) {
+                savedOrder = workingOrder
+                pendingSave = false
+            }
+        }
+    }
+    LaunchedEffect(state.categoryError) {
+        if (state.categoryError != null && pendingSave) pendingSave = false
+    }
+    fun beginSorting() {
+        if (!sorting) {
+            val ids = children.map { it.id }
+            workingOrder = ids
+            savedOrder = ids
+            sorting = true
+        }
+    }
+    fun finishSorting() {
+        workingOrder = savedOrder
+        sorting = false
+        pendingSave = false
+        showSortExitDialog = false
+    }
+    fun requestSortReturn() {
+        sortExitHasUnsavedChanges = sortDirty
+        showSortExitDialog = true
     }
 
     BackHandler(enabled = searchOpen) { searchOpen = false }
-    BackHandler(enabled = !searchOpen && currentCategoryId != null) {
+    BackHandler(enabled = !searchOpen && sorting) { requestSortReturn() }
+    BackHandler(enabled = !searchOpen && !sorting && currentCategoryId != null) {
         currentCategoryId = currentCategory?.parentId
     }
     BackHandler(enabled = !searchOpen && currentCategoryId == null) { onBack() }
@@ -151,8 +196,15 @@ internal fun ArchiveLibraryScreen(
         ArchiveBrandHeader(
             section = section,
             isSearchOpen = searchOpen,
+            sorting = sorting,
             onSearch = { searchOpen = true },
             onCloseSearch = { searchOpen = false },
+            onSaveSort = {
+                if (sorting && !pendingSave && sortDirty) {
+                    pendingSave = true
+                    onReorderSubcategories(workingOrder)
+                }
+            },
         )
         AnimatedVisibility(
             visible = searchOpen,
@@ -229,37 +281,36 @@ internal fun ArchiveLibraryScreen(
                         newSubcategoryName = ""
                         showNewSubcategoryDialog = true
                     },
+                    sorting = sorting,
+                    onSaveSort = {
+                        if (sorting && !pendingSave && sortDirty) {
+                            pendingSave = true
+                            onReorderSubcategories(workingOrder)
+                        }
+                    },
                     onBack = {
-                        if (currentCategory == null) onBack() else currentCategoryId = currentCategory.parentId
+                        if (sorting) requestSortReturn()
+                        else if (currentCategory == null) onBack()
+                        else currentCategoryId = currentCategory.parentId
                     },
                 )
             }
-            if (formalChildren.isNotEmpty()) {
-                item { SectionLabel(stringResource(R.string.kitchen_directory_subcategories)) }
-                items(formalChildren, key = { it.id }) { category ->
+            if (displayedChildren.isNotEmpty()) {
+                if (!sorting) item { SectionLabel(stringResource(R.string.kitchen_directory_subcategories)) }
+                items(displayedChildren, key = { it.id }) { category ->
                     CategoryRow(
                         category = category,
-                        canManage = currentCategoryId != null,
-                        deleteMode = deleteModeCategoryId == category.id,
+                        sorting = sorting,
+                        deleteMode = sorting,
                         onClick = { currentCategoryId = category.id },
-                        onRename = {
-                            renameTargetId = category.id
-                            renameName = category.name
-                        },
-                        onToggleDeleteMode = {
-                            deleteModeCategoryId =
-                                if (deleteModeCategoryId == category.id) null else category.id
-                        },
-                        onDelete = { deleteTargetId = category.id },
-                        onMove = { direction ->
-                            val from = formalChildren.indexOfFirst { it.id == category.id }
-                            val to = from + direction
-                            if (from >= 0 && to in formalChildren.indices) {
-                                val ordered =
-                                    formalChildren.toMutableList().apply {
-                                        add(to, removeAt(from))
-                                    }
-                                onReorderSubcategories(ordered.map { it.id })
+                        onLongPress = { beginSorting() },
+                        onMove = { delta ->
+                            val from = workingOrder.indexOf(category.id)
+                            val to = (from + delta).coerceIn(0, workingOrder.lastIndex)
+                            if (from >= 0 && to != from) {
+                                workingOrder = workingOrder.toMutableList().apply {
+                                    add(to, removeAt(from))
+                                }
                             }
                         },
                         onAddChild = {
@@ -267,10 +318,21 @@ internal fun ArchiveLibraryScreen(
                             newSubcategoryName = ""
                             showNewSubcategoryDialog = true
                         },
+                        onDelete = { deleteTargetId = category.id },
                     )
                 }
             }
-            if (directEntries.isNotEmpty()) {
+            if (sorting) {
+                item {
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = CulinarySpacing.pageHorizontal, vertical = CulinarySpacing.md),
+                        horizontalArrangement = androidx.compose.foundation.layout.Arrangement.End,
+                    ) {
+                        CulinaryTextButton(text = "取消", onClick = { requestSortReturn() })
+                    }
+                }
+            }
+            if (!sorting && directEntries.isNotEmpty()) {
                 item {
                     SectionLabel(
                         if (children.isEmpty()) {
@@ -305,6 +367,24 @@ internal fun ArchiveLibraryScreen(
                 }
             }
         }
+    }
+
+    if (showSortExitDialog) {
+        AlertDialog(
+            onDismissRequest = { showSortExitDialog = false },
+            title = { Text(if (sortExitHasUnsavedChanges) "本次排序尚未保存" else "确认要返回吗？") },
+            text = {
+                Text(
+                    if (sortExitHasUnsavedChanges) {
+                        "当前还有未保存的调整，返回后将恢复上次保存的顺序。确定返回吗？"
+                    } else {
+                        "当前排序已保存，确定退出吗？"
+                    },
+                )
+            },
+            confirmButton = { TextButton(onClick = { finishSorting() }) { Text("确认") } },
+            dismissButton = { TextButton(onClick = { showSortExitDialog = false }) { Text("取消") } },
+        )
     }
 
     val parentForDialog = categories.firstOrNull { it.id == newSubcategoryParentId }
@@ -426,6 +506,8 @@ private fun ArchiveBrandHeader(
     isSearchOpen: Boolean,
     onSearch: () -> Unit,
     onCloseSearch: () -> Unit,
+    sorting: Boolean = false,
+    onSaveSort: () -> Unit = {},
 ) {
     Row(
         modifier =
@@ -446,7 +528,14 @@ private fun ArchiveBrandHeader(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
-        if (isSearchOpen) {
+        if (sorting) {
+            CulinaryIconButton(
+                icon = CulinaryIcons.Check,
+                contentDescription = "保存排序",
+                onClick = onSaveSort,
+                tint = MaterialTheme.colorScheme.onSurface,
+            )
+        } else if (isSearchOpen) {
             CulinaryTextButton(
                 text = stringResource(R.string.kitchen_search_close),
                 onClick = onCloseSearch,
@@ -473,6 +562,8 @@ private fun ArchiveContextHeader(
     onAdd: (() -> Unit)?,
     onCreateSubcategory: (() -> Unit)?,
     onBack: () -> Unit,
+    sorting: Boolean = false,
+    onSaveSort: () -> Unit = {},
 ) {
     Column(modifier = Modifier.padding(horizontal = CulinarySpacing.pageHorizontal)) {
         Row(
@@ -481,10 +572,19 @@ private fun ArchiveContextHeader(
         ) {
             Icon(
                 imageVector = CulinaryIcons.Back,
-                contentDescription = null,
+                contentDescription = "返回",
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(18.dp).clickable(onClick = onBack),
+                modifier = Modifier.size(40.dp).clickable(onClick = onBack).padding(11.dp),
             )
+            Spacer(modifier = Modifier.weight(1f))
+            if (sorting) {
+                CulinaryIconButton(
+                    icon = CulinaryIcons.Check,
+                    contentDescription = "保存排序",
+                    onClick = onSaveSort,
+                    tint = MaterialTheme.colorScheme.onSurface,
+                )
+            }
             Text(
                 text = parentName,
                 style = MaterialTheme.typography.bodySmall,
@@ -549,127 +649,87 @@ private fun SectionLabel(text: String) {
 @Composable
 private fun CategoryRow(
     category: KitchenArchiveCategory,
-    canManage: Boolean,
+    sorting: Boolean,
     deleteMode: Boolean,
     onClick: () -> Unit,
-    onRename: () -> Unit,
-    onToggleDeleteMode: () -> Unit,
-    onDelete: () -> Unit,
+    onLongPress: () -> Unit,
     onMove: (Int) -> Unit,
     onAddChild: () -> Unit,
+    onDelete: () -> Unit,
 ) {
-    val currentOnMove by rememberUpdatedState(onMove)
+    val interactionSource = androidx.compose.runtime.remember { MutableInteractionSource() }
+    val pressed by interactionSource.collectIsPressedAsState()
+    var dragDistance by rememberSaveable(category.id) { mutableIntStateOf(0) }
     Row(
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .padding(horizontal = CulinarySpacing.pageHorizontal, vertical = CulinarySpacing.md),
+        modifier = Modifier
+            .fillMaxWidth()
+            .then(
+                if (sorting) {
+                    Modifier.pointerInput(category.id, sorting) {
+                        detectDragGesturesAfterLongPress(
+                            onDragStart = { dragDistance = 0 },
+                            onDragEnd = { dragDistance = 0 },
+                            onDragCancel = { dragDistance = 0 },
+                            onDrag = { change, amount ->
+                                change.consume()
+                                dragDistance += amount.y.toInt()
+                                val threshold = 28.dp.toPx().toInt().coerceAtLeast(1)
+                                while (dragDistance >= threshold) {
+                                    onMove(1)
+                                    dragDistance -= threshold
+                                }
+                                while (dragDistance <= -threshold) {
+                                    onMove(-1)
+                                    dragDistance += threshold
+                                }
+                            },
+                        )
+                    }
+                } else {
+                    Modifier
+                        .combinedClickable(
+                            interactionSource = interactionSource,
+                            indication = null,
+                            onClick = onClick,
+                            onLongClick = onLongPress,
+                        )
+                        .shadow(if (pressed) 3.dp else 0.dp, RectangleShape)
+                },
+            )
+            .padding(horizontal = CulinarySpacing.pageHorizontal, vertical = CulinarySpacing.md),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Column(
-            modifier =
-                Modifier
-                    .weight(1f)
-                    .combinedClickable(
-                        onClick = onClick,
-                        onLongClick = if (canManage) onRename else null,
-                    ),
-        ) {
-            Text(
-                text = category.name,
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurface,
-            )
+        Column(modifier = Modifier.weight(1f)) {
+            Text(category.name, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
             category.englishName?.takeIf { it.isNotBlank() }?.let {
-                Text(
-                    text = it,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+                Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             Text(
-                text =
-                    stringResource(
-                        R.string.kitchen_directory_category_meta,
-                        category.childCount,
-                        category.directCount,
-                    ),
+                stringResource(R.string.kitchen_directory_category_meta, category.childCount, category.directCount),
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
-        if (canManage) {
-            Box(
-                modifier =
-                    Modifier
-                        .size(48.dp)
-                        .pointerInput(category.id) {
-                            var distance = 0f
-                            detectDragGesturesAfterLongPress(
-                                onDragStart = { distance = 0f },
-                                onDragEnd = { distance = 0f },
-                                onDragCancel = { distance = 0f },
-                                onDrag = { change, dragAmount ->
-                                    change.consume()
-                                    distance += dragAmount.y
-                                    val threshold = 32.dp.toPx()
-                                    while (distance >= threshold) {
-                                        currentOnMove(1)
-                                        distance -= threshold
-                                    }
-                                    while (distance <= -threshold) {
-                                        currentOnMove(-1)
-                                        distance += threshold
-                                    }
-                                },
-                            )
-                        },
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(
-                    imageVector = CulinaryIcons.Sort,
-                    contentDescription = "长按并上下拖动排序",
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(20.dp),
-                )
-            }
-        }
         Box(
-            modifier =
-                Modifier
-                    .sizeIn(minWidth = 48.dp, minHeight = 48.dp)
-                    .combinedClickable(
-                        onClick = if (deleteMode) onDelete else onAddChild,
-                        onLongClick = if (canManage) onToggleDeleteMode else null,
-                    ).padding(horizontal = CulinarySpacing.xs, vertical = CulinarySpacing.sm),
+            modifier = Modifier
+                .sizeIn(minWidth = 48.dp, minHeight = 48.dp)
+                .combinedClickable(
+                    onClick = if (deleteMode) onDelete else onAddChild,
+                    onLongClick = {},
+                )
+                .padding(horizontal = CulinarySpacing.xs, vertical = CulinarySpacing.sm),
             contentAlignment = Alignment.Center,
         ) {
             if (deleteMode) {
-                Icon(
-                    imageVector = CulinaryIcons.Trash,
-                    contentDescription = "删除子库",
-                    tint = MaterialTheme.colorScheme.error,
-                    modifier = Modifier.size(20.dp),
-                )
+                Icon(CulinaryIcons.Trash, contentDescription = "删除子库", tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(20.dp))
             } else {
-                Text(
-                    text = "＋ 新建子库",
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.secondary,
-                )
+                Text("＋ 新建子库", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.secondary)
             }
         }
-        Text(
-            text = category.descendantCount.toString(),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        Icon(
-            imageVector = CulinaryIcons.ChevronRight,
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.size(16.dp).padding(start = 4.dp),
-        )
+        if (!sorting) {
+            Text(category.descendantCount.toString(), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Icon(CulinaryIcons.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(16.dp).padding(start = 4.dp))
+        }
     }
     CulinaryRule(modifier = Modifier.padding(horizontal = CulinarySpacing.pageHorizontal))
 }
