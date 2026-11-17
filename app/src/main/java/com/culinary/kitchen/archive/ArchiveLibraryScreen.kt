@@ -13,6 +13,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -687,7 +688,6 @@ private fun CategoryRow(
 ) {
     val actionInteractionSource = remember(category.id) { MutableInteractionSource() }
     val actionPressed by actionInteractionSource.collectIsPressedAsState()
-    val pressScale = remember(category.id) { Animatable(1f) }
     val groupJiggleX = remember(category.id) { Animatable(0f) }
     var dragging by remember(category.id) { mutableStateOf(false) }
     var dragOffsetY by remember(category.id) { mutableFloatStateOf(0f) }
@@ -737,7 +737,7 @@ private fun CategoryRow(
                 val scale = when {
                     selectedScale -> 1.045f
                     sorting -> 1f
-                    else -> pressScale.value
+                    else -> 1f
                 }
                 scaleX = scale
                 scaleY = scale
