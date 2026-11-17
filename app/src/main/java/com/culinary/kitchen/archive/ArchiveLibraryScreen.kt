@@ -4,10 +4,17 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
@@ -29,11 +36,14 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -116,8 +126,8 @@ internal fun ArchiveLibraryScreen(
     var pendingSave by rememberSaveable(section, currentCategoryId) { mutableStateOf(false) }
     var submittedOrder by rememberSaveable(section, currentCategoryId) { mutableStateOf(emptyList<String>()) }
     var showSortExitDialog by rememberSaveable(section) { mutableStateOf(false) }
-    var sortExitHasUnsavedChanges by rememberSaveable(section) { mutableStateOf(false) }
     var lastSortSaveVersion by rememberSaveable(section) { mutableIntStateOf(state.categorySortSaveVersion) }
+    val sortSnackbarHostState = remember { SnackbarHostState() }
 
     val categories = state.categories
     val entries = state.entries.filter { it.kind == section.kind }
@@ -155,6 +165,7 @@ internal fun ArchiveLibraryScreen(
             if (sorting && pendingSave) {
                 savedOrder = submittedOrder
                 pendingSave = false
+                sortSnackbarHostState.showSnackbar("已保存")
             }
         }
     }
@@ -184,8 +195,11 @@ internal fun ArchiveLibraryScreen(
         showSortExitDialog = false
     }
     fun requestSortReturn() {
-        sortExitHasUnsavedChanges = sortDirty
-        showSortExitDialog = true
+        if (sortDirty) {
+            showSortExitDialog = true
+        } else {
+            finishSorting()
+        }
     }
 
     BackHandler(enabled = searchOpen) { searchOpen = false }
@@ -377,28 +391,23 @@ internal fun ArchiveLibraryScreen(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier
                         .clickable {
-                            sortExitHasUnsavedChanges = true
-                            showSortExitDialog = true
+                                            showSortExitDialog = true
                         }
                         .padding(horizontal = CulinarySpacing.md, vertical = CulinarySpacing.sm),
                 )
             }
         }
+        SnackbarHost(
+            hostState = sortSnackbarHostState,
+            modifier = Modifier.fillMaxWidth(),
+        )
     }
 
     if (showSortExitDialog) {
         AlertDialog(
             onDismissRequest = { showSortExitDialog = false },
-            title = { Text(if (sortExitHasUnsavedChanges) "本次排序尚未保存" else "确认要返回吗？") },
-            text = {
-                Text(
-                    if (sortExitHasUnsavedChanges) {
-                        "当前还有未保存的调整，返回后将恢复上次保存的顺序。确定返回吗？"
-                    } else {
-                        "当前排序已保存，确定退出吗？"
-                    },
-                )
-            },
+            title = { Text("本次排序尚未保存") },
+            text = { Text("当前还有未保存的调整，返回后将恢复上次保存的顺序。确定返回吗？") },
             confirmButton = { TextButton(onClick = { finishSorting() }) { Text("确认") } },
             dismissButton = { TextButton(onClick = { showSortExitDialog = false }) { Text("取消") } },
         )
@@ -546,11 +555,9 @@ private fun ArchiveBrandHeader(
             )
         }
         if (sorting) {
-            CulinaryIconButton(
-                icon = CulinaryIcons.Check,
-                contentDescription = "保存排序",
+            CulinaryTextButton(
+                text = "保存",
                 onClick = onSaveSort,
-                tint = MaterialTheme.colorScheme.onSurface,
             )
         } else if (isSearchOpen) {
             CulinaryTextButton(
@@ -671,10 +678,24 @@ private fun CategoryRow(
     val pressed by interactionSource.collectIsPressedAsState()
     val actionInteractionSource = androidx.compose.runtime.remember { MutableInteractionSource() }
     val actionPressed by actionInteractionSource.collectIsPressedAsState()
+    val sortMotion = rememberInfiniteTransition()
+    val sortWobble by sortMotion.animateFloat(
+        initialValue = -1.25f,
+        targetValue = 1.25f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 105, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse,
+        ),
+    )
     var dragDistance by rememberSaveable(category.id) { mutableIntStateOf(0) }
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .graphicsLayer {
+                rotationZ = if (sorting) sortWobble else 0f
+                scaleX = if (sorting) 1.008f else 1f
+                scaleY = if (sorting) 1.008f else 1f
+            }
             .then(
                 if (sorting) {
                     Modifier.pointerInput(category.id, sorting) {
