@@ -271,7 +271,7 @@ internal fun ArchiveLibraryScreen(
             )
             return@Column
         }
-        LazyColumn(modifier = Modifier.fillMaxSize()) {
+        LazyColumn(modifier = Modifier.weight(1f)) {
             item {
                 ArchiveContextHeader(
                     section = section,
@@ -324,16 +324,6 @@ internal fun ArchiveLibraryScreen(
                     )
                 }
             }
-            if (sorting) {
-                item {
-                    Row(
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = CulinarySpacing.pageHorizontal, vertical = CulinarySpacing.md),
-                        horizontalArrangement = androidx.compose.foundation.layout.Arrangement.End,
-                    ) {
-                        CulinaryTextButton(text = "取消", onClick = { sortExitHasUnsavedChanges = true; showSortExitDialog = true })
-                    }
-                }
-            }
             if (!sorting && directEntries.isNotEmpty()) {
                 item {
                     SectionLabel(
@@ -367,6 +357,26 @@ internal fun ArchiveLibraryScreen(
                         onAction = onAdd,
                     )
                 }
+            }
+        }
+        if (sorting) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = CulinarySpacing.pageHorizontal, vertical = CulinarySpacing.sm),
+                horizontalArrangement = androidx.compose.foundation.layout.Arrangement.End,
+            ) {
+                Text(
+                    text = "取消",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier
+                        .clickable {
+                            sortExitHasUnsavedChanges = true
+                            showSortExitDialog = true
+                        }
+                        .padding(horizontal = CulinarySpacing.md, vertical = CulinarySpacing.sm),
+                )
             }
         }
     }
