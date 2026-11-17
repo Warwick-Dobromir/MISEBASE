@@ -417,6 +417,36 @@ class ArchiveCategorySeeder
                 arrayOf(TEST_BATCH),
             )
             db.execSQL("DELETE FROM archive_category WHERE test_batch = ?", arrayOf(TEST_BATCH))
+            deleteCategoriesWithTestPrefix(db)
+        }
+
+        /**
+         * 清除历史遗留的“测试…”分类（不限于当前 test_batch）。
+         * 若测试分类下意外存在正式子分类，先将其逐级提升到最近的非测试祖先，
+         * 不删除正式分类，也不触碰其档案本身。
+         */
+        private fun deleteCategoriesWithTestPrefix(db: SupportSQLiteDatabase) {
+            db.execSQL(
+                "DELETE FROM archive_category_assignment WHERE category_id IN " +
+                    "(SELECT id FROM archive_category WHERE name LIKE '测试%')",
+            )
+            while (true) {
+                val hasNonTestChild =
+                    db.query(
+                        "SELECT 1 FROM archive_category child " +
+                            "JOIN archive_category parent ON child.parent_id = parent.id " +
+                            "WHERE parent.name LIKE '测试%' AND child.name NOT LIKE '测试%' LIMIT 1",
+                    ).useRows { it.moveToFirst() }
+                if (!hasNonTestChild) break
+                db.execSQL(
+                    "UPDATE archive_category SET parent_id = " +
+                        "(SELECT parent_id FROM archive_category parent WHERE parent.id = archive_category.parent_id) " +
+                        "WHERE parent_id IN (SELECT id FROM archive_category WHERE name LIKE '测试%') " +
+                        "AND name NOT LIKE '测试%'",
+                )
+            }
+            db.execSQL("UPDATE archive_category SET parent_id = NULL WHERE name LIKE '测试%'")
+            db.execSQL("DELETE FROM archive_category WHERE name LIKE '测试%'")
         }
 
         private fun insertCategory(

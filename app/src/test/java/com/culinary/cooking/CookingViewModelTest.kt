@@ -82,6 +82,31 @@ class CookingViewModelTest {
         }
 
     @Test
+    fun `timer adjustment locks after first start including pause and unlocks on next step`() =
+        runTest {
+            val viewModel = viewModel(steps = listOf(step("a", 60), step("b", 30)))
+            advanceUntilIdle()
+
+            viewModel.adjust(5)
+            assertThat(viewModel.uiState.value.remainingSeconds).isEqualTo(65)
+
+            viewModel.toggleTimer()
+            assertThat(viewModel.uiState.value.hasStarted).isTrue()
+            viewModel.adjust(10)
+            assertThat(viewModel.uiState.value.remainingSeconds).isEqualTo(65)
+
+            viewModel.toggleTimer()
+            assertThat(viewModel.uiState.value.isRunning).isFalse()
+            viewModel.adjust(-10)
+            assertThat(viewModel.uiState.value.remainingSeconds).isEqualTo(65)
+
+            viewModel.next()
+            assertThat(viewModel.uiState.value.hasStarted).isFalse()
+            viewModel.adjust(-1)
+            assertThat(viewModel.uiState.value.remainingSeconds).isEqualTo(29)
+        }
+
+    @Test
     fun `countdown end stays on the current step and requires an explicit advance`() =
         runTest {
             val handle = handle(steps = listOf(step("a", 1), step("b", 1)))

@@ -6,6 +6,8 @@ import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -29,6 +31,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
@@ -69,6 +72,9 @@ fun ArchiveLibraryRoute(
         onOpenEntry = onOpenEntry,
         onBack = onBack,
         onCreateSubcategory = viewModel::createSubcategory,
+        onRenameSubcategory = viewModel::renameSubcategory,
+        onDeleteSubcategory = viewModel::deleteSubcategory,
+        onReorderSubcategories = viewModel::reorderSubcategories,
         modifier = modifier,
     )
 }
@@ -82,6 +88,9 @@ internal fun ArchiveLibraryScreen(
     onOpenEntry: (KitchenArchiveEntry) -> Unit,
     onBack: () -> Unit = {},
     onCreateSubcategory: (String?, String) -> Unit = { _, _ -> },
+    onRenameSubcategory: (String, String) -> Unit = { _, _ -> },
+    onDeleteSubcategory: (String) -> Unit = {},
+    onReorderSubcategories: (List<String>) -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     var currentCategoryId by rememberSaveable(section) { mutableStateOf<String?>(null) }
@@ -91,13 +100,17 @@ internal fun ArchiveLibraryScreen(
     var newSubcategoryParentId by rememberSaveable(section) { mutableStateOf<String?>(null) }
     var showNewSubcategoryDialog by rememberSaveable(section) { mutableStateOf(false) }
     var newSubcategoryName by rememberSaveable(section) { mutableStateOf("") }
+    var renameTargetId by rememberSaveable(section) { mutableStateOf<String?>(null) }
+    var renameName by rememberSaveable(section) { mutableStateOf("") }
+    var deleteTargetId by rememberSaveable(section) { mutableStateOf<String?>(null) }
+    var deleteModeCategoryId by rememberSaveable(section) { mutableStateOf<String?>(null) }
 
     val categories = state.categories
     val entries = state.entries.filter { it.kind == section.kind }
     val currentCategory = categories.firstOrNull { it.id == currentCategoryId }
-    val children = categories.filter { it.parentId == currentCategoryId }
-    val formalChildren = children.filter { !it.isTest }
-    val testChildren = children.filter { it.isTest }
+    // 测试分类在数据库启动清理后不应再出现；页面同时不展示任何遗留测试节点。
+    val children = categories.filter { it.parentId == currentCategoryId && !it.isTest }
+    val formalChildren = children
     val directEntries = entries.filter { entry -> entry.categoryId == currentCategoryId }
     val searchResults =
         if (query.isBlank()) {
@@ -224,21 +237,27 @@ internal fun ArchiveLibraryScreen(
                 items(formalChildren, key = { it.id }) { category ->
                     CategoryRow(
                         category = category,
+                        canManage = currentCategoryId != null,
+                        deleteMode = deleteModeCategoryId == category.id,
                         onClick = { currentCategoryId = category.id },
-                        onAddChild = {
-                            newSubcategoryParentId = category.id
-                            newSubcategoryName = ""
-                            showNewSubcategoryDialog = true
+                        onRename = {
+                            renameTargetId = category.id
+                            renameName = category.name
                         },
-                    )
-                }
-            }
-            if (testChildren.isNotEmpty()) {
-                item { SectionLabel(stringResource(R.string.kitchen_directory_test_section)) }
-                items(testChildren, key = { it.id }) { category ->
-                    CategoryRow(
-                        category = category,
-                        onClick = { currentCategoryId = category.id },
+                        onToggleDeleteMode = {
+                            deleteModeCategoryId = if (deleteModeCategoryId == category.id) null else category.id
+                        },
+                        onDelete = { deleteTargetId = category.id },
+                        onMove = { direction ->
+                            val from = formalChildren.indexOfFirst { it.id == category.id }
+                            val to = from + direction
+                            if (from >= 0 && to in formalChildren.indices) {
+                                val ordered = formalChildren.toMutableList().apply {
+                                    add(to, removeAt(from))
+                                }
+                                onReorderSubcategories(ordered.map { it.id })
+                            }
+                        },
                         onAddChild = {
                             newSubcategoryParentId = category.id
                             newSubcategoryName = ""
@@ -323,6 +342,73 @@ internal fun ArchiveLibraryScreen(
                     onClick = {
                         newSubcategoryParentId = null
                         showNewSubcategoryDialog = false
+                    },
+                ) { Text("取消") }
+            },
+        )
+    }
+
+    val renameTarget = categories.firstOrNull { it.id == renameTargetId }
+    if (renameTarget != null) {
+        AlertDialog(
+            onDismissRequest = { renameTargetId = null },
+            title = { Text("重命名子库") },
+            text = {
+                CulinaryTextField(
+                    value = renameName,
+                    onValueChange = { renameName = it },
+                    label = { Text("子库名称") },
+                    singleLine = true,
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        onRenameSubcategory(renameTarget.id, renameName)
+                        renameTargetId = null
+                    },
+                    enabled = renameName.isNotBlank(),
+                ) { Text("保存") }
+            },
+            dismissButton = {
+                TextButton(onClick = { renameTargetId = null }) { Text("取消") }
+            },
+        )
+    }
+
+    val deleteTarget = categories.firstOrNull { it.id == deleteTargetId }
+    if (deleteTarget != null) {
+        val canDelete = deleteTarget.childCount == 0 && deleteTarget.directCount == 0
+        AlertDialog(
+            onDismissRequest = {
+                deleteTargetId = null
+                deleteModeCategoryId = null
+            },
+            title = { Text("删除子库？") },
+            text = {
+                Text(
+                    if (canDelete) {
+                        "确定删除「${deleteTarget.name}」？此操作不可撤销。"
+                    } else {
+                        "「${deleteTarget.name}」仍有子分类或关联档案。为保护数据，系统不允许删除。"
+                    },
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        if (canDelete) onDeleteSubcategory(deleteTarget.id)
+                        deleteTargetId = null
+                        deleteModeCategoryId = null
+                    },
+                    enabled = canDelete,
+                ) { Text("删除") }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        deleteTargetId = null
+                        deleteModeCategoryId = null
                     },
                 ) { Text("取消") }
             },
@@ -416,10 +502,9 @@ private fun ArchiveContextHeader(
                 modifier = Modifier.weight(1f),
             )
             onAdd?.let { action ->
-                CulinaryButton(
-                    text = stringResource(section.newLabelRes),
+                CulinaryTextButton(
+                    text = "＋ " + stringResource(section.newLabelRes),
                     onClick = action,
-                    icon = CulinaryIcons.Add,
                 )
             }
             onCreateSubcategory?.let { action ->
@@ -460,33 +545,34 @@ private fun SectionLabel(text: String) {
 @Composable
 private fun CategoryRow(
     category: KitchenArchiveCategory,
+    canManage: Boolean,
+    deleteMode: Boolean,
     onClick: () -> Unit,
+    onRename: () -> Unit,
+    onToggleDeleteMode: () -> Unit,
+    onDelete: () -> Unit,
+    onMove: (Int) -> Unit,
     onAddChild: () -> Unit,
 ) {
+    val currentOnMove by rememberUpdatedState(onMove)
     Row(
         modifier =
             Modifier
                 .fillMaxWidth()
-                .clickable(onClick = onClick)
                 .padding(horizontal = CulinarySpacing.pageHorizontal, vertical = CulinarySpacing.md),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Column(modifier = Modifier.weight(1f)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    text = category.name,
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onSurface,
-                )
-                if (category.isTest) {
-                    Text(
-                        text = stringResource(R.string.kitchen_directory_test_badge),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.secondary,
-                        modifier = Modifier.padding(start = CulinarySpacing.xs),
-                    )
-                }
-            }
+        Column(
+            modifier = Modifier.weight(1f).combinedClickable(
+                onClick = onClick,
+                onLongClick = if (canManage) onRename else null,
+            ),
+        ) {
+            Text(
+                text = category.name,
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
             category.englishName?.takeIf { it.isNotBlank() }?.let {
                 Text(
                     text = it,
@@ -495,17 +581,71 @@ private fun CategoryRow(
                 )
             }
             Text(
-                text =
-                    stringResource(
-                        R.string.kitchen_directory_category_meta,
-                        category.childCount,
-                        category.directCount,
-                    ),
+                text = stringResource(
+                    R.string.kitchen_directory_category_meta,
+                    category.childCount,
+                    category.directCount,
+                ),
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
-        CulinaryTextButton(text = "＋ 新建子库", onClick = onAddChild)
+        if (canManage) {
+            Icon(
+                imageVector = CulinaryIcons.Sort,
+                contentDescription = "长按拖动排序",
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier
+                    .size(28.dp)
+                    .padding(4.dp)
+                    .pointerInput(category.id) {
+                        var distance = 0f
+                        detectDragGesturesAfterLongPress(
+                            onDragStart = { distance = 0f },
+                            onDragEnd = { distance = 0f },
+                            onDragCancel = { distance = 0f },
+                            onDrag = { change, dragAmount ->
+                                change.consume()
+                                distance += dragAmount.y
+                                val threshold = 44.dp.toPx()
+                                if (distance >= threshold) {
+                                    currentOnMove(1)
+                                    distance -= threshold
+                                } else if (distance <= -threshold) {
+                                    currentOnMove(-1)
+                                    distance += threshold
+                                }
+                            },
+                        )
+                    },
+            )
+        }
+        if (deleteMode) {
+            Icon(
+                imageVector = CulinaryIcons.Trash,
+                contentDescription = "删除子库；长按取消",
+                tint = MaterialTheme.colorScheme.error,
+                modifier = Modifier
+                    .size(40.dp)
+                    .combinedClickable(
+                        onClick = onDelete,
+                        onLongClick = onToggleDeleteMode,
+                    )
+                    .padding(10.dp),
+            )
+        } else {
+            Text(
+                text = "＋ 新建子库",
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.secondary,
+                modifier = Modifier
+                    .combinedClickable(
+                        onClick = onAddChild,
+                        onLongClick = if (canManage) onToggleDeleteMode else null,
+                    )
+                    .padding(horizontal = CulinarySpacing.xs, vertical = CulinarySpacing.sm),
+            )
+        }
         Text(
             text = category.descendantCount.toString(),
             style = MaterialTheme.typography.bodySmall,
