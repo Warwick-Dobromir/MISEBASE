@@ -847,20 +847,26 @@ private fun CategoryRow(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
-        Box(
-            modifier = Modifier
-                .sizeIn(minWidth = 48.dp, minHeight = 48.dp)
-                .clickable(
-                    interactionSource = actionInteractionSource,
-                    indication = null,
-                    onClick = onDelete,
+        if (deleteMode) {
+            Box(
+                modifier = Modifier
+                    .sizeIn(minWidth = 48.dp, minHeight = 48.dp)
+                    .clickable(
+                        interactionSource = actionInteractionSource,
+                        indication = null,
+                        onClick = onDelete,
+                    )
+                    .shadow(if (actionPressed) 3.dp else 0.dp, RectangleShape)
+                    .padding(horizontal = CulinarySpacing.xs, vertical = CulinarySpacing.sm),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    CulinaryIcons.Trash,
+                    contentDescription = "删除子库",
+                    tint = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.size(20.dp),
                 )
-                .shadow(if (actionPressed) 3.dp else 0.dp, RectangleShape)
-                .padding(horizontal = CulinarySpacing.xs, vertical = CulinarySpacing.sm),
-            contentAlignment = Alignment.Center,
-        ) {
-            if (deleteMode) {
-                Icon(CulinaryIcons.Trash, contentDescription = "删除子库", tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(20.dp))
+            }
         }
         if (!sorting) {
             Text(category.descendantCount.toString(), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
