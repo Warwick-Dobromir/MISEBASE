@@ -1,7 +1,7 @@
 package com.culinary.kitchen.archive
 
-import androidx.compose.ui.test.assertDoesNotExist
 import androidx.compose.ui.test.assertIsDisplayed
+import org.junit.Assert.assertTrue
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -49,7 +49,7 @@ class ArchiveLibraryScreenTest {
         compose.onNodeWithText("SAUCE COLLECTION").assertIsDisplayed()
         compose.onNodeWithText("下级分类").assertIsDisplayed()
         compose.onNodeWithText("酱汁基础").assertIsDisplayed()
-        compose.onNodeWithText("测试 · 基础酱汁").assertDoesNotExist()
+        assertTrue(compose.onAllNodesWithText("测试 · 基础酱汁").fetchSemanticsNodes().isEmpty())
     }
 
     @Test

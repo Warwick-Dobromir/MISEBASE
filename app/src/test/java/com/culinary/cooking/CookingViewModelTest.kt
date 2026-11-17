@@ -305,6 +305,7 @@ class CookingViewModelTest {
         override suspend fun saveDraft(version: RecipeVersion): RecipeVersionId = version.id
 
         override suspend fun savePublished(version: RecipeVersion): Outcome<RecipeVersionId> = Outcome.success(version.id)
+        override suspend fun archive(id: RecipeId): Outcome<Unit> = Outcome.success(Unit)
     }
 
     private class FakeIngredientRepository : IngredientRepository {
