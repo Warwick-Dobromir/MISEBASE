@@ -8,6 +8,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -16,6 +17,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.AlertDialog
@@ -597,14 +599,10 @@ private fun CategoryRow(
             )
         }
         if (canManage) {
-            Icon(
-                imageVector = CulinaryIcons.Sort,
-                contentDescription = "长按拖动排序",
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            Box(
                 modifier =
                     Modifier
-                        .size(28.dp)
-                        .padding(4.dp)
+                        .size(48.dp)
                         .pointerInput(category.id) {
                             var distance = 0f
                             detectDragGesturesAfterLongPress(
@@ -614,44 +612,52 @@ private fun CategoryRow(
                                 onDrag = { change, dragAmount ->
                                     change.consume()
                                     distance += dragAmount.y
-                                    val threshold = 44.dp.toPx()
-                                    if (distance >= threshold) {
+                                    val threshold = 32.dp.toPx()
+                                    while (distance >= threshold) {
                                         currentOnMove(1)
                                         distance -= threshold
-                                    } else if (distance <= -threshold) {
+                                    }
+                                    while (distance <= -threshold) {
                                         currentOnMove(-1)
                                         distance += threshold
                                     }
                                 },
                             )
                         },
-            )
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    imageVector = CulinaryIcons.Sort,
+                    contentDescription = "长按并上下拖动排序",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(20.dp),
+                )
+            }
         }
-        if (deleteMode) {
-            Icon(
-                imageVector = CulinaryIcons.Trash,
-                contentDescription = "删除子库；长按取消",
-                tint = MaterialTheme.colorScheme.error,
-                modifier =
-                    Modifier
-                        .size(40.dp)
-                        .combinedClickable(
-                            onClick = onDelete,
-                            onLongClick = onToggleDeleteMode,
-                        ).padding(10.dp),
-            )
-        } else {
-            Text(
-                text = "＋ 新建子库",
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.secondary,
-                modifier =
-                    Modifier
-                        .combinedClickable(
-                            onClick = onAddChild,
-                            onLongClick = if (canManage) onToggleDeleteMode else null,
-                        ).padding(horizontal = CulinarySpacing.xs, vertical = CulinarySpacing.sm),
-            )
+        Box(
+            modifier =
+                Modifier
+                    .sizeIn(minWidth = 48.dp, minHeight = 48.dp)
+                    .combinedClickable(
+                        onClick = if (deleteMode) onDelete else onAddChild,
+                        onLongClick = if (canManage) onToggleDeleteMode else null,
+                    ).padding(horizontal = CulinarySpacing.xs, vertical = CulinarySpacing.sm),
+            contentAlignment = Alignment.Center,
+        ) {
+            if (deleteMode) {
+                Icon(
+                    imageVector = CulinaryIcons.Trash,
+                    contentDescription = "删除子库",
+                    tint = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.size(20.dp),
+                )
+            } else {
+                Text(
+                    text = "＋ 新建子库",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.secondary,
+                )
+            }
         }
         Text(
             text = category.descendantCount.toString(),

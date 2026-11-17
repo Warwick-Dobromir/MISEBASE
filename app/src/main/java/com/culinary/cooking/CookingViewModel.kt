@@ -48,8 +48,6 @@ data class CookingUiState(
     val remainingSeconds: Int = 0,
     val presetSeconds: Int = 0,
     val isRunning: Boolean = false,
-    /** 本步骤计时器是否已经启动过；启动后直到切换步骤都禁止调整时长。 */
-    val hasStarted: Boolean = false,
     val finished: Boolean = false,
     /** 当前需要阻断确认的无时间步骤；null 表示没有弹窗。 */
     val blockingStep: CookingPlanStep? = null,
@@ -197,7 +195,6 @@ class CookingViewModel
             val current = plan[restoredIndex]
             val completed = current.number in restoredCompleted
             val restoredFinished = savedStateHandle.get<Boolean>(KEY_FINISHED) == true
-            val restoredHasStarted = savedStateHandle.get<Boolean>(KEY_HAS_STARTED) == true
             val restoredRemaining =
                 if (completed || restoredFinished) {
                     0
@@ -215,7 +212,6 @@ class CookingViewModel
                     remainingSeconds = restoredRemaining,
                     presetSeconds = current.step.timeSeconds,
                     isRunning = false,
-                    hasStarted = restoredHasStarted,
                     finished = restoredFinished,
                     blockingStep = if (restoredFinished || current.hasTime) null else current,
                     stepImages = images,
@@ -237,7 +233,7 @@ class CookingViewModel
                 val resumeFrom = if (state.remainingSeconds > 0) state.remainingSeconds else current.step.timeSeconds
                 baseRemaining = resumeFrom
                 startedAtMillis = SystemClock.elapsedRealtime()
-                _uiState.update { it.copy(isRunning = true, hasStarted = true, remainingSeconds = resumeFrom) }
+                _uiState.update { it.copy(isRunning = true, remainingSeconds = resumeFrom) }
                 startTicking()
             }
         }
@@ -246,7 +242,12 @@ class CookingViewModel
             tickJob?.cancel()
             val remaining = remainingNow()
             baseRemaining = remaining
-            _uiState.update { it.copy(isRunning = false, remainingSeconds = remaining) }
+            _uiState.update {
+                it.copy(
+                    isRunning = false,
+                    remainingSeconds = remaining,
+                )
+            }
             persistState()
         }
 
@@ -262,7 +263,7 @@ class CookingViewModel
             if (state.finished || state.blockingStep != null) return
             val current = state.current ?: return
             if (!current.hasTime) return
-            if (state.currentCompleted || state.hasStarted) return
+            if (state.currentCompleted || state.isRunning) return
             val adjusted =
                 (remainingNow() + deltaSeconds)
                     .coerceIn(0, com.culinary.core.common.KitchenTime.MAX_SECONDS)
@@ -392,7 +393,6 @@ class CookingViewModel
                     remainingSeconds = remaining,
                     presetSeconds = next.step.timeSeconds,
                     isRunning = false,
-                    hasStarted = false,
                     blockingStep = if (next.hasTime) null else next,
                 )
             }
@@ -406,7 +406,6 @@ class CookingViewModel
             savedStateHandle[KEY_REMAINING] = state.remainingSeconds
             savedStateHandle[KEY_COMPLETED] = state.completedNumbers.toIntArray()
             savedStateHandle[KEY_FINISHED] = state.finished
-            savedStateHandle[KEY_HAS_STARTED] = state.hasStarted
         }
 
         /** 退出制作模式时定位回原始步骤。 */
@@ -432,6 +431,5 @@ class CookingViewModel
             const val KEY_REMAINING = "cooking.remaining"
             const val KEY_COMPLETED = "cooking.completed"
             const val KEY_FINISHED = "cooking.finished"
-            const val KEY_HAS_STARTED = "cooking.has_started"
         }
     }

@@ -82,7 +82,7 @@ class CookingViewModelTest {
         }
 
     @Test
-    fun `timer adjustment locks after first start including pause and unlocks on next step`() =
+    fun `timer adjustment locks only while running and unlocks when paused`() =
         runTest {
             val viewModel = viewModel(steps = listOf(step("a", 60), step("b", 30)))
             advanceUntilIdle()
@@ -91,17 +91,22 @@ class CookingViewModelTest {
             assertThat(viewModel.uiState.value.remainingSeconds).isEqualTo(65)
 
             viewModel.toggleTimer()
-            assertThat(viewModel.uiState.value.hasStarted).isTrue()
+            assertThat(viewModel.uiState.value.isRunning).isTrue()
             viewModel.adjust(10)
             assertThat(viewModel.uiState.value.remainingSeconds).isEqualTo(65)
 
             viewModel.toggleTimer()
             assertThat(viewModel.uiState.value.isRunning).isFalse()
             viewModel.adjust(-10)
-            assertThat(viewModel.uiState.value.remainingSeconds).isEqualTo(65)
+            assertThat(viewModel.uiState.value.remainingSeconds).isEqualTo(55)
+
+            viewModel.toggleTimer()
+            assertThat(viewModel.uiState.value.isRunning).isTrue()
+            viewModel.toggleTimer()
+            assertThat(viewModel.uiState.value.isRunning).isFalse()
 
             viewModel.next()
-            assertThat(viewModel.uiState.value.hasStarted).isFalse()
+            assertThat(viewModel.uiState.value.isRunning).isFalse()
             viewModel.adjust(-1)
             assertThat(viewModel.uiState.value.remainingSeconds).isEqualTo(29)
         }
