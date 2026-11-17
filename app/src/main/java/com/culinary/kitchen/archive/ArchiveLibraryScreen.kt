@@ -653,6 +653,8 @@ private fun CategoryRow(
 ) {
     val interactionSource = androidx.compose.runtime.remember { MutableInteractionSource() }
     val pressed by interactionSource.collectIsPressedAsState()
+    val actionInteractionSource = androidx.compose.runtime.remember { MutableInteractionSource() }
+    val actionPressed by actionInteractionSource.collectIsPressedAsState()
     var dragDistance by rememberSaveable(category.id) { mutableIntStateOf(0) }
     Row(
         modifier = Modifier
@@ -707,10 +709,12 @@ private fun CategoryRow(
         Box(
             modifier = Modifier
                 .sizeIn(minWidth = 48.dp, minHeight = 48.dp)
-                .combinedClickable(
+                .clickable(
+                    interactionSource = actionInteractionSource,
+                    indication = null,
                     onClick = if (deleteMode) onDelete else onAddChild,
-                    onLongClick = {},
                 )
+                .shadow(if (actionPressed) 3.dp else 0.dp, RectangleShape)
                 .padding(horizontal = CulinarySpacing.xs, vertical = CulinarySpacing.sm),
             contentAlignment = Alignment.Center,
         ) {
