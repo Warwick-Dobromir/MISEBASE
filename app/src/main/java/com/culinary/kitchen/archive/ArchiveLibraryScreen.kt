@@ -134,7 +134,7 @@ internal fun ArchiveLibraryScreen(
     val sortSnackbarHostState = remember { SnackbarHostState() }
 
     val categories = state.categories
-    val entries = state.entries.filter { it.kind == section.kind }
+    val entries = state.entries.filter { it.kind == section.kind && it.testBatch == null }
     val currentCategory = categories.firstOrNull { it.id == currentCategoryId }
     // 测试分类在数据库启动清理后不应再出现；页面同时不展示任何遗留测试节点。
     val children = categories.filter { it.parentId == currentCategoryId && !it.isTest }
@@ -144,6 +144,8 @@ internal fun ArchiveLibraryScreen(
     } else children
     val sortDirty = sorting && workingOrder != savedOrder
     val directEntries = entries.filter { entry -> entry.categoryId == currentCategoryId }
+    val recursiveCount = currentCategory?.descendantCount
+        ?: (categories.filter { it.parentId == null && !it.isTest }.sumOf { it.descendantCount } + directEntries.size)
     val searchResults =
         if (query.isBlank()) {
             emptyList()
@@ -302,7 +304,7 @@ internal fun ArchiveLibraryScreen(
                     categoryPath =
                         currentCategory?.let { category -> categoryPath(category, categories) }.orEmpty(),
                     childCount = children.size,
-                    directCount = directEntries.size,
+                    recursiveCount = recursiveCount,
                     sorting = sorting,
                     onAdd = if (!showingSearch && currentCategoryId == null) onAdd else null,
                     onCreateSubcategory = {
