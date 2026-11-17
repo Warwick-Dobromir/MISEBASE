@@ -20,6 +20,12 @@ interface KitchenReferenceDao {
     @Query("SELECT * FROM kitchen_reference WHERE id = :id")
     suspend fun findById(id: String): KitchenReferenceEntity?
 
+    @Query("SELECT * FROM kitchen_reference WHERE status = 'ARCHIVED' OR deleted_at IS NOT NULL ORDER BY updated_at DESC")
+    fun observeArchived(): Flow<List<KitchenReferenceEntity>>
+
+    @Query("UPDATE kitchen_reference SET status = 'ACTIVE', deleted_at = NULL, updated_at = :at, revision = revision + 1 WHERE id = :id")
+    suspend fun restore(id: String, at: Long): Int
+
     @Query(
         "SELECT * FROM kitchen_reference WHERE kind = :kind AND deleted_at IS NULL " +
             "AND status = 'ACTIVE' ORDER BY normalized_name, id",
@@ -58,6 +64,9 @@ interface KitchenReferenceDao {
 
     @Query("SELECT COUNT(*) FROM kitchen_reference WHERE seed_version = :seedVersion")
     suspend fun countSeed(seedVersion: String): Int
+
+    @Query("DELETE FROM kitchen_reference WHERE id = :id")
+    suspend fun deleteById(id: String)
 
     @Query("SELECT COUNT(*) FROM kitchen_reference")
     suspend fun count(): Int

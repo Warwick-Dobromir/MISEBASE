@@ -19,6 +19,12 @@ interface IngredientDao {
     @Query("SELECT * FROM ingredient WHERE id = :id")
     suspend fun findById(id: String): IngredientEntity?
 
+    @Query("SELECT * FROM ingredient WHERE status = 'ARCHIVED' OR deleted_at IS NOT NULL ORDER BY updated_at DESC")
+    fun observeArchived(): Flow<List<IngredientEntity>>
+
+    @Query("UPDATE ingredient SET status = 'ACTIVE', deleted_at = NULL, updated_at = :at, revision = revision + 1 WHERE id = :id")
+    suspend fun restore(id: String, at: Long): Int
+
     @Query("SELECT * FROM ingredient WHERE deleted_at IS NULL AND status = 'ACTIVE' ORDER BY normalized_name")
     suspend fun allActive(): List<IngredientEntity>
 

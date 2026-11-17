@@ -19,6 +19,12 @@ interface RecipeDao {
     @Query("SELECT * FROM recipe WHERE id = :id")
     suspend fun findById(id: String): RecipeEntity?
 
+    @Query("SELECT * FROM recipe WHERE status = 'ARCHIVED' OR deleted_at IS NOT NULL ORDER BY updated_at DESC")
+    fun observeArchived(): Flow<List<RecipeEntity>>
+
+    @Query("UPDATE recipe SET status = 'ACTIVE', deleted_at = NULL, updated_at = :at, revision = revision + 1 WHERE id = :id")
+    suspend fun restore(id: String, at: Long): Int
+
     @Query("SELECT * FROM recipe WHERE deleted_at IS NULL AND status = 'ACTIVE' ORDER BY normalized_name, id")
     suspend fun listActive(): List<RecipeEntity>
 
