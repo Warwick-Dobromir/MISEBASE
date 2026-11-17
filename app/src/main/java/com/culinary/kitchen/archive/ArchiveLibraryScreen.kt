@@ -241,7 +241,7 @@ internal fun ArchiveLibraryScreen(
             .background(MaterialTheme.colorScheme.background),
     ) {
         AnimatedVisibility(
-            visible = !isScrolled,
+            visible = !isScrolled || sorting,
             enter = fadeIn() + slideInVertically(initialOffsetY = { -it / 3 }),
             exit = fadeOut() + slideOutVertically(targetOffsetY = { -it / 3 }),
         ) {
@@ -441,7 +441,7 @@ internal fun ArchiveLibraryScreen(
         )
     }
     AnimatedVisibility(
-        visible = isScrolled && !searchOpen,
+        visible = isScrolled && !searchOpen && !sorting,
         modifier = Modifier.align(Alignment.TopEnd).padding(top = 10.dp, end = 16.dp),
         enter = fadeIn() + scaleIn(initialScale = 0.82f),
         exit = fadeOut() + scaleOut(targetScale = 0.82f),
@@ -470,6 +470,7 @@ internal fun ArchiveLibraryScreen(
     ) {
         Row(
             modifier = Modifier
+                .fillMaxWidth(0.92f)
                 .sizeIn(maxWidth = 340.dp)
                 .shadow(12.dp, RoundedCornerShape(24.dp))
                 .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(24.dp))
