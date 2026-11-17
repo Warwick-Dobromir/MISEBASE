@@ -1,10 +1,10 @@
 package com.culinary.kitchen.archive
 
 import androidx.compose.ui.test.assertCountEquals
-import androidx.compose.ui.test.assertDoesNotExist
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
@@ -48,7 +48,7 @@ class ArchiveLibraryScreenTest {
         show()
 
         compose.onNodeWithText("酱汁库").assertIsDisplayed()
-        compose.onNodeWithText("SAUCE COLLECTION").assertDoesNotExist()
+        compose.onAllNodesWithText("SAUCE COLLECTION").assertCountEquals(0)
         compose.onNodeWithText("下级分类").assertIsDisplayed()
         compose.onNodeWithText("酱汁基础").assertIsDisplayed()
     }
@@ -57,7 +57,7 @@ class ArchiveLibraryScreenTest {
     fun `sort control is only shown inside a child library`() {
         show()
 
-        compose.onNodeWithContentDescription("排列下级分类").assertDoesNotExist()
+        compose.onAllNodesWithContentDescription("排列下级分类").assertCountEquals(0)
         compose.onNodeWithText("酱汁基础").performClick()
         compose.onNodeWithContentDescription("排列下级分类").assertIsDisplayed()
     }
