@@ -355,6 +355,7 @@ internal fun ArchiveLibraryScreen(
                     CategoryRow(
                         category = category,
                         sorting = sorting,
+                        canSort = currentCategoryId != null,
                         deleteMode = sorting,
                         onClick = { currentCategoryId = category.id },
                         onLongPressStart = { longPressFeedback = true },
@@ -767,6 +768,7 @@ private fun SectionLabel(
 private fun CategoryRow(
     category: KitchenArchiveCategory,
     sorting: Boolean,
+    canSort: Boolean,
     deleteMode: Boolean,
     onClick: () -> Unit,
     onLongPressStart: () -> Unit,
@@ -890,9 +892,11 @@ private fun CategoryRow(
                                 if (released && longPressRecognized) onLongPress()
                             },
                             onLongPress = {
-                                longPressRecognized = true
-                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                onLongPressStart()
+                                if (canSort) {
+                                    longPressRecognized = true
+                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                    onLongPressStart()
+                                }
                             },
                         )
                     }
