@@ -44,15 +44,43 @@ class RecycleBinManager @Inject constructor(private val database: CulinaryDataba
         database.withTransaction {
             val now = System.currentTimeMillis()
             when (item.type) {
-                "食材" -> database.ingredientDao().restore(item.id, now)
-                "酱汁" -> database.sauceDao().restore(item.id, now)
-                "菜谱" -> database.recipeDao().restore(item.id, now)
-                "分类目录" -> database.archiveCategoryDao().restore(item.id, now)
-                else -> database.kitchenReferenceDao().restore(item.id, now)
+                "食材" -> {
+                    restoreAssignedCategory("INGREDIENT", item.id, now)
+                    database.ingredientDao().restore(item.id, now)
+                }
+                "酱汁" -> {
+                    restoreAssignedCategory("SAUCE", item.id, now)
+                    database.sauceDao().restore(item.id, now)
+                }
+                "菜谱" -> {
+                    restoreAssignedCategory("RECIPE", item.id, now)
+                    database.recipeDao().restore(item.id, now)
+                }
+                "分类目录" -> restoreCategoryPath(item.id, now)
+                else -> {
+                    restoreAssignedCategory(item.type, item.id, now)
+                    database.kitchenReferenceDao().restore(item.id, now)
+                }
             }
         }
     }
 
+    private suspend fun restoreAssignedCategory(recordKind: String, recordId: String, at: Long) {
+        val assignment = database.archiveCategoryAssignmentDao().findByRecord(recordKind, recordId) ?: return
+        restoreCategoryPath(assignment.categoryId, at)
+    }
+
+    /** Restore archived ancestors before the selected directory, preserving its exact original path. */
+    private suspend fun restoreCategoryPath(categoryId: String, at: Long) {
+        val chain = mutableListOf<ArchiveCategoryEntity>()
+        var current = database.archiveCategoryDao().findById(categoryId)
+        var depth = 0
+        while (current != null && depth++ < 64) {
+            chain += current
+            current = current.parentId?.let { database.archiveCategoryDao().findById(it) }
+        }
+        chain.asReversed().forEach { database.archiveCategoryDao().restore(it.id, at) }
+    }
     suspend fun permanentlyDelete(item: RecycleBinItem) {
         database.withTransaction {
             when (item.type) {
