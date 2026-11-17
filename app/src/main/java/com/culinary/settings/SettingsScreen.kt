@@ -47,6 +47,7 @@ import com.culinary.core.designsystem.component.SectionHeader
 import com.culinary.core.designsystem.component.StatusTone
 import com.culinary.core.designsystem.icon.CulinaryIcons
 import com.culinary.core.designsystem.theme.CulinarySpacing
+import com.culinary.core.data.recycle.RecycleBinItem
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -93,6 +94,9 @@ fun SettingsRoute(
         onDismissLicenses = viewModel::dismissLicenses,
         onReimportSeed = viewModel::reimportSeed,
         onClearSeed = viewModel::clearSeed,
+        onRestoreRecycleItem = viewModel::restoreRecycleItem,
+        onDeleteRecycleItem = viewModel::permanentlyDeleteRecycleItem,
+        onDismissRecycleMessage = viewModel::clearRecycleBinMessage,
         modifier = modifier,
     )
 }
@@ -111,9 +115,13 @@ internal fun SettingsScreen(
     onDismissLicenses: () -> Unit,
     onReimportSeed: () -> Unit,
     onClearSeed: () -> Unit,
+    onRestoreRecycleItem: (RecycleBinItem) -> Unit,
+    onDeleteRecycleItem: (RecycleBinItem) -> Unit,
+    onDismissRecycleMessage: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var showSeedClearConfirm by remember { mutableStateOf(false) }
+    var permanentDeleteTarget by remember { mutableStateOf<RecycleBinItem?>(null) }
     Column(
         modifier =
             modifier
@@ -139,6 +147,7 @@ internal fun SettingsScreen(
                 onClear = { showSeedClearConfirm = true },
             )
             DiagnosticsSection(state = state, onExportDiagnostics = onExportDiagnostics)
+            RecycleBinSection(state = state, onRestore = onRestoreRecycleItem, onDelete = { permanentDeleteTarget = it }, onDismissMessage = onDismissRecycleMessage)
             AboutSection(state = state, onShowLicenses = onShowLicenses)
             Spacer(modifier = Modifier.height(CulinarySpacing.block))
             CulinaryRule()
@@ -165,6 +174,19 @@ internal fun SettingsScreen(
             destructive = true,
             onConfirm = onConfirmRestore,
             onDismiss = onCancelRestore,
+        )
+    }
+
+    if (permanentDeleteTarget != null) {
+        val target = permanentDeleteTarget!!
+        ConfirmDialog(
+            title = "彻底删除记录？",
+            message = "该记录将从本机数据库中永久删除。此操作不可撤销。",
+            confirmLabel = "彻底删除",
+            dismissLabel = stringResource(R.string.settings_cancel),
+            destructive = true,
+            onConfirm = { permanentDeleteTarget = null; onDeleteRecycleItem(target) },
+            onDismiss = { permanentDeleteTarget = null },
         )
     }
 
@@ -488,6 +510,33 @@ private fun AboutSection(
     CulinaryRule()
 }
 
+@Composable
+private fun RecycleBinSection(
+    state: SettingsUiState,
+    onRestore: (RecycleBinItem) -> Unit,
+    onDelete: (RecycleBinItem) -> Unit,
+    onDismissMessage: () -> Unit,
+) {
+    SectionHeader(title = "回收站")
+    Text("已归档的档案与分类目录暂存在这里。恢复会保留原有分类关系；彻底删除不可撤销。", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    if (state.recycleBinItems.isEmpty()) {
+        Text("回收站为空", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(vertical = CulinarySpacing.sm))
+    } else {
+        state.recycleBinItems.forEach { item ->
+            CulinaryRule()
+            Column(modifier = Modifier.fillMaxWidth().padding(vertical = CulinarySpacing.sm)) {
+                Text(item.title, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurface)
+                Text(item.type + " · " + item.detail, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    TextButton(onClick = { onRestore(item) }) { Text("恢复") }
+                    TextButton(onClick = { onDelete(item) }) { Text("彻底删除", color = MaterialTheme.colorScheme.error) }
+                }
+            }
+        }
+    }
+    state.recycleBinMessage?.let { message -> TextButton(onClick = onDismissMessage) { Text(message) } }
+    CulinaryRule()
+}
 @Composable
 private fun RestartDialog(onRestart: () -> Unit) {
     AlertDialog(
