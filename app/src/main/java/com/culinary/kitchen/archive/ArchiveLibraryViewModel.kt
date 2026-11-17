@@ -33,6 +33,7 @@ data class ArchiveLibraryUiState(
     val loadFailed: Boolean = false,
     val categoryMessage: String? = null,
     val categoryError: String? = null,
+    val categorySortSaveVersion: Int = 0,
 )
 
 /** 六库目录状态：当前库档案 + 分类树；分类/搜索状态由页面 SavedState 保存。 */
@@ -113,13 +114,17 @@ class ArchiveLibraryViewModel
         fun reorderSubcategories(orderedIds: List<String>) {
             viewModelScope.launch {
                 when (val result = categoryRepository.reorderCategories(orderedIds)) {
-                    is Outcome.Success -> setCategoryFeedback(message = null)
+                    is Outcome.Success -> {
+                        setCategoryFeedback(message = null)
+                        categorySortSaveVersion.value += 1
+                    }
                     is Outcome.Failure -> setCategoryFeedback(error = "排序失败：${result.error}")
                 }
             }
         }
 
         private val categoryFeedback = MutableStateFlow<ArchiveCategoryFeedback?>(null)
+        private val categorySortSaveVersion = MutableStateFlow(0)
 
         private fun setCategoryFeedback(
             message: String? = null,
@@ -133,13 +138,15 @@ class ArchiveLibraryViewModel
                 reader.observeEntries(),
                 reader.observeCategories(section.kind),
                 categoryFeedback,
-            ) { entries, categories, feedback ->
+                categorySortSaveVersion,
+            ) { entries, categories, feedback, sortSaveVersion ->
                 ArchiveLibraryUiState(
                     entries = entries,
                     categories = categories,
                     isLoading = false,
                     categoryMessage = feedback?.message,
                     categoryError = feedback?.error,
+                    categorySortSaveVersion = sortSaveVersion,
                 )
             }.catch {
                 emit(ArchiveLibraryUiState(isLoading = false, loadFailed = true))
