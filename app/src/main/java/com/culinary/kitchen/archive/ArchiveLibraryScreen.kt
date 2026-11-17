@@ -133,6 +133,7 @@ internal fun ArchiveLibraryScreen(
     var workingOrder by rememberSaveable(section, currentCategoryId) { mutableStateOf(emptyList<String>()) }
     var savedOrder by rememberSaveable(section, currentCategoryId) { mutableStateOf(emptyList<String>()) }
     var pendingSave by rememberSaveable(section, currentCategoryId) { mutableStateOf(false) }
+    var dragStartOrder by remember { mutableStateOf(emptyList<String>()) }
     var submittedOrder by rememberSaveable(section, currentCategoryId) { mutableStateOf(emptyList<String>()) }
     var showSortExitDialog by rememberSaveable(section) { mutableStateOf(false) }
     var lastSortSaveVersion by rememberSaveable(section) { mutableIntStateOf(state.categorySortSaveVersion) }
@@ -347,6 +348,8 @@ internal fun ArchiveLibraryScreen(
                             renameTargetId = category.id
                             renameName = category.name
                         },
+                        onDragStart = { dragStartOrder = workingOrder },
+                        onDragCancel = { workingOrder = dragStartOrder },
                         onMove = { delta ->
                             val from = workingOrder.indexOf(category.id)
                             val to = (from + delta).coerceIn(0, workingOrder.lastIndex)
@@ -698,6 +701,8 @@ private fun CategoryRow(
     listState: LazyListState,
     onRename: () -> Unit,
     onMove: (Int) -> Unit,
+    onDragStart: () -> Unit,
+    onDragCancel: () -> Unit,
     onDelete: () -> Unit,
 ) {
     val actionInteractionSource = remember(category.id) { MutableInteractionSource() }
@@ -768,6 +773,7 @@ private fun CategoryRow(
                     Modifier.pointerInput(category.id, sorting) {
                         detectDragGesturesAfterLongPress(
                             onDragStart = {
+                                onDragStart()
                                 dragging = true
                                 dragOffsetY = 0f
                             },
@@ -776,6 +782,7 @@ private fun CategoryRow(
                                 dragOffsetY = 0f
                             },
                             onDragCancel = {
+                                onDragCancel()
                                 dragging = false
                                 dragOffsetY = 0f
                             },
