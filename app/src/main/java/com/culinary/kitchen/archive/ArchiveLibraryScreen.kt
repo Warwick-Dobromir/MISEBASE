@@ -554,18 +554,7 @@ private fun ArchiveBrandHeader(
                 .padding(horizontal = CulinarySpacing.pageHorizontal, vertical = CulinarySpacing.sm),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = "MISEBASE",
-                style = CulinaryTextStyles.eyebrow,
-                color = MaterialTheme.colorScheme.onSurface,
-            )
-            Text(
-                text = stringResource(section.subtitleRes),
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
+        Spacer(modifier = Modifier.weight(1f))
         if (sorting) {
             CulinaryTextButton(
                 text = "保存",
