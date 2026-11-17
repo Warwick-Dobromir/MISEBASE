@@ -50,8 +50,7 @@ class CulinaryMigrationV4ToV5Test {
         val sqlite = opened.openHelper.writableDatabase
 
         assertThat(userVersion(sqlite)).isEqualTo(9)
-        assertThat(columnNames(sqlite, "sauce"))
-            .containsAtLeast("description", "difficulty", "hero_caption")
+        assertThat(columnNames(sqlite, "sauce")).containsAtLeast("description", "difficulty", "hero_caption")
         assertThat(columnNames(sqlite, "sauce_version")).contains("steps_json")
         assertThat(columnNames(sqlite, "sauce_component"))
             .containsAtLeast("label_override", "label_override_en")
