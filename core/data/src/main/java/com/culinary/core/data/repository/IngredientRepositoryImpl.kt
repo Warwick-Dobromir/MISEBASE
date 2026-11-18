@@ -1,16 +1,16 @@
 package com.culinary.core.data.repository
 
 import com.culinary.core.common.Clock
-import com.culinary.core.common.IdGenerator
 import com.culinary.core.common.CulinaryError
+import com.culinary.core.common.IdGenerator
 import com.culinary.core.common.Outcome
 import com.culinary.core.data.mapper.IngredientMapper
 import com.culinary.core.data.transaction.DbErrorMapper
 import com.culinary.core.database.dao.ChangeLogDao
 import com.culinary.core.database.dao.IngredientDao
 import com.culinary.core.database.dao.IngredientUnitConversionDao
-import com.culinary.core.database.entity.IngredientUnitConversionEntity
 import com.culinary.core.database.entity.ChangeLogEntity
+import com.culinary.core.database.entity.IngredientUnitConversionEntity
 import com.culinary.core.database.model.ChangeActionDb
 import com.culinary.core.domain.model.Ingredient
 import com.culinary.core.domain.model.IngredientChangeRecord
@@ -142,6 +142,7 @@ class IngredientRepositoryImpl
             changeLogDao.listByEntity("INGREDIENT", id.value).map { entry ->
                 IngredientChangeRecord(action = entry.action.name, createdAt = entry.createdAt)
             }
+
         override suspend fun archive(id: IngredientId): Outcome<Unit> =
             try {
                 val rows = dao.archive(id.value, clock.now().toEpochMilli())
