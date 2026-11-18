@@ -31,7 +31,7 @@ class IngredientDetailViewModel
         private val getRelations: ObserveKitchenRelationsUseCase,
         private val getArchiveCategoryForRecord: GetArchiveCategoryForRecordUseCase =
             GetArchiveCategoryForRecordUseCase(),
-        private val archiveImages: ArchiveImageUseCase = ArchiveImageUseCase(),
+        private val archiveImages: ArchiveImageUseCase,
     ) : ViewModel() {
         private val ingredientId =
             IngredientId(savedStateHandle.get<String>(IngredientsRoutes.ARG_INGREDIENT_ID).orEmpty())
