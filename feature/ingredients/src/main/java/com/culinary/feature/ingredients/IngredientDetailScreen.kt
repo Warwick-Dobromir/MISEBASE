@@ -45,8 +45,8 @@ import com.culinary.core.designsystem.component.StatusBadge
 import com.culinary.core.designsystem.component.StatusTone
 import com.culinary.core.designsystem.icon.CulinaryIcons
 import com.culinary.core.designsystem.theme.CulinarySpacing
-import com.culinary.core.domain.model.IngredientConversionView
 import com.culinary.core.domain.model.IngredientChangeRecord
+import com.culinary.core.domain.model.IngredientConversionView
 import com.culinary.core.domain.model.KitchenRecordKind
 import com.culinary.core.domain.model.KitchenRelatedRecord
 
@@ -348,8 +348,9 @@ private fun IngredientChangeHistory(records: List<IngredientChangeRecord>) {
         SectionHeader(title = "06  版本历史")
         records.forEachIndexed { index, record ->
             val current = index == records.lastIndex
-            val timestamp = java.text.SimpleDateFormat("yyyy-MM-dd HH:mm", java.util.Locale.getDefault())
-                .format(java.util.Date(record.createdAt))
+            val timestamp =
+                java.text.SimpleDateFormat("yyyy-MM-dd HH:mm", java.util.Locale.getDefault())
+                    .format(java.util.Date(record.createdAt))
             Row(
                 modifier = Modifier.fillMaxWidth().padding(vertical = CulinarySpacing.xs),
                 horizontalArrangement = Arrangement.SpaceBetween,
