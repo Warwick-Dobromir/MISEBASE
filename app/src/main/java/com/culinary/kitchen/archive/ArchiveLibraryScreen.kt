@@ -40,6 +40,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarDuration
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -179,12 +180,18 @@ internal fun ArchiveLibraryScreen(
             if (sorting && pendingSave) {
                 savedOrder = submittedOrder
                 pendingSave = false
-                sortSnackbarHostState.showSnackbar("已保存")
+                sortSnackbarHostState.showSnackbar("已保存", duration = SnackbarDuration.Short)
             }
         }
     }
     LaunchedEffect(state.categoryError) {
-        if (state.categoryError != null && pendingSave) pendingSave = false
+        state.categoryError?.let { message ->
+            if (pendingSave) pendingSave = false
+            sortSnackbarHostState.showSnackbar(
+                message = message,
+                duration = SnackbarDuration.Short,
+            )
+        }
     }
     LaunchedEffect(children.map { it.id }.toSet()) {
         if (sorting) {
@@ -230,12 +237,6 @@ internal fun ArchiveLibraryScreen(
         modifier = modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
-        state.categoryError?.let { message ->
-            ErrorBanner(
-                message = message,
-                modifier = Modifier.padding(horizontal = CulinarySpacing.pageHorizontal),
-            )
-        }
         if (!sorting) state.categoryMessage?.let { message ->
             Text(
                 text = message,
@@ -369,10 +370,6 @@ internal fun ArchiveLibraryScreen(
                 }
             }
         }
-        SnackbarHost(
-            hostState = sortSnackbarHostState,
-            modifier = Modifier.fillMaxWidth(),
-        )
         if (sorting) {
             Column(
                 modifier = Modifier.fillMaxWidth().navigationBarsPadding()
@@ -439,6 +436,16 @@ internal fun ArchiveLibraryScreen(
             modifier = Modifier.align(Alignment.TopEnd)
                 .padding(top = CulinarySpacing.xs, end = CulinarySpacing.pageHorizontal)
                 .widthIn(max = 220.dp),
+        )
+
+        SnackbarHost(
+            hostState = sortSnackbarHostState,
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth()
+                .padding(horizontal = CulinarySpacing.pageHorizontal)
+                .padding(bottom = if (sorting) 76.dp else 12.dp)
+                .navigationBarsPadding(),
         )
     }
 
