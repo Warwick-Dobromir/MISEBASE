@@ -57,18 +57,18 @@ class StartupCoordinatorTest {
         }
 
     @Test
-    fun `reports ready for a persisted schema v9 database`() =
+    fun `reports ready for a persisted schema v10 database`() =
         runBlocking {
             createPersistedV4Database()
 
             val state = coordinator().start()
 
             assertThat(state).isEqualTo(StartupState.Ready)
-            assertThat(requireNotNull(database).openHelper.writableDatabase.version).isEqualTo(9)
+            assertThat(requireNotNull(database).openHelper.writableDatabase.version).isEqualTo(10)
         }
 
     @Test
-    fun `migrates a v1 database to v9 and reports ready`() =
+    fun `migrates a v1 database to v10 and reports ready`() =
         runBlocking {
             createV1Database()
             assertV1Fixture()
@@ -81,7 +81,7 @@ class StartupCoordinatorTest {
             SQLiteDatabase
                 .openDatabase(context.getDatabasePath(DATABASE_NAME).path, null, SQLiteDatabase.OPEN_READONLY)
                 .use { sqlite ->
-                    assertThat(sqlite.version).isEqualTo(9)
+                    assertThat(sqlite.version).isEqualTo(10)
                     assertThat(columnNames(sqlite, "recipe_version")).contains("servings")
                     assertThat(tableNames(sqlite)).contains("kitchen_reference")
                     assertThat(tableNames(sqlite)).contains("kitchen_relation")
@@ -104,7 +104,7 @@ class StartupCoordinatorTest {
             assertThat(state).isInstanceOf(StartupState.Incompatible::class.java)
             val incompatible = state as StartupState.Incompatible
             assertThat(incompatible.databaseVersion).isEqualTo(10)
-            assertThat(incompatible.appSchemaVersion).isEqualTo(9)
+            assertThat(incompatible.appSchemaVersion).isEqualTo(10)
         }
 
     @Test
