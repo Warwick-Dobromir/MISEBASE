@@ -391,7 +391,6 @@ internal fun ArchiveLibraryScreen(
                 modifier = Modifier.align(Alignment.TopStart)
                     .padding(top = CulinarySpacing.xs, start = CulinarySpacing.pageHorizontal),
             )
-        }
 
         ArchiveSearchIsland(
             expanded = searchOpen,
