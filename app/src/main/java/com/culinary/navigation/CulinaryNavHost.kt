@@ -133,7 +133,7 @@ fun CulinaryNavHost(
     val isSauceEditor = currentRoute == SaucesRoutes.EDIT
     val isRecipeEditor = currentRoute == RecipesRoutes.EDIT
     val isCooking = currentRoute == CookingRoute.ROUTE
-    val ownsTopBar = currentRoute == SaucesRoutes.DETAIL || currentRoute == RecipesRoutes.DETAIL
+    val ownsTopBar = currentRoute == SaucesRoutes.DETAIL || currentRoute == IngredientsRoutes.DETAIL || currentRoute == RecipesRoutes.DETAIL
     val showBottomBar = topLevel != null
     val archiveSorting = remember { mutableStateOf(false) }
     LaunchedEffect(currentRoute) {
@@ -497,6 +497,7 @@ private fun NavGraphBuilder.ingredientGraph(navController: NavHostController) {
             onEdit = { id -> navController.navigate(IngredientsRoutes.edit(id)) },
             onArchived = { navController.popBackStack() },
             onOpenRelation = navController::openKitchenRelated,
+            onBack = { navController.popBackStack() },
         )
     }
     composable(IngredientsRoutes.EDIT) {
