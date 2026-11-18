@@ -2,6 +2,7 @@ name: Android APK
 # Rebuild latest archive navigation changes.
 # Re-run signed build after repository signing secrets were configured.
 # Rebuild after coroutine-safe archive auto-scroll correction.
+# Rebuild ingredient archive alignment using the repository's pinned release certificate.
 
 on:
   push:
@@ -102,7 +103,7 @@ jobs:
           gh release delete "$KEEP_TAG" --yes
           gh release create "$KEEP_TAG" "$APK" \
             --title "MISEBASE Android 安装包" \
-            --notes "Build commit: ${GITHUB_SHA}\nOriginal MISEBASE signing certificate verified."
+            --notes "Build commit: ${GITHUB_SHA}\\nOriginal MISEBASE signing certificate verified."
 
           # Delete every other release/tag only after the replacement asset is live.
           gh api --paginate "repos/${GITHUB_REPOSITORY}/releases?per_page=100" \
