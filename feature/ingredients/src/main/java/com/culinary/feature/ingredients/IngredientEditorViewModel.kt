@@ -118,11 +118,11 @@ class IngredientEditorViewModel
         }
 
         fun onNameChange(value: String) {
-            _uiState.update { it.copy(name = value, error = null) }
+            _uiState.update { it.copy(name = value, error = null, isDirty = true) }
         }
 
         fun onCategoryChange(value: String) {
-            _uiState.update { it.copy(category = value, categoryPathIds = emptyList()) }
+            _uiState.update { it.copy(category = value, categoryPathIds = emptyList(), isDirty = true) }
         }
 
         fun onCategorySelect(level: Int, categoryId: String?) {
@@ -130,56 +130,56 @@ class IngredientEditorViewModel
                 val base = state.categoryPathIds.take(level.coerceAtLeast(0))
                 val next = if (categoryId == null) base else base + categoryId
                 val leafName = next.lastOrNull()?.let { id -> state.categories.firstOrNull { it.id == id }?.name }.orEmpty()
-                state.copy(category = leafName, categoryPathIds = next, error = null)
+                state.copy(category = leafName, categoryPathIds = next, error = null, isDirty = true)
             }
         }
 
         fun onDescriptionChange(value: String) {
-            _uiState.update { it.copy(description = value) }
+            _uiState.update { it.copy(description = value, isDirty = true) }
         }
 
         fun onEnglishNameChange(value: String) {
-            _uiState.update { it.copy(englishName = value) }
+            _uiState.update { it.copy(englishName = value, isDirty = true) }
         }
 
         fun onScientificNameChange(value: String) {
-            _uiState.update { it.copy(scientificName = value) }
+            _uiState.update { it.copy(scientificName = value, isDirty = true) }
         }
 
         fun onFlavorProfileChange(value: String) {
-            _uiState.update { it.copy(flavorProfile = value) }
+            _uiState.update { it.copy(flavorProfile = value, isDirty = true) }
         }
 
         fun onSeasonalityChange(value: String) {
-            _uiState.update { it.copy(seasonality = value) }
+            _uiState.update { it.copy(seasonality = value, isDirty = true) }
         }
 
         fun onOriginChange(value: String) {
-            _uiState.update { it.copy(origin = value) }
+            _uiState.update { it.copy(origin = value, isDirty = true) }
         }
 
         fun onSelectionNotesChange(value: String) {
-            _uiState.update { it.copy(selectionNotes = value) }
+            _uiState.update { it.copy(selectionNotes = value, isDirty = true) }
         }
 
         fun onPrepNotesChange(value: String) {
-            _uiState.update { it.copy(prepNotes = value) }
+            _uiState.update { it.copy(prepNotes = value, isDirty = true) }
         }
 
         fun onExampleProductsChange(value: String) {
-            _uiState.update { it.copy(exampleProducts = value) }
+            _uiState.update { it.copy(exampleProducts = value, isDirty = true) }
         }
 
         fun onStorageNotesChange(value: String) {
-            _uiState.update { it.copy(storageNotes = value) }
+            _uiState.update { it.copy(storageNotes = value, isDirty = true) }
         }
 
         fun onAllergenNotesChange(value: String) {
-            _uiState.update { it.copy(allergenNotes = value) }
+            _uiState.update { it.copy(allergenNotes = value, isDirty = true) }
         }
 
         fun onUnitChange(unit: UnitModel) {
-            _uiState.update { it.copy(defaultUnit = unit) }
+            _uiState.update { it.copy(defaultUnit = unit, isDirty = true) }
         }
 
         fun clearError() {
