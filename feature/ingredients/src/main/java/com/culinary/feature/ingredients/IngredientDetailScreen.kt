@@ -186,7 +186,6 @@ internal fun IngredientDetailContent(
 
         IngredientHeaderMeta(detail.ingredient)
         IngredientSummary(detail = detail, onEdit = onEdit, onArchive = onArchive)
-        ConversionsSection(conversions = detail.conversions)
         IngredientRelationsSection(detailState.relations, onOpenRelation)
         IngredientChangeHistory(detail.changeHistory)
     }
@@ -208,6 +207,7 @@ private fun IngredientSummary(
             "常用计量单位",
             detail.defaultUnit?.let { "${it.name}（${it.symbol}）" } ?: "未设置",
         )
+        ConversionsSection(conversions = detail.conversions)
 
         if (!ingredient.flavorProfile.isNullOrBlank() || !ingredient.description.isNullOrBlank()) {
             SectionHeader(title = "02  风味与特性")
@@ -312,9 +312,12 @@ private fun IngredientRelationsSection(
 ) {
     val sauces = relations.filter { it.targetKind == KitchenRecordKind.SAUCE }
     val recipes = relations.filter { it.targetKind == KitchenRecordKind.RECIPE }
+    if (sauces.isNotEmpty() || recipes.isNotEmpty()) {
+        SectionHeader(title = "05  应用关系")
+    }
     if (sauces.isNotEmpty()) {
         CulinaryRelationSection(
-            title = "05  关联酱汁",
+            title = "酱汁",
             items = sauces.map { relation ->
                 CulinaryRelationItem(
                     eyebrow = relation.relationLabel,
@@ -326,7 +329,7 @@ private fun IngredientRelationsSection(
     }
     if (recipes.isNotEmpty()) {
         CulinaryRelationSection(
-            title = "05  关联菜谱",
+            title = "菜谱",
             items = recipes.map { relation ->
                 CulinaryRelationItem(
                     eyebrow = relation.relationLabel,
@@ -372,7 +375,7 @@ private fun IngredientChangeHistory(records: List<IngredientChangeRecord>) {
 @Composable
 private fun ConversionsSection(conversions: List<IngredientConversionView>) {
     Column(modifier = Modifier.padding(horizontal = CulinarySpacing.pageHorizontal)) {
-        SectionHeader(title = stringResource(R.string.ingredients_conversions, conversions.size))
+        SectionHeader(title = "单位换算关系")
         if (conversions.isEmpty()) {
             Text(
                 text = stringResource(R.string.ingredients_no_conversions),
