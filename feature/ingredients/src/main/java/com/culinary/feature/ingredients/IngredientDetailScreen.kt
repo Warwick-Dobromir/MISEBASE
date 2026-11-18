@@ -43,7 +43,6 @@ import com.culinary.core.designsystem.component.StatusBadge
 import com.culinary.core.designsystem.component.StatusTone
 import com.culinary.core.designsystem.component.formatArchiveTimestamp
 import com.culinary.core.designsystem.theme.CulinarySpacing
-import com.culinary.core.domain.model.Ingredient
 import com.culinary.core.domain.model.IngredientConversionView
 import com.culinary.core.domain.model.KitchenRecordKind
 import com.culinary.core.domain.model.KitchenRelatedRecord
@@ -167,20 +166,30 @@ internal fun IngredientDetailContent(
                 Spacer(modifier = Modifier.height(CulinarySpacing.sm))
             }
 
-            ArchiveModuleHeader(number = "01", english = "FLAVOR PROFILE", chinese = "风味特性")
-            DetailField("风味描述", ingredient.flavorProfile)
+            if (!ingredient.flavorProfile.isNullOrBlank()) {
+                ArchiveModuleHeader(number = "01", english = "FLAVOR PROFILE", chinese = "风味特性")
+                DetailField("风味描述", ingredient.flavorProfile)
+            }
 
-            ArchiveModuleHeader(number = "02", english = "CULINARY USE", chinese = "烹饪用途与预处理")
-            DetailField("烹饪用途 / 预处理说明", ingredient.prepNotes)
-            DetailField("示例商品 / 常见规格", ingredient.exampleProducts)
+            if (!ingredient.prepNotes.isNullOrBlank() || !ingredient.exampleProducts.isNullOrBlank()) {
+                ArchiveModuleHeader(number = "02", english = "CULINARY USE", chinese = "烹饪用途与预处理")
+                DetailField("烹饪用途 / 预处理说明", ingredient.prepNotes)
+                DetailField("示例商品 / 常见规格", ingredient.exampleProducts)
+            }
 
-            ArchiveModuleHeader(number = "03", english = "PROFESSIONAL NOTES", chinese = "专业信息")
-            DetailField("时令", ingredient.seasonality)
-            DetailField("产地", ingredient.origin)
-            DetailField("挑选标准", ingredient.selectionNotes)
-            DetailField("储存建议", ingredient.storageNotes)
-            DetailField("过敏原提示", ingredient.allergenNotes)
-            ingredient.seedNote?.takeIf { it.isNotBlank() }?.let { DetailField("原始备注", it) }
+            val professionalFields =
+                listOf(
+                    "时令" to ingredient.seasonality,
+                    "产地" to ingredient.origin,
+                    "挑选标准" to ingredient.selectionNotes,
+                    "储存建议" to ingredient.storageNotes,
+                    "过敏原提示" to ingredient.allergenNotes,
+                    "原始备注" to ingredient.seedNote,
+                ).filter { !it.second.isNullOrBlank() }
+            if (professionalFields.isNotEmpty()) {
+                ArchiveModuleHeader(number = "03", english = "PROFESSIONAL NOTES", chinese = "专业信息")
+                professionalFields.forEach { (label, value) -> DetailField(label, value) }
+            }
 
             ArchiveModuleHeader(number = "04", english = "APPLICATION", chinese = "应用关系")
             IngredientRelationsSection(detailState.relations, onOpenRelation)

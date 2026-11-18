@@ -56,7 +56,7 @@ fun IngredientEditorRoute(
     var showUnitPicker by remember { mutableStateOf(false) }
     var showDiscard by remember { mutableStateOf(false) }
     val dispatcher = LocalOnBackPressedDispatcherOwner.current?.onBackPressedDispatcher
-    val leave = { dispatcher?.onBackPressed() }
+    val leave: () -> Unit = { dispatcher?.onBackPressed() }
     val saved = state.saved
 
     LaunchedEffect(saved) {
