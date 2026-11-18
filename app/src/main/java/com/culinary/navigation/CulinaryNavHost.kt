@@ -19,6 +19,10 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -133,6 +137,8 @@ fun CulinaryNavHost(
     val isCooking = currentRoute == CookingRoute.ROUTE
     val ownsTopBar = currentRoute == SaucesRoutes.DETAIL || currentRoute == RecipesRoutes.DETAIL
     val showBottomBar = topLevel != null
+    var archiveSorting by remember { mutableStateOf(false) }
+    var archiveCancelRequestVersion by remember { mutableIntStateOf(0) }
     val detailContext =
         when (currentRoute) {
             SaucesRoutes.DETAIL -> "酱汁库"
@@ -183,7 +189,9 @@ fun CulinaryNavHost(
             }
         },
         bottomBar = {
-            if (showBottomBar) {
+            if (showBottomBar && isKitchenArchive && archiveSorting) {
+                ArchiveSortCancelBar(onCancel = { archiveCancelRequestVersion++ })
+            } else if (showBottomBar) {
                 CulinaryBottomBar(
                     currentRoute = currentRoute,
                     onSelect = { destination -> navController.navigateToTopLevel(destination.route) },
@@ -345,6 +353,8 @@ private fun NavGraphBuilder.libraryGraph(navController: NavHostController) {
             onAdd = { navController.openArchiveAdd(section) },
             onOpenEntry = { archiveEntry -> navController.openArchiveEntry(archiveEntry) },
             onBack = { navController.popBackStack() },
+            onSortingChanged = { archiveSorting = it },
+            cancelSortRequestVersion = archiveCancelRequestVersion,
         )
     }
 }

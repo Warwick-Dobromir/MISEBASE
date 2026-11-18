@@ -79,6 +79,8 @@ fun ArchiveLibraryRoute(
     onAdd: () -> Unit,
     onOpenEntry: (KitchenArchiveEntry) -> Unit,
     onBack: () -> Unit = {},
+    onSortingChanged: (Boolean) -> Unit = {},
+    cancelSortRequestVersion: Int = 0,
     modifier: Modifier = Modifier,
     viewModel: ArchiveLibraryViewModel = hiltViewModel(),
 ) {
@@ -89,6 +91,8 @@ fun ArchiveLibraryRoute(
         onAdd = onAdd,
         onOpenEntry = onOpenEntry,
         onBack = onBack,
+        onSortingChanged = onSortingChanged,
+        cancelSortRequestVersion = cancelSortRequestVersion,
         onCreateSubcategory = viewModel::createSubcategory,
         onRenameSubcategory = viewModel::renameSubcategory,
         onDeleteSubcategory = viewModel::deleteSubcategory,
@@ -105,6 +109,8 @@ internal fun ArchiveLibraryScreen(
     onAdd: () -> Unit,
     onOpenEntry: (KitchenArchiveEntry) -> Unit,
     onBack: () -> Unit = {},
+    onSortingChanged: (Boolean) -> Unit = {},
+    cancelSortRequestVersion: Int = 0,
     onCreateSubcategory: (String?, String) -> Unit = { _, _ -> },
     onRenameSubcategory: (String, String) -> Unit = { _, _ -> },
     onDeleteSubcategory: (String) -> Unit = {},
@@ -189,11 +195,13 @@ internal fun ArchiveLibraryScreen(
             workingOrder = ids
             savedOrder = ids
             sorting = true
+            onSortingChanged(true)
         }
     }
     fun finishSorting() {
         workingOrder = savedOrder
         sorting = false
+        onSortingChanged(false)
         pendingSave = false
         showSortExitDialog = false
     }
@@ -203,6 +211,10 @@ internal fun ArchiveLibraryScreen(
         } else {
             finishSorting()
         }
+    }
+
+    LaunchedEffect(cancelSortRequestVersion) {
+        if (cancelSortRequestVersion > 0 && sorting) requestSortReturn()
     }
 
     BackHandler(enabled = searchOpen) { searchOpen = false }
@@ -348,29 +360,22 @@ internal fun ArchiveLibraryScreen(
                 }
             }
         }
-        if (sorting) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = CulinarySpacing.pageHorizontal, vertical = CulinarySpacing.sm),
-                horizontalArrangement = androidx.compose.foundation.layout.Arrangement.End,
-            ) {
-                Text(
-                    text = "取消",
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier
-                        .clickable {
-                                            showSortExitDialog = true
-                        }
-                        .padding(horizontal = CulinarySpacing.md, vertical = CulinarySpacing.sm),
-                )
-            }
-        }
-        SnackbarHost(
+remove old cancel row        SnackbarHost(
             hostState = sortSnackbarHostState,
             modifier = Modifier.fillMaxWidth(),
         )
+        }
+
+        if (currentCategoryId != null || !sorting) {
+            ArchiveBackFloatButton(
+                onClick = {
+                    if (sorting) requestSortReturn()
+                    else if (currentCategory == null) onBack()
+                    else currentCategoryId = currentCategory.parentId
+                },
+                modifier = Modifier.align(Alignment.TopStart)
+                    .padding(top = CulinarySpacing.xs, start = CulinarySpacing.pageHorizontal),
+            )
         }
 
         ArchiveSearchIsland(
@@ -508,6 +513,29 @@ internal fun ArchiveLibraryScreen(
 }
 
 @Composable
+private fun ArchiveBackFloatButton(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Surface(
+        modifier = modifier.size(48.dp),
+        shape = CircleShape,
+        color = MaterialTheme.colorScheme.surface,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+        shadowElevation = 1.dp,
+    ) {
+        Box(modifier = Modifier.fillMaxSize().clickable(onClick = onClick), contentAlignment = Alignment.Center) {
+            Icon(
+                imageVector = CulinaryIcons.Back,
+                contentDescription = "返回",
+                tint = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.size(20.dp),
+            )
+        }
+    }
+}
+
+@Composable
 private fun ArchiveSearchIsland(
     expanded: Boolean,
     query: String,
@@ -580,24 +608,7 @@ private fun ArchiveContextHeader(
     onBack: () -> Unit,
 ) {
     Column(modifier = Modifier.padding(horizontal = CulinarySpacing.pageHorizontal)) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(top = CulinarySpacing.sm),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Icon(
-                imageVector = CulinaryIcons.Back,
-                contentDescription = "返回",
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(40.dp).clickable(onClick = onBack).padding(11.dp),
-            )
-            Text(
-                text = parentName,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(start = CulinarySpacing.xxs),
-            )
-        }
-        Spacer(modifier = Modifier.height(CulinarySpacing.xs))
+        Spacer(modifier = Modifier.height(48.dp + CulinarySpacing.xs))
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
