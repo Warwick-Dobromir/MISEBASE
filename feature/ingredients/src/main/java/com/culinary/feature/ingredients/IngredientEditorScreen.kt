@@ -1,5 +1,7 @@
 package com.culinary.feature.ingredients
 
+import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -31,12 +33,12 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.culinary.core.designsystem.component.CulinaryButton
+import com.culinary.core.designsystem.component.ArchiveEditorTopBar
+import com.culinary.core.designsystem.component.ConfirmDialog
 import com.culinary.core.designsystem.component.CulinaryRule
 import com.culinary.core.designsystem.component.CulinaryTextField
 import com.culinary.core.designsystem.component.ErrorBanner
 import com.culinary.core.designsystem.component.LoadingRows
-import com.culinary.core.designsystem.component.PageHeader
 import com.culinary.core.designsystem.component.SectionHeader
 import com.culinary.core.designsystem.icon.CulinaryIcons
 import com.culinary.core.designsystem.theme.CulinarySpacing
@@ -47,18 +49,33 @@ import com.culinary.core.domain.model.ArchiveCategory
 @Composable
 fun IngredientEditorRoute(
     onSaved: () -> Unit,
+    onCancelled: () -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: IngredientEditorViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     var showUnitPicker by remember { mutableStateOf(false) }
+    var showDiscard by remember { mutableStateOf(false) }
     val saved = state.saved
+    BackHandler(enabled = state.isDirty) { showDiscard = true }
 
     LaunchedEffect(saved) {
         if (saved) onSaved()
     }
 
-    Column(modifier = modifier.fillMaxSize()) {
+    Column(modifier = modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
+        ArchiveEditorTopBar(
+            title = if (state.isNew) {
+                stringResource(R.string.ingredients_editor_new_title)
+            } else {
+                stringResource(R.string.ingredients_editor_edit_title)
+            },
+            isSaving = state.isSaving,
+            canSave = !state.isLoading && (state.isDirty || state.isNew),
+            onBack = { if (state.isDirty) showDiscard = true else onCancelled() },
+            onCancel = { if (state.isDirty) showDiscard = true else onCancelled() },
+            onSave = viewModel::save,
+        )
         state.error?.let { message ->
             ErrorBanner(
                 message = message,
@@ -86,9 +103,23 @@ fun IngredientEditorRoute(
                 onStorageNotesChange = viewModel::onStorageNotesChange,
                 onAllergenNotesChange = viewModel::onAllergenNotesChange,
                 onOpenUnitPicker = { showUnitPicker = true },
-                onSave = viewModel::save,
             )
         }
+    }
+
+    if (showDiscard) {
+        ConfirmDialog(
+            title = "放弃修改？",
+            message = "当前食材档案有未保存的更改，确定退出吗？",
+            confirmLabel = "放弃修改",
+            onConfirm = {
+                showDiscard = false
+                onCancelled()
+            },
+            onDismiss = { showDiscard = false },
+            dismissLabel = "继续编辑",
+            destructive = true,
+        )
     }
 
     if (showUnitPicker) {
@@ -123,7 +154,6 @@ internal fun IngredientEditorForm(
     onStorageNotesChange: (String) -> Unit,
     onAllergenNotesChange: (String) -> Unit,
     onOpenUnitPicker: () -> Unit,
-    onSave: () -> Unit,
 ) {
     Column(
         modifier =
@@ -132,17 +162,6 @@ internal fun IngredientEditorForm(
                 .verticalScroll(rememberScrollState())
                 .padding(bottom = CulinarySpacing.xl),
     ) {
-        PageHeader(
-            eyebrow = "INGREDIENT",
-            title =
-                stringResource(
-                    if (state.isNew) {
-                        R.string.ingredients_editor_new_title
-                    } else {
-                        R.string.ingredients_editor_edit_title
-                    },
-                ),
-        )
         Column(modifier = Modifier.padding(horizontal = CulinarySpacing.pageHorizontal)) {
             CulinaryTextField(
                 value = state.name,
@@ -239,21 +258,6 @@ internal fun IngredientEditorForm(
                 onValueChange = onAllergenNotesChange,
                 label = { Text(text = stringResource(R.string.ingredients_allergen)) },
                 minLines = 2,
-            )
-            Spacer(modifier = Modifier.height(CulinarySpacing.xl))
-            CulinaryButton(
-                text =
-                    stringResource(
-                        if (state.isSaving) {
-                            R.string.ingredients_saving
-                        } else {
-                            R.string.ingredients_save
-                        },
-                    ),
-                onClick = onSave,
-                enabled = !state.isSaving,
-                loading = state.isSaving,
-                modifier = Modifier.fillMaxWidth(),
             )
         }
     }
