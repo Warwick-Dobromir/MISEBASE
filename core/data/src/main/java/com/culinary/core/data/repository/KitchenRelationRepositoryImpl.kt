@@ -37,6 +37,30 @@ class KitchenRelationRepositoryImpl
                 entities.mapNotNull { entity -> resolve(entity) }
             }
 
+        override fun observeReferencingRecord(recordId: String): Flow<List<KitchenRelatedRecord>> =
+            dao.observeByTarget(recordId).map { entities ->
+                entities.mapNotNull { entity ->
+                    val sourceKind = KitchenRelationMapper.kind(entity.sourceKind) ?: return@mapNotNull null
+                    if (sourceKind != KitchenRecordKind.SAUCE && sourceKind != KitchenRecordKind.RECIPE) {
+                        return@mapNotNull null
+                    }
+                    val sourceLabel =
+                        when (sourceKind) {
+                            KitchenRecordKind.SAUCE -> sauceDao.findById(entity.sourceRecordId)?.name
+                            KitchenRecordKind.RECIPE -> recipeDao.findById(entity.sourceRecordId)?.name
+                            else -> null
+                        }
+                    KitchenRelatedRecord(
+                        sourceRecordId = recordId,
+                        sourceKind = KitchenRecordKind.INGREDIENT,
+                        targetRecordId = entity.sourceRecordId,
+                        targetKind = sourceKind,
+                        targetLabel = sourceLabel ?: entity.targetLabel,
+                        relationLabel = entity.relationLabel,
+                        sortOrder = entity.sortOrder,
+                    )
+                }
+            }
         override suspend fun replaceRelations(
             sourceRecordId: String,
             sourceKind: KitchenRecordKind,

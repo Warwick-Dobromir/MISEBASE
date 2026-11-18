@@ -1,5 +1,6 @@
 package com.culinary.core.domain.repository
 
+import com.culinary.core.common.Outcome
 import com.culinary.core.domain.model.ArchiveImage
 import com.culinary.core.domain.model.ArchiveImageOwner
 
@@ -11,4 +12,13 @@ interface ArchiveImageRepository {
     ): List<ArchiveImage>
 
     suspend fun read(imageId: String): ByteArray?
+
+    suspend fun addIngredient(
+        ingredientId: String,
+        role: String,
+        bytes: ByteArray,
+        mimeType: String,
+    ): Outcome<ArchiveImage>
+
+    suspend fun delete(imageId: String): Outcome<Unit>
 }

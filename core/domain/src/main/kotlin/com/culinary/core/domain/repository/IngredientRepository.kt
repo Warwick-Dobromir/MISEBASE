@@ -3,6 +3,8 @@ package com.culinary.core.domain.repository
 import com.culinary.core.common.Outcome
 import com.culinary.core.domain.model.Ingredient
 import com.culinary.core.domain.model.IngredientId
+import com.culinary.core.domain.model.IngredientChangeRecord
+import com.culinary.core.domain.model.IngredientUnitConversion
 import kotlinx.coroutines.flow.Flow
 
 /**
@@ -17,5 +19,12 @@ interface IngredientRepository {
 
     suspend fun save(ingredient: Ingredient): Outcome<IngredientId>
 
+    suspend fun saveWithConversions(
+        ingredient: Ingredient,
+        conversions: List<IngredientUnitConversion>,
+    ): Outcome<IngredientId> = save(ingredient)
+
     suspend fun archive(id: IngredientId): Outcome<Unit>
+
+    suspend fun changeHistory(id: IngredientId): List<IngredientChangeRecord> = emptyList()
 }

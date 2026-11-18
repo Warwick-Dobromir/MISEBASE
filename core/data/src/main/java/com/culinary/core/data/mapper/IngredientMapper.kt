@@ -26,6 +26,8 @@ object IngredientMapper {
                 },
             category = entity.category,
             scientificName = entity.scientificName,
+            commonVarieties = entity.commonVarieties,
+            ediblePortion = entity.ediblePortion,
             description = entity.description,
             flavorProfile = entity.flavorProfile,
             seasonality = entity.seasonality,
@@ -39,6 +41,7 @@ object IngredientMapper {
             seedNote = entity.seedNote,
             seedId = entity.seedId,
             seedVersion = entity.seedVersion,
+            updatedAt = entity.updatedAt,
         )
 
     fun toEntity(
@@ -54,6 +57,8 @@ object IngredientMapper {
             defaultUnitId = ingredient.defaultUnitId?.value,
             category = ingredient.category,
             scientificName = ingredient.scientificName,
+            commonVarieties = ingredient.commonVarieties,
+            ediblePortion = ingredient.ediblePortion,
             description = ingredient.description,
             flavorProfile = ingredient.flavorProfile,
             seasonality = ingredient.seasonality,

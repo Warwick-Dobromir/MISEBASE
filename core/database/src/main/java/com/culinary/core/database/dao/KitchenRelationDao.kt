@@ -26,6 +26,12 @@ interface KitchenRelationDao {
     suspend fun listBySource(recordId: String): List<KitchenRelationEntity>
 
     @Query(
+        "SELECT * FROM kitchen_relation WHERE target_record_id = :recordId " +
+            "ORDER BY sort_order, relation_label, target_label",
+    )
+    fun observeByTarget(recordId: String): Flow<List<KitchenRelationEntity>>
+
+    @Query(
         "DELETE FROM kitchen_relation WHERE source_record_id = :sourceId " +
             "AND target_kind = :targetKind",
     )

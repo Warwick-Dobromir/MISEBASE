@@ -99,6 +99,38 @@ class SaveIngredientUseCaseTest {
         }
 
     @Test
+    fun `saves extended ingredient archive fields`() =
+        runBlocking<Unit> {
+            useCase(
+                SaveIngredientInput(
+                    name = "柠檬",
+                    englishName = "Lemon",
+                    scientificName = "Citrus limon",
+                    flavorProfile = "酸度明亮，带清新柑橘香",
+                    seasonality = "冬末至春季",
+                    origin = "意大利西西里",
+                    selectionNotes = "表皮紧实、有重量感",
+                    prepNotes = "使用前温水清洗",
+                    exampleProducts = "Beurre blanc、海鲜、甜点",
+                    storageNotes = "冷藏保存",
+                    allergenNotes = "无已知常见过敏原",
+                ),
+            )
+
+            val saved = repository.saved.single()
+            assertThat(saved.englishName).isEqualTo("Lemon")
+            assertThat(saved.scientificName).isEqualTo("Citrus limon")
+            assertThat(saved.flavorProfile).isEqualTo("酸度明亮，带清新柑橘香")
+            assertThat(saved.seasonality).isEqualTo("冬末至春季")
+            assertThat(saved.origin).isEqualTo("意大利西西里")
+            assertThat(saved.selectionNotes).isEqualTo("表皮紧实、有重量感")
+            assertThat(saved.prepNotes).isEqualTo("使用前温水清洗")
+            assertThat(saved.exampleProducts).isEqualTo("Beurre blanc、海鲜、甜点")
+            assertThat(saved.storageNotes).isEqualTo("冷藏保存")
+            assertThat(saved.allergenNotes).isEqualTo("无已知常见过敏原")
+        }
+
+    @Test
     fun `rejects over long category and description`() =
         runBlocking<Unit> {
             val category =

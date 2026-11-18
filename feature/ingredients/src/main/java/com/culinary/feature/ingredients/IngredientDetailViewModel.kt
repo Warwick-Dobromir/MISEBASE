@@ -31,7 +31,7 @@ class IngredientDetailViewModel
         private val getRelations: ObserveKitchenRelationsUseCase,
         private val getArchiveCategoryForRecord: GetArchiveCategoryForRecordUseCase =
             GetArchiveCategoryForRecordUseCase(),
-        private val archiveImages: ArchiveImageUseCase = ArchiveImageUseCase(),
+        private val archiveImages: ArchiveImageUseCase,
     ) : ViewModel() {
         private val ingredientId =
             IngredientId(savedStateHandle.get<String>(IngredientsRoutes.ARG_INGREDIENT_ID).orEmpty())
@@ -41,7 +41,7 @@ class IngredientDetailViewModel
         init {
             load()
             viewModelScope.launch {
-                getRelations(ingredientId.value).collect { relations ->
+                getRelations.referencing(ingredientId.value).collect { relations ->
                     _uiState.update { it.copy(relations = relations) }
                 }
             }
@@ -56,15 +56,15 @@ class IngredientDetailViewModel
                             runCatching {
                                 getArchiveCategoryForRecord(KitchenRecordKind.INGREDIENT, ingredientId.value)
                             }.getOrNull()
-                        val image =
-                            runCatching {
-                                archiveImages.primary(ArchiveImageOwner.INGREDIENT, ingredientId.value)
-                            }.getOrNull()
+                        val images = archiveImages.list(ArchiveImageOwner.INGREDIENT, ingredientId.value)
+                        val image = images.firstOrNull { it.role == "PRIMARY" }?.let { archiveImages.read(it.id) }
+                        val referenceImages = images.filter { it.role == "REFERENCE" }.mapNotNull { archiveImages.read(it.id) }
                         _uiState.update {
                             it.copy(
                                 detail = result.value,
                                 categoryPath = category?.path.orEmpty(),
                                 imageBytes = image,
+                                referenceImageBytes = referenceImages,
                                 isLoading = false,
                                 isArchiving = false,
                             )

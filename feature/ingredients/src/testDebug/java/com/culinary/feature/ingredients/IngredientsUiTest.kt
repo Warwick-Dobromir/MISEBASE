@@ -84,9 +84,9 @@ class IngredientsUiTest {
         }
 
         compose.onNodeWithText("名称").assertIsDisplayed()
-        compose.onNodeWithText("分类（可选）").assertIsDisplayed()
-        compose.onNodeWithText("默认单位").assertIsDisplayed()
-        compose.onNodeWithText("克（g）").assertIsDisplayed()
+        compose.onNodeWithText("CLASSIFICATION / 分类归属").assertIsDisplayed()
+        compose.onNodeWithText("默认单位").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("克（g）").performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("保存").performScrollTo().assertIsDisplayed()
     }
 

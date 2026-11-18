@@ -4,6 +4,7 @@ import com.culinary.core.common.CulinaryError
 import com.culinary.core.domain.model.ArchiveCategory
 import com.culinary.core.domain.model.IngredientDetail
 import com.culinary.core.domain.model.KitchenRelatedRecord
+import com.culinary.core.domain.model.PendingIngredientImage
 import com.culinary.core.domain.model.Unit as UnitModel
 
 /** 食材列表行：已解析默认单位标签，UI 不直接查仓库。 */
@@ -27,6 +28,7 @@ data class IngredientDetailUiState(
     val detail: IngredientDetail? = null,
     val categoryPath: List<String> = emptyList(),
     val imageBytes: ByteArray? = null,
+    val referenceImageBytes: List<ByteArray> = emptyList(),
     val isLoading: Boolean = true,
     val isArchiving: Boolean = false,
     val archived: Boolean = false,
@@ -41,16 +43,31 @@ data class IngredientEditorUiState(
     val category: String = "",
     val description: String = "",
     val englishName: String = "",
+    val scientificName: String = "",
+    val commonVarieties: String = "",
+    val ediblePortion: String = "",
+    val flavorProfile: String = "",
+    val seasonality: String = "",
+    val origin: String = "",
+    val selectionNotes: String = "",
+    val prepNotes: String = "",
     val exampleProducts: String = "",
     val storageNotes: String = "",
     val allergenNotes: String = "",
+    val primaryImageId: String? = null,
+    val primaryImageBytes: ByteArray? = null,
+    val pendingPrimaryImage: PendingIngredientImage? = null,
+    val referenceImages: List<IngredientImageDraft> = emptyList(),
+    val removedImageIds: List<String> = emptyList(),
     val categories: List<ArchiveCategory> = emptyList(),
     val categoryPathIds: List<String> = emptyList(),
     val defaultUnit: UnitModel? = null,
     val units: List<UnitModel> = emptyList(),
+    val conversions: List<IngredientConversionDraft> = emptyList(),
     val isLoading: Boolean = true,
     val isSaving: Boolean = false,
     val saved: Boolean = false,
+    val savedIngredientId: String? = null,
     val error: String? = null,
 ) {
     val isNew: Boolean get() = ingredientId == null
@@ -87,3 +104,14 @@ object IngredientErrorMessages {
             else -> "输入不合法。"
         }
 }
+
+/** 编辑器中已存在或待保存的食材附图。 */
+data class IngredientImageDraft(val id: String?, val bytes: ByteArray, val mimeType: String = "image/jpeg")
+
+/** 食材档案中的单位换算编辑行。 */
+data class IngredientConversionDraft(
+    val fromUnitId: String,
+    val toUnitId: String,
+    val factor: String,
+    val note: String = "",
+)

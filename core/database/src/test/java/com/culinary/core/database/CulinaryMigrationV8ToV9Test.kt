@@ -37,20 +37,20 @@ class CulinaryMigrationV8ToV9Test {
     }
 
     @Test
-    fun `migrates v8 to v9 and backfills archive ownership`() {
+    fun `migrates v8 through the current schema and backfills archive ownership`() {
         createV8()
         val opened =
             Room
                 .databaseBuilder(context, CulinaryDatabase::class.java, DATABASE_NAME)
                 .setJournalMode(RoomDatabase.JournalMode.TRUNCATE)
-                .addMigrations(CulinaryMigrations.MIGRATION_8_9)
+                .addMigrations(CulinaryMigrations.MIGRATION_8_9, CulinaryMigrations.MIGRATION_9_10)
                 .addCallback(CulinaryDatabaseCallback())
                 .allowMainThreadQueries()
                 .build()
         database = opened
         val sqlite = opened.openHelper.writableDatabase
 
-        assertThat(userVersion(sqlite)).isEqualTo(9)
+        assertThat(userVersion(sqlite)).isEqualTo(10)
 
         // 旧批次保留并被挂到自动生成的档案上
         assertThat(columnNames(sqlite, "inventory_batch"))

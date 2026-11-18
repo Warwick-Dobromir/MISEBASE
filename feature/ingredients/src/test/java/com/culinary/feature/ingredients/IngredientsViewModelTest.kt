@@ -4,6 +4,8 @@ import androidx.lifecycle.SavedStateHandle
 import com.culinary.core.common.CulinaryError
 import com.culinary.core.common.IdGenerator
 import com.culinary.core.common.Outcome
+import com.culinary.core.domain.model.ArchiveImage
+import com.culinary.core.domain.model.ArchiveImageOwner
 import com.culinary.core.domain.model.EntityStatus
 import com.culinary.core.domain.model.Ingredient
 import com.culinary.core.domain.model.IngredientId
@@ -11,10 +13,12 @@ import com.culinary.core.domain.model.IngredientUnitConversion
 import com.culinary.core.domain.model.KitchenRelatedRecord
 import com.culinary.core.domain.model.UnitDimension
 import com.culinary.core.domain.model.UnitId
+import com.culinary.core.domain.repository.ArchiveImageRepository
 import com.culinary.core.domain.repository.IngredientRepository
 import com.culinary.core.domain.repository.KitchenRelationRepository
 import com.culinary.core.domain.repository.UnitRepository
 import com.culinary.core.domain.transaction.TransactionRunner
+import com.culinary.core.domain.usecase.archive.ArchiveImageUseCase
 import com.culinary.core.domain.usecase.ingredient.ArchiveIngredientUseCase
 import com.culinary.core.domain.usecase.ingredient.GetIngredientDetailUseCase
 import com.culinary.core.domain.usecase.ingredient.ListIngredientsUseCase
@@ -48,6 +52,7 @@ class IngredientsViewModelTest {
     private val saveIngredient = SaveIngredientUseCase(ingredients, IdGenerator { "id-${counter++}" }, tx)
     private val archiveIngredient = ArchiveIngredientUseCase(ingredients, tx)
     private val detail = GetIngredientDetailUseCase(ingredients, units)
+    private val archiveImages = ArchiveImageUseCase(FakeArchiveImageRepository())
 
     @Before
     fun setUp() {
@@ -88,6 +93,7 @@ class IngredientsViewModelTest {
                     getIngredientDetail = detail,
                     archiveIngredient = archiveIngredient,
                     getRelations = emptyRelations(),
+                    archiveImages = archiveImages,
                 )
 
             advanceUntilIdle()
@@ -149,6 +155,7 @@ class IngredientsViewModelTest {
                     getIngredientDetail = detail,
                     archiveIngredient = archiveIngredient,
                     getRelations = emptyRelations(),
+                    archiveImages = archiveImages,
                 )
             advanceUntilIdle()
 
@@ -168,6 +175,7 @@ class IngredientsViewModelTest {
             getIngredientDetail = detail,
             saveIngredient = saveIngredient,
             listUnits = ListUnitsUseCase(units),
+            archiveImages = archiveImages,
         )
 
     private fun ingredient(): Ingredient =
@@ -180,6 +188,20 @@ class IngredientsViewModelTest {
             category = "粉类",
         )
 
+    private class FakeArchiveImageRepository : ArchiveImageRepository {
+        override suspend fun list(owner: ArchiveImageOwner, ownerId: String): List<ArchiveImage> = emptyList()
+
+        override suspend fun read(imageId: String): ByteArray? = null
+
+        override suspend fun addIngredient(
+            ingredientId: String,
+            role: String,
+            bytes: ByteArray,
+            mimeType: String,
+        ): Outcome<ArchiveImage> = Outcome.failure(CulinaryError.Validation("image", "not used in this test"))
+
+        override suspend fun delete(imageId: String): Outcome<Unit> = Outcome.success(Unit)
+    }
     private class FakeIngredientRepository : IngredientRepository {
         val items = mutableListOf<Ingredient>()
         val archived = mutableListOf<IngredientId>()

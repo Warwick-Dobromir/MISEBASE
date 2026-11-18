@@ -7,6 +7,7 @@ import com.culinary.core.common.flatMap
 import com.culinary.core.domain.model.EntityStatus
 import com.culinary.core.domain.model.Ingredient
 import com.culinary.core.domain.model.IngredientId
+import com.culinary.core.domain.model.IngredientUnitConversion
 import com.culinary.core.domain.model.UnitId
 import com.culinary.core.domain.repository.IngredientRepository
 import com.culinary.core.domain.rule.common.NameText
@@ -20,9 +21,18 @@ data class SaveIngredientInput(
     val category: String? = null,
     val description: String? = null,
     val englishName: String? = null,
+    val scientificName: String? = null,
+    val commonVarieties: String? = null,
+    val ediblePortion: String? = null,
+    val flavorProfile: String? = null,
+    val seasonality: String? = null,
+    val origin: String? = null,
+    val selectionNotes: String? = null,
+    val prepNotes: String? = null,
     val exampleProducts: String? = null,
     val storageNotes: String? = null,
     val allergenNotes: String? = null,
+    val conversions: List<IngredientUnitConversion> = emptyList(),
 )
 
 /**
@@ -64,13 +74,21 @@ class SaveIngredientUseCase(
                 defaultUnitId = input.defaultUnitId,
                 category = input.category.blankToNull(),
                 description = input.description.blankToNull(),
-                englishName = input.englishName.blankToNull() ?: existing?.englishName,
-                exampleProducts = input.exampleProducts.blankToNull() ?: existing?.exampleProducts,
-                storageNotes = input.storageNotes.blankToNull() ?: existing?.storageNotes,
-                allergenNotes = input.allergenNotes.blankToNull() ?: existing?.allergenNotes,
+                englishName = input.englishName.blankToNull(),
+                scientificName = input.scientificName.blankToNull(),
+                commonVarieties = input.commonVarieties.blankToNull(),
+                ediblePortion = input.ediblePortion.blankToNull(),
+                flavorProfile = input.flavorProfile.blankToNull(),
+                seasonality = input.seasonality.blankToNull(),
+                origin = input.origin.blankToNull(),
+                selectionNotes = input.selectionNotes.blankToNull(),
+                prepNotes = input.prepNotes.blankToNull(),
+                exampleProducts = input.exampleProducts.blankToNull(),
+                storageNotes = input.storageNotes.blankToNull(),
+                allergenNotes = input.allergenNotes.blankToNull(),
             )
 
-        return transactionRunner.write { repository.save(ingredient) }.flatMap { it }
+        return transactionRunner.write { repository.saveWithConversions(ingredient, input.conversions) }.flatMap { it }
     }
 
     private fun validate(input: SaveIngredientInput): CulinaryError? {

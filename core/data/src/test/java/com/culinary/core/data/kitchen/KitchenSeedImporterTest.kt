@@ -43,7 +43,14 @@ class KitchenSeedImporterTest {
     private val importer =
         KitchenSeedImporter(
             seedReader = KitchenSeedReader { File("src/main/assets/kitchen_seed_v1.json").readText() },
-            ingredientRepository = IngredientRepositoryImpl(database.ingredientDao(), clock),
+            ingredientRepository =
+                IngredientRepositoryImpl(
+                    database.ingredientDao(),
+                    database.ingredientUnitConversionDao(),
+                    database.changeLogDao(),
+                    clock,
+                    idGenerator,
+                ),
             sauceRepository =
                 SauceRepositoryImpl(
                     database.sauceDao(),

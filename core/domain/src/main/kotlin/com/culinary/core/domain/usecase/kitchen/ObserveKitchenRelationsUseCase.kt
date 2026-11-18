@@ -9,4 +9,6 @@ class ObserveKitchenRelationsUseCase(
     private val repository: KitchenRelationRepository,
 ) {
     operator fun invoke(recordId: String): Flow<List<KitchenRelatedRecord>> = repository.observeForRecord(recordId)
+
+    fun referencing(recordId: String): Flow<List<KitchenRelatedRecord>> = repository.observeReferencingRecord(recordId)
 }

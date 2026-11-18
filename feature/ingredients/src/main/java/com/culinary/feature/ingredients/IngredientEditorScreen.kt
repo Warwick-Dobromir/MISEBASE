@@ -1,6 +1,9 @@
 package com.culinary.feature.ingredients
 
+import android.graphics.BitmapFactory
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -27,16 +30,17 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.culinary.core.designsystem.component.CulinaryButton
 import com.culinary.core.designsystem.component.CulinaryRule
+import com.culinary.core.designsystem.component.CulinaryTextButton
 import com.culinary.core.designsystem.component.CulinaryTextField
 import com.culinary.core.designsystem.component.ErrorBanner
 import com.culinary.core.designsystem.component.LoadingRows
-import com.culinary.core.designsystem.component.PageHeader
 import com.culinary.core.designsystem.component.SectionHeader
 import com.culinary.core.designsystem.icon.CulinaryIcons
 import com.culinary.core.designsystem.theme.CulinarySpacing
@@ -46,16 +50,20 @@ import com.culinary.core.domain.model.ArchiveCategory
 /** 食材编辑器路由：名称、分类、默认单位、描述。 */
 @Composable
 fun IngredientEditorRoute(
-    onSaved: () -> Unit,
+    onSaved: (String) -> Unit,
+    onCancelled: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: IngredientEditorViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     var showUnitPicker by remember { mutableStateOf(false) }
+    var conversionUnitTarget by remember { mutableStateOf<Pair<Int, Boolean>?>(null) }
+    val pickPrimaryImage = rememberIngredientImagePicker(viewModel::onPrimaryImagePicked)
+    val pickReferenceImage = rememberIngredientImagePicker(viewModel::onReferenceImagePicked)
     val saved = state.saved
 
-    LaunchedEffect(saved) {
-        if (saved) onSaved()
+    LaunchedEffect(saved, state.savedIngredientId) {
+        if (saved) state.savedIngredientId?.let(onSaved)
     }
 
     Column(modifier = modifier.fillMaxSize()) {
@@ -76,11 +84,35 @@ fun IngredientEditorRoute(
                 onCategorySelect = viewModel::onCategorySelect,
                 onDescriptionChange = viewModel::onDescriptionChange,
                 onEnglishNameChange = viewModel::onEnglishNameChange,
+                onScientificNameChange = viewModel::onScientificNameChange,
+                onCommonVarietiesChange = viewModel::onCommonVarietiesChange,
+                onEdiblePortionChange = viewModel::onEdiblePortionChange,
+                onFlavorProfileChange = viewModel::onFlavorProfileChange,
+                onSeasonalityChange = viewModel::onSeasonalityChange,
+                onOriginChange = viewModel::onOriginChange,
+                onSelectionNotesChange = viewModel::onSelectionNotesChange,
+                onPrepNotesChange = viewModel::onPrepNotesChange,
                 onExampleProductsChange = viewModel::onExampleProductsChange,
                 onStorageNotesChange = viewModel::onStorageNotesChange,
                 onAllergenNotesChange = viewModel::onAllergenNotesChange,
-                onOpenUnitPicker = { showUnitPicker = true },
+                onOpenUnitPicker = {
+                    conversionUnitTarget = null
+                    showUnitPicker = true
+                },
+                onAddConversion = viewModel::addConversion,
+                onRemoveConversion = viewModel::removeConversion,
+                onOpenConversionUnitPicker = { index, from ->
+                    conversionUnitTarget = index to from
+                    showUnitPicker = true
+                },
+                onConversionFactorChange = viewModel::onConversionFactorChange,
+                onConversionNoteChange = viewModel::onConversionNoteChange,
+                onPickPrimaryImage = pickPrimaryImage,
+                onRemovePrimaryImage = viewModel::onPrimaryImageRemoved,
+                onPickReferenceImage = pickReferenceImage,
+                onRemoveReferenceImage = viewModel::onReferenceImageRemoved,
                 onSave = viewModel::save,
+                onCancel = onCancelled,
             )
         }
     }
@@ -88,9 +120,15 @@ fun IngredientEditorRoute(
     if (showUnitPicker) {
         IngredientUnitPickerDialog(
             units = state.units,
-            selectedId = state.defaultUnit?.id?.value,
-            onSelect = {
-                viewModel.onUnitChange(it)
+            selectedId = conversionUnitTarget?.let { (index, from) ->
+                state.conversions.getOrNull(index)?.let { if (from) it.fromUnitId else it.toUnitId }
+            } ?: state.defaultUnit?.id?.value,
+            onSelect = { unit ->
+                val target = conversionUnitTarget
+                if (target == null) viewModel.onUnitChange(unit)
+                else if (target.second) viewModel.onConversionFromUnitChange(target.first, unit)
+                else viewModel.onConversionToUnitChange(target.first, unit)
+                conversionUnitTarget = null
                 showUnitPicker = false
             },
             onDismiss = { showUnitPicker = false },
@@ -107,11 +145,29 @@ internal fun IngredientEditorForm(
     onCategorySelect: (Int, String?) -> Unit = { _, _ -> },
     onDescriptionChange: (String) -> Unit,
     onEnglishNameChange: (String) -> Unit,
+    onScientificNameChange: (String) -> Unit = {},
+    onCommonVarietiesChange: (String) -> Unit = {},
+    onEdiblePortionChange: (String) -> Unit = {},
+    onFlavorProfileChange: (String) -> Unit = {},
+    onSeasonalityChange: (String) -> Unit = {},
+    onOriginChange: (String) -> Unit = {},
+    onSelectionNotesChange: (String) -> Unit = {},
+    onPrepNotesChange: (String) -> Unit = {},
     onExampleProductsChange: (String) -> Unit,
     onStorageNotesChange: (String) -> Unit,
     onAllergenNotesChange: (String) -> Unit,
     onOpenUnitPicker: () -> Unit,
+    onAddConversion: () -> Unit = {},
+    onRemoveConversion: (Int) -> Unit = {},
+    onOpenConversionUnitPicker: (Int, Boolean) -> Unit = { _, _ -> },
+    onConversionFactorChange: (Int, String) -> Unit = { _, _ -> },
+    onConversionNoteChange: (Int, String) -> Unit = { _, _ -> },
+    onPickPrimaryImage: () -> Unit = {},
+    onRemovePrimaryImage: () -> Unit = {},
+    onPickReferenceImage: () -> Unit = {},
+    onRemoveReferenceImage: (Int) -> Unit = {},
     onSave: () -> Unit,
+    onCancel: () -> Unit = {},
 ) {
     Column(
         modifier =
@@ -120,18 +176,29 @@ internal fun IngredientEditorForm(
                 .verticalScroll(rememberScrollState())
                 .padding(bottom = CulinarySpacing.xl),
     ) {
-        PageHeader(
-            eyebrow = "INGREDIENT",
-            title =
-                stringResource(
-                    if (state.isNew) {
-                        R.string.ingredients_editor_new_title
-                    } else {
-                        R.string.ingredients_editor_edit_title
-                    },
+        Row(
+            modifier = Modifier.fillMaxWidth().height(56.dp).padding(horizontal = CulinarySpacing.xs),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(
+                imageVector = CulinaryIcons.Back,
+                contentDescription = "返回",
+                modifier = Modifier.size(40.dp).clickable(onClick = onCancel).padding(10.dp),
+            )
+            Spacer(modifier = Modifier.weight(1f))
+            Text(
+                text = stringResource(
+                    if (state.isNew) R.string.ingredients_editor_new_title else R.string.ingredients_editor_edit_title,
                 ),
-        )
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            Spacer(modifier = Modifier.weight(1f))
+            Spacer(modifier = Modifier.size(40.dp))
+        }
+        CulinaryRule()
         Column(modifier = Modifier.padding(horizontal = CulinarySpacing.pageHorizontal)) {
+            SectionHeader(title = "01  基本信息")
             CulinaryTextField(
                 value = state.name,
                 onValueChange = onNameChange,
@@ -144,12 +211,124 @@ internal fun IngredientEditorForm(
                 onCategorySelect = onCategorySelect,
                 onLegacyCategoryChange = onCategoryChange,
             )
+            CulinaryTextField(
+                value = state.englishName,
+                onValueChange = onEnglishNameChange,
+                label = { Text(text = stringResource(R.string.ingredients_english_name)) },
+                singleLine = true,
+            )
+            Spacer(modifier = Modifier.height(CulinarySpacing.field))
+            CulinaryTextField(
+                value = state.scientificName,
+                onValueChange = onScientificNameChange,
+                label = { Text("学名") },
+                singleLine = true,
+            )
+            Spacer(modifier = Modifier.height(CulinarySpacing.field))
+            CulinaryTextField(
+                value = state.commonVarieties,
+                onValueChange = onCommonVarietiesChange,
+                label = { Text("常见品种") },
+                minLines = 2,
+            )
+            Spacer(modifier = Modifier.height(CulinarySpacing.field))
+            CulinaryTextField(
+                value = state.ediblePortion,
+                onValueChange = onEdiblePortionChange,
+                label = { Text("可食用部分") },
+                minLines = 2,
+            )
+            Spacer(modifier = Modifier.height(CulinarySpacing.field))
+            SectionHeader(title = "02  图片资料")
+            state.primaryImageBytes?.let { bytes ->
+                val bitmap = remember(bytes) { BitmapFactory.decodeByteArray(bytes, 0, bytes.size)?.asImageBitmap() }
+                bitmap?.let {
+                    Image(
+                        bitmap = it,
+                        contentDescription = "食材主图",
+                        modifier = Modifier.fillMaxWidth().height(180.dp),
+                        contentScale = ContentScale.Crop,
+                    )
+                }
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(CulinarySpacing.lg)) {
+                CulinaryTextButton(
+                    text = if (state.primaryImageBytes == null) "添加主图" else "更换主图",
+                    onClick = onPickPrimaryImage,
+                )
+                if (state.primaryImageBytes != null) {
+                    CulinaryTextButton(text = "删除主图", onClick = onRemovePrimaryImage, danger = true)
+                }
+            }
+            SectionHeader(title = "补充图片")
+            state.referenceImages.forEachIndexed { index, image ->
+                val bitmap = remember(image.bytes) { BitmapFactory.decodeByteArray(image.bytes, 0, image.bytes.size)?.asImageBitmap() }
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(vertical = CulinarySpacing.xs),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(CulinarySpacing.sm),
+                ) {
+                    bitmap?.let {
+                        Image(
+                            bitmap = it,
+                            contentDescription = "食材补充图片",
+                            modifier = Modifier.size(72.dp),
+                            contentScale = ContentScale.Crop,
+                        )
+                    }
+                    CulinaryTextButton(text = "删除", onClick = { onRemoveReferenceImage(index) }, danger = true)
+                }
+            }
+            CulinaryTextButton(text = "添加补充图片", onClick = onPickReferenceImage)
+            SectionHeader(title = "03  计量信息")
             SectionHeader(title = stringResource(R.string.ingredients_default_unit))
             UnitSelectionRow(
                 value =
                     state.defaultUnit?.let { "${it.name}（${it.symbol}）" }
                         ?: stringResource(R.string.ingredients_no_unit),
                 onClick = onOpenUnitPicker,
+            )
+            Spacer(modifier = Modifier.height(CulinarySpacing.field))
+            SectionHeader(title = "其他单位与换算关系")
+            state.conversions.forEachIndexed { index, conversion ->
+                val from = state.units.firstOrNull { it.id.value == conversion.fromUnitId }
+                val to = state.units.firstOrNull { it.id.value == conversion.toUnitId }
+                Text(
+                    text = "换算关系 " + (index + 1),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                UnitSelectionRow(
+                    value = from?.let { "${it.name}（${it.symbol}）" } ?: "选择原单位",
+                    onClick = { onOpenConversionUnitPicker(index, true) },
+                )
+                UnitSelectionRow(
+                    value = to?.let { "${it.name}（${it.symbol}）" } ?: "选择目标单位",
+                    onClick = { onOpenConversionUnitPicker(index, false) },
+                )
+                CulinaryTextField(
+                    value = conversion.factor,
+                    onValueChange = { onConversionFactorChange(index, it) },
+                    label = { Text("换算系数：1 原单位 = ? 目标单位") },
+                    singleLine = true,
+                )
+                CulinaryTextField(
+                    value = conversion.note,
+                    onValueChange = { onConversionNoteChange(index, it) },
+                    label = { Text("换算依据（选填）") },
+                    minLines = 2,
+                )
+                CulinaryTextButton(text = "删除换算关系", onClick = { onRemoveConversion(index) }, danger = true)
+                Spacer(modifier = Modifier.height(CulinarySpacing.field))
+            }
+            CulinaryTextButton(text = "添加换算关系", onClick = onAddConversion)
+            Spacer(modifier = Modifier.height(CulinarySpacing.field))
+            SectionHeader(title = "04  风味与特性")
+            CulinaryTextField(
+                value = state.flavorProfile,
+                onValueChange = onFlavorProfileChange,
+                label = { Text("风味与特性") },
+                minLines = 3,
             )
             Spacer(modifier = Modifier.height(CulinarySpacing.field))
             CulinaryTextField(
@@ -159,13 +338,7 @@ internal fun IngredientEditorForm(
                 minLines = 3,
             )
             Spacer(modifier = Modifier.height(CulinarySpacing.field))
-            CulinaryTextField(
-                value = state.englishName,
-                onValueChange = onEnglishNameChange,
-                label = { Text(text = stringResource(R.string.ingredients_english_name)) },
-                singleLine = true,
-            )
-            Spacer(modifier = Modifier.height(CulinarySpacing.field))
+            SectionHeader(title = "05  烹饪用途")
             CulinaryTextField(
                 value = state.exampleProducts,
                 onValueChange = onExampleProductsChange,
@@ -173,6 +346,35 @@ internal fun IngredientEditorForm(
                 minLines = 2,
             )
             Spacer(modifier = Modifier.height(CulinarySpacing.field))
+            SectionHeader(title = "06  其他信息")
+            Spacer(modifier = Modifier.height(CulinarySpacing.field))
+            CulinaryTextField(
+                value = state.seasonality,
+                onValueChange = onSeasonalityChange,
+                label = { Text("季节性 / 时令") },
+                minLines = 2,
+            )
+            Spacer(modifier = Modifier.height(CulinarySpacing.field))
+            CulinaryTextField(
+                value = state.origin,
+                onValueChange = onOriginChange,
+                label = { Text("产地") },
+                singleLine = true,
+            )
+            Spacer(modifier = Modifier.height(CulinarySpacing.field))
+            CulinaryTextField(
+                value = state.selectionNotes,
+                onValueChange = onSelectionNotesChange,
+                label = { Text("挑选建议") },
+                minLines = 2,
+            )
+            Spacer(modifier = Modifier.height(CulinarySpacing.field))
+            CulinaryTextField(
+                value = state.prepNotes,
+                onValueChange = onPrepNotesChange,
+                label = { Text("预处理方法") },
+                minLines = 2,
+            )
             CulinaryTextField(
                 value = state.storageNotes,
                 onValueChange = onStorageNotesChange,
@@ -187,20 +389,20 @@ internal fun IngredientEditorForm(
                 minLines = 2,
             )
             Spacer(modifier = Modifier.height(CulinarySpacing.xl))
-            CulinaryButton(
-                text =
-                    stringResource(
-                        if (state.isSaving) {
-                            R.string.ingredients_saving
-                        } else {
-                            R.string.ingredients_save
-                        },
-                    ),
-                onClick = onSave,
-                enabled = !state.isSaving,
-                loading = state.isSaving,
+            Row(
                 modifier = Modifier.fillMaxWidth(),
-            )
+                horizontalArrangement = Arrangement.spacedBy(CulinarySpacing.lg),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                CulinaryTextButton(
+                    text = stringResource(R.string.ingredients_cancel),
+                    onClick = onCancel,
+                )
+                CulinaryTextButton(
+                    text = stringResource(if (state.isSaving) R.string.ingredients_saving else R.string.ingredients_save),
+                    onClick = onSave,
+                )
+            }
         }
     }
 }

@@ -1,5 +1,7 @@
 package com.culinary.core.domain.usecase.archive
 
+import com.culinary.core.common.CulinaryError
+import com.culinary.core.common.Outcome
 import com.culinary.core.domain.model.ArchiveImage
 import com.culinary.core.domain.model.ArchiveImageOwner
 import com.culinary.core.domain.repository.ArchiveImageRepository
@@ -38,4 +40,17 @@ class ArchiveImageUseCase(
         }
         return result
     }
+
+    suspend fun addIngredient(
+        ingredientId: String,
+        role: String,
+        bytes: ByteArray,
+        mimeType: String,
+    ): Outcome<ArchiveImage> =
+        repository?.addIngredient(ingredientId, role, bytes, mimeType)
+            ?: Outcome.failure(CulinaryError.Validation("archive.image", "image repository unavailable"))
+
+    suspend fun delete(imageId: String): Outcome<Unit> =
+        repository?.delete(imageId)
+            ?: Outcome.failure(CulinaryError.Validation("archive.image", "image repository unavailable"))
 }
