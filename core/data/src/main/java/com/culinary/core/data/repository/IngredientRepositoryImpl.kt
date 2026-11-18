@@ -1,12 +1,17 @@
 package com.culinary.core.data.repository
 
 import com.culinary.core.common.Clock
+import com.culinary.core.common.IdGenerator
 import com.culinary.core.common.CulinaryError
 import com.culinary.core.common.Outcome
 import com.culinary.core.data.mapper.IngredientMapper
 import com.culinary.core.data.transaction.DbErrorMapper
+import com.culinary.core.database.dao.ChangeLogDao
 import com.culinary.core.database.dao.IngredientDao
+import com.culinary.core.database.entity.ChangeLogEntity
+import com.culinary.core.database.model.ChangeActionDb
 import com.culinary.core.domain.model.Ingredient
+import com.culinary.core.domain.model.IngredientChangeRecord
 import com.culinary.core.domain.model.IngredientId
 import com.culinary.core.domain.repository.IngredientRepository
 import kotlinx.coroutines.CancellationException
@@ -25,7 +30,9 @@ class IngredientRepositoryImpl
     @Inject
     constructor(
         private val dao: IngredientDao,
+        private val changeLogDao: ChangeLogDao,
         private val clock: Clock,
+        private val idGenerator: IdGenerator,
     ) : IngredientRepository {
         override fun observeActive(): Flow<List<Ingredient>> =
             dao.observeActive().map { entities -> entities.map(IngredientMapper::toDomain) }
