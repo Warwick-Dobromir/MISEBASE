@@ -1,5 +1,6 @@
 package com.culinary.feature.ingredients
 
+import com.culinary.core.common.Outcome
 import com.culinary.core.domain.model.ComponentTarget
 import com.culinary.core.domain.model.IngredientId
 import com.culinary.core.domain.model.KitchenRecordKind
@@ -94,7 +95,10 @@ class GetIngredientApplicationsUseCase
                     is ComponentTarget.Sauce -> {
                         val key = target.versionId.value
                         if (visitedSauces.add(key)) {
-                            val version = (sauceRepository.getVersion(target.versionId) as? com.culinary.core.common.Outcome.Success)?.value
+                            val version = when (val result = sauceRepository.getVersion(target.versionId)) {
+                                is Outcome.Success -> result.value
+                                is Outcome.Failure -> null
+                            }
                             if (version != null && containsIngredient(
                                     version.components.map { it.target },
                                     ingredientId,
