@@ -118,6 +118,28 @@ class ArchiveLibraryScreenTest {
     }
 
     @Test
+    fun `ingredient library uses the same sort icon entry`() {
+        show(section = KitchenArchiveSection.INGREDIENTS)
+
+        compose.onNodeWithText("酱汁基础").performClick()
+        compose.onNodeWithContentDescription("排列下级分类").performClick()
+
+        compose.onNodeWithText("保存").assertIsDisplayed()
+        compose.onNodeWithContentDescription("返回排序").assertIsDisplayed()
+    }
+
+    @Test
+    fun `recipe library uses the same sort icon entry`() {
+        show(section = KitchenArchiveSection.RECIPES)
+
+        compose.onNodeWithText("酱汁基础").performClick()
+        compose.onNodeWithContentDescription("排列下级分类").performClick()
+
+        compose.onNodeWithText("保存").assertIsDisplayed()
+        compose.onNodeWithContentDescription("返回排序").assertIsDisplayed()
+    }
+
+    @Test
     fun `library search shows result with category path and is isolated to section`() {
         show()
 
@@ -134,11 +156,13 @@ class ArchiveLibraryScreenTest {
         onOpenEntry: (KitchenArchiveEntry) -> Unit = {},
         onCreateSubcategory: (String?, String) -> Unit = { _, _ -> },
     ) {
+        val sectionEntries = entries.map { it.copy(kind = section.kind) }
+        val sectionCategories = categories.map { it.copy(library = section.kind) }
         compose.setContent {
             CulinaryTheme {
                 ArchiveLibraryScreen(
                     section = section,
-                    state = ArchiveLibraryUiState(entries = entries, categories = categories, isLoading = false),
+                    state = ArchiveLibraryUiState(entries = sectionEntries, categories = sectionCategories, isLoading = false),
                     onAdd = onAdd,
                     onOpenEntry = onOpenEntry,
                     onCreateSubcategory = onCreateSubcategory,
