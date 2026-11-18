@@ -142,7 +142,7 @@ internal fun IngredientDetailContent(
                     text = it,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(top = -CulinarySpacing.xs),
+                    modifier = Modifier,
                 )
                 Spacer(modifier = Modifier.height(CulinarySpacing.md))
             }
