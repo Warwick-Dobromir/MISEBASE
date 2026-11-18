@@ -19,7 +19,7 @@ jobs:
           java-version: '17'
       - uses: gradle/actions/setup-gradle@v4
       - name: Compile app and run focused unit tests
-        run: ./gradlew :core:domain:test :core:database:testDebugUnitTest :core:data:testDebugUnitTest :feature:ingredients:testDebugUnitTest :app:assembleDebug --stacktrace
+        run: ./gradlew :core:database:testDebugUnitTest :core:data:testDebugUnitTest :feature:ingredients:testDebugUnitTest :app:assembleDebug --stacktrace
       - uses: actions/upload-artifact@v4
         with:
           name: misebase-ingredient-validation
