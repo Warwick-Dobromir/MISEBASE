@@ -41,6 +41,10 @@ data class IngredientEntity(
     val normalizedName: String,
     @ColumnInfo(name = "scientific_name")
     val scientificName: String? = null,
+    @ColumnInfo(name = "common_varieties")
+    val commonVarieties: String? = null,
+    @ColumnInfo(name = "edible_portion")
+    val ediblePortion: String? = null,
     @ColumnInfo(name = "category")
     val category: String? = null,
     @ColumnInfo(name = "description")
