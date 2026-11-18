@@ -4,7 +4,7 @@ name: Android APK
 
 on:
   push:
-    branches: [main, fix/archive-category-interactions, fix/archive-sort-feedback, build/pen-flip-90fb110]
+    branches: [main, fix/archive-category-interactions, fix/archive-sort-feedback, build/pen-flip-90fb110, ui/subcategory-search-sort-20261118]
   workflow_dispatch:
 
 permissions:
