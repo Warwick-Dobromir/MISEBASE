@@ -93,6 +93,8 @@ class IngredientEditorViewModel
                                             .orEmpty(),
                                     englishName = result.value.ingredient.englishName.orEmpty(),
                                     scientificName = result.value.ingredient.scientificName.orEmpty(),
+                                    commonVarieties = result.value.ingredient.commonVarieties.orEmpty(),
+                                    ediblePortion = result.value.ingredient.ediblePortion.orEmpty(),
                                     flavorProfile = result.value.ingredient.flavorProfile.orEmpty(),
                                     seasonality = result.value.ingredient.seasonality.orEmpty(),
                                     origin = result.value.ingredient.origin.orEmpty(),
@@ -165,6 +167,14 @@ class IngredientEditorViewModel
 
         fun onScientificNameChange(value: String) {
             _uiState.update { it.copy(scientificName = value) }
+        }
+
+        fun onCommonVarietiesChange(value: String) {
+            _uiState.update { it.copy(commonVarieties = value) }
+        }
+
+        fun onEdiblePortionChange(value: String) {
+            _uiState.update { it.copy(ediblePortion = value) }
         }
 
         fun onFlavorProfileChange(value: String) {
@@ -359,6 +369,8 @@ class IngredientEditorViewModel
                             description = state.description,
                             englishName = state.englishName,
                             scientificName = state.scientificName,
+                            commonVarieties = state.commonVarieties,
+                            ediblePortion = state.ediblePortion,
                             flavorProfile = state.flavorProfile,
                             seasonality = state.seasonality,
                             origin = state.origin,
