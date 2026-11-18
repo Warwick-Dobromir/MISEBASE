@@ -23,8 +23,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
@@ -364,10 +366,31 @@ internal fun ArchiveLibraryScreen(
             hostState = sortSnackbarHostState,
             modifier = Modifier.fillMaxWidth(),
         )
+        if (sorting) {
+            Column(
+                modifier = Modifier.fillMaxWidth().navigationBarsPadding()
+                    .background(MaterialTheme.colorScheme.surface),
+            ) {
+                androidx.compose.material3.HorizontalDivider(
+                    thickness = 1.dp,
+                    color = MaterialTheme.colorScheme.outlineVariant,
+                )
+                Box(
+                    modifier = Modifier.fillMaxWidth().height(68.dp)
+                        .clickable { requestSortReturn() },
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        text = "取消",
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+        }
         }
 
-        if (currentCategoryId != null) {
-            ArchiveBackFloatButton(
+        ArchiveBackFloatButton(
                 onClick = {
                     if (sorting) requestSortReturn()
                     else if (currentCategory == null) onBack()
@@ -385,7 +408,8 @@ internal fun ArchiveLibraryScreen(
             onExpand = { searchOpen = true },
             onCollapse = { searchOpen = false },
             modifier = Modifier.align(Alignment.TopEnd)
-                .padding(top = CulinarySpacing.xs, end = CulinarySpacing.pageHorizontal),
+                .padding(top = CulinarySpacing.xs, end = CulinarySpacing.pageHorizontal)
+                .widthIn(max = 220.dp),
         )
     }
 
@@ -518,11 +542,11 @@ private fun ArchiveBackFloatButton(
     modifier: Modifier = Modifier,
 ) {
     Surface(
-        modifier = modifier.size(48.dp),
+        modifier = modifier.size(40.dp),
         shape = CircleShape,
         color = MaterialTheme.colorScheme.surface,
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-        shadowElevation = 1.dp,
+        shadowElevation = 0.dp,
     ) {
         Box(modifier = Modifier.fillMaxSize().clickable(onClick = onClick), contentAlignment = Alignment.Center) {
             Icon(
