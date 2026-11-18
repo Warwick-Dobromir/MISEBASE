@@ -383,14 +383,17 @@ internal fun ArchiveLibraryScreen(
         }
 
         ArchiveBackFloatButton(
-                onClick = {
-                    if (sorting) requestSortReturn()
-                    else if (currentCategory == null) onBack()
-                    else currentCategoryId = currentCategory.parentId
-                },
-                modifier = Modifier.align(Alignment.TopStart)
-                    .padding(top = CulinarySpacing.xs, start = CulinarySpacing.pageHorizontal),
-            )
+            label = currentCategory?.parentId?.let { parentId ->
+                categories.firstOrNull { it.id == parentId }?.name
+            } ?: stringResource(R.string.kitchen_title),
+            onClick = {
+                if (sorting) requestSortReturn()
+                else if (currentCategory == null) onBack()
+                else currentCategoryId = currentCategory.parentId
+            },
+            modifier = Modifier.align(Alignment.TopStart)
+                .padding(top = CulinarySpacing.xs, start = CulinarySpacing.pageHorizontal),
+        )
 
         ArchiveSearchIsland(
             expanded = searchOpen,
@@ -529,24 +532,27 @@ internal fun ArchiveLibraryScreen(
 
 @Composable
 private fun ArchiveBackFloatButton(
+    label: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Surface(
-        modifier = modifier.size(40.dp),
-        shape = CircleShape,
-        color = MaterialTheme.colorScheme.surface,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-        shadowElevation = 0.dp,
+    Row(
+        modifier = modifier.height(40.dp).clickable(onClick = onClick)
+            .padding(horizontal = CulinarySpacing.xxs),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        Box(modifier = Modifier.fillMaxSize().clickable(onClick = onClick), contentAlignment = Alignment.Center) {
-            Icon(
-                imageVector = CulinaryIcons.Back,
-                contentDescription = "返回",
-                tint = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.size(20.dp),
-            )
-        }
+        Icon(
+            imageVector = CulinaryIcons.Back,
+            contentDescription = "返回",
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.size(20.dp),
+        )
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(start = CulinarySpacing.xxs),
+        )
     }
 }
 
