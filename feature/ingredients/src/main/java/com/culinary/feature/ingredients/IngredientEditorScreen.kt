@@ -178,17 +178,47 @@ internal fun IngredientEditorForm(
                 singleLine = true,
             )
             Spacer(modifier = Modifier.height(CulinarySpacing.field))
-            CulinaryTextField(value = state.scientificName, onValueChange = onScientificNameChange, label = { Text("学名") }, singleLine = true)
+            CulinaryTextField(
+                value = state.scientificName,
+                onValueChange = onScientificNameChange,
+                label = { Text("学名") },
+                singleLine = true,
+            )
             Spacer(modifier = Modifier.height(CulinarySpacing.field))
-            CulinaryTextField(value = state.flavorProfile, onValueChange = onFlavorProfileChange, label = { Text("风味与特性") }, minLines = 3)
+            CulinaryTextField(
+                value = state.flavorProfile,
+                onValueChange = onFlavorProfileChange,
+                label = { Text("风味与特性") },
+                minLines = 3,
+            )
             Spacer(modifier = Modifier.height(CulinarySpacing.field))
-            CulinaryTextField(value = state.seasonality, onValueChange = onSeasonalityChange, label = { Text("季节性 / 时令") }, minLines = 2)
+            CulinaryTextField(
+                value = state.seasonality,
+                onValueChange = onSeasonalityChange,
+                label = { Text("季节性 / 时令") },
+                minLines = 2,
+            )
             Spacer(modifier = Modifier.height(CulinarySpacing.field))
-            CulinaryTextField(value = state.origin, onValueChange = onOriginChange, label = { Text("产地") }, singleLine = true)
+            CulinaryTextField(
+                value = state.origin,
+                onValueChange = onOriginChange,
+                label = { Text("产地") },
+                singleLine = true,
+            )
             Spacer(modifier = Modifier.height(CulinarySpacing.field))
-            CulinaryTextField(value = state.selectionNotes, onValueChange = onSelectionNotesChange, label = { Text("挑选建议") }, minLines = 2)
+            CulinaryTextField(
+                value = state.selectionNotes,
+                onValueChange = onSelectionNotesChange,
+                label = { Text("挑选建议") },
+                minLines = 2,
+            )
             Spacer(modifier = Modifier.height(CulinarySpacing.field))
-            CulinaryTextField(value = state.prepNotes, onValueChange = onPrepNotesChange, label = { Text("预处理方法") }, minLines = 2)
+            CulinaryTextField(
+                value = state.prepNotes,
+                onValueChange = onPrepNotesChange,
+                label = { Text("预处理方法") },
+                minLines = 2,
+            )
             Spacer(modifier = Modifier.height(CulinarySpacing.field))
             CulinaryTextField(
                 value = state.exampleProducts,

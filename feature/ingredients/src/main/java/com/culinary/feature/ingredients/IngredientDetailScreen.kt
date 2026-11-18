@@ -121,7 +121,7 @@ internal fun IngredientDetailContent(
                 .padding(bottom = CulinarySpacing.xl),
     ) {
         PageHeader(
-            eyebrow = "INGREDIENT ARCHIVE",
+            eyebrow = "INGREDIENT",
             title = detail.ingredient.name,
             supporting =
                 detailState.categoryPath.joinToString(" / ").ifBlank {

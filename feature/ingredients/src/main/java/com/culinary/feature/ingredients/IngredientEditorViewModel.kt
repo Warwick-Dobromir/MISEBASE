@@ -136,13 +136,33 @@ class IngredientEditorViewModel
             _uiState.update { it.copy(description = value) }
         }
 
-        fun onEnglishNameChange(value: String) { _uiState.update { it.copy(englishName = value) } }
-        fun onScientificNameChange(value: String) { _uiState.update { it.copy(scientificName = value) } }
-        fun onFlavorProfileChange(value: String) { _uiState.update { it.copy(flavorProfile = value) } }
-        fun onSeasonalityChange(value: String) { _uiState.update { it.copy(seasonality = value) } }
-        fun onOriginChange(value: String) { _uiState.update { it.copy(origin = value) } }
-        fun onSelectionNotesChange(value: String) { _uiState.update { it.copy(selectionNotes = value) } }
-        fun onPrepNotesChange(value: String) { _uiState.update { it.copy(prepNotes = value) } }
+        fun onEnglishNameChange(value: String) {
+            _uiState.update { it.copy(englishName = value) }
+        }
+
+        fun onScientificNameChange(value: String) {
+            _uiState.update { it.copy(scientificName = value) }
+        }
+
+        fun onFlavorProfileChange(value: String) {
+            _uiState.update { it.copy(flavorProfile = value) }
+        }
+
+        fun onSeasonalityChange(value: String) {
+            _uiState.update { it.copy(seasonality = value) }
+        }
+
+        fun onOriginChange(value: String) {
+            _uiState.update { it.copy(origin = value) }
+        }
+
+        fun onSelectionNotesChange(value: String) {
+            _uiState.update { it.copy(selectionNotes = value) }
+        }
+
+        fun onPrepNotesChange(value: String) {
+            _uiState.update { it.copy(prepNotes = value) }
+        }
 
         fun onExampleProductsChange(value: String) {
             _uiState.update { it.copy(exampleProducts = value) }
