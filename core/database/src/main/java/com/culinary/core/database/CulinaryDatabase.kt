@@ -162,7 +162,7 @@ import com.culinary.core.database.entity.UnitEntity
         InventoryStocktakeEntity::class,
         InventoryStocktakeLineEntity::class,
     ],
-    version = 9,
+    version = 10,
     exportSchema = true,
 )
 @TypeConverters(
