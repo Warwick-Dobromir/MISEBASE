@@ -50,7 +50,8 @@ import com.culinary.core.domain.model.ArchiveCategory
 /** 食材编辑器路由：名称、分类、默认单位、描述。 */
 @Composable
 fun IngredientEditorRoute(
-    onSaved: () -> Unit,
+    onSaved: (String) -> Unit,
+    onCancelled: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: IngredientEditorViewModel = hiltViewModel(),
 ) {
@@ -61,8 +62,8 @@ fun IngredientEditorRoute(
     val pickReferenceImage = rememberIngredientImagePicker(viewModel::onReferenceImagePicked)
     val saved = state.saved
 
-    LaunchedEffect(saved) {
-        if (saved) onSaved()
+    LaunchedEffect(saved, state.savedIngredientId) {
+        if (saved) state.savedIngredientId?.let(onSaved)
     }
 
     Column(modifier = modifier.fillMaxSize()) {
@@ -111,7 +112,7 @@ fun IngredientEditorRoute(
                 onPickReferenceImage = pickReferenceImage,
                 onRemoveReferenceImage = viewModel::onReferenceImageRemoved,
                 onSave = viewModel::save,
-                onCancel = onSaved,
+                onCancel = onCancelled,
             )
         }
     }
