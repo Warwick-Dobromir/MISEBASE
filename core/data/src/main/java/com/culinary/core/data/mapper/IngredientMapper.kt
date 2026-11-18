@@ -41,6 +41,7 @@ object IngredientMapper {
             seedNote = entity.seedNote,
             seedId = entity.seedId,
             seedVersion = entity.seedVersion,
+            updatedAt = entity.updatedAt,
         )
 
     fun toEntity(
