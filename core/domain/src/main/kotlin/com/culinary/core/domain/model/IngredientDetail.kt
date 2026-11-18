@@ -9,6 +9,7 @@ data class IngredientDetail(
     val ingredient: Ingredient,
     val defaultUnit: Unit?,
     val conversions: List<IngredientConversionView>,
+    val changeHistory: List<IngredientChangeRecord> = emptyList(),
 )
 
 /** 一条换算依据；缺少任一单位时不猜数，保留 id 供诊断。 */
@@ -20,3 +21,6 @@ data class IngredientConversionView(
     val factor: Double,
     val note: String?,
 )
+
+/** 只读修改记录，不保存档案快照，也不支持回退。 */
+data class IngredientChangeRecord(val action: String, val createdAt: Long)
