@@ -25,7 +25,7 @@ class KitchenScreenTest {
     val compose = createComposeRule()
 
     @Test
-    fun `renders masthead two groups six categories and dynamic counts`() {
+    fun `renders kitchen masthead three core libraries and dynamic counts`() {
         compose.setContent {
             KitchenUnderTest(
                 state =
@@ -47,9 +47,8 @@ class KitchenScreenTest {
         compose.onNodeWithText("MISEBASE").assertIsDisplayed()
         compose.onNodeWithText("厨房").assertIsDisplayed()
         compose.onNodeWithText("烹饪资料").assertIsDisplayed()
-        compose.onNodeWithText("工作标准").assertIsDisplayed()
         compose.onNodeWithText("酱汁").assertIsDisplayed()
-        compose.onAllNodesWithText("共 10 条档案").assertCountEquals(5)
+        compose.onAllNodesWithText("共 10 条档案").assertCountEquals(2)
         compose.onNodeWithText("共 18 条档案").assertIsDisplayed()
     }
 
