@@ -3,6 +3,7 @@ package com.culinary.feature.ingredients
 import android.graphics.BitmapFactory
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -14,6 +15,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -55,6 +57,7 @@ import com.culinary.core.domain.model.KitchenRelatedRecord
 fun IngredientDetailRoute(
     onEdit: (String) -> Unit,
     onArchived: () -> Unit,
+    onBack: () -> Unit = onArchived,
     onOpenRelation: (KitchenRecordKind, String) -> Unit = { _, _ -> },
     modifier: Modifier = Modifier,
     viewModel: IngredientDetailViewModel = hiltViewModel(),
@@ -90,6 +93,7 @@ fun IngredientDetailRoute(
                 IngredientDetailContent(
                     detailState = state,
                     onEdit = onEdit,
+                    onBack = onBack,
                     onArchive = { showArchiveConfirm = true },
                     onOpenRelation = onOpenRelation,
                 )
@@ -116,6 +120,7 @@ fun IngredientDetailRoute(
 internal fun IngredientDetailContent(
     detailState: IngredientDetailUiState,
     onEdit: (String) -> Unit,
+    onBack: () -> Unit,
     onArchive: () -> Unit,
     onOpenRelation: (KitchenRecordKind, String) -> Unit,
 ) {
@@ -127,6 +132,25 @@ internal fun IngredientDetailContent(
                 .verticalScroll(rememberScrollState())
                 .padding(bottom = CulinarySpacing.xl),
     ) {
+        Row(
+            modifier = Modifier.fillMaxWidth().height(52.dp).padding(horizontal = CulinarySpacing.pageHorizontal),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+        ) {
+            Icon(
+                imageVector = CulinaryIcons.Back,
+                contentDescription = "返回",
+                modifier = Modifier.size(36.dp).clickable(onClick = onBack).padding(8.dp),
+                tint = MaterialTheme.colorScheme.onSurface,
+            )
+            Text(
+                text = "编辑档案",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.clickable { onEdit(detail.ingredient.id.value) }.padding(8.dp),
+            )
+        }
+        com.culinary.core.designsystem.component.CulinaryRule()
         PageHeader(
             eyebrow = "INGREDIENT ARCHIVE",
             title = detail.ingredient.name,
@@ -185,7 +209,7 @@ internal fun IngredientDetailContent(
         }
 
         IngredientHeaderMeta(detail.ingredient)
-        IngredientSummary(detail = detail, onEdit = onEdit, onArchive = onArchive)
+        IngredientSummary(detail = detail, onArchive = onArchive)
         IngredientRelationsSection(detailState.relations, onOpenRelation)
         IngredientChangeHistory(detail.changeHistory)
     }
@@ -194,7 +218,6 @@ internal fun IngredientDetailContent(
 @Composable
 private fun IngredientSummary(
     detail: com.culinary.core.domain.model.IngredientDetail,
-    onEdit: (String) -> Unit,
     onArchive: () -> Unit,
 ) {
     val ingredient = detail.ingredient
@@ -239,12 +262,7 @@ private fun IngredientSummary(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(CulinarySpacing.sm),
         ) {
-            CulinaryButton(
-                text = stringResource(R.string.ingredients_edit),
-                onClick = { onEdit(ingredient.id.value) },
-                variant = CulinaryButtonVariant.Secondary,
-                icon = CulinaryIcons.Edit,
-            )
+
             CulinaryTextButton(
                 text = stringResource(R.string.ingredients_archive),
                 onClick = onArchive,
