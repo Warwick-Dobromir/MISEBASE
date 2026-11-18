@@ -67,6 +67,7 @@ data class IngredientEditorUiState(
     val isLoading: Boolean = true,
     val isSaving: Boolean = false,
     val saved: Boolean = false,
+    val savedIngredientId: String? = null,
     val error: String? = null,
 ) {
     val isNew: Boolean get() = ingredientId == null
