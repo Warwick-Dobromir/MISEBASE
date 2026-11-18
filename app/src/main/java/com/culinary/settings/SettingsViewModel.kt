@@ -12,6 +12,7 @@ import com.culinary.core.common.Outcome
 import com.culinary.core.data.kitchen.KitchenSeedImporter
 import com.culinary.core.data.recycle.RecycleBinItem
 import com.culinary.core.data.recycle.RecycleBinManager
+import com.culinary.diagnostics.FailureLogStore
 import com.culinary.core.data.settings.SettingsMaintenance
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -46,6 +47,7 @@ class SettingsViewModel
                     appVersionName = BuildConfig.VERSION_NAME,
                     appVersionCode = BuildConfig.VERSION_CODE,
                     deviceLabel = deviceLabel(),
+                    failureLogs = FailureLogStore.read(context),
                 ),
             )
         val uiState: StateFlow<SettingsUiState> = _uiState.asStateFlow()
