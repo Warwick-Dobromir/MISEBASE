@@ -14,6 +14,9 @@ interface IngredientUnitConversionDao {
     @Query("SELECT * FROM ingredient_unit_conversion WHERE ingredient_id = :ingredientId")
     suspend fun listByIngredient(ingredientId: String): List<IngredientUnitConversionEntity>
 
+    @Query("DELETE FROM ingredient_unit_conversion WHERE ingredient_id = :ingredientId")
+    suspend fun deleteByIngredient(ingredientId: String)
+
     @Query("SELECT COUNT(*) FROM ingredient_unit_conversion")
     suspend fun count(): Int
 }
