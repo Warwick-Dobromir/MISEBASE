@@ -136,7 +136,6 @@ internal fun ArchiveLibraryScreen(
     var deleteTargetId by rememberSaveable(section) { mutableStateOf<String?>(null) }
     var deleteModeCategoryId by rememberSaveable(section) { mutableStateOf<String?>(null) }
     var sorting by rememberSaveable(section) { mutableStateOf(false) }
-    var longPressFeedback by remember { mutableStateOf(false) }
     val categoryListState = rememberLazyListState()
     val isScrolled by remember { derivedStateOf { categoryListState.firstVisibleItemIndex > 0 || categoryListState.firstVisibleItemScrollOffset > 72 } }
     var workingOrder by rememberSaveable(section, currentCategoryId) { mutableStateOf(emptyList<String>()) }
@@ -202,7 +201,6 @@ internal fun ArchiveLibraryScreen(
         }
     }
     fun beginSorting() {
-        longPressFeedback = false
         if (!sorting) {
             val ids = children.map { it.id }
             workingOrder = ids
@@ -237,11 +235,7 @@ internal fun ArchiveLibraryScreen(
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background),
     ) {
-        AnimatedVisibility(
-            visible = !isScrolled || sorting,
-            enter = fadeIn() + slideInVertically(initialOffsetY = { -it / 3 }),
-            exit = fadeOut() + slideOutVertically(targetOffsetY = { -it / 3 }),
-        ) {
+        if (!isScrolled || sorting) {
             ArchiveBrandHeader(
                 section = section,
                 isSearchOpen = searchOpen,
@@ -352,13 +346,8 @@ internal fun ArchiveLibraryScreen(
                     CategoryRow(
                         category = category,
                         sorting = sorting,
-                        canSort = currentCategoryId != null,
                         deleteMode = sorting,
                         onClick = { currentCategoryId = category.id },
-                        onLongPressStart = { longPressFeedback = true },
-                        onLongPressEnd = { longPressFeedback = false },
-                        onLongPress = { beginSorting() },
-                        longPressFeedback = longPressFeedback,
                         listState = categoryListState,
                         onRename = {
                             renameTargetId = category.id
@@ -765,13 +754,8 @@ private fun SectionLabel(
 private fun CategoryRow(
     category: KitchenArchiveCategory,
     sorting: Boolean,
-    canSort: Boolean,
     deleteMode: Boolean,
     onClick: () -> Unit,
-    onLongPressStart: () -> Unit,
-    onLongPressEnd: () -> Unit,
-    onLongPress: () -> Unit,
-    longPressFeedback: Boolean,
     listState: LazyListState,
     onRename: () -> Unit,
     onMove: (Int) -> Unit,
@@ -781,31 +765,10 @@ private fun CategoryRow(
 ) {
     val actionInteractionSource = remember(category.id) { MutableInteractionSource() }
     val actionPressed by actionInteractionSource.collectIsPressedAsState()
-    val haptic = LocalHapticFeedback.current
     var dragging by remember(category.id) { mutableStateOf(false) }
     var dragOffsetY by remember(category.id) { mutableFloatStateOf(0f) }
     var rowHeightPx by remember(category.id) { mutableIntStateOf(0) }
     val currentOnMove by rememberUpdatedState(onMove)
-    val jiggleOffset = remember(category.id) { Animatable(0f) }
-    LaunchedEffect(longPressFeedback) {
-        if (longPressFeedback && !sorting) {
-            jiggleOffset.snapTo(0f)
-            jiggleOffset.animateTo(
-                targetValue = 0f,
-                animationSpec = keyframes {
-                    durationMillis = 240
-                    -2.5f at 40
-                    2.5f at 80
-                    -1.5f at 120
-                    1f at 160
-                    0f at 240
-                },
-            )
-        } else {
-            jiggleOffset.snapTo(0f)
-        }
-    }
-
     // 按住边缘时持续缓慢滚动，而不是依赖手指继续移动产生新的拖动事件。
     LaunchedEffect(dragging, sorting) {
         while (dragging && sorting) {
@@ -844,7 +807,7 @@ private fun CategoryRow(
                 }
                 scaleX = scale
                 scaleY = scale
-                translationX = if (longPressFeedback && !sorting) jiggleOffset.value else 0f
+                translationX = 0f
                 translationY = if (selectedScale) dragOffsetY else 0f
             }
             .shadow(
@@ -890,25 +853,7 @@ private fun CategoryRow(
                         )
                     }
                 } else {
-                    Modifier.pointerInput(category.id, sorting) {
-                        var longPressRecognized = false
-                        detectTapGestures(
-                            onTap = { onClick() },
-                            onPress = {
-                                longPressRecognized = false
-                                val released = tryAwaitRelease()
-                                onLongPressEnd()
-                                if (released && longPressRecognized) onLongPress()
-                            },
-                            onLongPress = {
-                                if (canSort) {
-                                    longPressRecognized = true
-                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                    onLongPressStart()
-                                }
-                            },
-                        )
-                    }
+                    Modifier.clickable(onClick = onClick)
                 },
             )
             .padding(horizontal = CulinarySpacing.pageHorizontal, vertical = CulinarySpacing.md),
@@ -937,7 +882,7 @@ private fun CategoryRow(
                 Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             Text(
-                stringResource(R.string.kitchen_directory_category_meta, category.childCount, category.directCount),
+                stringResource(R.string.kitchen_directory_category_meta, category.childCount, category.descendantCount),
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
