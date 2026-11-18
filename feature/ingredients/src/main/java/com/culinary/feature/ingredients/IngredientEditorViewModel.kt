@@ -399,7 +399,7 @@ class IngredientEditorViewModel
                     )
                 when (result) {
                     is Outcome.Success -> {
-                        _uiState.update { it.copy(ingredientId = result.value.value, isNew = false) }
+                        _uiState.update { it.copy(ingredientId = result.value.value) }
                         when (val imageResult = persistImages(result.value.value)) {
                             is Outcome.Failure -> {
                                 _uiState.update { it.copy(isSaving = false, error = IngredientErrorMessages.describe(imageResult.error)) }
