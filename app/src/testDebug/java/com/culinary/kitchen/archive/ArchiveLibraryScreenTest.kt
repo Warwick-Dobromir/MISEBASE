@@ -150,6 +150,18 @@ class ArchiveLibraryScreenTest {
     }
 
     @Test
+    fun `sorting starts from the child library sort icon`() {
+        show()
+
+        compose.onNodeWithContentDescription("排列下级分类").assertDoesNotExist()
+        compose.onNodeWithText("酱汁基础").performClick()
+        compose.onNodeWithContentDescription("排列下级分类").performClick()
+
+        compose.onNodeWithText("保存").assertIsDisplayed()
+        compose.onNodeWithText("取消").assertIsDisplayed()
+    }
+
+    @Test
     fun `library search shows result with category path and is isolated to section`() {
         show()
 
