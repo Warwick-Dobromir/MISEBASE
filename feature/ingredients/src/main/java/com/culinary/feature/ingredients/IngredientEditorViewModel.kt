@@ -11,6 +11,7 @@ import com.culinary.core.domain.usecase.archive.AssignArchiveCategoryUseCase
 import com.culinary.core.domain.usecase.archive.GetArchiveCategoryForRecordUseCase
 import com.culinary.core.domain.usecase.archive.ListArchiveCategoriesUseCase
 import com.culinary.core.domain.usecase.ingredient.GetIngredientDetailUseCase
+import com.culinary.core.domain.usecase.ingredient.ArchiveIngredientUseCase
 import com.culinary.core.domain.usecase.ingredient.SaveIngredientInput
 import com.culinary.core.domain.usecase.ingredient.SaveIngredientUseCase
 import com.culinary.core.domain.usecase.unit.ListUnitsUseCase
@@ -32,6 +33,7 @@ class IngredientEditorViewModel
         savedStateHandle: SavedStateHandle,
         private val getIngredientDetail: GetIngredientDetailUseCase,
         private val saveIngredient: SaveIngredientUseCase,
+        private val archiveIngredient: ArchiveIngredientUseCase,
         private val listUnits: ListUnitsUseCase,
         private val listArchiveCategories: ListArchiveCategoriesUseCase = ListArchiveCategoriesUseCase(),
         private val getArchiveCategoryForRecord: GetArchiveCategoryForRecordUseCase = GetArchiveCategoryForRecordUseCase(),
@@ -154,6 +156,16 @@ class IngredientEditorViewModel
 
         fun clearError() {
             _uiState.update { it.copy(error = null) }
+        }
+
+        fun archive() {
+            val id = routeId ?: return
+            viewModelScope.launch {
+                when (val result = archiveIngredient(IngredientId(id))) {
+                    is Outcome.Success -> _uiState.update { it.copy(archived = true, error = null) }
+                    is Outcome.Failure -> _uiState.update { it.copy(error = IngredientErrorMessages.describe(result.error)) }
+                }
+            }
         }
 
         fun save() {
