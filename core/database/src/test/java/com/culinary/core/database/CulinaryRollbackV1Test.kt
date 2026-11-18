@@ -111,7 +111,7 @@ class CulinaryRollbackV1Test {
 
             // 3) 没有降级迁移；不得声称支持原地降级。
             assertThat(CulinaryMigrations.ALL.map { migration -> migration.startVersion to migration.endVersion })
-                .containsExactly(1 to 2, 2 to 3, 3 to 4, 4 to 5, 5 to 6, 6 to 7, 7 to 8, 8 to 9)
+                .containsExactly(1 to 2, 2 to 3, 3 to 4, 4 to 5, 5 to 6, 6 to 7, 7 to 8, 8 to 9, 9 to 10)
         }
     }
 
