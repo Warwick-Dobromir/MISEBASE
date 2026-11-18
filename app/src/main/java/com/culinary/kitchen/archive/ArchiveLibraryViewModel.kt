@@ -1,9 +1,11 @@
 package com.culinary.kitchen.archive
 
+import android.content.Context
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.culinary.core.common.Outcome
+import com.culinary.diagnostics.FailureLogStore
 import com.culinary.core.data.kitchen.KitchenArchiveCategory
 import com.culinary.core.data.kitchen.KitchenArchiveEntry
 import com.culinary.core.data.kitchen.KitchenArchiveKind
@@ -19,6 +21,7 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 
 data class ArchiveCategoryFeedback(
@@ -42,6 +45,7 @@ class ArchiveLibraryViewModel
     @Inject
     constructor(
         savedStateHandle: SavedStateHandle,
+        @ApplicationContext private val context: Context,
         reader: KitchenArchiveReader,
         private val categoryRepository: ArchiveCategoryRepository,
     ) : ViewModel() {
@@ -131,6 +135,7 @@ class ArchiveLibraryViewModel
             error: String? = null,
         ) {
             categoryFeedback.value = ArchiveCategoryFeedback(message = message, error = error)
+            if (error != null) FailureLogStore.record(context, "厨房资料库分类", error)
         }
 
         val uiState: StateFlow<ArchiveLibraryUiState> =
