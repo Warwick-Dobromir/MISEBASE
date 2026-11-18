@@ -79,7 +79,7 @@ class IngredientEditorViewModel
                             val primary = images.firstOrNull { it.role == "PRIMARY" }
                             val primaryBytes = primary?.let { archiveImages.read(it.id) }
                             val referenceImages = images.filter { it.role == "REFERENCE" }.mapNotNull { image ->
-                                archiveImages.read(image.id)?.let { IngredientImageDraft(image.id, it) }
+                                archiveImages.read(image.id)?.let { IngredientImageDraft(image.id, it, "image/jpeg") }
                             }
                             _uiState.update {
                                 it.copy(
@@ -213,7 +213,7 @@ class IngredientEditorViewModel
         }
 
         fun onReferenceImagePicked(image: PendingIngredientImage) {
-            _uiState.update { it.copy(referenceImages = it.referenceImages + IngredientImageDraft(null, image.bytes)) }
+            _uiState.update { it.copy(referenceImages = it.referenceImages + IngredientImageDraft(null, image.bytes, image.mimeType)) }
         }
 
         fun onReferenceImageRemoved(index: Int) {
@@ -238,7 +238,7 @@ class IngredientEditorViewModel
                 }
             }
             state.referenceImages.filter { it.id == null }.forEach { image ->
-                when (val result = archiveImages.addIngredient(ingredientId, "REFERENCE", image.bytes, "image/jpeg")) {
+                when (val result = archiveImages.addIngredient(ingredientId, "REFERENCE", image.bytes, image.mimeType)) {
                     is Outcome.Failure -> return result
                     is Outcome.Success -> Unit
                 }
