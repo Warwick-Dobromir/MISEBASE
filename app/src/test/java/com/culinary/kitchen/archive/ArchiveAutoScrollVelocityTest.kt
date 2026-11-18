@@ -154,7 +154,9 @@ class ArchiveAutoScrollVelocityTest {
 
         assertThat(abs(first.offsetPx)).isAtMost(12f)
         assertThat(first.edgeOverdragPx).isEqualTo(-2_000f)
-        assertThat(reversed.offsetPx).isGreaterThan(first.offsetPx)
+        // The visual offset is intentionally saturated while the pointer remains far beyond the edge.
+        // The separately tracked raw distance must still respond to every reverse movement.
+        assertThat(reversed.offsetPx).isEqualTo(first.offsetPx)
         assertThat(reversed.edgeOverdragPx).isEqualTo(-1_990f)
         assertThat(abs(reversed.offsetPx)).isAtMost(12f)
     }
