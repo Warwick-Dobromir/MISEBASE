@@ -167,6 +167,7 @@ class IngredientsViewModelTest {
                 ),
             getIngredientDetail = detail,
             saveIngredient = saveIngredient,
+            archiveIngredient = archiveIngredient,
             listUnits = ListUnitsUseCase(units),
         )
 
