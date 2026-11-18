@@ -1,3 +1,4 @@
+import org.gradle.api.tasks.testing.Test
 import java.util.Properties
 
 plugins {
@@ -100,6 +101,14 @@ android {
             }
         }
     }
+}
+
+// Compose + Robolectric archive tests retain substantial framework state.
+// Keep one test worker and give it a bounded heap on the GitHub runner.
+tasks.withType<Test>().configureEach {
+    maxHeapSize = "2g"
+    maxParallelForks = 1
+    forkEvery = 1
 }
 
 // 组合根：只做模块装配，不承载业务规则（A03A §4；MB-D-004 的 14 模块）。

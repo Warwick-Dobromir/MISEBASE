@@ -1,22 +1,28 @@
 package com.culinary.kitchen.archive
 
+import androidx.compose.foundation.layout.height
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.swipeUp
+import androidx.compose.ui.unit.dp
 import com.culinary.core.data.kitchen.KitchenArchiveCategory
 import com.culinary.core.data.kitchen.KitchenArchiveEntry
 import com.culinary.core.data.kitchen.KitchenArchiveKind
 import com.culinary.core.designsystem.theme.CulinaryTheme
 import com.google.common.truth.Truth.assertThat
 import org.junit.Rule
-import org.junit.Test
 import org.junit.runner.RunWith
-import org.robolectric.RobolectricTestRunner
+import org.junit.Test
 import org.robolectric.annotation.Config
+import org.robolectric.RobolectricTestRunner
 
 /** 统一资料库页：分类树、分区、搜索、空状态和回调。 */
 @RunWith(RobolectricTestRunner::class)
@@ -27,8 +33,9 @@ class ArchiveLibraryScreenTest {
 
     private val categories =
         listOf(
-            category("base", null, "酱汁基础", 0, descendant = 2, childCount = 1),
-            category("basic", "base", "基础酱汁", 2, descendant = 2),
+            category("base", null, "酱汁基础", 0, descendant = 3, childCount = 1),
+            category("basic", "base", "基础酱汁", 2, descendant = 3, childCount = 1),
+            category("deep", "basic", "冷酱", 1, descendant = 1),
             category("empty", null, "空分类", 0),
             category("test", null, "测试 · 基础酱汁", 0, testBatch = "UI-CATEGORY-TEST-V1"),
         )
@@ -37,7 +44,7 @@ class ArchiveLibraryScreenTest {
         listOf(
             entry("s1", "基础高汤酱", "basic", "base / basic"),
             entry("s2", "香菇酱", "basic", "base / basic"),
-            entry("s3", "烟熏酱", "basic", "base / basic"),
+            entry("s3", "烟熏酱", "deep", "base / basic / deep"),
         )
 
     @Test
@@ -45,6 +52,7 @@ class ArchiveLibraryScreenTest {
         show()
 
         compose.onNodeWithText("酱汁库").assertIsDisplayed()
+        compose.onNodeWithText("MISEBASE").assertIsDisplayed()
         compose.onNodeWithText("SAUCE COLLECTION").assertIsDisplayed()
         compose.onNodeWithText("下级分类").assertIsDisplayed()
         compose.onNodeWithText("酱汁基础").assertIsDisplayed()
@@ -74,79 +82,102 @@ class ArchiveLibraryScreenTest {
     }
 
     @Test
-    fun `library root can create its first subcategory without creating a root category editor`() {
-        var createdParent: String? = "not-called"
-        var createdName = ""
-        show(
-            categories = emptyList(),
-            onCreateSubcategory = { parentId, name ->
-                createdParent = parentId
-                createdName = name
-            },
-        )
-
-        compose.onNodeWithText("＋ 新建子库").performClick()
-        compose.onNodeWithText("所属资料库：酱汁库").assertIsDisplayed()
-        compose.onNode(hasSetTextAction()).performTextInput("基础酱汁")
-        compose.onNodeWithText("创建").performClick()
-
-        assertThat(createdParent).isNull()
-        assertThat(createdName).isEqualTo("基础酱汁")
-    }
-
-    @Test
-    fun `ingredient library root can create its first subcategory`() {
-        var createdParent: String? = "not-called"
-        show(
-            section = KitchenArchiveSection.INGREDIENTS,
-            categories = emptyList(),
-            onCreateSubcategory = { parentId, _ -> createdParent = parentId },
-        )
-
-        compose.onNodeWithText("＋ 新建子库").performClick()
-        compose.onNodeWithText("所属资料库：食材库").assertIsDisplayed()
-        compose.onNode(hasSetTextAction()).performTextInput("乳制品与蛋类")
-        compose.onNodeWithText("创建").performClick()
-
-        assertThat(createdParent).isNull()
-    }
-
-    @Test
-    fun `recipe library root can create its first subcategory`() {
-        var createdParent: String? = "not-called"
-        show(
-            section = KitchenArchiveSection.RECIPES,
-            categories = emptyList(),
-            onCreateSubcategory = { parentId, _ -> createdParent = parentId },
-        )
-
-        compose.onNodeWithText("＋ 新建子库").performClick()
-        compose.onNodeWithText("所属资料库：菜谱库").assertIsDisplayed()
-        compose.onNode(hasSetTextAction()).performTextInput("主菜")
-        compose.onNodeWithText("创建").performClick()
-
-        assertThat(createdParent).isNull()
-    }
-
-    @Test
-    fun `nested subcategory can create another level under the selected parent`() {
-        var createdParent: String? = null
-        var createdName = ""
-        show(
-            onCreateSubcategory = { parentId, name ->
-                createdParent = parentId
-                createdName = name
-            },
-        )
+    fun `category row displays recursive archive count`() {
+        show()
 
         compose.onNodeWithText("酱汁基础").performClick()
-        compose.onNodeWithText("＋ 新建子库").performClick()
-        compose.onNodeWithText("所属分类：酱汁基础").assertIsDisplayed()
-        compose.onNode(hasSetTextAction()).performTextInput("冷酱")
-        compose.onNodeWithText("创建").performClick()
+        compose.onNodeWithText("MISEBASE").assertDoesNotExist()
+        compose.onNodeWithContentDescription("全局搜索").assertIsDisplayed()
+        compose.onNodeWithText("1 个子分类 · 3 条档案").assertIsDisplayed()
+        compose.onNodeWithText("基础酱汁").performClick()
+        compose.onNodeWithText("0 个子分类 · 1 条档案").assertIsDisplayed()
+    }
 
-        assertThat(createdParent).isEqualTo("base")
-        assertThat(createdName).isEqualTo("冷酱")
+    @Test
+    fun `long press no longer enters sorting mode`() {
+        show()
+
+        compose.onNodeWithText("酱汁基础").performTouchInput { longClick() }
+
+        compose.onNodeWithText("保存").assertDoesNotExist()
+        compose.onNodeWithText("取消").assertDoesNotExist()
+    }
+
+    @Test
+    fun `sorting starts from the child library sort icon`() {
+        show()
+
+        compose.onNodeWithContentDescription("排列下级分类").assertDoesNotExist()
+        compose.onNodeWithText("酱汁基础").performClick()
+        compose.onNodeWithContentDescription("排列下级分类").performClick()
+
+        compose.onNodeWithText("保存").assertIsDisplayed()
+        compose.onNodeWithText("取消").assertIsDisplayed()
+        compose.onNodeWithContentDescription("返回排序").assertIsDisplayed()
+
+        compose.onNodeWithContentDescription("返回排序").performClick()
+        compose.onNodeWithText("确认要返回吗？").assertIsDisplayed()
+        compose.onNodeWithText("确认").performClick()
+        compose.onNodeWithContentDescription("排列下级分类").assertIsDisplayed()
+    }
+
+    @Test
+    fun `sorting list remains vertically scrollable outside drag handle`() {
+        val manyChildren =
+            listOf(category("parent", null, "父分类", 0, descendant = 24, childCount = 24)) +
+                (1..24).map { index ->
+                    category(
+                        id = "child-$index",
+                        parentId = "parent",
+                        name = "排序分类 $index",
+                        direct = 0,
+                    )
+                }
+        val sectionEntries = emptyList<KitchenArchiveEntry>()
+        compose.setContent {
+            CulinaryTheme {
+                ArchiveLibraryScreen(
+                    section = KitchenArchiveSection.SAUCES,
+                    state =
+                        ArchiveLibraryUiState(
+                            entries = sectionEntries,
+                            categories = manyChildren,
+                            isLoading = false,
+                        ),
+                    onAdd = {},
+                    onOpenEntry = {},
+                    modifier = Modifier.height(500.dp),
+                )
+            }
+        }
+
+        compose.onNodeWithText("父分类").performClick()
+        compose.onNodeWithContentDescription("排列下级分类").performClick()
+        compose.onNodeWithContentDescription("拖动排序").assertIsDisplayed()
+        compose.onNodeWithText("排序分类 1").performTouchInput { swipeUp() }
+        compose.onNodeWithText("排序分类 24").assertIsDisplayed()
+    }
+
+    @Test
+    fun `ingredient library uses the same sort icon entry`() {
+        show(section = KitchenArchiveSection.INGREDIENTS)
+
+        compose.onNodeWithText("酱汁基础").performClick()
+        compose.onNodeWithContentDescription("排列下级分类").performClick()
+
+        compose.onNodeWithText("保存").assertIsDisplayed()
+        compose.onNodeWithContentDescription("返回排序").assertIsDisplayed()
+    }
+
+    @Test
+    fun `recipe library uses the same sort icon entry`() {
+        show(section = KitchenArchiveSection.RECIPES)
+
+        compose.onNodeWithText("酱汁基础").performClick()
+        compose.onNodeWithContentDescription("排列下级分类").performClick()
+
+        compose.onNodeWithText("保存").assertIsDisplayed()
+        compose.onNodeWithContentDescription("返回排序").assertIsDisplayed()
     }
 
     @Test
@@ -166,11 +197,18 @@ class ArchiveLibraryScreenTest {
         onOpenEntry: (KitchenArchiveEntry) -> Unit = {},
         onCreateSubcategory: (String?, String) -> Unit = { _, _ -> },
     ) {
+        val sectionEntries = entries.map { it.copy(kind = section.kind) }
+        val sectionCategories = categories.map { it.copy(library = section.kind) }
         compose.setContent {
             CulinaryTheme {
                 ArchiveLibraryScreen(
                     section = section,
-                    state = ArchiveLibraryUiState(entries = entries, categories = categories, isLoading = false),
+                    state =
+                        ArchiveLibraryUiState(
+                            entries = sectionEntries,
+                            categories = sectionCategories,
+                            isLoading = false,
+                        ),
                     onAdd = onAdd,
                     onOpenEntry = onOpenEntry,
                     onCreateSubcategory = onCreateSubcategory,

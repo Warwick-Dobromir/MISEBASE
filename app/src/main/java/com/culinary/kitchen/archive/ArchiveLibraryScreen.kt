@@ -8,49 +8,41 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.animation.shrinkOut
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
-import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.keyframes
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.background
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.collectIsPressedAsState
-import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
-import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.scrollBy
+import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.sizeIn
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -59,18 +51,17 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import androidx.compose.ui.platform.LocalHapticFeedback
-import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import kotlinx.coroutines.delay
-import com.culinary.R
 import com.culinary.core.data.kitchen.KitchenArchiveCategory
 import com.culinary.core.data.kitchen.KitchenArchiveEntry
 import com.culinary.core.designsystem.component.CulinaryIconButton
@@ -84,6 +75,9 @@ import com.culinary.core.designsystem.component.LoadingRows
 import com.culinary.core.designsystem.icon.CulinaryIcons
 import com.culinary.core.designsystem.theme.CulinarySpacing
 import com.culinary.core.designsystem.theme.CulinaryTextStyles
+import com.culinary.R
+import kotlinx.coroutines.delay
+
 
 /** 六库统一目录路由：分类钻取、分类/档案分区、分页和单库搜索。 */
 @Composable
@@ -136,7 +130,6 @@ internal fun ArchiveLibraryScreen(
     var deleteTargetId by rememberSaveable(section) { mutableStateOf<String?>(null) }
     var deleteModeCategoryId by rememberSaveable(section) { mutableStateOf<String?>(null) }
     var sorting by rememberSaveable(section) { mutableStateOf(false) }
-    var longPressFeedback by remember { mutableStateOf(false) }
     val categoryListState = rememberLazyListState()
     val isScrolled by remember { derivedStateOf { categoryListState.firstVisibleItemIndex > 0 || categoryListState.firstVisibleItemScrollOffset > 72 } }
     var workingOrder by rememberSaveable(section, currentCategoryId) { mutableStateOf(emptyList<String>()) }
@@ -202,7 +195,6 @@ internal fun ArchiveLibraryScreen(
         }
     }
     fun beginSorting() {
-        longPressFeedback = false
         if (!sorting) {
             val ids = children.map { it.id }
             workingOrder = ids
@@ -217,11 +209,7 @@ internal fun ArchiveLibraryScreen(
         showSortExitDialog = false
     }
     fun requestSortReturn() {
-        if (sortDirty) {
-            showSortExitDialog = true
-        } else {
-            finishSorting()
-        }
+        showSortExitDialog = true
     }
 
     BackHandler(enabled = searchOpen) { searchOpen = false }
@@ -237,17 +225,15 @@ internal fun ArchiveLibraryScreen(
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background),
     ) {
-        AnimatedVisibility(
-            visible = !isScrolled || sorting,
-            enter = fadeIn() + slideInVertically(initialOffsetY = { -it / 3 }),
-            exit = fadeOut() + slideOutVertically(targetOffsetY = { -it / 3 }),
-        ) {
+        if ((!isScrolled && currentCategoryId == null) || sorting) {
             ArchiveBrandHeader(
                 section = section,
+                showBrand = currentCategoryId == null,
                 isSearchOpen = searchOpen,
                 sorting = sorting,
                 onSearch = { searchOpen = true },
                 onCloseSearch = { searchOpen = false },
+                onReturnSort = { requestSortReturn() },
                 onSaveSort = {
                     if (sorting && !pendingSave && sortDirty) {
                         submittedOrder = workingOrder
@@ -274,7 +260,7 @@ internal fun ArchiveLibraryScreen(
                     ),
             )
         }
-        if (!isScrolled || sorting) CulinaryRule()
+        if ((!isScrolled && currentCategoryId == null) || sorting) CulinaryRule()
         state.categoryError?.let { message ->
             ErrorBanner(
                 message = message,
@@ -327,6 +313,11 @@ internal fun ArchiveLibraryScreen(
                     childCount = children.size,
                     recursiveCount = recursiveCount,
                     sorting = sorting,
+                    onSearch = if (currentCategoryId != null) {
+                        { searchOpen = !searchOpen }
+                    } else {
+                        null
+                    },
                     onAdd = if (!showingSearch && currentCategoryId == null) onAdd else null,
                     onCreateSubcategory = {
                         newSubcategoryParentId = currentCategory?.id
@@ -352,13 +343,8 @@ internal fun ArchiveLibraryScreen(
                     CategoryRow(
                         category = category,
                         sorting = sorting,
-                        canSort = currentCategoryId != null,
                         deleteMode = sorting,
                         onClick = { currentCategoryId = category.id },
-                        onLongPressStart = { longPressFeedback = true },
-                        onLongPressEnd = { longPressFeedback = false },
-                        onLongPress = { beginSorting() },
-                        longPressFeedback = longPressFeedback,
                         listState = categoryListState,
                         onRename = {
                             renameTargetId = category.id
@@ -492,8 +478,16 @@ internal fun ArchiveLibraryScreen(
     if (showSortExitDialog) {
         AlertDialog(
             onDismissRequest = { showSortExitDialog = false },
-            title = { Text("本次排序尚未保存") },
-            text = { Text("当前还有未保存的调整，返回后将恢复上次保存的顺序。确定返回吗？") },
+            title = { Text("确认要返回吗？") },
+            text = {
+                Text(
+                    if (sortDirty) {
+                        "当前还有未保存的调整，返回后将恢复上次保存的顺序。确定返回吗？"
+                    } else {
+                        "当前排序没有未保存的修改，确认退出排序吗？"
+                    },
+                )
+            },
             confirmButton = { TextButton(onClick = { finishSorting() }) { Text("确认") } },
             dismissButton = { TextButton(onClick = { showSortExitDialog = false }) { Text("取消") } },
         )
@@ -615,10 +609,12 @@ internal fun ArchiveLibraryScreen(
 @Composable
 private fun ArchiveBrandHeader(
     section: KitchenArchiveSection,
+    showBrand: Boolean,
     isSearchOpen: Boolean,
     onSearch: () -> Unit,
     onCloseSearch: () -> Unit,
     sorting: Boolean = false,
+    onReturnSort: () -> Unit = {},
     onSaveSort: () -> Unit = {},
 ) {
     Row(
@@ -628,11 +624,32 @@ private fun ArchiveBrandHeader(
                 .padding(horizontal = CulinarySpacing.pageHorizontal, vertical = CulinarySpacing.sm),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Spacer(modifier = Modifier.weight(1f))
+        if (showBrand) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = "MISEBASE",
+                    style = CulinaryTextStyles.eyebrow,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+                Text(
+                    text = stringResource(section.subtitleRes),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        } else {
+            Spacer(modifier = Modifier.weight(1f))
+        }
         if (sorting) {
             CulinaryTextButton(
                 text = "保存",
                 onClick = onSaveSort,
+            )
+            CulinaryIconButton(
+                icon = CulinaryIcons.Back,
+                contentDescription = "返回排序",
+                onClick = onReturnSort,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         } else if (isSearchOpen) {
             CulinaryTextButton(
@@ -659,6 +676,7 @@ private fun ArchiveContextHeader(
     childCount: Int,
     recursiveCount: Int,
     sorting: Boolean,
+    onSearch: (() -> Unit)?,
     onAdd: (() -> Unit)?,
     onCreateSubcategory: (() -> Unit)?,
     onBack: () -> Unit,
@@ -678,8 +696,16 @@ private fun ArchiveContextHeader(
                 text = parentName,
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(start = CulinarySpacing.xxs),
+                modifier = Modifier.padding(start = CulinarySpacing.xxs).weight(1f),
             )
+            onSearch?.let { action ->
+                CulinaryIconButton(
+                    icon = CulinaryIcons.Search,
+                    contentDescription = stringResource(R.string.kitchen_search_global_hint),
+                    onClick = action,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
         }
         Spacer(modifier = Modifier.height(CulinarySpacing.xs))
         Row(
@@ -765,13 +791,8 @@ private fun SectionLabel(
 private fun CategoryRow(
     category: KitchenArchiveCategory,
     sorting: Boolean,
-    canSort: Boolean,
     deleteMode: Boolean,
     onClick: () -> Unit,
-    onLongPressStart: () -> Unit,
-    onLongPressEnd: () -> Unit,
-    onLongPress: () -> Unit,
-    longPressFeedback: Boolean,
     listState: LazyListState,
     onRename: () -> Unit,
     onMove: (Int) -> Unit,
@@ -781,31 +802,10 @@ private fun CategoryRow(
 ) {
     val actionInteractionSource = remember(category.id) { MutableInteractionSource() }
     val actionPressed by actionInteractionSource.collectIsPressedAsState()
-    val haptic = LocalHapticFeedback.current
     var dragging by remember(category.id) { mutableStateOf(false) }
     var dragOffsetY by remember(category.id) { mutableFloatStateOf(0f) }
     var rowHeightPx by remember(category.id) { mutableIntStateOf(0) }
     val currentOnMove by rememberUpdatedState(onMove)
-    val jiggleOffset = remember(category.id) { Animatable(0f) }
-    LaunchedEffect(longPressFeedback) {
-        if (longPressFeedback && !sorting) {
-            jiggleOffset.snapTo(0f)
-            jiggleOffset.animateTo(
-                targetValue = 0f,
-                animationSpec = keyframes {
-                    durationMillis = 240
-                    -2.5f at 40
-                    2.5f at 80
-                    -1.5f at 120
-                    1f at 160
-                    0f at 240
-                },
-            )
-        } else {
-            jiggleOffset.snapTo(0f)
-        }
-    }
-
     // 按住边缘时持续缓慢滚动，而不是依赖手指继续移动产生新的拖动事件。
     LaunchedEffect(dragging, sorting) {
         while (dragging && sorting) {
@@ -844,7 +844,7 @@ private fun CategoryRow(
                 }
                 scaleX = scale
                 scaleY = scale
-                translationX = if (longPressFeedback && !sorting) jiggleOffset.value else 0f
+                translationX = 0f
                 translationY = if (selectedScale) dragOffsetY else 0f
             }
             .shadow(
@@ -854,63 +854,7 @@ private fun CategoryRow(
                 },
                 shape = RectangleShape,
             )
-            .then(
-                if (sorting) {
-                    Modifier.pointerInput(category.id, sorting) {
-                        detectDragGesturesAfterLongPress(
-                            onDragStart = {
-                                onDragStart()
-                                dragging = true
-                                dragOffsetY = 0f
-                            },
-                            onDragEnd = {
-                                dragging = false
-                                dragOffsetY = 0f
-                            },
-                            onDragCancel = {
-                                onDragCancel()
-                                dragging = false
-                                dragOffsetY = 0f
-                            },
-                            onDrag = { change, amount ->
-                                change.consume()
-                                dragOffsetY += amount.y
-                                // 以整行实际高度作为换位补偿，抵消列表重排造成的布局位移，
-                                // 选中项的视觉位置因此连续跟随手指，不会一次跨越多行。
-                                val threshold = rowHeightPx.toFloat().coerceAtLeast(1f)
-                                while (dragOffsetY >= threshold) {
-                                    currentOnMove(1)
-                                    dragOffsetY -= threshold
-                                }
-                                while (dragOffsetY <= -threshold) {
-                                    currentOnMove(-1)
-                                    dragOffsetY += threshold
-                                }
-                            },
-                        )
-                    }
-                } else {
-                    Modifier.pointerInput(category.id, sorting) {
-                        var longPressRecognized = false
-                        detectTapGestures(
-                            onTap = { onClick() },
-                            onPress = {
-                                longPressRecognized = false
-                                val released = tryAwaitRelease()
-                                onLongPressEnd()
-                                if (released && longPressRecognized) onLongPress()
-                            },
-                            onLongPress = {
-                                if (canSort) {
-                                    longPressRecognized = true
-                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                    onLongPressStart()
-                                }
-                            },
-                        )
-                    }
-                },
-            )
+            .then(if (sorting) Modifier else Modifier.clickable(onClick = onClick))
             .padding(horizontal = CulinarySpacing.pageHorizontal, vertical = CulinarySpacing.md),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -937,10 +881,56 @@ private fun CategoryRow(
                 Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             Text(
-                stringResource(R.string.kitchen_directory_category_meta, category.childCount, category.directCount),
+                stringResource(R.string.kitchen_directory_category_meta, category.childCount, category.descendantCount),
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
+        }
+        if (sorting) {
+            Box(
+                modifier = Modifier
+                    .sizeIn(minWidth = 48.dp, minHeight = 48.dp)
+                    .pointerInput(category.id, sorting) {
+                        detectDragGesturesAfterLongPress(
+                            onDragStart = {
+                                onDragStart()
+                                dragging = true
+                                dragOffsetY = 0f
+                            },
+                            onDragEnd = {
+                                dragging = false
+                                dragOffsetY = 0f
+                            },
+                            onDragCancel = {
+                                onDragCancel()
+                                dragging = false
+                                dragOffsetY = 0f
+                            },
+                            onDrag = { change, amount ->
+                                change.consume()
+                                dragOffsetY += amount.y
+                                val threshold = rowHeightPx.toFloat().coerceAtLeast(1f)
+                                while (dragOffsetY >= threshold) {
+                                    currentOnMove(1)
+                                    dragOffsetY -= threshold
+                                }
+                                while (dragOffsetY <= -threshold) {
+                                    currentOnMove(-1)
+                                    dragOffsetY += threshold
+                                }
+                            },
+                        )
+                    }
+                    .padding(horizontal = CulinarySpacing.xs, vertical = CulinarySpacing.sm),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    CulinaryIcons.Sort,
+                    contentDescription = "拖动排序",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(20.dp),
+                )
+            }
         }
         if (deleteMode) {
             Box(

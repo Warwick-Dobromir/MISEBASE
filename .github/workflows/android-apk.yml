@@ -4,7 +4,9 @@ name: Android APK
 
 on:
   push:
-    branches: [main, fix/archive-category-interactions, fix/archive-sort-feedback, fix/archive-library-completion]
+    branches: [main, fix/archive-category-interactions, fix/archive-sort-feedback, fix/archive-library-completion, fix/archive-library-layout-counts-sort]
+  pull_request:
+    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -18,8 +20,10 @@ jobs:
       MISEBASE_RELEASE_KEY_ALIAS: ${{ secrets.MISEBASE_RELEASE_KEY_ALIAS }}
       MISEBASE_RELEASE_KEY_PASSWORD: ${{ secrets.MISEBASE_RELEASE_KEY_PASSWORD }}
     steps:
-      - name: Checkout main
+      - name: Checkout requested branch
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref || github.ref_name }}
 
       - name: Require original release signing secrets
         env:
@@ -43,7 +47,7 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
 
       - name: Run unit tests
-        run: ./gradlew :app:testDebugUnitTest --tests "com.culinary.cooking.CookingViewModelTest" --no-daemon
+        run: ./gradlew :app:testDebugUnitTest --tests "com.culinary.cooking.CookingViewModelTest" --tests "com.culinary.kitchen.archive.ArchiveLibraryScreenTest" --tests "com.culinary.kitchen.KitchenScreenTest" --no-daemon
 
       - name: Build APK with original MISEBASE release key
         env:
@@ -69,6 +73,15 @@ jobs:
           test -n "$ACTUAL"
           test "$ACTUAL" = "$EXPECTED"
           echo "Verified package, version, and original signing certificate: $ACTUAL"
+
+      - name: Upload branch APK for review
+        if: github.ref != 'refs/heads/main'
+        uses: actions/upload-artifact@v4
+        with:
+          name: misebase-archive-fix-${{ github.sha }}
+          path: app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 7
 
       - name: Replace latest APK and remove the other 21 releases
         if: github.ref == 'refs/heads/main'
