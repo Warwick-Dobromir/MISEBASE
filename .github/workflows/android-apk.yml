@@ -20,8 +20,10 @@ jobs:
       MISEBASE_RELEASE_KEY_ALIAS: ${{ secrets.MISEBASE_RELEASE_KEY_ALIAS }}
       MISEBASE_RELEASE_KEY_PASSWORD: ${{ secrets.MISEBASE_RELEASE_KEY_PASSWORD }}
     steps:
-      - name: Checkout main
+      - name: Checkout requested branch
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref || github.ref_name }}
 
       - name: Require original release signing secrets
         env:
