@@ -106,7 +106,7 @@ android {
 // Compose + Robolectric archive tests retain substantial framework state.
 // Keep one test worker and give it a bounded heap on the GitHub runner.
 tasks.withType<Test>().configureEach {
-    maxHeapSize = "3g"
+    maxHeapSize = "2g"
     maxParallelForks = 1
 }
 
