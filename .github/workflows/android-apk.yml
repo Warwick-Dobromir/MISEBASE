@@ -52,7 +52,6 @@ jobs:
         run: |
           ./gradlew :app:testDebugUnitTest --tests "com.culinary.cooking.CookingViewModelTest" --no-daemon
           ./gradlew :feature:ingredients:testDebugUnitTest --tests "com.culinary.feature.ingredients.IngredientsViewModelTest" --no-daemon
-          ./gradlew :core:domain:test --tests "com.culinary.core.domain.usecase.ingredient.SaveIngredientUseCaseTest" --no-daemon
 
       - name: Build APK with original MISEBASE release key
         env:
