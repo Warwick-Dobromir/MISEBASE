@@ -57,6 +57,8 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import kotlin.math.pow
+import kotlin.math.sign
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.withFrameNanos
@@ -728,34 +730,84 @@ internal fun archiveAutoScrollVelocityPxPerSecond(edgeProgress: Float): Float {
 }
 
 /**
- * Applies one pointer delta while enforcing the current sortable-list boundaries.
- * A failed move never consumes a row distance; outward movement at either end is
- * clamped immediately, while movement back into the list remains available.
+ * Visual drag offset and the separately tracked pointer overdrag at a list boundary.
+ * The raw overdrag is capped so reversing direction always releases the resistance
+ * promptly, even if the pointer was moved far beyond the boundary.
+ */
+internal data class ArchiveDragOffsetState(
+    val offsetPx: Float,
+    val edgeOverdragPx: Float = 0f,
+)
+
+internal fun archiveEdgeResistanceOffset(
+    overdragPx: Float,
+    maxOffsetPx: Float,
+): Float {
+    val limit = maxOffsetPx.coerceAtLeast(1f)
+    val maxRaw = limit * 5f
+    val raw = overdragPx.coerceIn(-maxRaw, maxRaw)
+    val progress = (kotlin.math.abs(raw) / maxRaw).coerceIn(0f, 1f)
+    val resisted = limit * progress.pow(0.8f)
+    return resisted * raw.sign
+}
+
+/**
+ * Applies pointer movement while preserving row snapping and preventing boundary crossing.
+ * At an edge, the item moves with increasing resistance up to a small visual limit.
+ * The raw overdrag is tracked separately and rebased at that limit for prompt reversal.
  */
 internal fun archiveDragOffsetAfterDelta(
     currentOffsetPx: Float,
+    currentEdgeOverdragPx: Float,
     deltaPx: Float,
     rowHeightPx: Float,
+    maxEdgeOffsetPx: Float,
     canMove: (Int) -> Boolean,
     move: (Int) -> Boolean,
-): Float {
+): ArchiveDragOffsetState {
     val threshold = rowHeightPx.coerceAtLeast(1f)
     var offset = currentOffsetPx + deltaPx
 
-    if (offset < 0f && !canMove(-1)) return 0f
-    if (offset > 0f && !canMove(1)) return 0f
+    if (currentEdgeOverdragPx != 0f) {
+        val maxRaw = maxEdgeOffsetPx.coerceAtLeast(1f) * 5f
+        val updatedRaw = (currentEdgeOverdragPx + deltaPx).coerceIn(-maxRaw, maxRaw)
+        val stillAtSameEdge = updatedRaw != 0f &&
+            updatedRaw.sign == currentEdgeOverdragPx.sign
+        if (stillAtSameEdge) {
+            return ArchiveDragOffsetState(
+                offsetPx = archiveEdgeResistanceOffset(updatedRaw, maxEdgeOffsetPx),
+                edgeOverdragPx = updatedRaw,
+            )
+        }
+        offset = updatedRaw
+    }
 
     while (offset >= threshold) {
-        if (!canMove(1) || !move(1)) return 0f
+        if (!canMove(1) || !move(1)) {
+            return ArchiveDragOffsetState(
+                offsetPx = archiveEdgeResistanceOffset(offset, maxEdgeOffsetPx),
+                edgeOverdragPx = offset,
+            )
+        }
         offset -= threshold
-        if (offset > 0f && !canMove(1)) return 0f
     }
     while (offset <= -threshold) {
-        if (!canMove(-1) || !move(-1)) return 0f
+        if (!canMove(-1) || !move(-1)) {
+            return ArchiveDragOffsetState(
+                offsetPx = archiveEdgeResistanceOffset(offset, maxEdgeOffsetPx),
+                edgeOverdragPx = offset,
+            )
+        }
         offset += threshold
-        if (offset < 0f && !canMove(-1)) return 0f
     }
-    return offset
+
+    if ((offset < 0f && !canMove(-1)) || (offset > 0f && !canMove(1))) {
+        return ArchiveDragOffsetState(
+            offsetPx = archiveEdgeResistanceOffset(offset, maxEdgeOffsetPx),
+            edgeOverdragPx = offset,
+        )
+    }
+    return ArchiveDragOffsetState(offsetPx = offset)
 }
 
 @Composable
@@ -772,7 +824,9 @@ private fun CategoryRow(
 ) {
     var dragging by remember(category.id) { mutableStateOf(false) }
     var dragOffsetY by remember(category.id) { mutableFloatStateOf(0f) }
+    var edgeOverdragY by remember(category.id) { mutableFloatStateOf(0f) }
     var rowHeightPx by remember(category.id) { mutableIntStateOf(0) }
+    val maxEdgeOffsetPx = with(LocalDensity.current) { 12.dp.toPx() }
     val currentCanMove by rememberUpdatedState(canMove)
     val currentOnMove by rememberUpdatedState(onMove)
 
@@ -827,6 +881,11 @@ private fun CategoryRow(
                         val consumed = listState.scrollBy(requestedDelta)
                         // 列表滚动会移动行本身；用实际消费量补偿视觉偏移，保持项目与手指同步。
                         dragOffsetY += consumed
+                        if (edgeOverdragY != 0f) {
+                            edgeOverdragY = (edgeOverdragY + consumed)
+                                .coerceIn(-maxEdgeOffsetPx * 5f, maxEdgeOffsetPx * 5f)
+                            dragOffsetY = archiveEdgeResistanceOffset(edgeOverdragY, maxEdgeOffsetPx)
+                        }
                     }
                 }
             }
@@ -863,26 +922,32 @@ private fun CategoryRow(
                             onDragStart = {
                                 dragging = true
                                 dragOffsetY = 0f
+                                edgeOverdragY = 0f
                             },
                             onDragEnd = {
                                 dragging = false
                                 dragOffsetY = 0f
+                                edgeOverdragY = 0f
                             },
                             onDragCancel = {
                                 dragging = false
                                 dragOffsetY = 0f
+                                edgeOverdragY = 0f
                             },
                             onDrag = { change, amount ->
                                 change.consume()
-                                // 首尾边界在视觉偏移阶段即生效：不允许拖动项穿过可排序区域。
-                                // 只有真实完成换位才消耗整行距离；边界处立即归零，反向拖动仍可继续。
-                                dragOffsetY = archiveDragOffsetAfterDelta(
+                                // 边界不允许换位，但保留有限弹性位移；反向拖动时从当前状态连续释放。
+                                val nextDrag = archiveDragOffsetAfterDelta(
                                     currentOffsetPx = dragOffsetY,
+                                    currentEdgeOverdragPx = edgeOverdragY,
                                     deltaPx = amount.y,
                                     rowHeightPx = rowHeightPx.toFloat(),
+                                    maxEdgeOffsetPx = maxEdgeOffsetPx,
                                     canMove = currentCanMove,
                                     move = currentOnMove,
                                 )
+                                dragOffsetY = nextDrag.offsetPx
+                                edgeOverdragY = nextDrag.edgeOverdragPx
                             },
                         )
                     }
