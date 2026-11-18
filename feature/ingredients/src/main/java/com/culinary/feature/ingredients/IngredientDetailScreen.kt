@@ -126,9 +126,9 @@ internal fun IngredientDetailContent(
             modifier =
                 Modifier
                     .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = CulinarySpacing.pageHorizontal)
-                .padding(bottom = CulinarySpacing.xl),
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = CulinarySpacing.pageHorizontal)
+                    .padding(bottom = CulinarySpacing.xl),
         ) {
             Spacer(modifier = Modifier.height(CulinarySpacing.lg))
             Column(modifier = Modifier.fillMaxWidth()) {
