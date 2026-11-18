@@ -4,12 +4,12 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.culinary.core.common.Outcome
-import com.culinary.core.domain.model.ArchiveLibrary
 import com.culinary.core.domain.model.ArchiveImageOwner
-import com.culinary.core.domain.model.PendingIngredientImage
-import com.culinary.core.domain.model.IngredientUnitConversion
-import com.culinary.core.domain.model.UnitId
+import com.culinary.core.domain.model.ArchiveLibrary
 import com.culinary.core.domain.model.IngredientId
+import com.culinary.core.domain.model.IngredientUnitConversion
+import com.culinary.core.domain.model.PendingIngredientImage
+import com.culinary.core.domain.model.UnitId
 import com.culinary.core.domain.model.KitchenRecordKind
 import com.culinary.core.domain.usecase.archive.ArchiveImageUseCase
 import com.culinary.core.domain.usecase.archive.AssignArchiveCategoryUseCase
@@ -26,8 +26,8 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import javax.inject.Inject
 import com.culinary.core.domain.model.Unit as UnitModel
+import javax.inject.Inject
 
 /** 食材编辑器 ViewModel：名称、分类、默认单位、描述。 */
 @HiltViewModel
@@ -216,20 +216,45 @@ class IngredientEditorViewModel
         }
 
         fun onConversionFromUnitChange(index: Int, unit: UnitModel) {
-            _uiState.update { state -> state.copy(conversions = state.conversions.mapIndexed { i, row -> if (i == index) row.copy(fromUnitId = unit.id.value) else row }) }
+            _uiState.update { state ->
+                state.copy(
+                    conversions = state.conversions.mapIndexed { i, row ->
+                        if (i == index) row.copy(fromUnitId = unit.id.value) else row
+                    },
+                )
+            }
         }
 
         fun onConversionToUnitChange(index: Int, unit: UnitModel) {
-            _uiState.update { state -> state.copy(conversions = state.conversions.mapIndexed { i, row -> if (i == index) row.copy(toUnitId = unit.id.value) else row }) }
+            _uiState.update { state ->
+                state.copy(
+                    conversions = state.conversions.mapIndexed { i, row ->
+                        if (i == index) row.copy(toUnitId = unit.id.value) else row
+                    },
+                )
+            }
         }
 
         fun onConversionFactorChange(index: Int, value: String) {
-            _uiState.update { state -> state.copy(conversions = state.conversions.mapIndexed { i, row -> if (i == index) row.copy(factor = value) else row }) }
+            _uiState.update { state ->
+                state.copy(
+                    conversions = state.conversions.mapIndexed { i, row ->
+                        if (i == index) row.copy(factor = value) else row
+                    },
+                )
+            }
         }
 
         fun onConversionNoteChange(index: Int, value: String) {
-            _uiState.update { state -> state.copy(conversions = state.conversions.mapIndexed { i, row -> if (i == index) row.copy(note = value) else row }) }
+            _uiState.update { state ->
+                state.copy(
+                    conversions = state.conversions.mapIndexed { i, row ->
+                        if (i == index) row.copy(note = value) else row
+                    },
+                )
+            }
         }
+
         fun onUnitChange(unit: UnitModel) {
             _uiState.update { it.copy(defaultUnit = unit) }
         }
@@ -286,6 +311,7 @@ class IngredientEditorViewModel
             }
             return Outcome.success(Unit)
         }
+
         fun clearError() {
             _uiState.update { it.copy(error = null) }
         }
