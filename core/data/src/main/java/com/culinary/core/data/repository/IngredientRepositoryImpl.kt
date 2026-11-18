@@ -139,6 +139,8 @@ class IngredientRepositoryImpl
             } catch (e: Throwable) {
                 Outcome.failure(DbErrorMapper.map(e))
             }
+        }
+
         override suspend fun changeHistory(id: IngredientId): List<IngredientChangeRecord> =
             changeLogDao.listByEntity("INGREDIENT", id.value).map { entry ->
                 IngredientChangeRecord(action = entry.action.name, createdAt = entry.createdAt)
