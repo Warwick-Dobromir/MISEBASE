@@ -1,5 +1,7 @@
 package com.culinary.kitchen.archive
 
+import androidx.compose.foundation.layout.height
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -11,17 +13,16 @@ import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeUp
 import androidx.compose.ui.unit.dp
-import androidx.compose.foundation.layout.height
 import com.culinary.core.data.kitchen.KitchenArchiveCategory
 import com.culinary.core.data.kitchen.KitchenArchiveEntry
 import com.culinary.core.data.kitchen.KitchenArchiveKind
 import com.culinary.core.designsystem.theme.CulinaryTheme
 import com.google.common.truth.Truth.assertThat
 import org.junit.Rule
-import org.junit.Test
 import org.junit.runner.RunWith
-import org.robolectric.RobolectricTestRunner
+import org.junit.Test
 import org.robolectric.annotation.Config
+import org.robolectric.RobolectricTestRunner
 
 /** 统一资料库页：分类树、分区、搜索、空状态和回调。 */
 @RunWith(RobolectricTestRunner::class)
@@ -145,7 +146,7 @@ class ArchiveLibraryScreenTest {
                         ),
                     onAdd = {},
                     onOpenEntry = {},
-                    modifier = androidx.compose.ui.Modifier.height(500.dp),
+                    modifier = Modifier.height(500.dp),
                 )
             }
         }
