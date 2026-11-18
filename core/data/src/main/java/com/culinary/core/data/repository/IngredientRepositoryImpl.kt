@@ -104,15 +104,19 @@ class IngredientRepositoryImpl
                     conversionDao.deleteByIngredient(ingredient.id.value)
                     val now = clock.now().toEpochMilli()
                     conversions.forEach { conversion ->
+                        val previous = existingConversions.firstOrNull {
+                            it.fromUnitId == conversion.fromUnit.value && it.toUnitId == conversion.toUnit.value
+                        }
                         conversionDao.insert(
                             IngredientUnitConversionEntity(
-                                id = idGenerator.newId(),
+                                id = previous?.id ?: idGenerator.newId(),
                                 ingredientId = ingredient.id.value,
                                 fromUnitId = conversion.fromUnit.value,
                                 toUnitId = conversion.toUnit.value,
                                 factor = conversion.factor,
                                 note = conversion.note,
-                                createdAt = now,
+                                source = previous?.source,
+                                createdAt = previous?.createdAt ?: now,
                             ),
                         )
                     }
