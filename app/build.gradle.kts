@@ -108,6 +108,7 @@ android {
 tasks.withType<Test>().configureEach {
     maxHeapSize = "2g"
     maxParallelForks = 1
+    forkEvery = 1
 }
 
 // 组合根：只做模块装配，不承载业务规则（A03A §4；MB-D-004 的 14 模块）。
