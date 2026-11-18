@@ -56,15 +56,15 @@ class IngredientDetailViewModel
                             runCatching {
                                 getArchiveCategoryForRecord(KitchenRecordKind.INGREDIENT, ingredientId.value)
                             }.getOrNull()
-                        val image =
-                            runCatching {
-                                archiveImages.primary(ArchiveImageOwner.INGREDIENT, ingredientId.value)
-                            }.getOrNull()
+                        val images = archiveImages.list(ArchiveImageOwner.INGREDIENT, ingredientId.value)
+                        val image = images.firstOrNull { it.role == "PRIMARY" }?.let { archiveImages.read(it.id) }
+                        val referenceImages = images.filter { it.role == "REFERENCE" }.mapNotNull { archiveImages.read(it.id) }
                         _uiState.update {
                             it.copy(
                                 detail = result.value,
                                 categoryPath = category?.path.orEmpty(),
                                 imageBytes = image,
+                                referenceImageBytes = referenceImages,
                                 isLoading = false,
                                 isArchiving = false,
                             )
