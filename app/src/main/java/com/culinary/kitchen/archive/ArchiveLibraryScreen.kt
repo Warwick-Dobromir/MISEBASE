@@ -1,12 +1,13 @@
 package com.culinary.kitchen.archive
 
 import androidx.activity.compose.BackHandler
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.slideInHorizontally
-import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.RectangleShape
@@ -23,12 +24,14 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -46,8 +49,6 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
@@ -62,7 +63,6 @@ import com.culinary.core.data.kitchen.KitchenArchiveCategory
 import com.culinary.core.data.kitchen.KitchenArchiveEntry
 import com.culinary.core.designsystem.component.CulinaryIconButton
 import com.culinary.core.designsystem.component.CulinaryRule
-import com.culinary.core.designsystem.component.CulinarySearchField
 import com.culinary.core.designsystem.component.CulinaryTextButton
 import com.culinary.core.designsystem.component.CulinaryTextField
 import com.culinary.core.designsystem.component.EmptyState
@@ -123,7 +123,6 @@ internal fun ArchiveLibraryScreen(
     var deleteTargetId by rememberSaveable(section) { mutableStateOf<String?>(null) }
     var deleteModeCategoryId by rememberSaveable(section) { mutableStateOf<String?>(null) }
     var sorting by rememberSaveable(section) { mutableStateOf(false) }
-    var longPressFeedback by remember { mutableStateOf(false) }
     val categoryListState = rememberLazyListState()
     var workingOrder by rememberSaveable(section, currentCategoryId) { mutableStateOf(emptyList<String>()) }
     var savedOrder by rememberSaveable(section, currentCategoryId) { mutableStateOf(emptyList<String>()) }
@@ -185,7 +184,6 @@ internal fun ArchiveLibraryScreen(
         }
     }
     fun beginSorting() {
-        longPressFeedback = false
         if (!sorting) {
             val ids = children.map { it.id }
             workingOrder = ids
@@ -214,44 +212,10 @@ internal fun ArchiveLibraryScreen(
     }
     BackHandler(enabled = !searchOpen && !sorting && currentCategoryId == null) { onBack() }
 
-    Column(
-        modifier =
-            modifier
-                .fillMaxSize()
-                .background(MaterialTheme.colorScheme.background),
+    Box(
+        modifier = modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
     ) {
-        ArchiveBrandHeader(
-            section = section,
-            isSearchOpen = searchOpen,
-            sorting = sorting,
-            onSearch = { searchOpen = true },
-            onCloseSearch = { searchOpen = false },
-            onSaveSort = {
-                if (sorting && !pendingSave && sortDirty) {
-                    submittedOrder = workingOrder
-                    pendingSave = true
-                    onReorderSubcategories(submittedOrder)
-                }
-            },
-        )
-        AnimatedVisibility(
-            visible = searchOpen,
-            enter = slideInHorizontally(initialOffsetX = { it }),
-            exit = slideOutHorizontally(targetOffsetX = { it }),
-        ) {
-            CulinarySearchField(
-                value = query,
-                onValueChange = { query = it },
-                placeholder = stringResource(R.string.kitchen_search_global_hint),
-                modifier =
-                    Modifier.padding(
-                        start = CulinarySpacing.pageHorizontal,
-                        end = CulinarySpacing.pageHorizontal,
-                        bottom = CulinarySpacing.sm,
-                    ),
-            )
-        }
-        CulinaryRule()
+        Column(modifier = Modifier.fillMaxSize()) {
         state.categoryError?.let { message ->
             ErrorBanner(
                 message = message,
@@ -318,17 +282,19 @@ internal fun ArchiveLibraryScreen(
                 )
             }
             if (displayedChildren.isNotEmpty()) {
-                if (!sorting) item { SectionLabel(stringResource(R.string.kitchen_directory_subcategories)) }
+                if (!sorting) item {
+                    SectionLabel(
+                        text = stringResource(R.string.kitchen_directory_subcategories),
+                        showSortButton = true,
+                        onSort = { beginSorting() },
+                    )
+                }
                 items(displayedChildren, key = { it.id }) { category ->
                     CategoryRow(
                         category = category,
                         sorting = sorting,
                         deleteMode = sorting,
                         onClick = { currentCategoryId = category.id },
-                        onLongPressStart = { longPressFeedback = true },
-                        onLongPressEnd = { longPressFeedback = false },
-                        onLongPress = { beginSorting() },
-                        longPressFeedback = longPressFeedback,
                         listState = categoryListState,
                         onRename = {
                             renameTargetId = category.id
@@ -342,11 +308,6 @@ internal fun ArchiveLibraryScreen(
                                     add(to, removeAt(from))
                                 }
                             }
-                        },
-                        onAddChild = {
-                            newSubcategoryParentId = category.id
-                            newSubcategoryName = ""
-                            showNewSubcategoryDialog = true
                         },
                         onDelete = { deleteTargetId = category.id },
                     )
@@ -409,6 +370,17 @@ internal fun ArchiveLibraryScreen(
         SnackbarHost(
             hostState = sortSnackbarHostState,
             modifier = Modifier.fillMaxWidth(),
+        )
+        }
+
+        ArchiveSearchIsland(
+            expanded = searchOpen,
+            query = query,
+            onQueryChange = { query = it },
+            onExpand = { searchOpen = true },
+            onCollapse = { searchOpen = false },
+            modifier = Modifier.align(Alignment.TopEnd)
+                .padding(top = CulinarySpacing.xs, end = CulinarySpacing.pageHorizontal),
         )
     }
 
@@ -536,50 +508,60 @@ internal fun ArchiveLibraryScreen(
 }
 
 @Composable
-private fun ArchiveBrandHeader(
-    section: KitchenArchiveSection,
-    isSearchOpen: Boolean,
-    onSearch: () -> Unit,
-    onCloseSearch: () -> Unit,
-    sorting: Boolean = false,
-    onSaveSort: () -> Unit = {},
+private fun ArchiveSearchIsland(
+    expanded: Boolean,
+    query: String,
+    onQueryChange: (String) -> Unit,
+    onExpand: () -> Unit,
+    onCollapse: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
-    Row(
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .padding(horizontal = CulinarySpacing.pageHorizontal, vertical = CulinarySpacing.sm),
-        verticalAlignment = Alignment.CenterVertically,
+    Surface(
+        modifier = modifier.width(if (expanded) 292.dp else 48.dp)
+            .height(48.dp).animateContentSize(),
+        shape = CircleShape,
+        color = MaterialTheme.colorScheme.surface,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+        shadowElevation = 1.dp,
     ) {
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = "MISEBASE",
-                style = CulinaryTextStyles.eyebrow,
-                color = MaterialTheme.colorScheme.onSurface,
-            )
-            Text(
-                text = stringResource(section.subtitleRes),
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-        if (sorting) {
-            CulinaryTextButton(
-                text = "保存",
-                onClick = onSaveSort,
-            )
-        } else if (isSearchOpen) {
-            CulinaryTextButton(
-                text = stringResource(R.string.kitchen_search_close),
-                onClick = onCloseSearch,
-            )
-        } else {
-            CulinaryIconButton(
-                icon = CulinaryIcons.Search,
-                contentDescription = stringResource(R.string.kitchen_search_global_hint),
-                onClick = onSearch,
+        Row(
+            modifier = Modifier.fillMaxSize()
+                .padding(horizontal = if (expanded) CulinarySpacing.sm else 0.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(
+                imageVector = CulinaryIcons.Search,
+                contentDescription = if (expanded) null else stringResource(R.string.kitchen_search_global_hint),
                 tint = MaterialTheme.colorScheme.onSurface,
+                modifier = if (expanded) Modifier.size(20.dp) else Modifier.fillMaxSize()
+                    .clickable(onClick = onExpand).padding(14.dp),
             )
+            if (expanded) {
+                BasicTextField(
+                    value = query,
+                    onValueChange = onQueryChange,
+                    singleLine = true,
+                    textStyle = MaterialTheme.typography.bodyMedium.copy(color = MaterialTheme.colorScheme.onSurface),
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                    modifier = Modifier.weight(1f),
+                    decorationBox = { innerTextField ->
+                        Box(modifier = Modifier.padding(start = CulinarySpacing.xs)) {
+                            if (query.isEmpty()) Text(
+                                text = stringResource(R.string.kitchen_search_global_hint),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                            innerTextField()
+                        }
+                    },
+                )
+                Icon(
+                    imageVector = CulinaryIcons.Close,
+                    contentDescription = stringResource(R.string.kitchen_search_close),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(36.dp).clickable(onClick = onCollapse).padding(9.dp),
+                )
+            }
         }
     }
 }
@@ -659,15 +641,35 @@ private fun ArchiveContextHeader(
 }
 
 @Composable
-private fun SectionLabel(text: String) {
+private fun SectionLabel(
+    text: String,
+    showSortButton: Boolean = false,
+    onSort: () -> Unit = {},
+) {
     Column(modifier = Modifier.fillMaxWidth().padding(top = CulinarySpacing.lg)) {
         CulinaryRule()
-        Text(
-            text = text,
-            style = CulinaryTextStyles.eyebrow,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(horizontal = CulinarySpacing.pageHorizontal, vertical = CulinarySpacing.sm),
-        )
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = CulinarySpacing.pageHorizontal),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = text,
+                style = CulinaryTextStyles.eyebrow,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.weight(1f).padding(vertical = CulinarySpacing.sm),
+            )
+            if (showSortButton) Box(
+                modifier = Modifier.size(32.dp).clickable(onClick = onSort),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    imageVector = CulinaryIcons.Sort,
+                    contentDescription = "分类排序",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(16.dp),
+                )
+            }
+        }
     }
 }
 
@@ -677,19 +679,11 @@ private fun CategoryRow(
     sorting: Boolean,
     deleteMode: Boolean,
     onClick: () -> Unit,
-    onLongPressStart: () -> Unit,
-    onLongPressEnd: () -> Unit,
-    onLongPress: () -> Unit,
-    longPressFeedback: Boolean,
     listState: LazyListState,
     onRename: () -> Unit,
     onMove: (Int) -> Unit,
-    onAddChild: () -> Unit,
     onDelete: () -> Unit,
 ) {
-    val actionInteractionSource = remember(category.id) { MutableInteractionSource() }
-    val actionPressed by actionInteractionSource.collectIsPressedAsState()
-    val haptic = LocalHapticFeedback.current
     var dragging by remember(category.id) { mutableStateOf(false) }
     var dragOffsetY by remember(category.id) { mutableFloatStateOf(0f) }
     var rowHeightPx by remember(category.id) { mutableIntStateOf(0) }
@@ -776,21 +770,7 @@ private fun CategoryRow(
                     }
                 } else {
                     Modifier.pointerInput(category.id, sorting) {
-                        var longPressRecognized = false
-                        detectTapGestures(
-                            onTap = { onClick() },
-                            onPress = {
-                                longPressRecognized = false
-                                val released = tryAwaitRelease()
-                                onLongPressEnd()
-                                if (released && longPressRecognized) onLongPress()
-                            },
-                            onLongPress = {
-                                longPressRecognized = true
-                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                onLongPressStart()
-                            },
-                        )
+                        detectTapGestures(onTap = { onClick() })
                     }
                 },
             )
@@ -825,22 +805,15 @@ private fun CategoryRow(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
-        Box(
-            modifier = Modifier
-                .sizeIn(minWidth = 48.dp, minHeight = 48.dp)
-                .clickable(
-                    interactionSource = actionInteractionSource,
-                    indication = null,
-                    onClick = if (deleteMode) onDelete else onAddChild,
-                )
-                .shadow(if (actionPressed) 3.dp else 0.dp, RectangleShape)
-                .padding(horizontal = CulinarySpacing.xs, vertical = CulinarySpacing.sm),
-            contentAlignment = Alignment.Center,
-        ) {
-            if (deleteMode) {
-                Icon(CulinaryIcons.Trash, contentDescription = "删除子库", tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(20.dp))
-            } else {
-                Text("＋ 新建子库", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.secondary)
+        if (deleteMode) {
+            Box(
+                modifier = Modifier.sizeIn(minWidth = 48.dp, minHeight = 48.dp)
+                    .clickable(onClick = onDelete)
+                    .padding(horizontal = CulinarySpacing.xs, vertical = CulinarySpacing.sm),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(CulinaryIcons.Trash, contentDescription = "删除子库",
+                    tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(20.dp))
             }
         }
         if (!sorting) {

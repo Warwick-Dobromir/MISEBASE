@@ -45,7 +45,9 @@ class ArchiveLibraryScreenTest {
         show()
 
         compose.onNodeWithText("酱汁库").assertIsDisplayed()
-        compose.onNodeWithText("SAUCE COLLECTION").assertIsDisplayed()
+        compose.onNodeWithText("SAUCE COLLECTION").assertDoesNotExist()
+        compose.onNodeWithContentDescription("分类排序").assertIsDisplayed()
+        compose.onNodeWithContentDescription("全局搜索").assertIsDisplayed()
         compose.onNodeWithText("下级分类").assertIsDisplayed()
         compose.onNodeWithText("酱汁基础").assertIsDisplayed()
     }
@@ -147,6 +149,15 @@ class ArchiveLibraryScreenTest {
 
         assertThat(createdParent).isEqualTo("base")
         assertThat(createdName).isEqualTo("冷酱")
+    }
+
+    @Test
+    fun `sort icon enters sorting mode without long press`() {
+        show()
+
+        compose.onNodeWithContentDescription("分类排序").performClick()
+        compose.onNodeWithText("取消").assertIsDisplayed()
+        compose.onNodeWithContentDescription("删除子库").assertIsDisplayed()
     }
 
     @Test

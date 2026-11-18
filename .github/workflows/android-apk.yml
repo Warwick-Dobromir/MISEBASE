@@ -3,7 +3,7 @@ name: Android APK
 
 on:
   push:
-    branches: [main, fix/archive-category-interactions, fix/archive-sort-feedback, build/pen-flip-90fb110]
+    branches: [main, fix/archive-category-interactions, fix/archive-sort-feedback, build/pen-flip-90fb110, ui/subcategory-search-sort-20261118]
   workflow_dispatch:
 
 permissions:
@@ -75,7 +75,7 @@ jobs:
         if: github.ref != 'refs/heads/main'
         uses: actions/upload-artifact@v4
         with:
-          name: MISEBASE-pen-flip-90fb110
+          name: MISEBASE-subcategory-search-sort-20261118
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
           retention-days: 7
