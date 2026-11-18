@@ -14,6 +14,8 @@ data class Ingredient(
     val status: EntityStatus,
     val category: String? = null,
     val scientificName: String? = null,
+    val commonVarieties: String? = null,
+    val ediblePortion: String? = null,
     val description: String? = null,
     val flavorProfile: String? = null,
     val seasonality: String? = null,
