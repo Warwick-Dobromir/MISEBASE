@@ -747,7 +747,7 @@ internal fun archiveEdgeResistanceOffset(
     val maxRaw = limit * 5f
     val raw = overdragPx.coerceIn(-maxRaw, maxRaw)
     val progress = (kotlin.math.abs(raw) / maxRaw).coerceIn(0f, 1f)
-    val resisted = limit * progress.pow(0.8f)
+    val resisted = limit * progress.pow(1.15f)
     return resisted * raw.sign
 }
 
@@ -770,7 +770,7 @@ internal fun archiveDragOffsetAfterDelta(
 
     if (currentEdgeOverdragPx != 0f) {
         val maxRaw = maxEdgeOffsetPx.coerceAtLeast(1f) * 5f
-        val updatedRaw = (currentEdgeOverdragPx + deltaPx).coerceIn(-maxRaw, maxRaw)
+        val updatedRaw = currentEdgeOverdragPx + deltaPx
         val stillAtSameEdge = updatedRaw != 0f &&
             updatedRaw.sign == currentEdgeOverdragPx.sign
         if (stillAtSameEdge) {
@@ -786,7 +786,7 @@ internal fun archiveDragOffsetAfterDelta(
         if (!canMove(1) || !move(1)) {
             return ArchiveDragOffsetState(
                 offsetPx = archiveEdgeResistanceOffset(offset, maxEdgeOffsetPx),
-                edgeOverdragPx = offset.coerceIn(-maxEdgeOffsetPx.coerceAtLeast(1f) * 5f, maxEdgeOffsetPx.coerceAtLeast(1f) * 5f),
+                edgeOverdragPx = offset,
             )
         }
         offset -= threshold
@@ -795,7 +795,7 @@ internal fun archiveDragOffsetAfterDelta(
         if (!canMove(-1) || !move(-1)) {
             return ArchiveDragOffsetState(
                 offsetPx = archiveEdgeResistanceOffset(offset, maxEdgeOffsetPx),
-                edgeOverdragPx = offset.coerceIn(-maxEdgeOffsetPx.coerceAtLeast(1f) * 5f, maxEdgeOffsetPx.coerceAtLeast(1f) * 5f),
+                edgeOverdragPx = offset,
             )
         }
         offset += threshold
@@ -804,7 +804,7 @@ internal fun archiveDragOffsetAfterDelta(
     if ((offset < 0f && !canMove(-1)) || (offset > 0f && !canMove(1))) {
         return ArchiveDragOffsetState(
             offsetPx = archiveEdgeResistanceOffset(offset, maxEdgeOffsetPx),
-            edgeOverdragPx = offset.coerceIn(-maxEdgeOffsetPx.coerceAtLeast(1f) * 5f, maxEdgeOffsetPx.coerceAtLeast(1f) * 5f),
+            edgeOverdragPx = offset,
         )
     }
     return ArchiveDragOffsetState(offsetPx = offset)
@@ -882,8 +882,7 @@ private fun CategoryRow(
                         // 列表滚动会移动行本身；用实际消费量补偿视觉偏移，保持项目与手指同步。
                         dragOffsetY += consumed
                         if (edgeOverdragY != 0f) {
-                            edgeOverdragY = (edgeOverdragY + consumed)
-                                .coerceIn(-maxEdgeOffsetPx * 5f, maxEdgeOffsetPx * 5f)
+                            edgeOverdragY += consumed
                             dragOffsetY = archiveEdgeResistanceOffset(edgeOverdragY, maxEdgeOffsetPx)
                         }
                     }

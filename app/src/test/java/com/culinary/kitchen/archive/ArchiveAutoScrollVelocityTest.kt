@@ -31,7 +31,7 @@ class ArchiveAutoScrollVelocityTest {
 
         assertThat(result.offsetPx).isLessThan(0f)
         assertThat(abs(result.offsetPx)).isAtMost(12f)
-        assertThat(result.edgeOverdragPx).isEqualTo(-60f)
+        assertThat(result.edgeOverdragPx).isEqualTo(-80f)
         assertThat(moveCalls).isEqualTo(0)
     }
 
@@ -50,12 +50,12 @@ class ArchiveAutoScrollVelocityTest {
 
         assertThat(result.offsetPx).isGreaterThan(0f)
         assertThat(result.offsetPx).isAtMost(12f)
-        assertThat(result.edgeOverdragPx).isEqualTo(60f)
+        assertThat(result.edgeOverdragPx).isEqualTo(80f)
         assertThat(moveCalls).isEqualTo(0)
     }
 
     @Test
-    fun reachingFirstItemKeepsOnlyBoundedElasticResidual() {
+    fun reachingFirstItemRetainsFullPointerDistanceForSmoothReturn() {
         var index = 1
         val result = archiveDragOffsetAfterDelta(
             currentOffsetPx = 0f,
@@ -70,7 +70,7 @@ class ArchiveAutoScrollVelocityTest {
         assertThat(index).isEqualTo(0)
         assertThat(result.offsetPx).isLessThan(0f)
         assertThat(abs(result.offsetPx)).isAtMost(12f)
-        assertThat(result.edgeOverdragPx).isEqualTo(-60f)
+        assertThat(result.edgeOverdragPx).isEqualTo(-150f)
     }
 
     @Test
@@ -132,7 +132,7 @@ class ArchiveAutoScrollVelocityTest {
     }
 
     @Test
-    fun continuedOutwardMovementDoesNotAccumulateUnboundedPointerSeparation() {
+    fun continuedOutwardMovementKeepsTruePointerDistanceButCapsVisualOffset() {
         val first = archiveDragOffsetAfterDelta(
             currentOffsetPx = 0f,
             currentEdgeOverdragPx = 0f,
@@ -153,8 +153,58 @@ class ArchiveAutoScrollVelocityTest {
         )
 
         assertThat(abs(first.offsetPx)).isAtMost(12f)
-        assertThat(abs(first.edgeOverdragPx)).isAtMost(60f)
+        assertThat(first.edgeOverdragPx).isEqualTo(-2_000f)
         assertThat(reversed.offsetPx).isGreaterThan(first.offsetPx)
-        assertThat(reversed.edgeOverdragPx).isGreaterThan(first.edgeOverdragPx)
+        assertThat(reversed.edgeOverdragPx).isEqualTo(-1_990f)
+        assertThat(abs(reversed.offsetPx)).isAtMost(12f)
+    }
+
+    @Test
+    fun longReverseGestureKeepsEdgeStateUntilFingerReturnsToBoundary() {
+        val outward = archiveDragOffsetAfterDelta(
+            currentOffsetPx = 0f,
+            currentEdgeOverdragPx = 0f,
+            deltaPx = -500f,
+            rowHeightPx = 100f,
+            maxEdgeOffsetPx = 12f,
+            canMove = { false },
+            move = { false },
+        )
+        val stillOutside = archiveDragOffsetAfterDelta(
+            currentOffsetPx = outward.offsetPx,
+            currentEdgeOverdragPx = outward.edgeOverdragPx,
+            deltaPx = 400f,
+            rowHeightPx = 100f,
+            maxEdgeOffsetPx = 12f,
+            canMove = { false },
+            move = { false },
+        )
+        val approaching = archiveDragOffsetAfterDelta(
+            currentOffsetPx = stillOutside.offsetPx,
+            currentEdgeOverdragPx = stillOutside.edgeOverdragPx,
+            deltaPx = 50f,
+            rowHeightPx = 100f,
+            maxEdgeOffsetPx = 12f,
+            canMove = { false },
+            move = { false },
+        )
+        val backAtBoundary = archiveDragOffsetAfterDelta(
+            currentOffsetPx = approaching.offsetPx,
+            currentEdgeOverdragPx = approaching.edgeOverdragPx,
+            deltaPx = 50f,
+            rowHeightPx = 100f,
+            maxEdgeOffsetPx = 12f,
+            canMove = { false },
+            move = { false },
+        )
+
+        assertThat(outward.edgeOverdragPx).isEqualTo(-500f)
+        assertThat(stillOutside.edgeOverdragPx).isEqualTo(-100f)
+        assertThat(stillOutside.offsetPx).isEqualTo(-12f)
+        assertThat(approaching.edgeOverdragPx).isEqualTo(-50f)
+        assertThat(approaching.offsetPx).isGreaterThan(-12f)
+        assertThat(approaching.offsetPx).isLessThan(0f)
+        assertThat(backAtBoundary.edgeOverdragPx).isEqualTo(0f)
+        assertThat(backAtBoundary.offsetPx).isEqualTo(0f)
     }
 }
