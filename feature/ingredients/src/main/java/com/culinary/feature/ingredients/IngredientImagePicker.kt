@@ -25,7 +25,7 @@ internal fun rememberIngredientImagePicker(onPicked: (PendingIngredientImage) ->
                         withContext(Dispatchers.IO) {
                             runCatching {
                                 val bytes = context.contentResolver.openInputStream(uri)?.use { it.readBytes() }
-                                if (bytes.isNullOrEmpty()) null else {
+                                if (bytes == null || bytes.isEmpty()) null else {
                                     PendingIngredientImage(
                                         bytes = bytes,
                                         mimeType = context.contentResolver.getType(uri) ?: "image/jpeg",
