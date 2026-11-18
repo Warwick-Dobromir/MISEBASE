@@ -236,6 +236,7 @@ internal fun ArchiveLibraryScreen(
                 sorting = sorting,
                 onSearch = { searchOpen = true },
                 onCloseSearch = { searchOpen = false },
+                onReturnSort = { requestSortReturn() },
                 onSaveSort = {
                     if (sorting && !pendingSave && sortDirty) {
                         submittedOrder = workingOrder
@@ -618,6 +619,7 @@ private fun ArchiveBrandHeader(
     onSearch: () -> Unit,
     onCloseSearch: () -> Unit,
     sorting: Boolean = false,
+    onReturnSort: () -> Unit = {},
     onSaveSort: () -> Unit = {},
 ) {
     Row(
@@ -647,6 +649,12 @@ private fun ArchiveBrandHeader(
             CulinaryTextButton(
                 text = "保存",
                 onClick = onSaveSort,
+            )
+            CulinaryIconButton(
+                icon = CulinaryIcons.Back,
+                contentDescription = "返回排序",
+                onClick = onReturnSort,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         } else if (isSearchOpen) {
             CulinaryTextButton(
