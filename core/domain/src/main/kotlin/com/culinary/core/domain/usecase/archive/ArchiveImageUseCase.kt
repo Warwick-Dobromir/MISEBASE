@@ -30,7 +30,7 @@ class ArchiveImageUseCase(
         owner: ArchiveImageOwner,
         ownerId: String,
     ): Map<Int, ByteArray> {
-        val images = repository.list(owner, ownerId)
+        val images = repository?.list(owner, ownerId).orEmpty()
         val result = linkedMapOf<Int, ByteArray>()
         images.forEach { image ->
             val stepNo = image.stepNo ?: return@forEach
