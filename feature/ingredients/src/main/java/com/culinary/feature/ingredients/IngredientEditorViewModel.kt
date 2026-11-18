@@ -343,6 +343,7 @@ class IngredientEditorViewModel
 
         fun save() {
             val state = _uiState.value
+            if (state.isSaving || state.saved) return
             val name = state.name.trim()
             if (name.isEmpty()) {
                 _uiState.update { it.copy(error = "名称不能为空。") }
@@ -372,8 +373,8 @@ class IngredientEditorViewModel
                     note = row.note.trim().takeIf { it.isNotEmpty() },
                 )
             }
+            _uiState.update { it.copy(isSaving = true, error = null) }
             viewModelScope.launch {
-                _uiState.update { it.copy(isSaving = true, error = null) }
                 val result =
                     saveIngredient(
                         SaveIngredientInput(
