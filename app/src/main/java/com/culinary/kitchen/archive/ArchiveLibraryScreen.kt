@@ -283,11 +283,6 @@ internal fun ArchiveLibraryScreen(
                     directCount = directEntries.size,
                     sorting = sorting,
                     onAdd = if (!showingSearch && currentCategoryId == null) onAdd else null,
-                    onCreateSubcategory = {
-                        newSubcategoryParentId = currentCategory?.id
-                        newSubcategoryName = ""
-                        showNewSubcategoryDialog = true
-                    },
                     onBack = {
                         if (sorting) requestSortReturn()
                         else if (currentCategory == null) onBack()
@@ -628,7 +623,6 @@ private fun ArchiveContextHeader(
     directCount: Int,
     sorting: Boolean,
     onAdd: (() -> Unit)?,
-    onCreateSubcategory: (() -> Unit)?,
     onBack: () -> Unit,
 ) {
     Column(modifier = Modifier.padding(horizontal = CulinarySpacing.pageHorizontal)) {
@@ -650,9 +644,6 @@ private fun ArchiveContextHeader(
                     text = "＋ " + stringResource(section.newLabelRes),
                     onClick = action,
                 )
-            }
-            onCreateSubcategory?.let { action ->
-                CulinaryTextButton(text = "＋ 新建子库", onClick = action)
             }
         }
         if (categoryPath.isNotEmpty()) {
