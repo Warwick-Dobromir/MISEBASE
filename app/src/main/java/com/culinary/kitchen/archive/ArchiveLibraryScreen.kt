@@ -312,13 +312,20 @@ internal fun ArchiveLibraryScreen(
                             renameTargetId = category.id
                             renameName = category.name
                         },
+                        canMove = { delta ->
+                            val from = workingOrder.indexOf(category.id)
+                            from >= 0 && (from + delta) in workingOrder.indices
+                        },
                         onMove = { delta ->
                             val from = workingOrder.indexOf(category.id)
-                            val to = (from + delta).coerceIn(0, workingOrder.lastIndex)
-                            if (from >= 0 && to != from) {
+                            val to = from + delta
+                            if (from >= 0 && to in workingOrder.indices) {
                                 workingOrder = workingOrder.toMutableList().apply {
                                     add(to, removeAt(from))
                                 }
+                                true
+                            } else {
+                                false
                             }
                         },
                         onDelete = { deleteTargetId = category.id },
@@ -720,6 +727,37 @@ internal fun archiveAutoScrollVelocityPxPerSecond(edgeProgress: Float): Float {
     return 320f + 2_080f * progress * progress
 }
 
+/**
+ * Applies one pointer delta while enforcing the current sortable-list boundaries.
+ * A failed move never consumes a row distance; outward movement at either end is
+ * clamped immediately, while movement back into the list remains available.
+ */
+internal fun archiveDragOffsetAfterDelta(
+    currentOffsetPx: Float,
+    deltaPx: Float,
+    rowHeightPx: Float,
+    canMove: (Int) -> Boolean,
+    move: (Int) -> Boolean,
+): Float {
+    val threshold = rowHeightPx.coerceAtLeast(1f)
+    var offset = currentOffsetPx + deltaPx
+
+    if (offset < 0f && !canMove(-1)) return 0f
+    if (offset > 0f && !canMove(1)) return 0f
+
+    while (offset >= threshold) {
+        if (!canMove(1) || !move(1)) return 0f
+        offset -= threshold
+        if (offset > 0f && !canMove(1)) return 0f
+    }
+    while (offset <= -threshold) {
+        if (!canMove(-1) || !move(-1)) return 0f
+        offset += threshold
+        if (offset < 0f && !canMove(-1)) return 0f
+    }
+    return offset
+}
+
 @Composable
 private fun CategoryRow(
     category: KitchenArchiveCategory,
@@ -728,12 +766,14 @@ private fun CategoryRow(
     onClick: () -> Unit,
     listState: LazyListState,
     onRename: () -> Unit,
-    onMove: (Int) -> Unit,
+    canMove: (Int) -> Boolean,
+    onMove: (Int) -> Boolean,
     onDelete: () -> Unit,
 ) {
     var dragging by remember(category.id) { mutableStateOf(false) }
     var dragOffsetY by remember(category.id) { mutableFloatStateOf(0f) }
     var rowHeightPx by remember(category.id) { mutableIntStateOf(0) }
+    val currentCanMove by rememberUpdatedState(canMove)
     val currentOnMove by rememberUpdatedState(onMove)
 
     // 在内容视口内提前触发自动滚动，避免手指必须抵达系统状态栏/导航栏边缘。
@@ -834,18 +874,15 @@ private fun CategoryRow(
                             },
                             onDrag = { change, amount ->
                                 change.consume()
-                                dragOffsetY += amount.y
-                                // 以整行实际高度作为换位补偿，抵消列表重排造成的布局位移，
-                                // 选中项的视觉位置因此连续跟随手指，不会一次跨越多行。
-                                val threshold = rowHeightPx.toFloat().coerceAtLeast(1f)
-                                while (dragOffsetY >= threshold) {
-                                    currentOnMove(1)
-                                    dragOffsetY -= threshold
-                                }
-                                while (dragOffsetY <= -threshold) {
-                                    currentOnMove(-1)
-                                    dragOffsetY += threshold
-                                }
+                                // 首尾边界在视觉偏移阶段即生效：不允许拖动项穿过可排序区域。
+                                // 只有真实完成换位才消耗整行距离；边界处立即归零，反向拖动仍可继续。
+                                dragOffsetY = archiveDragOffsetAfterDelta(
+                                    currentOffsetPx = dragOffsetY,
+                                    deltaPx = amount.y,
+                                    rowHeightPx = rowHeightPx.toFloat(),
+                                    canMove = currentCanMove,
+                                    move = currentOnMove,
+                                )
                             },
                         )
                     }
