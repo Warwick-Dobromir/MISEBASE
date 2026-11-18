@@ -61,6 +61,7 @@ data class IngredientEditorUiState(
     val categoryPathIds: List<String> = emptyList(),
     val defaultUnit: UnitModel? = null,
     val units: List<UnitModel> = emptyList(),
+    val conversions: List<IngredientConversionDraft> = emptyList(),
     val isLoading: Boolean = true,
     val isSaving: Boolean = false,
     val saved: Boolean = false,
@@ -103,3 +104,11 @@ object IngredientErrorMessages {
 
 /** 编辑器中已存在或待保存的食材附图。 */
 data class IngredientImageDraft(val id: String?, val bytes: ByteArray, val mimeType: String = "image/jpeg")
+
+/** 食材档案中的单位换算编辑行。 */
+data class IngredientConversionDraft(
+    val fromUnitId: String,
+    val toUnitId: String,
+    val factor: String,
+    val note: String = "",
+)
