@@ -5,6 +5,7 @@ import com.culinary.core.common.Clock
 import com.culinary.core.common.CulinaryError
 import com.culinary.core.common.ErrorCode
 import com.culinary.core.common.Outcome
+import com.culinary.core.common.UuidV4Generator
 import com.culinary.core.database.CulinaryDatabase
 import com.culinary.core.database.CulinaryDatabaseCallback
 import com.culinary.core.domain.model.EntityStatus
@@ -29,6 +30,7 @@ class IngredientRepositoryTest {
     private lateinit var repository: IngredientRepositoryImpl
 
     private val clock = Clock { Instant.ofEpochMilli(NOW) }
+    private val idGenerator = UuidV4Generator()
 
     @Before
     fun setUp() {
@@ -40,7 +42,14 @@ class IngredientRepositoryTest {
                 ).addCallback(CulinaryDatabaseCallback())
                 .allowMainThreadQueries()
                 .build()
-        repository = IngredientRepositoryImpl(database.ingredientDao(), clock)
+        repository =
+            IngredientRepositoryImpl(
+                database.ingredientDao(),
+                database.ingredientUnitConversionDao(),
+                database.changeLogDao(),
+                clock,
+                idGenerator,
+            )
     }
 
     @After

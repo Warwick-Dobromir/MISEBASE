@@ -16,6 +16,7 @@ import com.culinary.core.domain.model.NewInventoryBatch
 import com.culinary.core.domain.model.Product
 import com.culinary.core.domain.model.ProductId
 import com.culinary.core.domain.model.Recipe
+import com.culinary.core.domain.model.RecipeId
 import com.culinary.core.domain.model.RecipeVersion
 import com.culinary.core.domain.model.RecipeVersionId
 import com.culinary.core.domain.model.Sauce
@@ -63,6 +64,14 @@ class InMemoryRecipeRepository : RecipeRepository {
         recipes.removeAll { it.id == recipe.id }
         recipes += recipe
         return Outcome.success(recipe.id)
+    }
+
+    override suspend fun archive(id: RecipeId): Outcome<Unit> {
+        val existing = recipes.firstOrNull { it.id == id }
+            ?: return Outcome.failure(CulinaryError.NotFound(entity = "recipe", id = id.value))
+        recipes.remove(existing)
+        recipes += existing.copy(status = EntityStatus.ARCHIVED)
+        return Outcome.success(Unit)
     }
 
     override suspend fun saveDraft(version: RecipeVersion): RecipeVersionId {
