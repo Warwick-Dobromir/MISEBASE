@@ -81,7 +81,7 @@ class IngredientEditorViewModel
                             val primary = images.firstOrNull { it.role == "PRIMARY" }
                             val primaryBytes = primary?.let { archiveImages.read(it.id) }
                             val referenceImages = images.filter { it.role == "REFERENCE" }.mapNotNull { image ->
-                                archiveImages.read(image.id)?.let { IngredientImageDraft(image.id, it, "image/jpeg") }
+                                archiveImages.read(image.id)?.let { IngredientImageDraft(image.id, it, image.mimeType ?: "image/jpeg") }
                             }
                             _uiState.update {
                                 it.copy(
