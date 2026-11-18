@@ -209,11 +209,7 @@ internal fun ArchiveLibraryScreen(
         showSortExitDialog = false
     }
     fun requestSortReturn() {
-        if (sortDirty) {
-            showSortExitDialog = true
-        } else {
-            finishSorting()
-        }
+        showSortExitDialog = true
     }
 
     BackHandler(enabled = searchOpen) { searchOpen = false }
