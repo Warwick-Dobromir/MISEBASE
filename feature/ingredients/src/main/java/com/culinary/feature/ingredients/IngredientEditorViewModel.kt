@@ -77,9 +77,7 @@ class IngredientEditorViewModel
                             _uiState.update {
                                 it.copy(
                                     name = result.value.ingredient.name,
-                                    category =
-                                        assignedCategory?.name
-                                            ?: result.value.ingredient.category.orEmpty(),
+                                    category = assignedCategory?.name ?: result.value.ingredient.category.orEmpty(),
                                     categoryPathIds = categoryPath,
                                     description =
                                         result.value.ingredient.description
@@ -87,12 +85,24 @@ class IngredientEditorViewModel
                                     englishName =
                                         result.value.ingredient.englishName
                                             .orEmpty(),
-                                    scientificName = result.value.ingredient.scientificName.orEmpty(),
-                                    flavorProfile = result.value.ingredient.flavorProfile.orEmpty(),
-                                    seasonality = result.value.ingredient.seasonality.orEmpty(),
-                                    origin = result.value.ingredient.origin.orEmpty(),
-                                    selectionNotes = result.value.ingredient.selectionNotes.orEmpty(),
-                                    prepNotes = result.value.ingredient.prepNotes.orEmpty(),
+                                    scientificName = 
+                                        result.value.ingredient.scientificName
+                                            .orEmpty(),
+                                    flavorProfile = 
+                                        result.value.ingredient.flavorProfile
+                                            .orEmpty(),
+                                    seasonality = 
+                                        result.value.ingredient.seasonality
+                                            .orEmpty(),
+                                    origin = 
+                                        result.value.ingredient.origin
+                                            .orEmpty(),
+                                    selectionNotes = 
+                                        result.value.ingredient.selectionNotes
+                                            .orEmpty(),
+                                    prepNotes = 
+                                        result.value.ingredient.prepNotes
+                                            .orEmpty(),
                                     exampleProducts =
                                         result.value.ingredient.exampleProducts
                                             .orEmpty(),
@@ -130,14 +140,19 @@ class IngredientEditorViewModel
             _uiState.update { it.copy(category = value, categoryPathIds = emptyList()) }
         }
 
-        fun onCategorySelect(level: Int, categoryId: String?) {
+        fun onCategorySelect(
+            level: Int,
+            categoryId: String?,
+        ) {
             _uiState.update { state ->
                 val base = state.categoryPathIds.take(level.coerceAtLeast(0))
                 val next = if (categoryId == null) base else base + categoryId
                 val leafName =
-                    next.lastOrNull()?.let { id ->
-                        state.categories.firstOrNull { it.id == id }?.name
-                    }.orEmpty()
+                    next.lastOrNull()
+                        ?.let { id ->
+                            state.categories.firstOrNull { it.id == id }?.name
+                        }
+                        .orEmpty()
                 state.copy(category = leafName, categoryPathIds = next, error = null)
             }
         }
