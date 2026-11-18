@@ -41,7 +41,7 @@ class IngredientDetailViewModel
         init {
             load()
             viewModelScope.launch {
-                getRelations(ingredientId.value).collect { relations ->
+                getRelations.referencing(ingredientId.value).collect { relations ->
                     _uiState.update { it.copy(relations = relations) }
                 }
             }
