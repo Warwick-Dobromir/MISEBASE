@@ -39,7 +39,6 @@ import com.culinary.core.designsystem.component.ErrorBanner
 import com.culinary.core.designsystem.component.LoadingRows
 import com.culinary.core.designsystem.theme.CulinarySpacing
 import com.culinary.core.designsystem.theme.CulinaryTextStyles
-import com.culinary.core.domain.model.IngredientDetail
 import com.culinary.core.domain.model.KitchenRecordKind
 import com.culinary.core.domain.model.KitchenRelatedRecord
 
@@ -131,9 +130,12 @@ internal fun IngredientDetailContent(
             Spacer(modifier = Modifier.height(CulinarySpacing.lg))
             Column(modifier = Modifier.fillMaxWidth()) {
                 Text(
-                    text = (detailState.categoryPath.lastOrNull()
-                        ?: ingredient.category?.takeIf { it.isNotBlank() }
-                        ?: "INGREDIENT").uppercase(),
+                    text =
+                        (
+                            detailState.categoryPath.lastOrNull()
+                                ?: ingredient.category?.takeIf { it.isNotBlank() }
+                                ?: "INGREDIENT"
+                        ).uppercase(),
                     style = CulinaryTextStyles.eyebrow,
                     color = MaterialTheme.colorScheme.secondary,
                 )
@@ -161,7 +163,10 @@ internal fun IngredientDetailContent(
             }
 
             ArchiveModuleHeader(number = "01", english = "BASIC INFORMATION", chinese = "基础信息")
-            ArchiveField("默认单位", detail.defaultUnit?.let { "${it.name}（${it.symbol}）" } ?: "未设置")
+            ArchiveField(
+                "默认单位",
+                detail.defaultUnit?.let { "${it.name}（${it.symbol}）" } ?: "未设置",
+            )
             ArchiveField("学名", ingredient.scientificName)
             Spacer(modifier = Modifier.height(CulinarySpacing.xl))
 
@@ -194,7 +199,10 @@ internal fun IngredientDetailContent(
                     val from = conversion.fromUnit?.symbol ?: conversion.fromUnitId.value
                     val to = conversion.toUnit?.symbol ?: conversion.toUnitId.value
                     Row(
-                        modifier = Modifier.fillMaxWidth().padding(vertical = CulinarySpacing.xxs),
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = CulinarySpacing.xxs),
                         horizontalArrangement = Arrangement.End,
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
@@ -281,7 +289,12 @@ private fun IngredientRelationsSection(
                 title = relation.targetLabel,
                 subtitle = null,
                 relationLabel = relation.relationLabel,
-                onClick = { onOpenRelation(relation.targetKind, relation.targetRecordId) },
+                onClick = {
+                    onOpenRelation(
+                        relation.targetKind,
+                        relation.targetRecordId,
+                    )
+                },
             )
         }
     }
