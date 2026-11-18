@@ -122,30 +122,3 @@ private fun BottomBarItem(
         )
     }
 }
-
-
-/** 排序模式专用底栏：占据原五项导航栏的完整位置。 */
-@Composable
-fun ArchiveSortCancelBar(onCancel: () -> Unit) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(MaterialTheme.colorScheme.surface)
-            .navigationBarsPadding(),
-    ) {
-        HorizontalDivider(thickness = 1.dp, color = MaterialTheme.colorScheme.outlineVariant)
-        Box(
-            modifier = Modifier.fillMaxWidth().height(BarHeight),
-            contentAlignment = Alignment.Center,
-        ) {
-            Text(
-                text = "取消",
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier
-                    .selectable(selected = false, role = Role.Button, onClick = onCancel)
-                    .padding(horizontal = 32.dp, vertical = 16.dp),
-            )
-        }
-    }
-}

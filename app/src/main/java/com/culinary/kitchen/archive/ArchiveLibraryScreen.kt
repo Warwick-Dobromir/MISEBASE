@@ -366,7 +366,7 @@ remove old cancel row        SnackbarHost(
         )
         }
 
-        if (currentCategoryId != null || !sorting) {
+        if (currentCategoryId != null) {
             ArchiveBackFloatButton(
                 onClick = {
                     if (sorting) requestSortReturn()
