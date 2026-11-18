@@ -1,6 +1,7 @@
 name: Android APK
 # Rebuild latest archive navigation changes.
 # Re-run signed build after repository signing secrets were configured.
+# Rebuild after coroutine-safe archive auto-scroll correction.
 
 on:
   push:
