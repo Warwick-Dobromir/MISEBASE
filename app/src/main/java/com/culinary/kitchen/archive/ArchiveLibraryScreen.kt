@@ -854,45 +854,7 @@ private fun CategoryRow(
                 },
                 shape = RectangleShape,
             )
-            .then(
-                if (sorting) {
-                    Modifier.pointerInput(category.id, sorting) {
-                        detectDragGesturesAfterLongPress(
-                            onDragStart = {
-                                onDragStart()
-                                dragging = true
-                                dragOffsetY = 0f
-                            },
-                            onDragEnd = {
-                                dragging = false
-                                dragOffsetY = 0f
-                            },
-                            onDragCancel = {
-                                onDragCancel()
-                                dragging = false
-                                dragOffsetY = 0f
-                            },
-                            onDrag = { change, amount ->
-                                change.consume()
-                                dragOffsetY += amount.y
-                                // 以整行实际高度作为换位补偿，抵消列表重排造成的布局位移，
-                                // 选中项的视觉位置因此连续跟随手指，不会一次跨越多行。
-                                val threshold = rowHeightPx.toFloat().coerceAtLeast(1f)
-                                while (dragOffsetY >= threshold) {
-                                    currentOnMove(1)
-                                    dragOffsetY -= threshold
-                                }
-                                while (dragOffsetY <= -threshold) {
-                                    currentOnMove(-1)
-                                    dragOffsetY += threshold
-                                }
-                            },
-                        )
-                    }
-                } else {
-                    Modifier.clickable(onClick = onClick)
-                },
-            )
+            .then(if (sorting) Modifier else Modifier.clickable(onClick = onClick))
             .padding(horizontal = CulinarySpacing.pageHorizontal, vertical = CulinarySpacing.md),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -923,6 +885,52 @@ private fun CategoryRow(
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
+        }
+        if (sorting) {
+            Box(
+                modifier = Modifier
+                    .sizeIn(minWidth = 48.dp, minHeight = 48.dp)
+                    .pointerInput(category.id, sorting) {
+                        detectDragGesturesAfterLongPress(
+                            onDragStart = {
+                                onDragStart()
+                                dragging = true
+                                dragOffsetY = 0f
+                            },
+                            onDragEnd = {
+                                dragging = false
+                                dragOffsetY = 0f
+                            },
+                            onDragCancel = {
+                                onDragCancel()
+                                dragging = false
+                                dragOffsetY = 0f
+                            },
+                            onDrag = { change, amount ->
+                                change.consume()
+                                dragOffsetY += amount.y
+                                val threshold = rowHeightPx.toFloat().coerceAtLeast(1f)
+                                while (dragOffsetY >= threshold) {
+                                    currentOnMove(1)
+                                    dragOffsetY -= threshold
+                                }
+                                while (dragOffsetY <= -threshold) {
+                                    currentOnMove(-1)
+                                    dragOffsetY += threshold
+                                }
+                            },
+                        )
+                    }
+                    .padding(horizontal = CulinarySpacing.xs, vertical = CulinarySpacing.sm),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    CulinaryIcons.Sort,
+                    contentDescription = "拖动排序",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(20.dp),
+                )
+            }
         }
         if (deleteMode) {
             Box(
