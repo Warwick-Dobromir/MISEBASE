@@ -18,37 +18,38 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.culinary.core.designsystem.component.ArchiveHeroImage
+import com.culinary.core.designsystem.component.ArchiveDetailBar
+import com.culinary.core.designsystem.component.ArchiveDetailFooter
+import com.culinary.core.designsystem.component.ArchiveDetailHeading
+import com.culinary.core.designsystem.component.ArchiveModuleHeader
+import com.culinary.core.designsystem.component.ArchiveProse
+import com.culinary.core.designsystem.component.ArchiveRelatedRow
+import com.culinary.core.designsystem.component.ArchiveWideImage
 import com.culinary.core.designsystem.component.ConfirmDialog
-import com.culinary.core.designsystem.component.CulinaryButton
-import com.culinary.core.designsystem.component.CulinaryButtonVariant
-import com.culinary.core.designsystem.component.CulinaryRelationItem
-import com.culinary.core.designsystem.component.CulinaryRelationSection
-import com.culinary.core.designsystem.component.CulinaryTextButton
+import com.culinary.core.designsystem.component.CulinaryLinkText
+import com.culinary.core.designsystem.component.CulinaryRule
 import com.culinary.core.designsystem.component.ErrorBanner
 import com.culinary.core.designsystem.component.LoadingRows
-import com.culinary.core.designsystem.component.PageHeader
-import com.culinary.core.designsystem.component.SectionHeader
-import com.culinary.core.designsystem.component.StatusBadge
-import com.culinary.core.designsystem.component.StatusTone
-import com.culinary.core.designsystem.icon.CulinaryIcons
 import com.culinary.core.designsystem.theme.CulinarySpacing
-import com.culinary.core.domain.model.IngredientConversionView
+import com.culinary.core.domain.model.IngredientDetail
 import com.culinary.core.domain.model.KitchenRecordKind
 import com.culinary.core.domain.model.KitchenRelatedRecord
 
-/** 食材详情路由：档案、默认单位、换算；可编辑或归档。 */
+/** 食材详情：沿用酱汁/菜谱档案详情的统一结构，食材字段独立映射。 */
 @Composable
 fun IngredientDetailRoute(
     onEdit: (String) -> Unit,
     onArchived: () -> Unit,
     onOpenRelation: (KitchenRecordKind, String) -> Unit = { _, _ -> },
+    onBack: () -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: IngredientDetailViewModel = hiltViewModel(),
 ) {
@@ -78,14 +79,13 @@ fun IngredientDetailRoute(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(CulinarySpacing.pageHorizontal),
                 )
-
-            else ->
-                IngredientDetailContent(
-                    detailState = state,
-                    onEdit = onEdit,
-                    onArchive = { showArchiveConfirm = true },
-                    onOpenRelation = onOpenRelation,
-                )
+            else -> IngredientDetailContent(
+                detailState = state,
+                onEdit = onEdit,
+                onArchive = { showArchiveConfirm = true },
+                onOpenRelation = onOpenRelation,
+                onBack = onBack,
+            )
         }
     }
 
@@ -111,121 +111,146 @@ internal fun IngredientDetailContent(
     onEdit: (String) -> Unit,
     onArchive: () -> Unit,
     onOpenRelation: (KitchenRecordKind, String) -> Unit,
+    onBack: () -> Unit = {},
 ) {
     val detail = detailState.detail ?: return
-    Column(
-        modifier =
-            Modifier
+    val ingredient = detail.ingredient
+    Column(modifier = Modifier.fillMaxSize()) {
+        ArchiveDetailBar(
+            editLabel = "编辑档案 ↗",
+            onBack = onBack,
+            onEdit = { onEdit(ingredient.id.value) },
+        )
+        Column(
+            modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
+                .padding(horizontal = CulinarySpacing.pageHorizontal)
                 .padding(bottom = CulinarySpacing.xl),
-    ) {
-        PageHeader(
-            eyebrow = "INGREDIENT",
-            title = detail.ingredient.name,
-            supporting =
-                detailState.categoryPath.joinToString(" / ").ifBlank {
-                    detail.ingredient.category ?: stringResource(R.string.ingredients_uncategorized)
-                },
-        )
-        detailState.imageBytes?.let { bytes ->
-            ArchiveHeroImage(
-                bytes = bytes,
-                modifier = Modifier.padding(horizontal = CulinarySpacing.pageHorizontal),
+        ) {
+            Spacer(modifier = Modifier.height(CulinarySpacing.lg))
+            ArchiveDetailHeading(
+                categoryLabel = detailState.categoryPath.lastOrNull()
+                    ?: ingredient.category?.takeIf { it.isNotBlank() }
+                    ?: "INGREDIENT",
+                englishTitle = null,
+                chineseTitle = ingredient.name,
+                description = ingredient.description,
             )
-        }
-        Column(modifier = Modifier.padding(horizontal = CulinarySpacing.pageHorizontal)) {
-            Row(horizontalArrangement = Arrangement.spacedBy(CulinarySpacing.xs)) {
-                if (detail.ingredient.isSeed) {
-                    StatusBadge(
-                        text = stringResource(R.string.ingredients_seed_badge),
-                        tone = StatusTone.Accent,
-                    )
+            ingredient.englishName?.takeIf { it.isNotBlank() }?.let {
+                Text(
+                    text = it,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = -CulinarySpacing.xs),
+                )
+                Spacer(modifier = Modifier.height(CulinarySpacing.md))
+            }
+            detailState.imageBytes?.let { bytes ->
+                ArchiveWideImage(bytes = bytes, caption = null)
+            }
+
+            ArchiveModuleHeader(number = "01", english = "BASIC INFORMATION", chinese = "基础信息")
+            ArchiveField("默认单位", detail.defaultUnit?.let { "${it.name}（${it.symbol}）" } ?: "未设置")
+            ArchiveField("学名", ingredient.scientificName)
+            Spacer(modifier = Modifier.height(CulinarySpacing.xl))
+
+            ArchiveModuleHeader(number = "02", english = "CHARACTERISTICS", chinese = "风味与特性")
+            ArchiveField("风味特征", ingredient.flavorProfile)
+            ArchiveField("时令", ingredient.seasonality)
+            ArchiveField("产地", ingredient.origin)
+            ArchiveField("挑选标准", ingredient.selectionNotes)
+            ArchiveField("预处理", ingredient.prepNotes)
+            Spacer(modifier = Modifier.height(CulinarySpacing.xl))
+
+            ArchiveModuleHeader(number = "03", english = "CULINARY APPLICATION", chinese = "烹饪应用")
+            ArchiveField("常见用途", ingredient.exampleProducts)
+            Spacer(modifier = Modifier.height(CulinarySpacing.xl))
+
+            ArchiveModuleHeader(number = "04", english = "STORAGE & SAFETY", chinese = "储存与安全")
+            ArchiveField("储存说明", ingredient.storageNotes)
+            ArchiveField("过敏原提示", ingredient.allergenNotes)
+            Spacer(modifier = Modifier.height(CulinarySpacing.xl))
+
+            ArchiveModuleHeader(number = "05", english = "UNIT CONVERSIONS", chinese = "单位换算")
+            if (detail.conversions.isEmpty()) {
+                Text(
+                    text = "暂无换算关系",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            } else {
+                detail.conversions.forEachIndexed { index, conversion ->
+                    val from = conversion.fromUnit?.symbol ?: conversion.fromUnitId.value
+                    val to = conversion.toUnit?.symbol ?: conversion.toUnitId.value
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(vertical = CulinarySpacing.xxs),
+                        horizontalArrangement = Arrangement.End,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            text = "1 $from  =  ${formatFactor(conversion.factor)} $to",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            textAlign = TextAlign.End,
+                        )
+                    }
+                    conversion.note?.takeIf { it.isNotBlank() }?.let {
+                        Text(
+                            text = it,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.fillMaxWidth(),
+                            textAlign = TextAlign.End,
+                        )
+                    }
+                    if (index < detail.conversions.lastIndex) {
+                        CulinaryRule()
+                    }
                 }
-                StatusBadge(
-                    text =
-                        stringResource(
-                            if (detail.ingredient.isActive) {
-                                R.string.ingredients_active
-                            } else {
-                                R.string.ingredients_archived
-                            },
-                        ),
-                    tone = if (detail.ingredient.isActive) StatusTone.Success else StatusTone.Neutral,
+            }
+            Spacer(modifier = Modifier.height(CulinarySpacing.xl))
+
+            ArchiveModuleHeader(number = "06", english = "RELATED RECORDS", chinese = "关联档案")
+            IngredientRelationsSection(detailState.relations, onOpenRelation)
+            Spacer(modifier = Modifier.height(CulinarySpacing.lg))
+
+            ArchiveDetailFooter(
+                updatedLabel = if (ingredient.isActive) "档案状态 · 正常" else "档案状态 · 已归档",
+                versionLabel = null,
+            )
+            Spacer(modifier = Modifier.height(CulinarySpacing.md))
+            CulinaryRule()
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(vertical = CulinarySpacing.md),
+                horizontalArrangement = Arrangement.Center,
+            ) {
+                CulinaryLinkText(
+                    text = "删除此食材档案",
+                    onClick = onArchive,
                 )
             }
         }
-
-        IngredientSummary(detail = detail, onEdit = onEdit, onArchive = onArchive)
-        ConversionsSection(conversions = detail.conversions)
-        IngredientRelationsSection(detailState.relations, onOpenRelation)
     }
 }
 
-@Suppress("CyclomaticComplexMethod")
 @Composable
-private fun IngredientSummary(
-    detail: com.culinary.core.domain.model.IngredientDetail,
-    onEdit: (String) -> Unit,
-    onArchive: () -> Unit,
-) {
-    Column(modifier = Modifier.padding(horizontal = CulinarySpacing.pageHorizontal)) {
-        SectionHeader(title = stringResource(R.string.ingredients_default_unit))
+private fun ArchiveField(label: String, value: String?) {
+    if (value.isNullOrBlank()) {
         Text(
-            text =
-                detail.defaultUnit?.let { "${it.name}（${it.symbol}）" }
-                    ?: stringResource(R.string.ingredients_no_unit),
-            style = MaterialTheme.typography.bodyLarge,
-            color = MaterialTheme.colorScheme.onSurface,
+            text = "$label · 暂未填写",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(vertical = CulinarySpacing.xs),
         )
-
-        if (!detail.ingredient.description.isNullOrBlank()) {
-            SectionHeader(title = stringResource(R.string.ingredients_description_label))
-            Text(
-                text = detail.ingredient.description.orEmpty(),
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurface,
-            )
-        }
-
-        listOfNotNull(
-            detail.ingredient.englishName?.let { stringResource(R.string.ingredients_english_name) to it },
-            detail.ingredient.scientificName?.let { "学名" to it },
-            detail.ingredient.flavorProfile?.let { "风味" to it },
-            detail.ingredient.seasonality?.let { "时令" to it },
-            detail.ingredient.origin?.let { "产地" to it },
-            detail.ingredient.selectionNotes?.let { "挑选" to it },
-            detail.ingredient.prepNotes?.let { "预处理" to it },
-            detail.ingredient.exampleProducts?.let { stringResource(R.string.ingredients_example_products) to it },
-            detail.ingredient.storageNotes?.let { stringResource(R.string.ingredients_storage) to it },
-            detail.ingredient.allergenNotes?.let { stringResource(R.string.ingredients_allergen) to it },
-            detail.ingredient.seedNote?.let { stringResource(R.string.ingredients_seed_note) to it },
-        ).forEach { (label, value) ->
-            SectionHeader(title = label)
-            Text(
-                text = value,
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurface,
-            )
-        }
-
-        Spacer(modifier = Modifier.height(CulinarySpacing.block))
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(CulinarySpacing.sm),
-        ) {
-            CulinaryButton(
-                text = stringResource(R.string.ingredients_edit),
-                onClick = { onEdit(detail.ingredient.id.value) },
-                variant = CulinaryButtonVariant.Secondary,
-                icon = CulinaryIcons.Edit,
-            )
-            CulinaryTextButton(
-                text = stringResource(R.string.ingredients_archive),
-                onClick = onArchive,
-                danger = true,
-            )
-        }
+    } else {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        ArchiveProse(value)
+        Spacer(modifier = Modifier.height(CulinarySpacing.sm))
     }
 }
 
@@ -234,61 +259,19 @@ private fun IngredientRelationsSection(
     relations: List<KitchenRelatedRecord>,
     onOpenRelation: (KitchenRecordKind, String) -> Unit,
 ) {
-    CulinaryRelationSection(
-        title = stringResource(R.string.ingredients_relations),
-        items =
-            relations.map { relation ->
-                CulinaryRelationItem(
-                    eyebrow = relation.relationLabel,
-                    title = relation.targetLabel,
-                    onClick = { onOpenRelation(relation.targetKind, relation.targetRecordId) },
-                )
-            },
-    )
-}
-
-@Composable
-private fun ConversionsSection(conversions: List<IngredientConversionView>) {
-    Column(modifier = Modifier.padding(horizontal = CulinarySpacing.pageHorizontal)) {
-        SectionHeader(title = stringResource(R.string.ingredients_conversions, conversions.size))
-        if (conversions.isEmpty()) {
-            Text(
-                text = stringResource(R.string.ingredients_no_conversions),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        } else {
-            conversions.forEach { conversion -> ConversionRow(conversion) }
-        }
-    }
-}
-
-@Composable
-private fun ConversionRow(conversion: IngredientConversionView) {
-    val from = conversion.fromUnit?.symbol ?: conversion.fromUnitId.value
-    val to = conversion.toUnit?.symbol ?: conversion.toUnitId.value
-    Column(
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .padding(vertical = CulinarySpacing.sm),
-    ) {
+    if (relations.isEmpty()) {
         Text(
-            text =
-                stringResource(
-                    R.string.ingredients_conversion_row,
-                    from,
-                    to,
-                    formatFactor(conversion.factor),
-                ),
-            style = MaterialTheme.typography.bodyLarge,
-            color = MaterialTheme.colorScheme.onSurface,
+            text = "暂无关联档案",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
-        if (!conversion.note.isNullOrBlank()) {
-            Text(
-                text = conversion.note.orEmpty(),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+    } else {
+        relations.forEach { relation ->
+            ArchiveRelatedRow(
+                title = relation.targetLabel,
+                subtitle = null,
+                relationLabel = relation.relationLabel,
+                onClick = { onOpenRelation(relation.targetKind, relation.targetRecordId) },
             )
         }
     }
