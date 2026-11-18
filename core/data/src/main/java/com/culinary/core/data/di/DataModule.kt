@@ -15,6 +15,7 @@ import com.culinary.core.data.logging.TimberAppLogger
 import com.culinary.core.database.CulinaryDatabase
 import com.culinary.core.database.DatabaseFactory
 import com.culinary.core.database.dao.CalculationRecordDao
+import com.culinary.core.database.dao.ChangeLogDao
 import com.culinary.core.database.dao.IngredientDao
 import com.culinary.core.database.dao.UnitDao
 import dagger.Module
@@ -65,6 +66,10 @@ object DataModule {
     @Provides
     @Singleton
     fun provideIngredientDao(database: CulinaryDatabase): IngredientDao = database.ingredientDao()
+
+    @Provides
+    @Singleton
+    fun provideChangeLogDao(database: CulinaryDatabase): ChangeLogDao = database.changeLogDao()
 
     @Provides
     @Singleton
