@@ -49,6 +49,7 @@ class ArchiveLibraryScreenTest {
         show()
 
         compose.onNodeWithText("酱汁库").assertIsDisplayed()
+        compose.onNodeWithText("MISEBASE").assertIsDisplayed()
         compose.onNodeWithText("SAUCE COLLECTION").assertIsDisplayed()
         compose.onNodeWithText("下级分类").assertIsDisplayed()
         compose.onNodeWithText("酱汁基础").assertIsDisplayed()
@@ -158,6 +159,8 @@ class ArchiveLibraryScreenTest {
         show()
 
         compose.onNodeWithText("酱汁基础").performClick()
+        compose.onNodeWithText("MISEBASE").assertDoesNotExist()
+        compose.onNodeWithContentDescription("全局搜索").assertIsDisplayed()
         compose.onNodeWithText("1 个子分类 · 3 条档案").assertIsDisplayed()
         compose.onNodeWithText("基础酱汁").performClick()
         compose.onNodeWithText("0 个子分类 · 1 条档案").assertIsDisplayed()
