@@ -35,6 +35,7 @@ class GetIngredientDetailUseCase(
                 ingredient = ingredient,
                 defaultUnit = ingredient.defaultUnitId?.let { units[it] },
                 conversions = conversions,
+                changeHistory = ingredientRepository.changeHistory(id),
             ),
         )
     }
