@@ -1,7 +1,6 @@
 package com.culinary.feature.ingredients
 
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -39,7 +38,6 @@ import com.culinary.core.designsystem.component.CulinaryRule
 import com.culinary.core.designsystem.component.CulinaryTextField
 import com.culinary.core.designsystem.component.ErrorBanner
 import com.culinary.core.designsystem.component.LoadingRows
-import com.culinary.core.designsystem.component.CulinaryTextButton
 import com.culinary.core.designsystem.icon.CulinaryIcons
 import com.culinary.core.designsystem.theme.CulinarySpacing
 import com.culinary.core.domain.model.ArchiveCategory
@@ -188,20 +186,7 @@ internal fun IngredientEditorForm(
                 minLines = 2,
             )
             Spacer(modifier = Modifier.height(CulinarySpacing.xl))
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(top = CulinarySpacing.lg),
-                horizontalArrangement = Arrangement.spacedBy(CulinarySpacing.md),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                CulinaryTextButton(text = stringResource(R.string.ingredients_cancel), onClick = onCancel)
-                Spacer(modifier = Modifier.weight(1f))
-                CulinaryButton(
-                    text = stringResource(if (state.isSaving) R.string.ingredients_saving else R.string.ingredients_save),
-                    onClick = onSave,
-                    enabled = !state.isSaving,
-                    loading = state.isSaving,
-                )
-            }
+
         }
     }
 }
