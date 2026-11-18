@@ -1,5 +1,5 @@
-import org.gradle.api.tasks.testing.Test
 import java.util.Properties
+import org.gradle.api.tasks.testing.Test
 
 plugins {
     id("culinary.android.application")
