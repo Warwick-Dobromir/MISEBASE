@@ -32,6 +32,8 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.culinary.core.designsystem.component.ArchiveEditorTopBar
+import com.culinary.core.designsystem.component.ConfirmDialog
+import com.culinary.core.designsystem.component.CulinaryLinkText
 import com.culinary.core.designsystem.component.ArchiveEditorSectionHeader
 import com.culinary.core.designsystem.component.CulinaryButton
 import com.culinary.core.designsystem.component.CulinaryRule
@@ -47,15 +49,20 @@ import com.culinary.core.domain.model.ArchiveCategory
 fun IngredientEditorRoute(
     onSaved: () -> Unit,
     onCancelled: () -> Unit = {},
+    onArchived: () -> Unit = onCancelled,
     modifier: Modifier = Modifier,
     viewModel: IngredientEditorViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     var showUnitPicker by remember { mutableStateOf(false) }
     val saved = state.saved
+    val archived = state.archived
 
     LaunchedEffect(saved) {
         if (saved) onSaved()
+    }
+    LaunchedEffect(archived) {
+        if (archived) onArchived()
     }
 
     Column(modifier = modifier.fillMaxSize()) {
@@ -82,6 +89,7 @@ fun IngredientEditorRoute(
                 onOpenUnitPicker = { showUnitPicker = true },
                 onSave = viewModel::save,
                 onCancel = onCancelled,
+                onArchive = viewModel::archive,
             )
         }
     }
@@ -114,7 +122,9 @@ internal fun IngredientEditorForm(
     onOpenUnitPicker: () -> Unit,
     onSave: () -> Unit,
     onCancel: () -> Unit = {},
+    onArchive: () -> Unit = {},
 ) {
+    var showDelete by remember { mutableStateOf(false) }
     Column(modifier = Modifier.fillMaxSize()) {
         ArchiveEditorTopBar(
             title = if (state.isNew) stringResource(R.string.ingredients_editor_new_title)
@@ -187,7 +197,34 @@ internal fun IngredientEditorForm(
             )
             Spacer(modifier = Modifier.height(CulinarySpacing.xl))
 
+            if (!state.isNew) {
+                Spacer(modifier = Modifier.height(CulinarySpacing.xl))
+                CulinaryRule()
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(vertical = CulinarySpacing.md),
+                    horizontalArrangement = Arrangement.Center,
+                ) {
+                    CulinaryLinkText(
+                        text = "删除此食材档案",
+                        onClick = { showDelete = true },
+                    )
+                }
+            }
         }
+    }
+    if (showDelete) {
+        ConfirmDialog(
+            title = stringResource(R.string.ingredients_archive_title),
+            message = stringResource(R.string.ingredients_archive_message),
+            confirmLabel = stringResource(R.string.ingredients_archive),
+            dismissLabel = stringResource(R.string.ingredients_cancel),
+            onConfirm = {
+                showDelete = false
+                onArchive()
+            },
+            onDismiss = { showDelete = false },
+            destructive = true,
+        )
     }
 }
 
