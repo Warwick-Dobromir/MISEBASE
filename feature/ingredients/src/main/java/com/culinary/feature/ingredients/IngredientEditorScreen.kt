@@ -32,16 +32,15 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.culinary.core.designsystem.component.ArchiveEditorSectionHeader
 import com.culinary.core.designsystem.component.ArchiveEditorTopBar
 import com.culinary.core.designsystem.component.ConfirmDialog
 import com.culinary.core.designsystem.component.CulinaryLinkText
-import com.culinary.core.designsystem.component.ArchiveEditorSectionHeader
-import com.culinary.core.designsystem.component.CulinaryButton
 import com.culinary.core.designsystem.component.CulinaryRule
 import com.culinary.core.designsystem.component.CulinaryTextField
-import com.culinary.core.designsystem.component.SectionHeader
 import com.culinary.core.designsystem.component.ErrorBanner
 import com.culinary.core.designsystem.component.LoadingRows
+import com.culinary.core.designsystem.component.SectionHeader
 import com.culinary.core.designsystem.icon.CulinaryIcons
 import com.culinary.core.designsystem.theme.CulinarySpacing
 import com.culinary.core.designsystem.theme.CulinaryTextStyles
@@ -142,8 +141,12 @@ internal fun IngredientEditorForm(
     var showDelete by remember { mutableStateOf(false) }
     Column(modifier = Modifier.fillMaxSize()) {
         ArchiveEditorTopBar(
-            title = if (state.isNew) stringResource(R.string.ingredients_editor_new_title)
-                else stringResource(R.string.ingredients_editor_edit_title),
+            title =
+                if (state.isNew) {
+                    stringResource(R.string.ingredients_editor_new_title)
+                } else {
+                    stringResource(R.string.ingredients_editor_edit_title)
+                },
             onBack = onCancel,
             onCancel = onCancel,
             onSave = onSave,
@@ -151,9 +154,12 @@ internal fun IngredientEditorForm(
             canSave = !state.isLoading && !state.isSaving && state.name.isNotBlank(),
         )
         Column(
-            modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())
-                .padding(horizontal = CulinarySpacing.pageHorizontal)
-                .padding(bottom = CulinarySpacing.xl),
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = CulinarySpacing.pageHorizontal)
+                    .padding(bottom = CulinarySpacing.xl),
         ) {
             ArchiveEditorSectionHeader(index = "01", english = "IDENTITY", title = "基础信息")
             CulinaryTextField(
@@ -297,7 +303,6 @@ internal fun IngredientEditorForm(
     }
 }
 
-
 @Composable
 private fun IngredientClassificationSelector(
     state: IngredientEditorUiState,
@@ -355,15 +360,22 @@ private fun IngredientCategoryLevelField(
         )
         androidx.compose.foundation.layout.Box(modifier = Modifier.fillMaxWidth()) {
             Row(
-                modifier = Modifier.fillMaxWidth().clickable { expanded = true }
-                    .padding(vertical = CulinarySpacing.xs),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .clickable { expanded = true }
+                        .padding(vertical = CulinarySpacing.xs),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
                     text = selected?.name ?: "选择分类",
                     style = MaterialTheme.typography.bodyLarge,
-                    color = if (selected == null) MaterialTheme.colorScheme.onSurfaceVariant
-                    else MaterialTheme.colorScheme.onSurface,
+                    color =
+                        if (selected == null) {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        } else {
+                            MaterialTheme.colorScheme.onSurface
+                        },
                     modifier = Modifier.weight(1f),
                 )
                 if (selected != null) {
