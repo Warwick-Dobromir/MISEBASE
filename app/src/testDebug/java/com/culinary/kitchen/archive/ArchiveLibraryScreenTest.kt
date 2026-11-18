@@ -153,7 +153,7 @@ class ArchiveLibraryScreenTest {
         compose.onNodeWithText("父分类").performClick()
         compose.onNodeWithContentDescription("排列下级分类").performClick()
         compose.onNodeWithContentDescription("拖动排序").assertIsDisplayed()
-        compose.onRoot().performTouchInput { swipeUp() }
+        compose.onNodeWithText("排序分类 1").performTouchInput { swipeUp() }
         compose.onNodeWithText("排序分类 24").assertIsDisplayed()
     }
 
