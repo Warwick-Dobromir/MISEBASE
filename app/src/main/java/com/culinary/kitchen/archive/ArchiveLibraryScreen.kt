@@ -742,52 +742,51 @@ private fun CategoryRow(
     LaunchedEffect(dragging, sorting, autoScrollEdgePx) {
         var previousFrameNanos = 0L
         while (dragging && sorting) {
-            withFrameNanos { frameNanos ->
-                val frameSeconds =
-                    if (previousFrameNanos == 0L) 0f
-                    else ((frameNanos - previousFrameNanos) / 1_000_000_000f).coerceIn(0f, 0.05f)
-                previousFrameNanos = frameNanos
+            val frameNanos = withFrameNanos { it }
+            val frameSeconds =
+                if (previousFrameNanos == 0L) 0f
+                else ((frameNanos - previousFrameNanos) / 1_000_000_000f).coerceIn(0f, 0.05f)
+            previousFrameNanos = frameNanos
 
-                if (frameSeconds > 0f) {
-                    val viewport = listState.layoutInfo
-                    val draggedCenter = viewport.visibleItemsInfo
-                        .firstOrNull { it.key == category.id }
-                        ?.let { it.offset + rowHeightPx / 2f + dragOffsetY }
+            if (frameSeconds > 0f) {
+                val viewport = listState.layoutInfo
+                val draggedCenter = viewport.visibleItemsInfo
+                    .firstOrNull { it.key == category.id }
+                    ?.let { it.offset + rowHeightPx / 2f + dragOffsetY }
 
-                    if (draggedCenter != null) {
-                        val topProgress = (
-                            (autoScrollEdgePx - (draggedCenter - viewport.viewportStartOffset)) /
-                                autoScrollEdgePx
-                            ).coerceIn(0f, 1f)
-                        val bottomProgress = (
-                            (autoScrollEdgePx - (viewport.viewportEndOffset - draggedCenter)) /
-                                autoScrollEdgePx
-                            ).coerceIn(0f, 1f)
+                if (draggedCenter != null) {
+                    val topProgress = (
+                        (autoScrollEdgePx - (draggedCenter - viewport.viewportStartOffset)) /
+                            autoScrollEdgePx
+                        ).coerceIn(0f, 1f)
+                    val bottomProgress = (
+                        (autoScrollEdgePx - (viewport.viewportEndOffset - draggedCenter)) /
+                            autoScrollEdgePx
+                        ).coerceIn(0f, 1f)
 
-                        val direction: Float
-                        val progress: Float
-                        when {
-                            topProgress > 0f && topProgress >= bottomProgress -> {
-                                direction = -1f
-                                progress = topProgress
-                            }
-                            bottomProgress > 0f -> {
-                                direction = 1f
-                                progress = bottomProgress
-                            }
-                            else -> {
-                                direction = 0f
-                                progress = 0f
-                            }
+                    val direction: Float
+                    val progress: Float
+                    when {
+                        topProgress > 0f && topProgress >= bottomProgress -> {
+                            direction = -1f
+                            progress = topProgress
                         }
-
-                        if (direction != 0f) {
-                            val speed = archiveAutoScrollVelocityPxPerSecond(progress)
-                            val requestedDelta = direction * speed * frameSeconds
-                            val consumed = listState.scrollBy(requestedDelta)
-                            // 列表滚动会移动行本身；用实际消费量补偿视觉偏移，保持项目与手指同步。
-                            dragOffsetY += consumed
+                        bottomProgress > 0f -> {
+                            direction = 1f
+                            progress = bottomProgress
                         }
+                        else -> {
+                            direction = 0f
+                            progress = 0f
+                        }
+                    }
+
+                    if (direction != 0f) {
+                        val speed = archiveAutoScrollVelocityPxPerSecond(progress)
+                        val requestedDelta = direction * speed * frameSeconds
+                        val consumed = listState.scrollBy(requestedDelta)
+                        // 列表滚动会移动行本身；用实际消费量补偿视觉偏移，保持项目与手指同步。
+                        dragOffsetY += consumed
                     }
                 }
             }
