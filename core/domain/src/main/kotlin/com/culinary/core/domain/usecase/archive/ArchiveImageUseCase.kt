@@ -1,27 +1,28 @@
 package com.culinary.core.domain.usecase.archive
 
+import com.culinary.core.common.CulinaryError
 import com.culinary.core.common.Outcome
 import com.culinary.core.domain.model.ArchiveImage
 import com.culinary.core.domain.model.ArchiveImageOwner
 import com.culinary.core.domain.repository.ArchiveImageRepository
 
 class ArchiveImageUseCase(
-    private val repository: ArchiveImageRepository,
+    private val repository: ArchiveImageRepository? = null,
 ) {
     suspend fun list(
         owner: ArchiveImageOwner,
         ownerId: String,
-    ): List<ArchiveImage> = repository.list(owner, ownerId)
+    ): List<ArchiveImage> = repository?.list(owner, ownerId).orEmpty()
 
-    suspend fun read(imageId: String): ByteArray? = repository.read(imageId)
+    suspend fun read(imageId: String): ByteArray? = repository?.read(imageId)
 
     suspend fun primary(
         owner: ArchiveImageOwner,
         ownerId: String,
     ): ByteArray? {
-        val images = repository.list(owner, ownerId)
+        val images = repository?.list(owner, ownerId).orEmpty()
         val image = images.firstOrNull { it.role == "PRIMARY" } ?: images.firstOrNull()
-        return image?.let { repository.read(it.id) }
+        return image?.let { repository?.read(it.id) }
     }
 
     /** 步骤图片：stepNo（1 起）→ 原始字节；无图片的步骤不返回键。 */
@@ -34,7 +35,7 @@ class ArchiveImageUseCase(
         images.forEach { image ->
             val stepNo = image.stepNo ?: return@forEach
             if (stepNo <= 0 || result.containsKey(stepNo)) return@forEach
-            val bytes = repository.read(image.id) ?: return@forEach
+            val bytes = repository?.read(image.id) ?: return@forEach
             result[stepNo] = bytes
         }
         return result
@@ -45,7 +46,11 @@ class ArchiveImageUseCase(
         role: String,
         bytes: ByteArray,
         mimeType: String,
-    ): Outcome<ArchiveImage> = repository.addIngredient(ingredientId, role, bytes, mimeType)
+    ): Outcome<ArchiveImage> =
+        repository?.addIngredient(ingredientId, role, bytes, mimeType)
+            ?: Outcome.failure(CulinaryError.Validation("archive.image", "image repository unavailable"))
 
-    suspend fun delete(imageId: String): Outcome<Unit> = repository.delete(imageId)
+    suspend fun delete(imageId: String): Outcome<Unit> =
+        repository?.delete(imageId)
+            ?: Outcome.failure(CulinaryError.Validation("archive.image", "image repository unavailable"))
 }
