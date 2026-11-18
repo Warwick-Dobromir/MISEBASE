@@ -21,9 +21,9 @@ import java.util.concurrent.Executors
 import javax.inject.Provider
 
 /**
- * 启动协调：全新库、持久化 v4 库、v1→v4 迁移、版本过高与损坏六条路径。
+ * 启动协调：全新库、持久化 v10 库、v1→v10 迁移、版本过高与损坏五条路径。
  *
- * 回归重点：`EXPECTED_SCHEMA_VERSION` 必须与 `CulinaryDatabase` 的 v5 对齐；否则
+ * 回归重点：`EXPECTED_SCHEMA_VERSION` 必须与 `CulinaryDatabase` 的 v10 对齐；否则
  * 已持久化的 v4 库在第二次启动时会被误判为 `Incompatible`。
  */
 @RunWith(RobolectricTestRunner::class)
@@ -59,7 +59,7 @@ class StartupCoordinatorTest {
     @Test
     fun `reports ready for a persisted schema v10 database`() =
         runBlocking {
-            createPersistedV4Database()
+            createPersistedSchema10Database()
 
             val state = coordinator().start()
 
@@ -95,7 +95,7 @@ class StartupCoordinatorTest {
             val file = context.getDatabasePath(DATABASE_NAME)
             file.parentFile?.mkdirs()
             SQLiteDatabase.openOrCreateDatabase(file, null).use { sqlite ->
-                sqlite.version = 10
+                sqlite.version = 11
             }
             val coordinator = coordinator()
 
@@ -103,7 +103,7 @@ class StartupCoordinatorTest {
 
             assertThat(state).isInstanceOf(StartupState.Incompatible::class.java)
             val incompatible = state as StartupState.Incompatible
-            assertThat(incompatible.databaseVersion).isEqualTo(10)
+            assertThat(incompatible.databaseVersion).isEqualTo(11)
             assertThat(incompatible.appSchemaVersion).isEqualTo(10)
         }
 
@@ -131,7 +131,7 @@ class StartupCoordinatorTest {
 
     private fun buildRoom(): CulinaryDatabase = DatabaseFactory.create(context, writeExecutor, readExecutor)
 
-    private fun createPersistedV4Database() {
+    private fun createPersistedSchema10Database() {
         context.deleteDatabase(DATABASE_NAME)
         val built = buildRoom()
         built.openHelper.writableDatabase
