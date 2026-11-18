@@ -480,8 +480,18 @@ internal fun ArchiveLibraryScreen(
     if (showSortExitDialog) {
         AlertDialog(
             onDismissRequest = { showSortExitDialog = false },
-            title = { Text("本次排序尚未保存") },
-            text = { Text("当前还有未保存的调整，返回后将恢复上次保存的顺序。确定返回吗？") },
+            title = {
+                Text(if (sortDirty) "本次排序尚未保存" else "确认要返回吗？")
+            },
+            text = {
+                Text(
+                    if (sortDirty) {
+                        "当前还有未保存的调整，返回后将恢复上次保存的顺序。确定返回吗？"
+                    } else {
+                        "当前排序没有未保存的修改，确认退出排序吗？"
+                    },
+                )
+            },
             confirmButton = { TextButton(onClick = { finishSorting() }) { Text("确认") } },
             dismissButton = { TextButton(onClick = { showSortExitDialog = false }) { Text("取消") } },
         )
