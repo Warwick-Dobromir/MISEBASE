@@ -230,9 +230,10 @@ internal fun ArchiveLibraryScreen(
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background),
     ) {
-        if (!isScrolled || sorting) {
+        if ((!isScrolled && currentCategoryId == null) || sorting) {
             ArchiveBrandHeader(
                 section = section,
+                showBrand = currentCategoryId == null,
                 isSearchOpen = searchOpen,
                 sorting = sorting,
                 onSearch = { searchOpen = true },
@@ -263,7 +264,7 @@ internal fun ArchiveLibraryScreen(
                     ),
             )
         }
-        if (!isScrolled || sorting) CulinaryRule()
+        if ((!isScrolled && currentCategoryId == null) || sorting) CulinaryRule()
         state.categoryError?.let { message ->
             ErrorBanner(
                 message = message,
@@ -316,6 +317,11 @@ internal fun ArchiveLibraryScreen(
                     childCount = children.size,
                     recursiveCount = recursiveCount,
                     sorting = sorting,
+                    onSearch = if (currentCategoryId != null) {
+                        { searchOpen = !searchOpen }
+                    } else {
+                        null
+                    },
                     onAdd = if (!showingSearch && currentCategoryId == null) onAdd else null,
                     onCreateSubcategory = {
                         newSubcategoryParentId = currentCategory?.id
@@ -599,6 +605,7 @@ internal fun ArchiveLibraryScreen(
 @Composable
 private fun ArchiveBrandHeader(
     section: KitchenArchiveSection,
+    showBrand: Boolean,
     isSearchOpen: Boolean,
     onSearch: () -> Unit,
     onCloseSearch: () -> Unit,
@@ -612,7 +619,22 @@ private fun ArchiveBrandHeader(
                 .padding(horizontal = CulinarySpacing.pageHorizontal, vertical = CulinarySpacing.sm),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Spacer(modifier = Modifier.weight(1f))
+        if (showBrand) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = "MISEBASE",
+                    style = CulinaryTextStyles.eyebrow,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+                Text(
+                    text = stringResource(section.subtitleRes),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        } else {
+            Spacer(modifier = Modifier.weight(1f))
+        }
         if (sorting) {
             CulinaryTextButton(
                 text = "保存",
@@ -643,6 +665,7 @@ private fun ArchiveContextHeader(
     childCount: Int,
     recursiveCount: Int,
     sorting: Boolean,
+    onSearch: (() -> Unit)?,
     onAdd: (() -> Unit)?,
     onCreateSubcategory: (() -> Unit)?,
     onBack: () -> Unit,
@@ -662,8 +685,16 @@ private fun ArchiveContextHeader(
                 text = parentName,
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(start = CulinarySpacing.xxs),
+                modifier = Modifier.padding(start = CulinarySpacing.xxs).weight(1f),
             )
+            onSearch?.let { action ->
+                CulinaryIconButton(
+                    icon = CulinaryIcons.Search,
+                    contentDescription = stringResource(R.string.kitchen_search_global_hint),
+                    onClick = action,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
         }
         Spacer(modifier = Modifier.height(CulinarySpacing.xs))
         Row(
