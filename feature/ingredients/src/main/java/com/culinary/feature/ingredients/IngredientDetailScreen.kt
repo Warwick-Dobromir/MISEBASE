@@ -224,6 +224,8 @@ private fun IngredientSummary(
         IngredientInfoLine("所属分类", ingredient.category)
         IngredientInfoLine("英文名称", ingredient.englishName)
         IngredientInfoLine("学名", ingredient.scientificName)
+        IngredientInfoLine("常见品种", ingredient.commonVarieties)
+        IngredientInfoLine("可食用部分", ingredient.ediblePortion)
         IngredientInfoLine(
             "常用计量单位",
             detail.defaultUnit?.let { "${it.name}（${it.symbol}）" } ?: "未设置",
