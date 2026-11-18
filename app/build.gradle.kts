@@ -1,4 +1,5 @@
 import java.util.Properties
+import org.gradle.api.tasks.testing.Test
 
 plugins {
     id("culinary.android.application")
@@ -57,12 +58,6 @@ android {
 
     testOptions {
         unitTests.isIncludeAndroidResources = true
-        // Compose + Robolectric archive tests retain substantial framework state.
-        // Keep one test worker and give it a bounded heap on the GitHub runner.
-        unitTests.all {
-            maxHeapSize = "3g"
-            maxParallelForks = 1
-        }
     }
 
     buildFeatures {
@@ -106,6 +101,13 @@ android {
             }
         }
     }
+}
+
+// Compose + Robolectric archive tests retain substantial framework state.
+// Keep one test worker and give it a bounded heap on the GitHub runner.
+tasks.withType<Test>().configureEach {
+    maxHeapSize = "3g"
+    maxParallelForks = 1
 }
 
 // 组合根：只做模块装配，不承载业务规则（A03A §4；MB-D-004 的 14 模块）。
