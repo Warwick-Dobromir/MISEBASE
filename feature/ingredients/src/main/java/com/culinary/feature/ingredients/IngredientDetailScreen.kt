@@ -156,6 +156,7 @@ internal fun IngredientDetailContent(
             }
         }
 
+        IngredientHeaderMeta(detail.ingredient)
         IngredientSummary(detail = detail, onEdit = onEdit, onArchive = onArchive)
         ConversionsSection(conversions = detail.conversions)
         IngredientRelationsSection(detailState.relations, onOpenRelation)
@@ -254,6 +255,58 @@ private fun IngredientParagraph(value: String?) {
         color = MaterialTheme.colorScheme.onSurface,
         modifier = Modifier.padding(bottom = CulinarySpacing.sm),
     )
+}
+
+@Composable
+private fun IngredientHeaderMeta(ingredient: com.culinary.core.domain.model.Ingredient) {
+    val lines = listOfNotNull(
+        ingredient.englishName?.takeIf { it.isNotBlank() },
+        ingredient.scientificName?.takeIf { it.isNotBlank() },
+        "档案编号  ${ingredient.id.value}",
+    )
+    if (lines.isEmpty()) return
+    Column(modifier = Modifier.padding(horizontal = CulinarySpacing.pageHorizontal)) {
+        lines.forEach { line ->
+            Text(
+                text = line,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
+
+@Composable
+private fun IngredientRelationsSection(
+    relations: List<KitchenRelatedRecord>,
+    onOpenRelation: (KitchenRecordKind, String) -> Unit,
+) {
+    val sauces = relations.filter { it.targetKind == KitchenRecordKind.SAUCE }
+    val recipes = relations.filter { it.targetKind == KitchenRecordKind.RECIPE }
+    if (sauces.isNotEmpty()) {
+        CulinaryRelationSection(
+            title = "05  关联酱汁",
+            items = sauces.map { relation ->
+                CulinaryRelationItem(
+                    eyebrow = relation.relationLabel,
+                    title = relation.targetLabel,
+                    onClick = { onOpenRelation(relation.targetKind, relation.targetRecordId) },
+                )
+            },
+        )
+    }
+    if (recipes.isNotEmpty()) {
+        CulinaryRelationSection(
+            title = "05  关联菜谱",
+            items = recipes.map { relation ->
+                CulinaryRelationItem(
+                    eyebrow = relation.relationLabel,
+                    title = relation.targetLabel,
+                    onClick = { onOpenRelation(relation.targetKind, relation.targetRecordId) },
+                )
+            },
+        )
+    }
 }
 
 @Composable
