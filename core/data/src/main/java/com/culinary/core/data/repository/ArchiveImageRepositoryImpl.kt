@@ -16,7 +16,7 @@ import com.culinary.core.domain.repository.ArchiveImageRepository
 import kotlinx.coroutines.CancellationException
 import javax.inject.Inject
 
-/** 复用既有 image_asset 与私有文件存储；只读，不改图片管理逻辑。 */
+/** 食材图片读写：复用既有 image_asset 与私有文件存储。 */
 class ArchiveImageRepositoryImpl
     @Inject
     constructor(
@@ -51,12 +51,16 @@ class ArchiveImageRepositoryImpl
             mimeType: String,
         ): Outcome<ArchiveImage> {
             return try {
-                if (bytes.isEmpty()) return Outcome.failure(CulinaryError.Validation("ingredient.image", "image is empty"))
+                if (bytes.isEmpty()) {
+                    return Outcome.failure(CulinaryError.Validation("ingredient.image", "image is empty"))
+                }
                 val imageRole =
                     when (role) {
                         "PRIMARY" -> ImageRoleDb.PRIMARY
                         "REFERENCE" -> ImageRoleDb.REFERENCE
-                        else -> return Outcome.failure(CulinaryError.Validation("ingredient.image", "invalid image role"))
+                        else -> {
+                            return Outcome.failure(CulinaryError.Validation("ingredient.image", "invalid image role"))
+                        }
                     }
                 val stored =
                     when (val result = imageFileStorage.store(bytes, mimeType)) {
@@ -103,8 +107,9 @@ class ArchiveImageRepositoryImpl
 
         override suspend fun delete(imageId: String): Outcome<Unit> {
             return try {
-                val entity = imageAssetDao.findById(imageId)
-                    ?: return Outcome.failure(CulinaryError.NotFound("image_asset", imageId))
+                val entity =
+                    imageAssetDao.findById(imageId)
+                        ?: return Outcome.failure(CulinaryError.NotFound("image_asset", imageId))
                 imageAssetDao.softDelete(imageId, clock.now().toEpochMilli())
                 imageFileStorage.delete(entity.relativePath)
             } catch (e: CancellationException) {
@@ -120,6 +125,7 @@ class ArchiveImageRepositoryImpl
                 )
             }
         }
+
         override suspend fun read(imageId: String): ByteArray? {
             val entity = imageAssetDao.findById(imageId)?.takeIf { it.deletedAt == null } ?: return null
             return imageFileStorage.readOrNull(entity.relativePath)
