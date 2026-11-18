@@ -121,7 +121,7 @@ internal fun IngredientDetailContent(
                 .padding(bottom = CulinarySpacing.xl),
     ) {
         PageHeader(
-            eyebrow = "INGREDIENT ARCHIVE",
+            eyebrow = "INGREDIENT",
             title = detail.ingredient.name,
             supporting =
                 detailState.categoryPath.joinToString(" / ").ifBlank {
@@ -156,53 +156,57 @@ internal fun IngredientDetailContent(
             }
         }
 
-        IngredientHeaderMeta(detail.ingredient)
         IngredientSummary(detail = detail, onEdit = onEdit, onArchive = onArchive)
         ConversionsSection(conversions = detail.conversions)
         IngredientRelationsSection(detailState.relations, onOpenRelation)
     }
 }
 
+@Suppress("CyclomaticComplexMethod")
 @Composable
 private fun IngredientSummary(
     detail: com.culinary.core.domain.model.IngredientDetail,
     onEdit: (String) -> Unit,
     onArchive: () -> Unit,
 ) {
-    val ingredient = detail.ingredient
     Column(modifier = Modifier.padding(horizontal = CulinarySpacing.pageHorizontal)) {
-        SectionHeader(title = "01  基本信息")
-        IngredientInfoLine("所属分类", ingredient.category)
-        IngredientInfoLine("英文名称", ingredient.englishName)
-        IngredientInfoLine("学名", ingredient.scientificName)
-        IngredientInfoLine(
-            "常用计量单位",
-            detail.defaultUnit?.let { "${it.name}（${it.symbol}）" } ?: "未设置",
+        SectionHeader(title = stringResource(R.string.ingredients_default_unit))
+        Text(
+            text =
+                detail.defaultUnit?.let { "${it.name}（${it.symbol}）" }
+                    ?: stringResource(R.string.ingredients_no_unit),
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSurface,
         )
 
-        if (!ingredient.flavorProfile.isNullOrBlank() || !ingredient.description.isNullOrBlank()) {
-            SectionHeader(title = "02  风味与特性")
-            IngredientParagraph(ingredient.flavorProfile)
-            IngredientParagraph(ingredient.description)
+        if (!detail.ingredient.description.isNullOrBlank()) {
+            SectionHeader(title = stringResource(R.string.ingredients_description_label))
+            Text(
+                text = detail.ingredient.description.orEmpty(),
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
         }
 
-        if (!ingredient.exampleProducts.isNullOrBlank()) {
-            SectionHeader(title = "03  烹饪用途")
-            IngredientParagraph(ingredient.exampleProducts)
-        }
-
-        val otherFields = listOfNotNull(
-            "产地" to ingredient.origin,
-            "季节性 / 时令" to ingredient.seasonality,
-            "挑选建议" to ingredient.selectionNotes,
-            "预处理方法" to ingredient.prepNotes,
-            "储存方式" to ingredient.storageNotes,
-            "过敏原信息" to ingredient.allergenNotes,
-            "档案备注" to ingredient.seedNote,
-        ).filter { !it.second.isNullOrBlank() }
-        if (otherFields.isNotEmpty()) {
-            SectionHeader(title = "04  其他信息")
-            otherFields.forEach { (label, value) -> IngredientInfoLine(label, value) }
+        listOfNotNull(
+            detail.ingredient.englishName?.let { stringResource(R.string.ingredients_english_name) to it },
+            detail.ingredient.scientificName?.let { "学名" to it },
+            detail.ingredient.flavorProfile?.let { "风味" to it },
+            detail.ingredient.seasonality?.let { "时令" to it },
+            detail.ingredient.origin?.let { "产地" to it },
+            detail.ingredient.selectionNotes?.let { "挑选" to it },
+            detail.ingredient.prepNotes?.let { "预处理" to it },
+            detail.ingredient.exampleProducts?.let { stringResource(R.string.ingredients_example_products) to it },
+            detail.ingredient.storageNotes?.let { stringResource(R.string.ingredients_storage) to it },
+            detail.ingredient.allergenNotes?.let { stringResource(R.string.ingredients_allergen) to it },
+            detail.ingredient.seedNote?.let { stringResource(R.string.ingredients_seed_note) to it },
+        ).forEach { (label, value) ->
+            SectionHeader(title = label)
+            Text(
+                text = value,
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
         }
 
         Spacer(modifier = Modifier.height(CulinarySpacing.block))
@@ -212,7 +216,7 @@ private fun IngredientSummary(
         ) {
             CulinaryButton(
                 text = stringResource(R.string.ingredients_edit),
-                onClick = { onEdit(ingredient.id.value) },
+                onClick = { onEdit(detail.ingredient.id.value) },
                 variant = CulinaryButtonVariant.Secondary,
                 icon = CulinaryIcons.Edit,
             )
@@ -226,87 +230,21 @@ private fun IngredientSummary(
 }
 
 @Composable
-private fun IngredientInfoLine(label: String, value: String?) {
-    if (value.isNullOrBlank()) return
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = CulinarySpacing.xs),
-    ) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        Text(
-            text = value,
-            style = MaterialTheme.typography.bodyLarge,
-            color = MaterialTheme.colorScheme.onSurface,
-        )
-    }
-}
-
-@Composable
-private fun IngredientParagraph(value: String?) {
-    if (value.isNullOrBlank()) return
-    Text(
-        text = value,
-        style = MaterialTheme.typography.bodyLarge,
-        color = MaterialTheme.colorScheme.onSurface,
-        modifier = Modifier.padding(bottom = CulinarySpacing.sm),
-    )
-}
-
-@Composable
-private fun IngredientHeaderMeta(ingredient: com.culinary.core.domain.model.Ingredient) {
-    val lines = listOfNotNull(
-        ingredient.englishName?.takeIf { it.isNotBlank() },
-        ingredient.scientificName?.takeIf { it.isNotBlank() },
-        "档案编号  ${ingredient.id.value}",
-    )
-    if (lines.isEmpty()) return
-    Column(modifier = Modifier.padding(horizontal = CulinarySpacing.pageHorizontal)) {
-        lines.forEach { line ->
-            Text(
-                text = line,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-    }
-}
-
-@Composable
 private fun IngredientRelationsSection(
     relations: List<KitchenRelatedRecord>,
     onOpenRelation: (KitchenRecordKind, String) -> Unit,
 ) {
-    val sauces = relations.filter { it.targetKind == KitchenRecordKind.SAUCE }
-    val recipes = relations.filter { it.targetKind == KitchenRecordKind.RECIPE }
-    if (sauces.isNotEmpty()) {
-        CulinaryRelationSection(
-            title = "05  关联酱汁",
-            items = sauces.map { relation ->
+    CulinaryRelationSection(
+        title = stringResource(R.string.ingredients_relations),
+        items =
+            relations.map { relation ->
                 CulinaryRelationItem(
                     eyebrow = relation.relationLabel,
                     title = relation.targetLabel,
                     onClick = { onOpenRelation(relation.targetKind, relation.targetRecordId) },
                 )
             },
-        )
-    }
-    if (recipes.isNotEmpty()) {
-        CulinaryRelationSection(
-            title = "05  关联菜谱",
-            items = recipes.map { relation ->
-                CulinaryRelationItem(
-                    eyebrow = relation.relationLabel,
-                    title = relation.targetLabel,
-                    onClick = { onOpenRelation(relation.targetKind, relation.targetRecordId) },
-                )
-            },
-        )
-    }
+    )
 }
 
 @Composable

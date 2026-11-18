@@ -33,6 +33,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.culinary.core.designsystem.component.CulinaryButton
 import com.culinary.core.designsystem.component.CulinaryRule
+import com.culinary.core.designsystem.component.CulinaryTextButton
 import com.culinary.core.designsystem.component.CulinaryTextField
 import com.culinary.core.designsystem.component.ErrorBanner
 import com.culinary.core.designsystem.component.LoadingRows
@@ -87,6 +88,7 @@ fun IngredientEditorRoute(
                 onAllergenNotesChange = viewModel::onAllergenNotesChange,
                 onOpenUnitPicker = { showUnitPicker = true },
                 onSave = viewModel::save,
+                onCancel = onSaved,
             )
         }
     }
@@ -124,6 +126,7 @@ internal fun IngredientEditorForm(
     onAllergenNotesChange: (String) -> Unit,
     onOpenUnitPicker: () -> Unit,
     onSave: () -> Unit,
+    onCancel: () -> Unit = {},
 ) {
     Column(
         modifier =
@@ -144,6 +147,7 @@ internal fun IngredientEditorForm(
                 ),
         )
         Column(modifier = Modifier.padding(horizontal = CulinarySpacing.pageHorizontal)) {
+            SectionHeader(title = "01  基本信息")
             CulinaryTextField(
                 value = state.name,
                 onValueChange = onNameChange,
@@ -185,6 +189,7 @@ internal fun IngredientEditorForm(
                 singleLine = true,
             )
             Spacer(modifier = Modifier.height(CulinarySpacing.field))
+            SectionHeader(title = "02  风味与特性")
             CulinaryTextField(
                 value = state.flavorProfile,
                 onValueChange = onFlavorProfileChange,
@@ -220,6 +225,7 @@ internal fun IngredientEditorForm(
                 minLines = 2,
             )
             Spacer(modifier = Modifier.height(CulinarySpacing.field))
+            SectionHeader(title = "03  烹饪用途")
             CulinaryTextField(
                 value = state.exampleProducts,
                 onValueChange = onExampleProductsChange,
@@ -227,6 +233,7 @@ internal fun IngredientEditorForm(
                 minLines = 2,
             )
             Spacer(modifier = Modifier.height(CulinarySpacing.field))
+            SectionHeader(title = "04  其他信息")
             CulinaryTextField(
                 value = state.storageNotes,
                 onValueChange = onStorageNotesChange,
@@ -241,20 +248,20 @@ internal fun IngredientEditorForm(
                 minLines = 2,
             )
             Spacer(modifier = Modifier.height(CulinarySpacing.xl))
-            CulinaryButton(
-                text =
-                    stringResource(
-                        if (state.isSaving) {
-                            R.string.ingredients_saving
-                        } else {
-                            R.string.ingredients_save
-                        },
-                    ),
-                onClick = onSave,
-                enabled = !state.isSaving,
-                loading = state.isSaving,
+            Row(
                 modifier = Modifier.fillMaxWidth(),
-            )
+                horizontalArrangement = Arrangement.spacedBy(CulinarySpacing.lg),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                CulinaryTextButton(
+                    text = stringResource(R.string.ingredients_cancel),
+                    onClick = onCancel,
+                )
+                CulinaryTextButton(
+                    text = stringResource(if (state.isSaving) R.string.ingredients_saving else R.string.ingredients_save),
+                    onClick = onSave,
+                )
+            }
         }
     }
 }
