@@ -769,7 +769,6 @@ internal fun archiveDragOffsetAfterDelta(
     var offset = currentOffsetPx + deltaPx
 
     if (currentEdgeOverdragPx != 0f) {
-        val maxRaw = maxEdgeOffsetPx.coerceAtLeast(1f) * 5f
         val updatedRaw = currentEdgeOverdragPx + deltaPx
         val stillAtSameEdge = updatedRaw != 0f &&
             updatedRaw.sign == currentEdgeOverdragPx.sign
