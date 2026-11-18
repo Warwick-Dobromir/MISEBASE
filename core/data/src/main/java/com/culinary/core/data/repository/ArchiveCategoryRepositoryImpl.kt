@@ -268,8 +268,11 @@ class ArchiveCategoryRepositoryImpl
                 if (selected.any { it.status != EntityStatusDb.ACTIVE }) {
                     return@write invalid("orderedIds", "only active categories can be reordered")
                 }
+                // 排序界面隐藏测试分类；完整性校验必须与页面可见集合一致。
+                // 测试分类即使残留为 ACTIVE，也不能阻止正式分类排序。
                 val siblings = all.filter {
                     it.status == EntityStatusDb.ACTIVE &&
+                        it.testBatch == null &&
                         it.library == first.library &&
                         it.parentId == first.parentId
                 }
