@@ -9,6 +9,9 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.swipeUp
+import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.layout.height
 import com.culinary.core.data.kitchen.KitchenArchiveCategory
 import com.culinary.core.data.kitchen.KitchenArchiveEntry
 import com.culinary.core.data.kitchen.KitchenArchiveKind
@@ -115,6 +118,43 @@ class ArchiveLibraryScreenTest {
         compose.onNodeWithText("确认要返回吗？").assertIsDisplayed()
         compose.onNodeWithText("确认").performClick()
         compose.onNodeWithContentDescription("排列下级分类").assertIsDisplayed()
+    }
+
+    @Test
+    fun `sorting list remains vertically scrollable outside drag handle`() {
+        val manyChildren =
+            listOf(category("parent", null, "父分类", 0, descendant = 24, childCount = 24)) +
+                (1..24).map { index ->
+                    category(
+                        id = "child-$index",
+                        parentId = "parent",
+                        name = "排序分类 $index",
+                        direct = 0,
+                    )
+                }
+        val sectionEntries = emptyList<KitchenArchiveEntry>()
+        compose.setContent {
+            CulinaryTheme {
+                ArchiveLibraryScreen(
+                    section = KitchenArchiveSection.SAUCES,
+                    state =
+                        ArchiveLibraryUiState(
+                            entries = sectionEntries,
+                            categories = manyChildren,
+                            isLoading = false,
+                        ),
+                    onAdd = {},
+                    onOpenEntry = {},
+                    modifier = androidx.compose.ui.Modifier.height(500.dp),
+                )
+            }
+        }
+
+        compose.onNodeWithText("父分类").performClick()
+        compose.onNodeWithContentDescription("排列下级分类").performClick()
+        compose.onNodeWithContentDescription("拖动排序").assertIsDisplayed()
+        compose.onRoot().performTouchInput { swipeUp() }
+        compose.onNodeWithText("排序分类 24").assertIsDisplayed()
     }
 
     @Test
