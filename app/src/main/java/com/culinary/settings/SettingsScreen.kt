@@ -535,6 +535,7 @@ private fun FailureLogSection(
         )
     }
 }
+
 @Composable
 private fun AboutSection(
     state: SettingsUiState,
