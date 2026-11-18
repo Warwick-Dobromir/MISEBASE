@@ -5,8 +5,11 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.culinary.core.common.Outcome
 import com.culinary.core.domain.model.ArchiveLibrary
+import com.culinary.core.domain.model.ArchiveImageOwner
+import com.culinary.core.domain.model.PendingIngredientImage
 import com.culinary.core.domain.model.IngredientId
 import com.culinary.core.domain.model.KitchenRecordKind
+import com.culinary.core.domain.usecase.archive.ArchiveImageUseCase
 import com.culinary.core.domain.usecase.archive.AssignArchiveCategoryUseCase
 import com.culinary.core.domain.usecase.archive.GetArchiveCategoryForRecordUseCase
 import com.culinary.core.domain.usecase.archive.ListArchiveCategoriesUseCase
@@ -33,6 +36,7 @@ class IngredientEditorViewModel
         private val getIngredientDetail: GetIngredientDetailUseCase,
         private val saveIngredient: SaveIngredientUseCase,
         private val listUnits: ListUnitsUseCase,
+        private val archiveImages: ArchiveImageUseCase,
         private val listArchiveCategories: ListArchiveCategoriesUseCase = ListArchiveCategoriesUseCase(),
         private val getArchiveCategoryForRecord: GetArchiveCategoryForRecordUseCase = GetArchiveCategoryForRecordUseCase(),
         private val assignArchiveCategory: AssignArchiveCategoryUseCase = AssignArchiveCategoryUseCase(),
@@ -71,6 +75,12 @@ class IngredientEditorViewModel
                                     getArchiveCategoryForRecord(KitchenRecordKind.INGREDIENT, routeId)
                                 }.getOrNull()
                             val categoryPath = buildIngredientCategoryPath(assignedCategory?.id, categories)
+                            val images = archiveImages.list(ArchiveImageOwner.INGREDIENT, routeId)
+                            val primary = images.firstOrNull { it.role == "PRIMARY" }
+                            val primaryBytes = primary?.let { archiveImages.read(it.id) }
+                            val referenceImages = images.filter { it.role == "REFERENCE" }.mapNotNull { image ->
+                                archiveImages.read(image.id)?.let { IngredientImageDraft(image.id, it) }
+                            }
                             _uiState.update {
                                 it.copy(
                                     name = result.value.ingredient.name,
@@ -96,6 +106,9 @@ class IngredientEditorViewModel
                                         result.value.ingredient.allergenNotes
                                             .orEmpty(),
                                     defaultUnit = result.value.defaultUnit ?: it.defaultUnit,
+                                    primaryImageId = primary?.id,
+                                    primaryImageBytes = primaryBytes,
+                                    referenceImages = referenceImages,
                                     isLoading = false,
                                 )
                             }
@@ -180,6 +193,58 @@ class IngredientEditorViewModel
             _uiState.update { it.copy(defaultUnit = unit) }
         }
 
+        fun onPrimaryImagePicked(image: PendingIngredientImage) {
+            _uiState.update { state ->
+                val removed = state.primaryImageId?.let { state.removedImageIds + it } ?: state.removedImageIds
+                state.copy(
+                    primaryImageId = null,
+                    primaryImageBytes = image.bytes,
+                    pendingPrimaryImage = image,
+                    removedImageIds = removed,
+                )
+            }
+        }
+
+        fun onPrimaryImageRemoved() {
+            _uiState.update { state ->
+                val removed = state.primaryImageId?.let { state.removedImageIds + it } ?: state.removedImageIds
+                state.copy(primaryImageId = null, primaryImageBytes = null, pendingPrimaryImage = null, removedImageIds = removed)
+            }
+        }
+
+        fun onReferenceImagePicked(image: PendingIngredientImage) {
+            _uiState.update { it.copy(referenceImages = it.referenceImages + IngredientImageDraft(null, image.bytes)) }
+        }
+
+        fun onReferenceImageRemoved(index: Int) {
+            _uiState.update { state ->
+                val image = state.referenceImages.getOrNull(index) ?: return@update state
+                val removed = image.id?.let { state.removedImageIds + it } ?: state.removedImageIds
+                state.copy(referenceImages = state.referenceImages.filterIndexed { i, _ -> i != index }, removedImageIds = removed)
+            }
+        }
+
+        private suspend fun persistImages(state: IngredientEditorUiState, ingredientId: String): Outcome<Unit> {
+            state.removedImageIds.distinct().forEach { imageId ->
+                when (val result = archiveImages.delete(imageId)) {
+                    is Outcome.Failure -> return result
+                    is Outcome.Success -> Unit
+                }
+            }
+            state.pendingPrimaryImage?.let { image ->
+                when (val result = archiveImages.addIngredient(ingredientId, "PRIMARY", image.bytes, image.mimeType)) {
+                    is Outcome.Failure -> return result
+                    is Outcome.Success -> Unit
+                }
+            }
+            state.referenceImages.filter { it.id == null }.forEach { image ->
+                when (val result = archiveImages.addIngredient(ingredientId, "REFERENCE", image.bytes, "image/jpeg")) {
+                    is Outcome.Failure -> return result
+                    is Outcome.Success -> Unit
+                }
+            }
+            return Outcome.success(Unit)
+        }
         fun clearError() {
             _uiState.update { it.copy(error = null) }
         }
@@ -215,6 +280,13 @@ class IngredientEditorViewModel
                     )
                 when (result) {
                     is Outcome.Success -> {
+                        when (val imageResult = persistImages(state, result.value.value)) {
+                            is Outcome.Failure -> {
+                                _uiState.update { it.copy(isSaving = false, error = IngredientErrorMessages.describe(imageResult.error)) }
+                                return@launch
+                            }
+                            is Outcome.Success -> Unit
+                        }
                         val categoryId = state.categoryPathIds.lastOrNull()
                         if (categoryId != null) {
                             when (
