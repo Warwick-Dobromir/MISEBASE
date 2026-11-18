@@ -57,6 +57,12 @@ android {
 
     testOptions {
         unitTests.isIncludeAndroidResources = true
+        // Compose + Robolectric archive tests retain substantial framework state.
+        // Keep one test worker and give it a bounded heap on the GitHub runner.
+        unitTests.all {
+            maxHeapSize = "3g"
+            maxParallelForks = 1
+        }
     }
 
     buildFeatures {
