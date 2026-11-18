@@ -29,6 +29,7 @@ data class Ingredient(
     val seedNote: String? = null,
     val seedId: String? = null,
     val seedVersion: String? = null,
+    val updatedAt: Long? = null,
 ) {
     init {
         require(name.isNotBlank()) { "ingredient name must not be blank" }
