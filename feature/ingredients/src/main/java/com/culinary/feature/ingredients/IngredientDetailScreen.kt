@@ -78,13 +78,15 @@ fun IngredientDetailRoute(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(CulinarySpacing.pageHorizontal),
                 )
-            else -> IngredientDetailContent(
-                detailState = state,
-                onEdit = onEdit,
-                onArchive = { showArchiveConfirm = true },
-                onOpenRelation = onOpenRelation,
-                onBack = onBack,
-            )
+            else -> {
+                IngredientDetailContent(
+                    detailState = state,
+                    onEdit = onEdit,
+                    onArchive = { showArchiveConfirm = true },
+                    onOpenRelation = onOpenRelation,
+                    onBack = onBack,
+                )
+            }
         }
     }
 
@@ -121,8 +123,9 @@ internal fun IngredientDetailContent(
             onEdit = { onEdit(ingredient.id.value) },
         )
         Column(
-            modifier = Modifier
-                .fillMaxSize()
+            modifier =
+                Modifier
+                    .fillMaxSize()
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = CulinarySpacing.pageHorizontal)
                 .padding(bottom = CulinarySpacing.xl),
@@ -253,7 +256,10 @@ internal fun IngredientDetailContent(
 }
 
 @Composable
-private fun ArchiveField(label: String, value: String?) {
+private fun ArchiveField(
+    label: String,
+    value: String?,
+) {
     if (value.isNullOrBlank()) {
         Text(
             text = "$label · 暂未填写",
