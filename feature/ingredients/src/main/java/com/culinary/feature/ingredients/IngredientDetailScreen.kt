@@ -210,6 +210,7 @@ internal fun IngredientDetailContent(
         IngredientSummary(detail = detail, onArchive = onArchive)
         IngredientRelationsSection(detailState.relations, onOpenRelation)
         IngredientChangeHistory(detail.changeHistory)
+        IngredientArchiveFooter(detail.ingredient.updatedAt)
     }
 }
 
@@ -272,6 +273,27 @@ private fun IngredientSummary(
     }
 }
 
+@Composable
+private fun IngredientArchiveFooter(updatedAt: Long?) {
+    val timestamp = updatedAt?.let {
+        java.text.SimpleDateFormat("yyyy-MM-dd HH:mm", java.util.Locale.getDefault()).format(java.util.Date(it))
+    }
+    Column(modifier = Modifier.fillMaxWidth().padding(horizontal = CulinarySpacing.pageHorizontal)) {
+        timestamp?.let {
+            Text(
+                text = "最后更新  " + it,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        Text(
+            text = "MISEBASE  ·  CULINARY RECORDS",
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(top = CulinarySpacing.sm),
+        )
+    }
+}
 @Composable
 private fun IngredientInfoLine(label: String, value: String?) {
     if (value.isNullOrBlank()) return
