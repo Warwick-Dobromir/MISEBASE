@@ -67,8 +67,9 @@ class InMemoryRecipeRepository : RecipeRepository {
     }
 
     override suspend fun archive(id: RecipeId): Outcome<Unit> {
-        val existing = recipes.firstOrNull { it.id == id }
-            ?: return Outcome.failure(CulinaryError.NotFound(entity = "recipe", id = id.value))
+        val existing =
+            recipes.firstOrNull { it.id == id }
+                ?: return Outcome.failure(CulinaryError.NotFound(entity = "recipe", id = id.value))
         recipes.remove(existing)
         recipes += existing.copy(status = EntityStatus.ARCHIVED)
         return Outcome.success(Unit)
