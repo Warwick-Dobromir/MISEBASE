@@ -319,7 +319,6 @@ internal fun IngredientEditorForm(
                 minLines = 3,
             )
             Spacer(modifier = Modifier.height(CulinarySpacing.field))
-            Spacer(modifier = Modifier.height(CulinarySpacing.field))
             CulinaryTextField(
                 value = state.seasonality,
                 onValueChange = onSeasonalityChange,
