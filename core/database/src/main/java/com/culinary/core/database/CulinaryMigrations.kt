@@ -17,6 +17,7 @@ import com.culinary.core.database.schema.CulinarySchemaExtras
  * v7 → v8：酱汁/菜谱版本增加最小制作范围数值与单位；只加可空列，历史数据保持 null。
  * v8 → v9：库存档案/档案-商品关联、批次生产日期与冻结/回收/临时标记、冻结与库位转移记录、
  * 出库单与明细、打印任务、盘点单与明细；历史批次/流水按商品回填档案归属，不丢旧数据。
+ * v9 → v10：食材档案新增常见品种与可食用部分字段，仅添加可空列，不改动既有数据。
  */
 internal object CulinaryMigrations {
     val MIGRATION_1_2: Migration = MIGRATION_1_2_IMPL
@@ -31,6 +32,7 @@ internal object CulinaryMigrations {
     val MIGRATION_6_7: Migration = MIGRATION_6_7_IMPL
     val MIGRATION_7_8: Migration = MIGRATION_7_8_IMPL
     val MIGRATION_8_9: Migration = MIGRATION_8_9_IMPL
+    val MIGRATION_9_10: Migration = MIGRATION_9_10_IMPL
 
     val ALL: Array<Migration> =
         arrayOf(
@@ -42,6 +44,7 @@ internal object CulinaryMigrations {
             MIGRATION_6_7,
             MIGRATION_7_8,
             MIGRATION_8_9,
+            MIGRATION_9_10,
         )
 }
 
@@ -803,3 +806,12 @@ private val V9_ARCHIVE_BACKFILL =
             "`id`, `archive_id`, `product_id`, `conversion_ratio`, `is_default`, `created_at`) " +
             "SELECT 'ap_' || `id`, 'arch_' || `id`, `id`, 1.0, 1, `created_at` FROM `product`",
     )
+
+private val MIGRATION_9_10_IMPL =
+    object : Migration(9, 10) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            CulinarySchemaExtras.dropPartialIndexes(db)
+            db.execSQL("ALTER TABLE `ingredient` ADD COLUMN `common_varieties` TEXT")
+            db.execSQL("ALTER TABLE `ingredient` ADD COLUMN `edible_portion` TEXT")
+        }
+    }
