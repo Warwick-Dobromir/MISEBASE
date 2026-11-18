@@ -1,5 +1,7 @@
 package com.culinary.settings
 
+import android.content.ClipData
+import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -48,6 +50,7 @@ import com.culinary.core.designsystem.component.StatusTone
 import com.culinary.core.designsystem.icon.CulinaryIcons
 import com.culinary.core.designsystem.theme.CulinarySpacing
 import com.culinary.core.data.recycle.RecycleBinItem
+import com.culinary.diagnostics.FailureLogEntry
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -90,6 +93,10 @@ fun SettingsRoute(
         onCancelRestore = viewModel::cancelRestore,
         onRestart = { restartApplication(context) },
         onExportDiagnostics = { diagnosticsLauncher.launch("MISEBASE-diagnostics-${fileStamp()}.txt") },
+        onCopyFailureLogs = { text ->
+            val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+            clipboard.setPrimaryClip(ClipData.newPlainText("MISEBASE 失败记录", text))
+        },
         onShowLicenses = viewModel::showLicenses,
         onDismissLicenses = viewModel::dismissLicenses,
         onReimportSeed = viewModel::reimportSeed,
@@ -111,6 +118,7 @@ internal fun SettingsScreen(
     onCancelRestore: () -> Unit,
     onRestart: () -> Unit,
     onExportDiagnostics: () -> Unit,
+    onCopyFailureLogs: (String) -> Unit,
     onShowLicenses: () -> Unit,
     onDismissLicenses: () -> Unit,
     onReimportSeed: () -> Unit,
@@ -147,6 +155,7 @@ internal fun SettingsScreen(
                 onClear = { showSeedClearConfirm = true },
             )
             DiagnosticsSection(state = state, onExportDiagnostics = onExportDiagnostics)
+            FailureLogSection(entries = state.failureLogs, onCopy = onCopyFailureLogs)
             RecycleBinSection(state = state, onRestore = onRestoreRecycleItem, onDelete = { permanentDeleteTarget = it }, onDismissMessage = onDismissRecycleMessage)
             AboutSection(state = state, onShowLicenses = onShowLicenses)
             Spacer(modifier = Modifier.height(CulinarySpacing.block))
@@ -468,6 +477,64 @@ private fun DiagnosticsSection(
     )
 }
 
+@Composable
+private fun FailureLogSection(
+    entries: List<FailureLogEntry>,
+    onCopy: (String) -> Unit,
+) {
+    SectionHeader(title = "失败记录")
+    Text(
+        text = "记录操作失败的时间、来源和错误详情，最多保留最近 100 条。可复制后发送给开发人员排查。",
+        style = MaterialTheme.typography.bodyMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
+    Spacer(modifier = Modifier.height(CulinarySpacing.sm))
+    if (entries.isEmpty()) {
+        Text(
+            text = "暂无失败记录",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    } else {
+        Text(
+            text = "共 ${entries.size} 条，以下显示最近 10 条",
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        entries.take(10).forEach { entry ->
+            Spacer(modifier = Modifier.height(CulinarySpacing.sm))
+            Text(
+                text = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(Date(entry.timestamp)),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Text(
+                text = entry.source,
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.secondary,
+            )
+            Text(
+                text = entry.message,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            CulinaryRule(modifier = Modifier.padding(top = CulinarySpacing.xs))
+        }
+        Spacer(modifier = Modifier.height(CulinarySpacing.sm))
+        CulinaryButton(
+            text = "复制全部失败记录",
+            onClick = {
+                val formatter = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
+                val content = entries.asReversed().joinToString(separator = "\n\n") { entry ->
+                    formatter.format(Date(entry.timestamp)) + " | " + entry.source + "\n" + entry.message
+                }
+                onCopy(content)
+            },
+            variant = CulinaryButtonVariant.Secondary,
+            modifier = Modifier.fillMaxWidth(),
+        )
+    }
+}
 @Composable
 private fun AboutSection(
     state: SettingsUiState,
