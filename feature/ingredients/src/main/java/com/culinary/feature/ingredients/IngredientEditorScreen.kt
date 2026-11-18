@@ -41,7 +41,6 @@ import com.culinary.core.designsystem.component.CulinaryTextButton
 import com.culinary.core.designsystem.component.CulinaryTextField
 import com.culinary.core.designsystem.component.ErrorBanner
 import com.culinary.core.designsystem.component.LoadingRows
-import com.culinary.core.designsystem.component.PageHeader
 import com.culinary.core.designsystem.component.SectionHeader
 import com.culinary.core.designsystem.icon.CulinaryIcons
 import com.culinary.core.designsystem.theme.CulinarySpacing
@@ -172,17 +171,27 @@ internal fun IngredientEditorForm(
                 .verticalScroll(rememberScrollState())
                 .padding(bottom = CulinarySpacing.xl),
     ) {
-        PageHeader(
-            eyebrow = "INGREDIENT",
-            title =
-                stringResource(
-                    if (state.isNew) {
-                        R.string.ingredients_editor_new_title
-                    } else {
-                        R.string.ingredients_editor_edit_title
-                    },
+        Row(
+            modifier = Modifier.fillMaxWidth().height(56.dp).padding(horizontal = CulinarySpacing.xs),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(
+                imageVector = CulinaryIcons.Back,
+                contentDescription = "返回",
+                modifier = Modifier.size(40.dp).clickable(onClick = onCancel).padding(10.dp),
+            )
+            Spacer(modifier = Modifier.weight(1f))
+            Text(
+                text = stringResource(
+                    if (state.isNew) R.string.ingredients_editor_new_title else R.string.ingredients_editor_edit_title,
                 ),
-        )
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            Spacer(modifier = Modifier.weight(1f))
+            Spacer(modifier = Modifier.size(40.dp))
+        }
+        CulinaryRule()
         Column(modifier = Modifier.padding(horizontal = CulinarySpacing.pageHorizontal)) {
             SectionHeader(title = "01  基本信息")
             CulinaryTextField(
