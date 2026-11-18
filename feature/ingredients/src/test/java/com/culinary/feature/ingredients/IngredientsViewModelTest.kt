@@ -19,6 +19,7 @@ import com.culinary.core.domain.usecase.ingredient.ArchiveIngredientUseCase
 import com.culinary.core.domain.usecase.ingredient.GetIngredientDetailUseCase
 import com.culinary.core.domain.usecase.ingredient.ListIngredientsUseCase
 import com.culinary.core.domain.usecase.ingredient.SaveIngredientUseCase
+import com.culinary.feature.ingredients.GetIngredientApplicationsUseCase
 import com.culinary.core.domain.usecase.kitchen.ObserveKitchenRelationsUseCase
 import com.culinary.core.domain.usecase.unit.ListUnitsUseCase
 import com.google.common.truth.Truth.assertThat
@@ -87,7 +88,7 @@ class IngredientsViewModelTest {
                     savedStateHandle = SavedStateHandle(mapOf(IngredientsRoutes.ARG_INGREDIENT_ID to ID)),
                     getIngredientDetail = detail,
                     archiveIngredient = archiveIngredient,
-                    getRelations = emptyRelations(),
+                    getApplications = emptyApplications(),
                 )
 
             advanceUntilIdle()
@@ -160,7 +161,7 @@ class IngredientsViewModelTest {
                     savedStateHandle = SavedStateHandle(mapOf(IngredientsRoutes.ARG_INGREDIENT_ID to ID)),
                     getIngredientDetail = detail,
                     archiveIngredient = archiveIngredient,
-                    getRelations = emptyRelations(),
+                    getApplications = emptyApplications(),
                 )
             advanceUntilIdle()
 
@@ -255,5 +256,33 @@ private fun emptyRelations(): ObserveKitchenRelationsUseCase =
             ): com.culinary.core.common.Outcome<Unit> =
                 com.culinary.core.common.Outcome
                     .success(Unit)
+        },
+    )
+
+private fun emptyApplications(): GetIngredientApplicationsUseCase =
+    GetIngredientApplicationsUseCase(
+        sauceRepository = object : com.culinary.core.domain.repository.SauceRepository {
+            override fun observeActive(): Flow<List<com.culinary.core.domain.model.Sauce>> = flowOf(emptyList())
+            override suspend fun get(id: com.culinary.core.domain.model.SauceId): Outcome<com.culinary.core.domain.model.Sauce> = error("unused")
+            override suspend fun getVersion(id: com.culinary.core.domain.model.SauceVersionId): Outcome<com.culinary.core.domain.model.SauceVersion> = error("unused")
+            override suspend fun listVersions(sauceId: com.culinary.core.domain.model.SauceId): List<com.culinary.core.domain.model.SauceVersion> = emptyList()
+            override suspend fun findCurrentVersion(sauceId: com.culinary.core.domain.model.SauceId): com.culinary.core.domain.model.SauceVersion? = null
+            override suspend fun nextVersionNo(sauceId: com.culinary.core.domain.model.SauceId): Int = 1
+            override suspend fun save(sauce: com.culinary.core.domain.model.Sauce): Outcome<com.culinary.core.domain.model.SauceId> = error("unused")
+            override suspend fun saveDraft(version: com.culinary.core.domain.model.SauceVersion): Outcome<com.culinary.core.domain.model.SauceVersionId> = error("unused")
+            override suspend fun savePublished(version: com.culinary.core.domain.model.SauceVersion): Outcome<com.culinary.core.domain.model.SauceVersionId> = error("unused")
+            override suspend fun archive(id: com.culinary.core.domain.model.SauceId): Outcome<Unit> = Outcome.success(Unit)
+        },
+        recipeRepository = object : com.culinary.core.domain.repository.RecipeRepository {
+            override fun observeActive(): Flow<List<com.culinary.core.domain.model.Recipe>> = flowOf(emptyList())
+            override suspend fun get(id: com.culinary.core.domain.model.RecipeId): Outcome<com.culinary.core.domain.model.Recipe> = error("unused")
+            override suspend fun getVersion(id: com.culinary.core.domain.model.RecipeVersionId): com.culinary.core.domain.model.RecipeVersion? = null
+            override suspend fun getCurrentVersion(recipeId: com.culinary.core.domain.model.RecipeId): com.culinary.core.domain.model.RecipeVersion? = null
+            override suspend fun listVersions(recipeId: com.culinary.core.domain.model.RecipeId): List<com.culinary.core.domain.model.RecipeVersion> = emptyList()
+            override suspend fun nextVersionNo(recipeId: com.culinary.core.domain.model.RecipeId): Int = 1
+            override suspend fun save(recipe: com.culinary.core.domain.model.Recipe): Outcome<com.culinary.core.domain.model.RecipeId> = error("unused")
+            override suspend fun archive(id: com.culinary.core.domain.model.RecipeId): Outcome<Unit> = Outcome.success(Unit)
+            override suspend fun saveDraft(version: com.culinary.core.domain.model.RecipeVersion): com.culinary.core.domain.model.RecipeVersionId = error("unused")
+            override suspend fun savePublished(version: com.culinary.core.domain.model.RecipeVersion): Outcome<com.culinary.core.domain.model.RecipeVersionId> = error("unused")
         },
     )
