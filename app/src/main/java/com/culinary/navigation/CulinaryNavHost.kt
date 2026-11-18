@@ -503,8 +503,20 @@ private fun NavGraphBuilder.ingredientGraph(navController: NavHostController) {
             onOpenRelation = navController::openKitchenRelated,
         )
     }
-    composable(IngredientsRoutes.EDIT) {
-        IngredientEditorRoute(onSaved = { navController.popBackStack() })
+    composable(IngredientsRoutes.EDIT) { entry ->
+        val routeIngredientId = entry.arguments?.getString(IngredientsRoutes.ARG_INGREDIENT_ID)
+        IngredientEditorRoute(
+            onSaved = { savedId ->
+                if (routeIngredientId == IngredientsRoutes.NEW_ID) {
+                    navController.navigate(IngredientsRoutes.detail(savedId)) {
+                        popUpTo(IngredientsRoutes.LIST) { inclusive = false }
+                    }
+                } else {
+                    navController.popBackStack()
+                }
+            },
+            onCancelled = { navController.popBackStack() },
+        )
     }
 }
 
