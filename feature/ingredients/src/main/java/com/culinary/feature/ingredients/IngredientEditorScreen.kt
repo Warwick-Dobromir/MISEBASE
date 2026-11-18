@@ -174,6 +174,20 @@ internal fun IngredientEditorForm(
                 onCategorySelect = onCategorySelect,
                 onLegacyCategoryChange = onCategoryChange,
             )
+            CulinaryTextField(
+                value = state.englishName,
+                onValueChange = onEnglishNameChange,
+                label = { Text(text = stringResource(R.string.ingredients_english_name)) },
+                singleLine = true,
+            )
+            Spacer(modifier = Modifier.height(CulinarySpacing.field))
+            CulinaryTextField(
+                value = state.scientificName,
+                onValueChange = onScientificNameChange,
+                label = { Text("学名") },
+                singleLine = true,
+            )
+            Spacer(modifier = Modifier.height(CulinarySpacing.field))
             SectionHeader(title = "02  图片资料")
             state.primaryImageBytes?.let { bytes ->
                 val bitmap = remember(bytes) { BitmapFactory.decodeByteArray(bytes, 0, bytes.size)?.asImageBitmap() }
@@ -224,27 +238,6 @@ internal fun IngredientEditorForm(
                 onClick = onOpenUnitPicker,
             )
             Spacer(modifier = Modifier.height(CulinarySpacing.field))
-            CulinaryTextField(
-                value = state.description,
-                onValueChange = onDescriptionChange,
-                label = { Text(text = stringResource(R.string.ingredients_description_label)) },
-                minLines = 3,
-            )
-            Spacer(modifier = Modifier.height(CulinarySpacing.field))
-            CulinaryTextField(
-                value = state.englishName,
-                onValueChange = onEnglishNameChange,
-                label = { Text(text = stringResource(R.string.ingredients_english_name)) },
-                singleLine = true,
-            )
-            Spacer(modifier = Modifier.height(CulinarySpacing.field))
-            CulinaryTextField(
-                value = state.scientificName,
-                onValueChange = onScientificNameChange,
-                label = { Text("学名") },
-                singleLine = true,
-            )
-            Spacer(modifier = Modifier.height(CulinarySpacing.field))
             SectionHeader(title = "04  风味与特性")
             CulinaryTextField(
                 value = state.flavorProfile,
@@ -252,6 +245,14 @@ internal fun IngredientEditorForm(
                 label = { Text("风味与特性") },
                 minLines = 3,
             )
+            Spacer(modifier = Modifier.height(CulinarySpacing.field))
+            CulinaryTextField(
+                value = state.description,
+                onValueChange = onDescriptionChange,
+                label = { Text(text = stringResource(R.string.ingredients_description_label)) },
+                minLines = 3,
+            )
+            Spacer(modifier = Modifier.height(CulinarySpacing.field))
             Spacer(modifier = Modifier.height(CulinarySpacing.field))
             CulinaryTextField(
                 value = state.seasonality,
