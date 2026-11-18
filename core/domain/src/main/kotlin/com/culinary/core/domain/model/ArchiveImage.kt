@@ -22,6 +22,7 @@ data class ArchiveImage(
     val sortOrder: Int,
     /** 步骤序号（1 起）；主图/参考图为 null。 */
     val stepNo: Int? = null,
+    val mimeType: String? = null,
 )
 
 /** 从系统照片选择器读入、尚未写入磁盘的食材图片。 */
