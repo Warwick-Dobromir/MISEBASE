@@ -204,6 +204,7 @@ fun CulinaryNavHost(
                     .fillMaxSize()
                     .padding(padding)
                     .imePadding(),
+            onArchiveSortingChanged = { archiveSorting.value = it },
         )
     }
 }
@@ -256,6 +257,7 @@ internal fun AppTopBar(
 private fun AppNavGraph(
     navController: NavHostController,
     modifier: Modifier = Modifier,
+    onArchiveSortingChanged: (Boolean) -> Unit,
 ) {
     NavHost(
         navController = navController,
@@ -269,7 +271,7 @@ private fun AppNavGraph(
         homeGraph(navController)
         homePlaceholderGraph()
         kitchenReferenceGraph(navController)
-        libraryGraph(navController)
+        libraryGraph(navController, onArchiveSortingChanged)
         sauceGraph(navController)
         ingredientGraph(navController)
         recipeGraph(navController)
@@ -328,7 +330,10 @@ private fun NavGraphBuilder.homePlaceholderGraph() {
  * `library` 显示厨房首页；`library/{tab}` 的 tab 取六个档案类型。
  * 资料库页共享统一骨架，底栏保持厨房选中；详情/编辑路由由各自能力处理。
  */
-private fun NavGraphBuilder.libraryGraph(navController: NavHostController) {
+private fun NavGraphBuilder.libraryGraph(
+    navController: NavHostController,
+    onArchiveSortingChanged: (Boolean) -> Unit,
+) {
     composable(LIBRARY_ROUTE) {
         KitchenRoute(
             onOpenCategory = { category ->
@@ -351,7 +356,7 @@ private fun NavGraphBuilder.libraryGraph(navController: NavHostController) {
             onAdd = { navController.openArchiveAdd(section) },
             onOpenEntry = { archiveEntry -> navController.openArchiveEntry(archiveEntry) },
             onBack = { navController.popBackStack() },
-            onSortingChanged = { archiveSorting.value = it },
+            onSortingChanged = onArchiveSortingChanged,
         )
     }
 }
