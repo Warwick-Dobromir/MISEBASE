@@ -31,7 +31,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.culinary.core.designsystem.component.CulinaryButton
 import com.culinary.core.designsystem.component.CulinaryRule
 import com.culinary.core.designsystem.component.CulinaryTextButton
 import com.culinary.core.designsystem.component.CulinaryTextField
