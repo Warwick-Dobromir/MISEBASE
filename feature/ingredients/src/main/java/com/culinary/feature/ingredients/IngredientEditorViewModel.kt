@@ -406,7 +406,7 @@ class IngredientEditorViewModel
                                 is Outcome.Success -> Unit
                             }
                         }
-                        _uiState.update { it.copy(isSaving = false, saved = true) }
+                        _uiState.update { it.copy(isSaving = false, saved = true, savedIngredientId = result.value.value) }
                     }
                     is Outcome.Failure ->
                         _uiState.update {
