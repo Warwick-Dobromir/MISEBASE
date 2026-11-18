@@ -40,6 +40,7 @@ class ArchiveImageRepositoryImpl
                         role = entity.role.name,
                         sortOrder = entity.sortOrder,
                         stepNo = entity.stepNo,
+                        mimeType = entity.mimeType,
                     )
                 }
             }
