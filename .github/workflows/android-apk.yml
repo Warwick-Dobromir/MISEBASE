@@ -3,7 +3,7 @@ name: Android APK
 
 on:
   push:
-    branches: [main, fix/archive-category-interactions, fix/archive-sort-feedback]
+    branches: [main, fix/archive-category-interactions, fix/archive-sort-feedback, build/pen-flip-90fb110]
   workflow_dispatch:
 
 permissions:
@@ -17,8 +17,10 @@ jobs:
       MISEBASE_RELEASE_KEY_ALIAS: ${{ secrets.MISEBASE_RELEASE_KEY_ALIAS }}
       MISEBASE_RELEASE_KEY_PASSWORD: ${{ secrets.MISEBASE_RELEASE_KEY_PASSWORD }}
     steps:
-      - name: Checkout main
+      - name: Checkout requested source commit
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
 
       - name: Require original release signing secrets
         env:
