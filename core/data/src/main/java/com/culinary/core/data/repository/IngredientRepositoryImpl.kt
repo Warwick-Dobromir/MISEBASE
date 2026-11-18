@@ -8,11 +8,14 @@ import com.culinary.core.data.mapper.IngredientMapper
 import com.culinary.core.data.transaction.DbErrorMapper
 import com.culinary.core.database.dao.ChangeLogDao
 import com.culinary.core.database.dao.IngredientDao
+import com.culinary.core.database.dao.IngredientUnitConversionDao
+import com.culinary.core.database.entity.IngredientUnitConversionEntity
 import com.culinary.core.database.entity.ChangeLogEntity
 import com.culinary.core.database.model.ChangeActionDb
 import com.culinary.core.domain.model.Ingredient
 import com.culinary.core.domain.model.IngredientChangeRecord
 import com.culinary.core.domain.model.IngredientId
+import com.culinary.core.domain.model.IngredientUnitConversion
 import com.culinary.core.domain.repository.IngredientRepository
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
@@ -30,6 +33,7 @@ class IngredientRepositoryImpl
     @Inject
     constructor(
         private val dao: IngredientDao,
+        private val conversionDao: IngredientUnitConversionDao,
         private val changeLogDao: ChangeLogDao,
         private val clock: Clock,
         private val idGenerator: IdGenerator,
@@ -78,6 +82,58 @@ class IngredientRepositoryImpl
                 Outcome.failure(DbErrorMapper.map(e))
             }
 
+        override suspend fun saveWithConversions(
+            ingredient: Ingredient,
+            conversions: List<IngredientUnitConversion>,
+        ): Outcome<IngredientId> =
+            try {
+                val existingIngredient = dao.findById(ingredient.id.value)
+                val ingredientChanged = existingIngredient?.let(IngredientMapper::toDomain) != ingredient
+                val existingConversions = conversionDao.listByIngredient(ingredient.id.value)
+                val current = existingConversions.map {
+                    listOf(it.fromUnitId, it.toUnitId, it.factor.toString(), it.note.orEmpty()).joinToString("|")
+                }.sorted()
+                val requested = conversions.map {
+                    listOf(it.fromUnit.value, it.toUnit.value, it.factor.toString(), it.note.orEmpty()).joinToString("|")
+                }.sorted()
+                when (val saved = save(ingredient)) {
+                    is Outcome.Failure -> return saved
+                    is Outcome.Success -> Unit
+                }
+                if (current != requested) {
+                    conversionDao.deleteByIngredient(ingredient.id.value)
+                    val now = clock.now().toEpochMilli()
+                    conversions.forEach { conversion ->
+                        conversionDao.insert(
+                            IngredientUnitConversionEntity(
+                                id = idGenerator.newId(),
+                                ingredientId = ingredient.id.value,
+                                fromUnitId = conversion.fromUnit.value,
+                                toUnitId = conversion.toUnit.value,
+                                factor = conversion.factor,
+                                note = conversion.note,
+                                createdAt = now,
+                            ),
+                        )
+                    }
+                    if (!ingredientChanged) {
+                        changeLogDao.insert(
+                            ChangeLogEntity(
+                                id = idGenerator.newId(),
+                                entityType = "INGREDIENT",
+                                entityId = ingredient.id.value,
+                                action = ChangeActionDb.UPDATE,
+                                createdAt = now,
+                            ),
+                        )
+                    }
+                }
+                Outcome.success(ingredient.id)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Throwable) {
+                Outcome.failure(DbErrorMapper.map(e))
+            }
         override suspend fun changeHistory(id: IngredientId): List<IngredientChangeRecord> =
             changeLogDao.listByEntity("INGREDIENT", id.value).map { entry ->
                 IngredientChangeRecord(action = entry.action.name, createdAt = entry.createdAt)
