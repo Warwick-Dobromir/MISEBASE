@@ -74,20 +74,30 @@ class IngredientsUiTest {
                     onCategoryChange = {},
                     onDescriptionChange = {},
                     onEnglishNameChange = {},
+                    onScientificNameChange = {},
+                    onFlavorProfileChange = {},
+                    onSeasonalityChange = {},
+                    onOriginChange = {},
+                    onSelectionNotesChange = {},
+                    onPrepNotesChange = {},
                     onExampleProductsChange = {},
                     onStorageNotesChange = {},
                     onAllergenNotesChange = {},
                     onOpenUnitPicker = {},
-                    onSave = {},
                 )
             }
         }
 
         compose.onNodeWithText("名称").assertIsDisplayed()
-        compose.onNodeWithText("分类（可选）").assertIsDisplayed()
+        compose.onNodeWithText("CLASSIFICATION / 分类归属").assertIsDisplayed()
         compose.onNodeWithText("默认单位").assertIsDisplayed()
         compose.onNodeWithText("克（g）").assertIsDisplayed()
-        compose.onNodeWithText("保存").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("学名").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("风味与特性").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("时令").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("产地").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("挑选说明").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("预处理").performScrollTo().assertIsDisplayed()
     }
 
     @Test
@@ -120,7 +130,6 @@ class IngredientsUiTest {
             CulinaryTheme {
                 IngredientDetailContent(
                     detailState = IngredientDetailUiState(detail = detail, isLoading = false),
-                    onEdit = {},
                     onArchive = {},
                     onOpenRelation = { _, _ -> },
                 )
