@@ -10,16 +10,16 @@ import com.culinary.core.domain.model.KitchenRecordKind
 import com.culinary.core.domain.usecase.archive.AssignArchiveCategoryUseCase
 import com.culinary.core.domain.usecase.archive.GetArchiveCategoryForRecordUseCase
 import com.culinary.core.domain.usecase.archive.ListArchiveCategoriesUseCase
-import com.culinary.core.domain.usecase.ingredient.GetIngredientDetailUseCase
 import com.culinary.core.domain.usecase.ingredient.ArchiveIngredientUseCase
+import com.culinary.core.domain.usecase.ingredient.GetIngredientDetailUseCase
 import com.culinary.core.domain.usecase.ingredient.SaveIngredientInput
 import com.culinary.core.domain.usecase.ingredient.SaveIngredientUseCase
 import com.culinary.core.domain.usecase.unit.ListUnitsUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -36,7 +36,8 @@ class IngredientEditorViewModel
         private val archiveIngredient: ArchiveIngredientUseCase,
         private val listUnits: ListUnitsUseCase,
         private val listArchiveCategories: ListArchiveCategoriesUseCase = ListArchiveCategoriesUseCase(),
-        private val getArchiveCategoryForRecord: GetArchiveCategoryForRecordUseCase = GetArchiveCategoryForRecordUseCase(),
+        private val getArchiveCategoryForRecord: GetArchiveCategoryForRecordUseCase =
+            GetArchiveCategoryForRecordUseCase(),
         private val assignArchiveCategory: AssignArchiveCategoryUseCase = AssignArchiveCategoryUseCase(),
     ) : ViewModel() {
         private val routeId: String? =
@@ -76,7 +77,9 @@ class IngredientEditorViewModel
                             _uiState.update {
                                 it.copy(
                                     name = result.value.ingredient.name,
-                                    category = assignedCategory?.name ?: result.value.ingredient.category.orEmpty(),
+                                    category =
+                                        assignedCategory?.name
+                                            ?: result.value.ingredient.category.orEmpty(),
                                     categoryPathIds = categoryPath,
                                     description =
                                         result.value.ingredient.description
@@ -131,7 +134,10 @@ class IngredientEditorViewModel
             _uiState.update { state ->
                 val base = state.categoryPathIds.take(level.coerceAtLeast(0))
                 val next = if (categoryId == null) base else base + categoryId
-                val leafName = next.lastOrNull()?.let { id -> state.categories.firstOrNull { it.id == id }?.name }.orEmpty()
+                val leafName =
+                    next.lastOrNull()?.let { id ->
+                        state.categories.firstOrNull { it.id == id }?.name
+                    }.orEmpty()
                 state.copy(category = leafName, categoryPathIds = next, error = null)
             }
         }
@@ -192,8 +198,14 @@ class IngredientEditorViewModel
             val id = routeId ?: return
             viewModelScope.launch {
                 when (val result = archiveIngredient(IngredientId(id))) {
-                    is Outcome.Success -> _uiState.update { it.copy(archived = true, error = null) }
-                    is Outcome.Failure -> _uiState.update { it.copy(error = IngredientErrorMessages.describe(result.error)) }
+                    is Outcome.Success -> {
+                        _uiState.update { it.copy(archived = true, error = null) }
+                    }
+                    is Outcome.Failure -> {
+                        _uiState.update {
+                            it.copy(error = IngredientErrorMessages.describe(result.error))
+                        }
+                    }
                 }
             }
         }
@@ -237,7 +249,10 @@ class IngredientEditorViewModel
                             ) {
                                 is Outcome.Failure -> {
                                     _uiState.update {
-                                        it.copy(isSaving = false, error = IngredientErrorMessages.describe(assignment.error))
+                                        it.copy(
+                                            isSaving = false,
+                                            error = IngredientErrorMessages.describe(assignment.error),
+                                        )
                                     }
                                     return@launch
                                 }
@@ -257,7 +272,6 @@ class IngredientEditorViewModel
             }
         }
     }
-
 
 private fun buildIngredientCategoryPath(
     categoryId: String?,
