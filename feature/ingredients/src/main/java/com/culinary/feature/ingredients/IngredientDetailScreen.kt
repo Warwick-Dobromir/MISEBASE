@@ -40,6 +40,7 @@ import com.culinary.core.designsystem.component.StatusTone
 import com.culinary.core.designsystem.icon.CulinaryIcons
 import com.culinary.core.designsystem.theme.CulinarySpacing
 import com.culinary.core.domain.model.IngredientConversionView
+import com.culinary.core.domain.model.IngredientChangeRecord
 import com.culinary.core.domain.model.KitchenRecordKind
 import com.culinary.core.domain.model.KitchenRelatedRecord
 
@@ -160,6 +161,7 @@ internal fun IngredientDetailContent(
         IngredientSummary(detail = detail, onEdit = onEdit, onArchive = onArchive)
         ConversionsSection(conversions = detail.conversions)
         IngredientRelationsSection(detailState.relations, onOpenRelation)
+        IngredientChangeHistory(detail.changeHistory)
     }
 }
 
@@ -309,6 +311,228 @@ private fun IngredientRelationsSection(
     }
 }
 
+@Composable
+private fun IngredientChangeHistory(records: List<IngredientChangeRecord>) {
+    if (records.isEmpty()) return
+    Column(modifier = Modifier.padding(horizontal = CulinarySpacing.pageHorizontal)) {
+        SectionHeader(title = "06  版本历史")
+        records.forEachIndexed { index, record ->
+            val current = index == records.lastIndex
+            val timestamp = java.text.SimpleDateFormat("yyyy-MM-dd HH:mm", java.util.Locale.getDefault())
+                .format(java.util.Date(record.createdAt))
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(vertical = CulinarySpacing.xs),
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Column {
+                    Text(
+                        text = "v${'
+    Column(modifier = Modifier.padding(horizontal = CulinarySpacing.pageHorizontal)) {
+        SectionHeader(title = stringResource(R.string.ingredients_conversions, conversions.size))
+        if (conversions.isEmpty()) {
+            Text(
+                text = stringResource(R.string.ingredients_no_conversions),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        } else {
+            conversions.forEach { conversion -> ConversionRow(conversion) }
+        }
+    }
+}
+
+@Composable
+private fun ConversionRow(conversion: IngredientConversionView) {
+    val from = conversion.fromUnit?.symbol ?: conversion.fromUnitId.value
+    val to = conversion.toUnit?.symbol ?: conversion.toUnitId.value
+    Column(
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(vertical = CulinarySpacing.sm),
+    ) {
+        Text(
+            text =
+                stringResource(
+                    R.string.ingredients_conversion_row,
+                    from,
+                    to,
+                    formatFactor(conversion.factor),
+                ),
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSurface,
+        )
+        if (!conversion.note.isNullOrBlank()) {
+            Text(
+                text = conversion.note.orEmpty(),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
+
+private fun formatFactor(value: Double): String =
+    if (value % 1.0 == 0.0) value.toLong().toString() else value.toString()
+}{index + 1}  ${'
+    Column(modifier = Modifier.padding(horizontal = CulinarySpacing.pageHorizontal)) {
+        SectionHeader(title = stringResource(R.string.ingredients_conversions, conversions.size))
+        if (conversions.isEmpty()) {
+            Text(
+                text = stringResource(R.string.ingredients_no_conversions),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        } else {
+            conversions.forEach { conversion -> ConversionRow(conversion) }
+        }
+    }
+}
+
+@Composable
+private fun ConversionRow(conversion: IngredientConversionView) {
+    val from = conversion.fromUnit?.symbol ?: conversion.fromUnitId.value
+    val to = conversion.toUnit?.symbol ?: conversion.toUnitId.value
+    Column(
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(vertical = CulinarySpacing.sm),
+    ) {
+        Text(
+            text =
+                stringResource(
+                    R.string.ingredients_conversion_row,
+                    from,
+                    to,
+                    formatFactor(conversion.factor),
+                ),
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSurface,
+        )
+        if (!conversion.note.isNullOrBlank()) {
+            Text(
+                text = conversion.note.orEmpty(),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
+
+private fun formatFactor(value: Double): String =
+    if (value % 1.0 == 0.0) value.toLong().toString() else value.toString()
+}{if (current) "当前记录" else "历史记录"}",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface,
+                    )
+                    Text(
+                        text = "${'
+    Column(modifier = Modifier.padding(horizontal = CulinarySpacing.pageHorizontal)) {
+        SectionHeader(title = stringResource(R.string.ingredients_conversions, conversions.size))
+        if (conversions.isEmpty()) {
+            Text(
+                text = stringResource(R.string.ingredients_no_conversions),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        } else {
+            conversions.forEach { conversion -> ConversionRow(conversion) }
+        }
+    }
+}
+
+@Composable
+private fun ConversionRow(conversion: IngredientConversionView) {
+    val from = conversion.fromUnit?.symbol ?: conversion.fromUnitId.value
+    val to = conversion.toUnit?.symbol ?: conversion.toUnitId.value
+    Column(
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(vertical = CulinarySpacing.sm),
+    ) {
+        Text(
+            text =
+                stringResource(
+                    R.string.ingredients_conversion_row,
+                    from,
+                    to,
+                    formatFactor(conversion.factor),
+                ),
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSurface,
+        )
+        if (!conversion.note.isNullOrBlank()) {
+            Text(
+                text = conversion.note.orEmpty(),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
+
+private fun formatFactor(value: Double): String =
+    if (value % 1.0 == 0.0) value.toLong().toString() else value.toString()
+}{if (record.action == "CREATE") "创建档案" else "修改档案"} · ${'
+    Column(modifier = Modifier.padding(horizontal = CulinarySpacing.pageHorizontal)) {
+        SectionHeader(title = stringResource(R.string.ingredients_conversions, conversions.size))
+        if (conversions.isEmpty()) {
+            Text(
+                text = stringResource(R.string.ingredients_no_conversions),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        } else {
+            conversions.forEach { conversion -> ConversionRow(conversion) }
+        }
+    }
+}
+
+@Composable
+private fun ConversionRow(conversion: IngredientConversionView) {
+    val from = conversion.fromUnit?.symbol ?: conversion.fromUnitId.value
+    val to = conversion.toUnit?.symbol ?: conversion.toUnitId.value
+    Column(
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(vertical = CulinarySpacing.sm),
+    ) {
+        Text(
+            text =
+                stringResource(
+                    R.string.ingredients_conversion_row,
+                    from,
+                    to,
+                    formatFactor(conversion.factor),
+                ),
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSurface,
+        )
+        if (!conversion.note.isNullOrBlank()) {
+            Text(
+                text = conversion.note.orEmpty(),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
+
+private fun formatFactor(value: Double): String =
+    if (value % 1.0 == 0.0) value.toLong().toString() else value.toString()
+}timestamp",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                if (current) StatusBadge(text = "当前", tone = StatusTone.Accent)
+            }
+        }
+    }
+}
 @Composable
 private fun ConversionsSection(conversions: List<IngredientConversionView>) {
     Column(modifier = Modifier.padding(horizontal = CulinarySpacing.pageHorizontal)) {
