@@ -300,23 +300,38 @@ class IngredientEditorViewModel
             }
         }
 
-        private suspend fun persistImages(state: IngredientEditorUiState, ingredientId: String): Outcome<Unit> {
-            state.removedImageIds.distinct().forEach { imageId ->
+        private suspend fun persistImages(ingredientId: String): Outcome<Unit> {
+            _uiState.value.removedImageIds.distinct().forEach { imageId ->
                 when (val result = archiveImages.delete(imageId)) {
                     is Outcome.Failure -> return result
-                    is Outcome.Success -> Unit
+                    is Outcome.Success ->
+                        _uiState.update { state ->
+                            state.copy(removedImageIds = state.removedImageIds.filterNot { it == imageId })
+                        }
                 }
             }
-            state.pendingPrimaryImage?.let { image ->
+            _uiState.value.pendingPrimaryImage?.let { image ->
                 when (val result = archiveImages.addIngredient(ingredientId, "PRIMARY", image.bytes, image.mimeType)) {
                     is Outcome.Failure -> return result
-                    is Outcome.Success -> Unit
+                    is Outcome.Success ->
+                        _uiState.update { state ->
+                            state.copy(primaryImageId = result.value.id, pendingPrimaryImage = null)
+                        }
                 }
             }
-            state.referenceImages.filter { it.id == null }.forEach { image ->
-                when (val result = archiveImages.addIngredient(ingredientId, "REFERENCE", image.bytes, image.mimeType)) {
-                    is Outcome.Failure -> return result
-                    is Outcome.Success -> Unit
+            _uiState.value.referenceImages.forEachIndexed { index, image ->
+                if (image.id == null) {
+                    when (val result = archiveImages.addIngredient(ingredientId, "REFERENCE", image.bytes, image.mimeType)) {
+                        is Outcome.Failure -> return result
+                        is Outcome.Success ->
+                            _uiState.update { state ->
+                                state.copy(
+                                    referenceImages = state.referenceImages.mapIndexed { i, item ->
+                                        if (i == index) item.copy(id = result.value.id) else item
+                                    },
+                                )
+                            }
+                    }
                 }
             }
             return Outcome.success(Unit)
@@ -384,7 +399,8 @@ class IngredientEditorViewModel
                     )
                 when (result) {
                     is Outcome.Success -> {
-                        when (val imageResult = persistImages(state, result.value.value)) {
+                        _uiState.update { it.copy(ingredientId = result.value.value, isNew = false) }
+                        when (val imageResult = persistImages(result.value.value)) {
                             is Outcome.Failure -> {
                                 _uiState.update { it.copy(isSaving = false, error = IngredientErrorMessages.describe(imageResult.error)) }
                                 return@launch
