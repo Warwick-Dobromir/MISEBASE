@@ -71,6 +71,15 @@ jobs:
           test "$ACTUAL" = "$EXPECTED"
           echo "Verified package, version, and original signing certificate: $ACTUAL"
 
+      - name: Upload rebuilt APK for download
+        if: github.ref != 'refs/heads/main'
+        uses: actions/upload-artifact@v4
+        with:
+          name: MISEBASE-pen-flip-90fb110
+          path: app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 7
+
       - name: Replace latest APK and remove the other 21 releases
         if: github.ref == 'refs/heads/main'
         env:
