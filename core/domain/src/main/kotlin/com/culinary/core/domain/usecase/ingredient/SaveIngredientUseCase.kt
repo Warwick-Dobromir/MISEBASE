@@ -7,6 +7,7 @@ import com.culinary.core.common.flatMap
 import com.culinary.core.domain.model.EntityStatus
 import com.culinary.core.domain.model.Ingredient
 import com.culinary.core.domain.model.IngredientId
+import com.culinary.core.domain.model.IngredientUnitConversion
 import com.culinary.core.domain.model.UnitId
 import com.culinary.core.domain.repository.IngredientRepository
 import com.culinary.core.domain.rule.common.NameText
@@ -29,6 +30,7 @@ data class SaveIngredientInput(
     val exampleProducts: String? = null,
     val storageNotes: String? = null,
     val allergenNotes: String? = null,
+    val conversions: List<IngredientUnitConversion> = emptyList(),
 )
 
 /**
@@ -82,7 +84,7 @@ class SaveIngredientUseCase(
                 allergenNotes = input.allergenNotes.blankToNull(),
             )
 
-        return transactionRunner.write { repository.save(ingredient) }.flatMap { it }
+        return transactionRunner.write { repository.saveWithConversions(ingredient, input.conversions) }.flatMap { it }
     }
 
     private fun validate(input: SaveIngredientInput): CulinaryError? {
