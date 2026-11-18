@@ -48,11 +48,6 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
 
-      - name: Run unit tests
-        run: |
-          ./gradlew :app:testDebugUnitTest --tests "com.culinary.cooking.CookingViewModelTest" --no-daemon
-          ./gradlew :feature:ingredients:testDebugUnitTest --tests "com.culinary.feature.ingredients.IngredientsViewModelTest" --no-daemon
-
       - name: Build APK with original MISEBASE release key
         env:
           MISEBASE_RELEASE_STORE_FILE: ${{ runner.temp }}/release.keystore
@@ -86,6 +81,11 @@ jobs:
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
           retention-days: 7
+
+      - name: Run unit tests
+        run: |
+          ./gradlew :app:testDebugUnitTest --tests "com.culinary.cooking.CookingViewModelTest" --no-daemon
+          ./gradlew :feature:ingredients:testDebugUnitTest --tests "com.culinary.feature.ingredients.IngredientsViewModelTest" --no-daemon
 
       - name: Replace latest APK and remove the other 21 releases
         if: github.ref == 'refs/heads/main'
