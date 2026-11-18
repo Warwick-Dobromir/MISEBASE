@@ -338,6 +338,16 @@ internal fun IngredientEditorForm(
                 minLines = 3,
             )
             Spacer(modifier = Modifier.height(CulinarySpacing.field))
+            SectionHeader(title = "05  烹饪用途")
+            CulinaryTextField(
+                value = state.exampleProducts,
+                onValueChange = onExampleProductsChange,
+                label = { Text(text = stringResource(R.string.ingredients_example_products)) },
+                minLines = 2,
+            )
+            Spacer(modifier = Modifier.height(CulinarySpacing.field))
+            SectionHeader(title = "06  其他信息")
+            Spacer(modifier = Modifier.height(CulinarySpacing.field))
             CulinaryTextField(
                 value = state.seasonality,
                 onValueChange = onSeasonalityChange,
@@ -365,16 +375,6 @@ internal fun IngredientEditorForm(
                 label = { Text("预处理方法") },
                 minLines = 2,
             )
-            Spacer(modifier = Modifier.height(CulinarySpacing.field))
-            SectionHeader(title = "05  烹饪用途")
-            CulinaryTextField(
-                value = state.exampleProducts,
-                onValueChange = onExampleProductsChange,
-                label = { Text(text = stringResource(R.string.ingredients_example_products)) },
-                minLines = 2,
-            )
-            Spacer(modifier = Modifier.height(CulinarySpacing.field))
-            SectionHeader(title = "06  其他信息")
             CulinaryTextField(
                 value = state.storageNotes,
                 onValueChange = onStorageNotesChange,
