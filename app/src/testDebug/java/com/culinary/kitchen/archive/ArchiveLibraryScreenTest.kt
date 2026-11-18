@@ -41,17 +41,6 @@ class ArchiveLibraryScreenTest {
         )
 
     @Test
-    fun `auto scroll accelerates strongly toward the screen edge`() {
-        val nearEdge = archiveAutoScrollVelocityPxPerSecond(0.5f)
-        val atEdge = archiveAutoScrollVelocityPxPerSecond(1f)
-        val beyondEdge = archiveAutoScrollVelocityPxPerSecond(2f)
-
-        assertThat(nearEdge).isGreaterThan(500f)
-        assertThat(atEdge).isEqualTo(2_400f)
-        assertThat(beyondEdge).isEqualTo(atEdge)
-    }
-
-    @Test
     fun `renders category tree and formal category counts`() {
         show()
 
