@@ -74,10 +74,14 @@ class IngredientEditorViewModel
                                     getArchiveCategoryForRecord(KitchenRecordKind.INGREDIENT, routeId)
                                 }.getOrNull()
                             val categoryPath = buildIngredientCategoryPath(assignedCategory?.id, categories)
+                            val categoryName =
+                                assignedCategory?.name
+                                    ?: result.value.ingredient.category
+                                        .orEmpty()
                             _uiState.update {
                                 it.copy(
                                     name = result.value.ingredient.name,
-                                    category = assignedCategory?.name ?: result.value.ingredient.category.orEmpty(),
+                                    category = categoryName,
                                     categoryPathIds = categoryPath,
                                     description =
                                         result.value.ingredient.description
@@ -147,12 +151,11 @@ class IngredientEditorViewModel
             _uiState.update { state ->
                 val base = state.categoryPathIds.take(level.coerceAtLeast(0))
                 val next = if (categoryId == null) base else base + categoryId
-                val leafName =
-                    next.lastOrNull()
-                        ?.let { id ->
-                            state.categories.firstOrNull { it.id == id }?.name
-                        }
-                        .orEmpty()
+                val selectedCategory =
+                    state.categories.firstOrNull { category ->
+                        category.id == next.lastOrNull()
+                    }
+                val leafName = selectedCategory?.name.orEmpty()
                 state.copy(category = leafName, categoryPathIds = next, error = null)
             }
         }
