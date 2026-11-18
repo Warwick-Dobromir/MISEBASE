@@ -208,11 +208,8 @@ internal fun ArchiveLibraryScreen(
         showSortExitDialog = false
     }
     fun requestSortReturn() {
-        if (sortDirty) {
-            showSortExitDialog = true
-        } else {
-            finishSorting()
-        }
+        // 排序模式退出始终经过确认；无脏修改时确认后恢复最近一次保存顺序。
+        showSortExitDialog = true
     }
 
     LaunchedEffect(cancelSortRequestVersion) {
