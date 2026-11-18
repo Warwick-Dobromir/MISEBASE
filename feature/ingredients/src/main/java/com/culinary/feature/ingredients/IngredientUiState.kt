@@ -101,4 +101,4 @@ object IngredientErrorMessages {
 }
 
 /** 编辑器中已存在或待保存的食材附图。 */
-data class IngredientImageDraft(val id: String?, val bytes: ByteArray)
+data class IngredientImageDraft(val id: String?, val bytes: ByteArray, val mimeType: String = "image/jpeg")
