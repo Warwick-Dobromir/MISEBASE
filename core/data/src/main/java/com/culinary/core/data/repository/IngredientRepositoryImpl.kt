@@ -48,6 +48,8 @@ class IngredientRepositoryImpl
             try {
                 val now = clock.now().toEpochMilli()
                 val existing = dao.findById(ingredient.id.value)
+                val previous = existing?.let(IngredientMapper::toDomain)
+                if (previous == ingredient) return Outcome.success(ingredient.id)
                 if (existing == null) {
                     dao.insert(IngredientMapper.toEntity(ingredient, createdAt = now, updatedAt = now, revision = 1))
                 } else {
@@ -60,6 +62,15 @@ class IngredientRepositoryImpl
                         ),
                     )
                 }
+                changeLogDao.insert(
+                    ChangeLogEntity(
+                        id = idGenerator.newId(),
+                        entityType = "INGREDIENT",
+                        entityId = ingredient.id.value,
+                        action = if (existing == null) ChangeActionDb.CREATE else ChangeActionDb.UPDATE,
+                        createdAt = now,
+                    ),
+                )
                 Outcome.success(ingredient.id)
             } catch (e: CancellationException) {
                 throw e
