@@ -78,6 +78,10 @@ class IngredientRepositoryImpl
                 Outcome.failure(DbErrorMapper.map(e))
             }
 
+        override suspend fun changeHistory(id: IngredientId): List<IngredientChangeRecord> =
+            changeLogDao.listByEntity("INGREDIENT", id.value).map { entry ->
+                IngredientChangeRecord(action = entry.action.name, createdAt = entry.createdAt)
+            }
         override suspend fun archive(id: IngredientId): Outcome<Unit> =
             try {
                 val rows = dao.archive(id.value, clock.now().toEpochMilli())
