@@ -1,5 +1,6 @@
 package com.culinary.feature.ingredients
 
+import android.graphics.BitmapFactory
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -33,7 +34,6 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import android.graphics.BitmapFactory
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.culinary.core.designsystem.component.CulinaryRule
@@ -93,10 +93,16 @@ fun IngredientEditorRoute(
                 onExampleProductsChange = viewModel::onExampleProductsChange,
                 onStorageNotesChange = viewModel::onStorageNotesChange,
                 onAllergenNotesChange = viewModel::onAllergenNotesChange,
-                onOpenUnitPicker = { conversionUnitTarget = null; showUnitPicker = true },
+                onOpenUnitPicker = {
+                    conversionUnitTarget = null
+                    showUnitPicker = true
+                },
                 onAddConversion = viewModel::addConversion,
                 onRemoveConversion = viewModel::removeConversion,
-                onOpenConversionUnitPicker = { index, from -> conversionUnitTarget = index to from; showUnitPicker = true },
+                onOpenConversionUnitPicker = { index, from ->
+                    conversionUnitTarget = index to from
+                    showUnitPicker = true
+                },
                 onConversionFactorChange = viewModel::onConversionFactorChange,
                 onConversionNoteChange = viewModel::onConversionNoteChange,
                 onPickPrimaryImage = pickPrimaryImage,
