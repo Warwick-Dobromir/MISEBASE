@@ -86,8 +86,8 @@ class IngredientsUiTest {
         compose.onNodeWithText("名称").assertIsDisplayed()
         compose.onNodeWithText("分类（可选）").assertIsDisplayed()
         compose.onNodeWithText("默认单位").assertIsDisplayed()
-        compose.onNodeWithText("克（g）").assertIsDisplayed()
-        compose.onNodeWithText("保存").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("克（g）").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("保存").assertIsDisplayed()
     }
 
     @Test
@@ -128,7 +128,7 @@ class IngredientsUiTest {
         }
 
         compose.onNodeWithText("测试换算").performScrollTo().assertIsDisplayed()
-        compose.onNodeWithText("归档").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("删除此食材档案").performScrollTo().assertIsDisplayed()
     }
 
     private fun gram(): UnitModel = UnitModel(UnitId("g"), "g", "克", "g", UnitDimension.MASS, 1.0, true, false, 0)

@@ -41,6 +41,12 @@ data class IngredientEditorUiState(
     val category: String = "",
     val description: String = "",
     val englishName: String = "",
+    val scientificName: String = "",
+    val flavorProfile: String = "",
+    val seasonality: String = "",
+    val origin: String = "",
+    val selectionNotes: String = "",
+    val prepNotes: String = "",
     val exampleProducts: String = "",
     val storageNotes: String = "",
     val allergenNotes: String = "",
@@ -51,6 +57,7 @@ data class IngredientEditorUiState(
     val isLoading: Boolean = true,
     val isSaving: Boolean = false,
     val saved: Boolean = false,
+    val archived: Boolean = false,
     val error: String? = null,
 ) {
     val isNew: Boolean get() = ingredientId == null
