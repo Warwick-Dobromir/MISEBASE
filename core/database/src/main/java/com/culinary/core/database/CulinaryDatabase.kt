@@ -110,6 +110,7 @@ import com.culinary.core.database.entity.UnitEntity
  * v8 新增 sauce_version/recipe_version 的最小制作范围数值与单位（可空，历史数据保持 null）。
  * v9 新增库存档案与档案-商品关联、批次生产日期/冻结/回收/临时标记、冻结与库位转移记录、
  * 出库单与明细、打印任务、盘点单与明细，并为批次/流水补充档案归属；历史数据按商品回填。
+ * v10 为食材档案增加常见品种与可食用部分字段。
  */
 @Suppress("TooManyFunctions")
 @Database(
