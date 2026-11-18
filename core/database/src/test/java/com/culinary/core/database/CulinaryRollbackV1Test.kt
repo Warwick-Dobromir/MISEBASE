@@ -67,7 +67,7 @@ class CulinaryRollbackV1Test {
                     ),
                     emptyList(),
                 )
-                assertThat(userVersion(migrated.openHelper.writableDatabase)).isEqualTo(9)
+                assertThat(userVersion(migrated.openHelper.writableDatabase)).isEqualTo(10)
             } finally {
                 migrated.close()
                 database = null
@@ -94,7 +94,7 @@ class CulinaryRollbackV1Test {
             val reopened = openV2()
             try {
                 val sqlite = reopened.openHelper.writableDatabase
-                assertThat(userVersion(sqlite)).isEqualTo(9)
+                assertThat(userVersion(sqlite)).isEqualTo(10)
                 assertThat(reopened.recipeVersionDao().findById(VERSION_ID)?.servings).isEqualTo(1)
                 assertThat(reopened.calculationRecordDao().count()).isEqualTo(0)
                 sqlite.query("PRAGMA foreign_key_check").use { cursor ->
