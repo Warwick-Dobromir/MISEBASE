@@ -44,6 +44,8 @@ data class IngredientEditorUiState(
     val description: String = "",
     val englishName: String = "",
     val scientificName: String = "",
+    val commonVarieties: String = "",
+    val ediblePortion: String = "",
     val flavorProfile: String = "",
     val seasonality: String = "",
     val origin: String = "",
