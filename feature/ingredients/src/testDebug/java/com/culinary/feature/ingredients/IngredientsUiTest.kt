@@ -10,6 +10,8 @@ import com.culinary.core.domain.model.Ingredient
 import com.culinary.core.domain.model.IngredientConversionView
 import com.culinary.core.domain.model.IngredientDetail
 import com.culinary.core.domain.model.IngredientId
+import com.culinary.core.domain.model.KitchenRecordKind
+import com.culinary.core.domain.model.KitchenRelatedRecord
 import com.culinary.core.domain.model.UnitDimension
 import com.culinary.core.domain.model.UnitId
 import org.junit.Rule
@@ -66,6 +68,7 @@ class IngredientsUiTest {
                             name = "低筋面粉",
                             category = "粉类",
                             description = "蛋白质 8.5%",
+                            flavorProfile = "淡淡麦香",
                             defaultUnit = gram(),
                             units = listOf(gram()),
                             isLoading = false,
@@ -119,7 +122,30 @@ class IngredientsUiTest {
         compose.setContent {
             CulinaryTheme {
                 IngredientDetailContent(
-                    detailState = IngredientDetailUiState(detail = detail, isLoading = false),
+                    detailState =
+                        IngredientDetailUiState(
+                            detail = detail,
+                            isLoading = false,
+                            relations =
+                                listOf(
+                                    KitchenRelatedRecord(
+                                        sourceRecordId = "ingredient-1",
+                                        sourceKind = KitchenRecordKind.INGREDIENT,
+                                        targetRecordId = "sauce-1",
+                                        targetKind = KitchenRecordKind.SAUCE,
+                                        targetLabel = "白酱",
+                                        relationLabel = "基础原料",
+                                    ),
+                                    KitchenRelatedRecord(
+                                        sourceRecordId = "ingredient-1",
+                                        sourceKind = KitchenRecordKind.INGREDIENT,
+                                        targetRecordId = "recipe-1",
+                                        targetKind = KitchenRecordKind.RECIPE,
+                                        targetLabel = "奶油意面",
+                                        relationLabel = "主要食材",
+                                    ),
+                                ),
+                        ),
                     onEdit = {},
                     onArchive = {},
                     onOpenRelation = { _, _ -> },
@@ -128,6 +154,8 @@ class IngredientsUiTest {
         }
 
         compose.onNodeWithText("测试换算").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("白酱").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("奶油意面").performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("归档").performScrollTo().assertIsDisplayed()
     }
 

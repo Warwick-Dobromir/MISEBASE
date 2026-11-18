@@ -34,14 +34,20 @@ data class IngredientDetailUiState(
     val relations: List<KitchenRelatedRecord> = emptyList(),
 )
 
-/** 食材编辑器状态。 */
+/** 新建与编辑共用同一份字段状态；编辑页由档案数据完整回填。 */
 data class IngredientEditorUiState(
     val ingredientId: String? = null,
     val name: String = "",
     val category: String = "",
     val description: String = "",
     val englishName: String = "",
+    val scientificName: String = "",
     val exampleProducts: String = "",
+    val flavorProfile: String = "",
+    val seasonality: String = "",
+    val origin: String = "",
+    val selectionNotes: String = "",
+    val prepNotes: String = "",
     val storageNotes: String = "",
     val allergenNotes: String = "",
     val categories: List<ArchiveCategory> = emptyList(),
@@ -50,6 +56,7 @@ data class IngredientEditorUiState(
     val units: List<UnitModel> = emptyList(),
     val isLoading: Boolean = true,
     val isSaving: Boolean = false,
+    val isDirty: Boolean = false,
     val saved: Boolean = false,
     val error: String? = null,
 ) {
@@ -68,10 +75,7 @@ object IngredientErrorMessages {
             else -> "操作失败，请重试。"
         }
 
-    private fun withCode(
-        error: CulinaryError,
-        message: String,
-    ): String = "$message（${error.code.value}）"
+    private fun withCode(error: CulinaryError, message: String): String = "$message（${error.code.value}）"
 
     private fun validationMessage(error: CulinaryError.Validation): String =
         when (error.field) {
@@ -81,7 +85,6 @@ object IngredientErrorMessages {
                     error.rule.contains("characters") -> "名称过长，请控制在 120 个字符以内。"
                     else -> "名称不合法。"
                 }
-
             "ingredient.category" -> "分类过长，请控制在 60 个字符以内。"
             "ingredient.description" -> "描述过长，请控制在 500 个字符以内。"
             else -> "输入不合法。"

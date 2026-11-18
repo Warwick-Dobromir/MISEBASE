@@ -17,14 +17,14 @@ import com.culinary.core.domain.usecase.unit.ListUnitsUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 import com.culinary.core.domain.model.Unit as UnitModel
 
-/** 食材编辑器 ViewModel：名称、分类、默认单位、描述。 */
+/** 食材档案编辑状态：新建与编辑使用同一套字段和保存逻辑。 */
 @HiltViewModel
 class IngredientEditorViewModel
     @Inject
@@ -70,29 +70,27 @@ class IngredientEditorViewModel
                                 runCatching {
                                     getArchiveCategoryForRecord(KitchenRecordKind.INGREDIENT, routeId)
                                 }.getOrNull()
+                            val ingredient = result.value.ingredient
                             val categoryPath = buildIngredientCategoryPath(assignedCategory?.id, categories)
                             _uiState.update {
                                 it.copy(
-                                    name = result.value.ingredient.name,
-                                    category = assignedCategory?.name ?: result.value.ingredient.category.orEmpty(),
+                                    name = ingredient.name,
+                                    category = assignedCategory?.name ?: ingredient.category.orEmpty(),
                                     categoryPathIds = categoryPath,
-                                    description =
-                                        result.value.ingredient.description
-                                            .orEmpty(),
-                                    englishName =
-                                        result.value.ingredient.englishName
-                                            .orEmpty(),
-                                    exampleProducts =
-                                        result.value.ingredient.exampleProducts
-                                            .orEmpty(),
-                                    storageNotes =
-                                        result.value.ingredient.storageNotes
-                                            .orEmpty(),
-                                    allergenNotes =
-                                        result.value.ingredient.allergenNotes
-                                            .orEmpty(),
+                                    description = ingredient.description.orEmpty(),
+                                    englishName = ingredient.englishName.orEmpty(),
+                                    scientificName = ingredient.scientificName.orEmpty(),
+                                    exampleProducts = ingredient.exampleProducts.orEmpty(),
+                                    flavorProfile = ingredient.flavorProfile.orEmpty(),
+                                    seasonality = ingredient.seasonality.orEmpty(),
+                                    origin = ingredient.origin.orEmpty(),
+                                    selectionNotes = ingredient.selectionNotes.orEmpty(),
+                                    prepNotes = ingredient.prepNotes.orEmpty(),
+                                    storageNotes = ingredient.storageNotes.orEmpty(),
+                                    allergenNotes = ingredient.allergenNotes.orEmpty(),
                                     defaultUnit = result.value.defaultUnit ?: it.defaultUnit,
                                     isLoading = false,
+                                    isDirty = false,
                                 )
                             }
                         }
@@ -106,50 +104,41 @@ class IngredientEditorViewModel
                             }
                     }
                 } else {
-                    _uiState.update { it.copy(isLoading = false) }
+                    _uiState.update { it.copy(isLoading = false, isDirty = false) }
                 }
             }
         }
 
-        fun onNameChange(value: String) {
-            _uiState.update { it.copy(name = value, error = null) }
-        }
-
-        fun onCategoryChange(value: String) {
-            _uiState.update { it.copy(category = value, categoryPathIds = emptyList()) }
-        }
+        fun onNameChange(value: String) = change { copy(name = value) }
+        fun onCategoryChange(value: String) = change { copy(category = value, categoryPathIds = emptyList()) }
+        fun onDescriptionChange(value: String) = change { copy(description = value) }
+        fun onEnglishNameChange(value: String) = change { copy(englishName = value) }
+        fun onScientificNameChange(value: String) = change { copy(scientificName = value) }
+        fun onExampleProductsChange(value: String) = change { copy(exampleProducts = value) }
+        fun onFlavorProfileChange(value: String) = change { copy(flavorProfile = value) }
+        fun onSeasonalityChange(value: String) = change { copy(seasonality = value) }
+        fun onOriginChange(value: String) = change { copy(origin = value) }
+        fun onSelectionNotesChange(value: String) = change { copy(selectionNotes = value) }
+        fun onPrepNotesChange(value: String) = change { copy(prepNotes = value) }
+        fun onStorageNotesChange(value: String) = change { copy(storageNotes = value) }
+        fun onAllergenNotesChange(value: String) = change { copy(allergenNotes = value) }
 
         fun onCategorySelect(level: Int, categoryId: String?) {
             _uiState.update { state ->
                 val base = state.categoryPathIds.take(level.coerceAtLeast(0))
                 val next = if (categoryId == null) base else base + categoryId
-                val leafName = next.lastOrNull()?.let { id -> state.categories.firstOrNull { it.id == id }?.name }.orEmpty()
-                state.copy(category = leafName, categoryPathIds = next, error = null)
+                val leafName =
+                    next.lastOrNull()?.let { id -> state.categories.firstOrNull { it.id == id }?.name }.orEmpty()
+                state.copy(category = leafName, categoryPathIds = next, isDirty = true, error = null)
             }
         }
 
-        fun onDescriptionChange(value: String) {
-            _uiState.update { it.copy(description = value) }
-        }
-
-        fun onEnglishNameChange(value: String) {
-            _uiState.update { it.copy(englishName = value) }
-        }
-
-        fun onExampleProductsChange(value: String) {
-            _uiState.update { it.copy(exampleProducts = value) }
-        }
-
-        fun onStorageNotesChange(value: String) {
-            _uiState.update { it.copy(storageNotes = value) }
-        }
-
-        fun onAllergenNotesChange(value: String) {
-            _uiState.update { it.copy(allergenNotes = value) }
-        }
-
         fun onUnitChange(unit: UnitModel) {
-            _uiState.update { it.copy(defaultUnit = unit) }
+            _uiState.update { it.copy(defaultUnit = unit, isDirty = true, error = null) }
+        }
+
+        private inline fun change(crossinline updateState: IngredientEditorUiState.() -> IngredientEditorUiState) {
+            _uiState.update { updateState(it).copy(isDirty = true, error = null) }
         }
 
         fun clearError() {
@@ -174,7 +163,13 @@ class IngredientEditorViewModel
                             category = state.category,
                             description = state.description,
                             englishName = state.englishName,
+                            scientificName = state.scientificName,
                             exampleProducts = state.exampleProducts,
+                            flavorProfile = state.flavorProfile,
+                            seasonality = state.seasonality,
+                            origin = state.origin,
+                            selectionNotes = state.selectionNotes,
+                            prepNotes = state.prepNotes,
                             storageNotes = state.storageNotes,
                             allergenNotes = state.allergenNotes,
                         ),
@@ -196,7 +191,7 @@ class IngredientEditorViewModel
                                 is Outcome.Success -> Unit
                             }
                         }
-                        _uiState.update { it.copy(isSaving = false, saved = true) }
+                        _uiState.update { it.copy(isSaving = false, isDirty = false, saved = true) }
                     }
                     is Outcome.Failure ->
                         _uiState.update {
@@ -209,7 +204,6 @@ class IngredientEditorViewModel
             }
         }
     }
-
 
 private fun buildIngredientCategoryPath(
     categoryId: String?,

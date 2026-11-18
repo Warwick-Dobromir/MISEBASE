@@ -57,6 +57,8 @@ class IngredientRepositoryTest {
             val loaded = repository.get(IngredientId(ID))
             assertThat((loaded as Outcome.Success).value.name).isEqualTo("黄油")
             assertThat(loaded.value.status).isEqualTo(EntityStatus.ACTIVE)
+            assertThat(loaded.value.createdAtEpochMillis).isEqualTo(NOW)
+            assertThat(loaded.value.updatedAtEpochMillis).isEqualTo(NOW)
         }
 
     @Test

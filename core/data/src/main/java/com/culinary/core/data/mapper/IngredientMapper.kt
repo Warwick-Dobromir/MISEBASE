@@ -10,7 +10,7 @@ import com.culinary.core.domain.model.UnitId
 /**
  * 食材 Entity ↔ 领域模型。
  *
- * 数据库层与领域层各自声明枚举，映射必须显式穷举，避免新增枚举值时静默落默认分支。
+ * 数据库层与领域层各自声明枚举，映射必须显式穷举。
  */
 object IngredientMapper {
     fun toDomain(entity: IngredientEntity): Ingredient =
@@ -39,6 +39,8 @@ object IngredientMapper {
             seedNote = entity.seedNote,
             seedId = entity.seedId,
             seedVersion = entity.seedVersion,
+            createdAtEpochMillis = entity.createdAt,
+            updatedAtEpochMillis = entity.updatedAt,
         )
 
     fun toEntity(

@@ -99,6 +99,59 @@ class SaveIngredientUseCaseTest {
         }
 
     @Test
+    fun `saves the complete ingredient knowledge fields`() =
+        runBlocking<Unit> {
+            useCase(
+                SaveIngredientInput(
+                    name = "百里香",
+                    englishName = "Thyme",
+                    scientificName = "Thymus vulgaris",
+                    flavorProfile = "草本、清新",
+                    seasonality = "春夏",
+                    origin = "地中海",
+                    selectionNotes = "叶片完整、香气明显",
+                    prepNotes = "适合煎烤前加入",
+                    storageNotes = "冷藏并保持干燥",
+                    allergenNotes = "无已知常见过敏原",
+                    exampleProducts = "鲜枝、干叶",
+                ),
+            )
+
+            val saved = repository.saved.single()
+            assertThat(saved.englishName).isEqualTo("Thyme")
+            assertThat(saved.scientificName).isEqualTo("Thymus vulgaris")
+            assertThat(saved.flavorProfile).isEqualTo("草本、清新")
+            assertThat(saved.seasonality).isEqualTo("春夏")
+            assertThat(saved.origin).isEqualTo("地中海")
+            assertThat(saved.selectionNotes).isEqualTo("叶片完整、香气明显")
+            assertThat(saved.prepNotes).isEqualTo("适合煎烤前加入")
+            assertThat(saved.storageNotes).isEqualTo("冷藏并保持干燥")
+            assertThat(saved.allergenNotes).isEqualTo("无已知常见过敏原")
+            assertThat(saved.exampleProducts).isEqualTo("鲜枝、干叶")
+        }
+
+    @Test
+    fun `clears optional fields when an edit submits them empty`() =
+        runBlocking<Unit> {
+            repository.saved +=
+                Ingredient(
+                    id = IngredientId("existing-fields"),
+                    name = "百里香",
+                    normalizedName = "百里香",
+                    defaultUnitId = null,
+                    status = EntityStatus.ACTIVE,
+                    flavorProfile = "旧风味",
+                    prepNotes = "旧用途",
+                )
+
+            useCase(SaveIngredientInput(name = "百里香", id = IngredientId("existing-fields")))
+
+            val saved = repository.saved.single()
+            assertThat(saved.flavorProfile).isNull()
+            assertThat(saved.prepNotes).isNull()
+        }
+
+    @Test
     fun `rejects over long category and description`() =
         runBlocking<Unit> {
             val category =

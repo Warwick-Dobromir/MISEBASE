@@ -1,6 +1,9 @@
 package com.culinary.feature.ingredients
 
+import androidx.activity.compose.BackHandler
+import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -31,19 +34,18 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.culinary.core.designsystem.component.CulinaryButton
+import com.culinary.core.designsystem.component.ArchiveEditorInlineField
+import com.culinary.core.designsystem.component.ArchiveEditorNotesBox
+import com.culinary.core.designsystem.component.ArchiveEditorSectionHeader
+import com.culinary.core.designsystem.component.ArchiveEditorTopBar
 import com.culinary.core.designsystem.component.CulinaryRule
-import com.culinary.core.designsystem.component.CulinaryTextField
 import com.culinary.core.designsystem.component.ErrorBanner
 import com.culinary.core.designsystem.component.LoadingRows
-import com.culinary.core.designsystem.component.PageHeader
-import com.culinary.core.designsystem.component.SectionHeader
-import com.culinary.core.designsystem.icon.CulinaryIcons
 import com.culinary.core.designsystem.theme.CulinarySpacing
 import com.culinary.core.designsystem.theme.CulinaryTextStyles
 import com.culinary.core.domain.model.ArchiveCategory
 
-/** 食材编辑器路由：名称、分类、默认单位、描述。 */
+/** 食材编辑路由：新建与编辑共用同一表单，编辑时完整回填。 */
 @Composable
 fun IngredientEditorRoute(
     onSaved: () -> Unit,
@@ -52,13 +54,28 @@ fun IngredientEditorRoute(
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     var showUnitPicker by remember { mutableStateOf(false) }
+    var showDiscard by remember { mutableStateOf(false) }
+    val dispatcher = LocalOnBackPressedDispatcherOwner.current?.onBackPressedDispatcher
+    val leave = { dispatcher?.onBackPressed() }
     val saved = state.saved
 
     LaunchedEffect(saved) {
         if (saved) onSaved()
     }
 
+    BackHandler(enabled = state.isDirty && !state.isSaving) {
+        showDiscard = true
+    }
+
     Column(modifier = modifier.fillMaxSize()) {
+        ArchiveEditorTopBar(
+            title = if (state.isNew) "新建食材档案" else "编辑食材档案",
+            onBack = { if (state.isDirty) showDiscard = true else leave() },
+            onCancel = { if (state.isDirty) showDiscard = true else leave() },
+            onSave = viewModel::save,
+            isSaving = state.isSaving,
+            canSave = !state.isLoading && !state.isSaving && (state.isNew || state.isDirty),
+        )
         state.error?.let { message ->
             ErrorBanner(
                 message = message,
@@ -76,11 +93,17 @@ fun IngredientEditorRoute(
                 onCategorySelect = viewModel::onCategorySelect,
                 onDescriptionChange = viewModel::onDescriptionChange,
                 onEnglishNameChange = viewModel::onEnglishNameChange,
-                onExampleProductsChange = viewModel::onExampleProductsChange,
-                onStorageNotesChange = viewModel::onStorageNotesChange,
-                onAllergenNotesChange = viewModel::onAllergenNotesChange,
                 onOpenUnitPicker = { showUnitPicker = true },
                 onSave = viewModel::save,
+                onScientificNameChange = viewModel::onScientificNameChange,
+                onExampleProductsChange = viewModel::onExampleProductsChange,
+                onFlavorProfileChange = viewModel::onFlavorProfileChange,
+                onSeasonalityChange = viewModel::onSeasonalityChange,
+                onOriginChange = viewModel::onOriginChange,
+                onSelectionNotesChange = viewModel::onSelectionNotesChange,
+                onPrepNotesChange = viewModel::onPrepNotesChange,
+                onStorageNotesChange = viewModel::onStorageNotesChange,
+                onAllergenNotesChange = viewModel::onAllergenNotesChange,
             )
         }
     }
@@ -96,9 +119,28 @@ fun IngredientEditorRoute(
             onDismiss = { showUnitPicker = false },
         )
     }
+
+    if (showDiscard) {
+        AlertDialog(
+            onDismissRequest = { showDiscard = false },
+            title = { Text("放弃本次修改？") },
+            text = { Text("尚未保存的食材档案内容将不会保留。") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showDiscard = false
+                        leave()
+                    },
+                ) { Text("放弃修改") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDiscard = false }) { Text("继续编辑") }
+            },
+        )
+    }
 }
 
-@Suppress("LongMethod") // 单个表单页共享同一份编辑状态，拆分会重复回调参数。
+@Suppress("LongMethod", "LongParameterList")
 @Composable
 internal fun IngredientEditorForm(
     state: IngredientEditorUiState,
@@ -107,104 +149,100 @@ internal fun IngredientEditorForm(
     onCategorySelect: (Int, String?) -> Unit = { _, _ -> },
     onDescriptionChange: (String) -> Unit,
     onEnglishNameChange: (String) -> Unit,
-    onExampleProductsChange: (String) -> Unit,
-    onStorageNotesChange: (String) -> Unit,
-    onAllergenNotesChange: (String) -> Unit,
     onOpenUnitPicker: () -> Unit,
     onSave: () -> Unit,
+    onScientificNameChange: (String) -> Unit = {},
+    onExampleProductsChange: (String) -> Unit = {},
+    onFlavorProfileChange: (String) -> Unit = {},
+    onSeasonalityChange: (String) -> Unit = {},
+    onOriginChange: (String) -> Unit = {},
+    onSelectionNotesChange: (String) -> Unit = {},
+    onPrepNotesChange: (String) -> Unit = {},
+    onStorageNotesChange: (String) -> Unit = {},
+    onAllergenNotesChange: (String) -> Unit = {},
 ) {
     Column(
         modifier =
             Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
+                .padding(horizontal = CulinarySpacing.pageHorizontal)
                 .padding(bottom = CulinarySpacing.xl),
     ) {
-        PageHeader(
-            eyebrow = "INGREDIENT",
-            title =
-                stringResource(
-                    if (state.isNew) {
-                        R.string.ingredients_editor_new_title
-                    } else {
-                        R.string.ingredients_editor_edit_title
-                    },
-                ),
+        ArchiveEditorSectionHeader(index = "01", english = "IDENTITY", title = "基本信息", showRule = false)
+        EditorTextField("食材名称", state.name, onNameChange)
+        IngredientClassificationSelector(
+            state = state,
+            onCategorySelect = onCategorySelect,
+            onLegacyCategoryChange = onCategoryChange,
         )
-        Column(modifier = Modifier.padding(horizontal = CulinarySpacing.pageHorizontal)) {
-            CulinaryTextField(
-                value = state.name,
-                onValueChange = onNameChange,
-                label = { Text(text = stringResource(R.string.ingredients_name_label)) },
-                singleLine = true,
-            )
-            Spacer(modifier = Modifier.height(CulinarySpacing.field))
-            IngredientClassificationSelector(
-                state = state,
-                onCategorySelect = onCategorySelect,
-                onLegacyCategoryChange = onCategoryChange,
-            )
-            SectionHeader(title = stringResource(R.string.ingredients_default_unit))
-            UnitSelectionRow(
-                value =
-                    state.defaultUnit?.let { "${it.name}（${it.symbol}）" }
-                        ?: stringResource(R.string.ingredients_no_unit),
-                onClick = onOpenUnitPicker,
-            )
-            Spacer(modifier = Modifier.height(CulinarySpacing.field))
-            CulinaryTextField(
-                value = state.description,
-                onValueChange = onDescriptionChange,
-                label = { Text(text = stringResource(R.string.ingredients_description_label)) },
-                minLines = 3,
-            )
-            Spacer(modifier = Modifier.height(CulinarySpacing.field))
-            CulinaryTextField(
-                value = state.englishName,
-                onValueChange = onEnglishNameChange,
-                label = { Text(text = stringResource(R.string.ingredients_english_name)) },
-                singleLine = true,
-            )
-            Spacer(modifier = Modifier.height(CulinarySpacing.field))
-            CulinaryTextField(
-                value = state.exampleProducts,
-                onValueChange = onExampleProductsChange,
-                label = { Text(text = stringResource(R.string.ingredients_example_products)) },
-                minLines = 2,
-            )
-            Spacer(modifier = Modifier.height(CulinarySpacing.field))
-            CulinaryTextField(
-                value = state.storageNotes,
-                onValueChange = onStorageNotesChange,
-                label = { Text(text = stringResource(R.string.ingredients_storage)) },
-                minLines = 2,
-            )
-            Spacer(modifier = Modifier.height(CulinarySpacing.field))
-            CulinaryTextField(
-                value = state.allergenNotes,
-                onValueChange = onAllergenNotesChange,
-                label = { Text(text = stringResource(R.string.ingredients_allergen)) },
-                minLines = 2,
-            )
-            Spacer(modifier = Modifier.height(CulinarySpacing.xl))
-            CulinaryButton(
-                text =
-                    stringResource(
-                        if (state.isSaving) {
-                            R.string.ingredients_saving
-                        } else {
-                            R.string.ingredients_save
-                        },
-                    ),
-                onClick = onSave,
-                enabled = !state.isSaving,
-                loading = state.isSaving,
-                modifier = Modifier.fillMaxWidth(),
-            )
-        }
+        EditorTextField("英文名称", state.englishName, onEnglishNameChange)
+        EditorTextField("学名 / 拉丁名称", state.scientificName, onScientificNameChange)
+        EditorNotesField("档案描述", state.description, onDescriptionChange)
+        EditorTextField("示例商品 / 常见规格", state.exampleProducts, onExampleProductsChange)
+        Text(
+            text = "DEFAULT UNIT / 默认计量单位",
+            style = CulinaryTextStyles.eyebrow,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(top = CulinarySpacing.md),
+        )
+        UnitSelectionRow(
+            value =
+                state.defaultUnit?.let { "${it.name}（${it.symbol}）" }
+                    ?: stringResource(R.string.ingredients_no_unit),
+            onClick = onOpenUnitPicker,
+        )
+
+        ArchiveEditorSectionHeader(index = "02", english = "FLAVOR", title = "风味特性")
+        EditorNotesField("风味描述", state.flavorProfile, onFlavorProfileChange)
+
+        ArchiveEditorSectionHeader(index = "03", english = "CULINARY USE", title = "烹饪用途与预处理")
+        EditorNotesField("烹饪用途 / 预处理说明", state.prepNotes, onPrepNotesChange)
+
+        ArchiveEditorSectionHeader(index = "04", english = "PROFESSIONAL NOTES", title = "专业信息")
+        EditorTextField("时令", state.seasonality, onSeasonalityChange)
+        EditorTextField("产地", state.origin, onOriginChange)
+        EditorNotesField("挑选标准", state.selectionNotes, onSelectionNotesChange)
+        EditorNotesField("储存建议", state.storageNotes, onStorageNotesChange)
+        EditorNotesField("过敏原提示", state.allergenNotes, onAllergenNotesChange)
     }
 }
 
+@Composable
+private fun EditorTextField(
+    label: String,
+    value: String,
+    onValueChange: (String) -> Unit,
+) {
+    Column(modifier = Modifier.fillMaxWidth().padding(top = CulinarySpacing.md)) {
+        Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Spacer(modifier = Modifier.height(CulinarySpacing.xs))
+        ArchiveEditorInlineField(
+            value = value,
+            onValueChange = onValueChange,
+            placeholder = "填写$label",
+            modifier = Modifier.fillMaxWidth().padding(vertical = CulinarySpacing.xs),
+        )
+        CulinaryRule()
+    }
+}
+
+@Composable
+private fun EditorNotesField(
+    label: String,
+    value: String,
+    onValueChange: (String) -> Unit,
+) {
+    Column(modifier = Modifier.fillMaxWidth().padding(top = CulinarySpacing.md)) {
+        Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Spacer(modifier = Modifier.height(CulinarySpacing.xs))
+        ArchiveEditorNotesBox(
+            value = value,
+            onValueChange = onValueChange,
+            placeholder = "填写$label",
+        )
+    }
+}
 
 @Composable
 private fun IngredientClassificationSelector(
@@ -213,7 +251,7 @@ private fun IngredientClassificationSelector(
     onLegacyCategoryChange: (String) -> Unit,
 ) {
     val formal = state.categories.filter { !it.isTest }
-    Column(modifier = Modifier.fillMaxWidth()) {
+    Column(modifier = Modifier.fillMaxWidth().padding(top = CulinarySpacing.md)) {
         Text(
             text = "CLASSIFICATION / 分类归属",
             style = CulinaryTextStyles.eyebrow,
@@ -221,11 +259,10 @@ private fun IngredientClassificationSelector(
         )
         Spacer(modifier = Modifier.height(CulinarySpacing.xs))
         if (formal.isEmpty()) {
-            CulinaryTextField(
+            EditorTextField(
+                label = "分类（可选）",
                 value = state.category,
                 onValueChange = onLegacyCategoryChange,
-                label = { Text(text = stringResource(R.string.ingredients_category_label)) },
-                singleLine = true,
             )
             return
         }
@@ -261,7 +298,7 @@ private fun IngredientCategoryLevelField(
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
-        androidx.compose.foundation.layout.Box(modifier = Modifier.fillMaxWidth()) {
+        Box(modifier = Modifier.fillMaxWidth()) {
             Row(
                 modifier = Modifier.fillMaxWidth().clickable { expanded = true }
                     .padding(vertical = CulinarySpacing.xs),
@@ -283,7 +320,7 @@ private fun IngredientCategoryLevelField(
                     )
                 }
                 Icon(
-                    imageVector = CulinaryIcons.ChevronDown,
+                    imageVector = com.culinary.core.designsystem.icon.CulinaryIcons.ChevronDown,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(start = CulinarySpacing.xs).size(14.dp),
@@ -305,7 +342,6 @@ private fun IngredientCategoryLevelField(
     }
 }
 
-/** 选择型字段：与输入框同一高度，右侧 chevron 表示可展开选择。 */
 @Composable
 private fun UnitSelectionRow(
     value: String,
@@ -315,7 +351,7 @@ private fun UnitSelectionRow(
         modifier =
             Modifier
                 .fillMaxWidth()
-                .heightIn(min = 56.dp)
+                .heightIn(min = 52.dp)
                 .clickable(onClick = onClick)
                 .padding(vertical = CulinarySpacing.sm),
         verticalAlignment = Alignment.CenterVertically,
@@ -327,9 +363,9 @@ private fun UnitSelectionRow(
             modifier = Modifier.weight(1f),
         )
         Icon(
-            imageVector = CulinaryIcons.ChevronDown,
+            imageVector = com.culinary.core.designsystem.icon.CulinaryIcons.ChevronDown,
             contentDescription = null,
-            modifier = Modifier.size(20.dp),
+            modifier = Modifier.size(18.dp),
             tint = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
@@ -345,25 +381,16 @@ private fun IngredientUnitPickerDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        shape = MaterialTheme.shapes.large,
-        containerColor = MaterialTheme.colorScheme.surface,
-        title = {
-            Text(
-                text = stringResource(R.string.ingredients_unit_picker_title),
-                style = MaterialTheme.typography.headlineSmall,
-            )
-        },
+        title = { Text(stringResource(R.string.ingredients_unit_picker_title)) },
         text = {
             if (units.isEmpty()) {
-                Text(text = stringResource(R.string.ingredients_picker_empty))
+                Text(stringResource(R.string.ingredients_picker_empty))
             } else {
                 Column(modifier = Modifier.heightIn(max = 360.dp).verticalScroll(rememberScrollState())) {
                     units.forEach { unit ->
                         Row(
                             modifier =
-                                Modifier
-                                    .fillMaxWidth()
-                                    .clickable { onSelect(unit) }
+                                Modifier.fillMaxWidth().clickable { onSelect(unit) }
                                     .padding(vertical = CulinarySpacing.sm),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
@@ -375,7 +402,7 @@ private fun IngredientUnitPickerDialog(
                             )
                             if (unit.id.value == selectedId) {
                                 Icon(
-                                    imageVector = CulinaryIcons.Check,
+                                    imageVector = com.culinary.core.designsystem.icon.CulinaryIcons.Check,
                                     contentDescription = null,
                                     tint = MaterialTheme.colorScheme.secondary,
                                 )
@@ -387,12 +414,7 @@ private fun IngredientUnitPickerDialog(
             }
         },
         confirmButton = {
-            TextButton(onClick = onDismiss) {
-                Text(
-                    text = stringResource(R.string.ingredients_cancel),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.ingredients_cancel)) }
         },
     )
 }

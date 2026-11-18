@@ -12,24 +12,30 @@ import com.culinary.core.domain.repository.IngredientRepository
 import com.culinary.core.domain.rule.common.NameText
 import com.culinary.core.domain.transaction.TransactionRunner
 
-/** 新建或编辑食材的输入；[id] 为空表示新建。 */
+/** 新建或编辑食材的完整档案输入；id 为空表示新建。 */
 data class SaveIngredientInput(
     val name: String,
     val id: IngredientId? = null,
     val defaultUnitId: UnitId? = null,
     val category: String? = null,
     val description: String? = null,
-    val englishName: String? = null,
-    val exampleProducts: String? = null,
-    val storageNotes: String? = null,
-    val allergenNotes: String? = null,
+    val englishName: String = "",
+    val scientificName: String = "",
+    val exampleProducts: String = "",
+    val flavorProfile: String = "",
+    val seasonality: String = "",
+    val origin: String = "",
+    val selectionNotes: String = "",
+    val prepNotes: String = "",
+    val storageNotes: String = "",
+    val allergenNotes: String = "",
 )
 
 /**
- * 保存食材（Stage 3 档案编辑）。
+ * 保存食材档案。
  *
- * 校验在用例内完成：名称非空、长度上限；分类/描述有独立上限。
- * 事务由 [TransactionRunner] 统一开启，Repository 只做单条写入。
+ * 仅写入既有 ingredient 表字段，不新增表或数据库迁移。
+ * 编辑时空字段会按用户当前输入清空，避免旧值无法删除。
  */
 class SaveIngredientUseCase(
     private val repository: IngredientRepository,
@@ -64,10 +70,16 @@ class SaveIngredientUseCase(
                 defaultUnitId = input.defaultUnitId,
                 category = input.category.blankToNull(),
                 description = input.description.blankToNull(),
-                englishName = input.englishName.blankToNull() ?: existing?.englishName,
-                exampleProducts = input.exampleProducts.blankToNull() ?: existing?.exampleProducts,
-                storageNotes = input.storageNotes.blankToNull() ?: existing?.storageNotes,
-                allergenNotes = input.allergenNotes.blankToNull() ?: existing?.allergenNotes,
+                englishName = input.englishName.blankToNull(),
+                scientificName = input.scientificName.blankToNull(),
+                exampleProducts = input.exampleProducts.blankToNull(),
+                flavorProfile = input.flavorProfile.blankToNull(),
+                seasonality = input.seasonality.blankToNull(),
+                origin = input.origin.blankToNull(),
+                selectionNotes = input.selectionNotes.blankToNull(),
+                prepNotes = input.prepNotes.blankToNull(),
+                storageNotes = input.storageNotes.blankToNull(),
+                allergenNotes = input.allergenNotes.blankToNull(),
             )
 
         return transactionRunner.write { repository.save(ingredient) }.flatMap { it }
@@ -81,21 +93,16 @@ class SaveIngredientUseCase(
             name.isEmpty() -> validation("ingredient.name", "must not be blank")
             name.length > MAX_NAME_LENGTH ->
                 validation("ingredient.name", "must be at most $MAX_NAME_LENGTH characters")
-
             category != null && category.length > MAX_CATEGORY_LENGTH ->
                 validation("ingredient.category", "must be at most $MAX_CATEGORY_LENGTH characters")
-
             description != null && description.length > MAX_DESCRIPTION_LENGTH ->
                 validation("ingredient.description", "must be at most $MAX_DESCRIPTION_LENGTH characters")
-
             else -> null
         }
     }
 
-    private fun validation(
-        field: String,
-        rule: String,
-    ): CulinaryError = CulinaryError.Validation(field = field, rule = rule)
+    private fun validation(field: String, rule: String): CulinaryError =
+        CulinaryError.Validation(field = field, rule = rule)
 
     private fun String?.blankToNull(): String? = this?.trim()?.takeIf { it.isNotEmpty() }
 

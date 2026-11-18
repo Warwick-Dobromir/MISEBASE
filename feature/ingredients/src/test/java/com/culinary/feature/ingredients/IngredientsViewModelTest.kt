@@ -113,6 +113,9 @@ class IngredientsViewModelTest {
             viewModel.onNameChange("  低筋面粉 ")
             viewModel.onCategoryChange(" 粉类 ")
             viewModel.onDescriptionChange("蛋白质 8.5%")
+            viewModel.onFlavorProfileChange("坚果香")
+            viewModel.onSeasonalityChange("秋冬")
+            viewModel.onPrepNotesChange("适合烘焙")
             viewModel.onUnitChange(units.items.first())
             viewModel.save()
             advanceUntilIdle()
@@ -122,6 +125,9 @@ class IngredientsViewModelTest {
             assertThat(saved.name).isEqualTo("低筋面粉")
             assertThat(saved.category).isEqualTo("粉类")
             assertThat(saved.description).isEqualTo("蛋白质 8.5%")
+            assertThat(saved.flavorProfile).isEqualTo("坚果香")
+            assertThat(saved.seasonality).isEqualTo("秋冬")
+            assertThat(saved.prepNotes).isEqualTo("适合烘焙")
             assertThat(saved.defaultUnitId).isEqualTo(UnitId("g"))
         }
 
