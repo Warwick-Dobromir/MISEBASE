@@ -119,7 +119,7 @@ fun IngredientDetailRoute(
 internal fun IngredientDetailContent(
     detailState: IngredientDetailUiState,
     onEdit: (String) -> Unit,
-    onBack: () -> Unit,
+    onBack: () -> Unit = {},
     onArchive: () -> Unit,
     onOpenRelation: (KitchenRecordKind, String) -> Unit,
 ) {
