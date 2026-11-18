@@ -85,22 +85,22 @@ class IngredientEditorViewModel
                                     englishName =
                                         result.value.ingredient.englishName
                                             .orEmpty(),
-                                    scientificName = 
+                                    scientificName =
                                         result.value.ingredient.scientificName
                                             .orEmpty(),
-                                    flavorProfile = 
+                                    flavorProfile =
                                         result.value.ingredient.flavorProfile
                                             .orEmpty(),
-                                    seasonality = 
+                                    seasonality =
                                         result.value.ingredient.seasonality
                                             .orEmpty(),
-                                    origin = 
+                                    origin =
                                         result.value.ingredient.origin
                                             .orEmpty(),
-                                    selectionNotes = 
+                                    selectionNotes =
                                         result.value.ingredient.selectionNotes
                                             .orEmpty(),
-                                    prepNotes = 
+                                    prepNotes =
                                         result.value.ingredient.prepNotes
                                             .orEmpty(),
                                     exampleProducts =
