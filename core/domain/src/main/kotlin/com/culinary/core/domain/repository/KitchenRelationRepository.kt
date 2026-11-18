@@ -5,10 +5,13 @@ import com.culinary.core.domain.model.KitchenRecordKind
 import com.culinary.core.domain.model.KitchenRelatedRecord
 import com.culinary.core.domain.model.KitchenRelationDraft
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flowOf
 
 /** 厨房档案关系读写端口；种子导入器与酱汁编辑器共用同一张关系表。 */
 interface KitchenRelationRepository {
     fun observeForRecord(recordId: String): Flow<List<KitchenRelatedRecord>>
+
+    fun observeReferencingRecord(recordId: String): Flow<List<KitchenRelatedRecord>> = flowOf(emptyList())
 
     /**
      * 替换某档案的某一类手工关系。
