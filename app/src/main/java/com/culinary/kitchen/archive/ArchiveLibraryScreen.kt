@@ -482,9 +482,7 @@ internal fun ArchiveLibraryScreen(
     if (showSortExitDialog) {
         AlertDialog(
             onDismissRequest = { showSortExitDialog = false },
-            title = {
-                Text(if (sortDirty) "本次排序尚未保存" else "确认要返回吗？")
-            },
+            title = { Text("确认要返回吗？") },
             text = {
                 Text(
                     if (sortDirty) {
