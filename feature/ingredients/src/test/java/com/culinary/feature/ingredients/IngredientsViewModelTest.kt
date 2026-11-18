@@ -155,6 +155,7 @@ class IngredientsViewModelTest {
                     getIngredientDetail = detail,
                     archiveIngredient = archiveIngredient,
                     getRelations = emptyRelations(),
+                    archiveImages = archiveImages,
                 )
             advanceUntilIdle()
 
