@@ -1,4 +1,5 @@
 name: Android APK
+# Rebuild latest archive navigation changes.
 # Re-run signed build after repository signing secrets were configured.
 
 on:
