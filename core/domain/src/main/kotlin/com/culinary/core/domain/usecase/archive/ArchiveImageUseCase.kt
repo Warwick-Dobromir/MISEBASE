@@ -4,9 +4,8 @@ import com.culinary.core.common.Outcome
 import com.culinary.core.domain.model.ArchiveImage
 import com.culinary.core.domain.model.ArchiveImageOwner
 import com.culinary.core.domain.repository.ArchiveImageRepository
-import javax.inject.Inject
 
-class ArchiveImageUseCase @Inject constructor(
+class ArchiveImageUseCase(
     private val repository: ArchiveImageRepository,
 ) {
     suspend fun list(
