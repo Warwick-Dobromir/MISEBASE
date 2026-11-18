@@ -7,6 +7,8 @@ import com.culinary.core.common.Outcome
 import com.culinary.core.domain.model.ArchiveLibrary
 import com.culinary.core.domain.model.ArchiveImageOwner
 import com.culinary.core.domain.model.PendingIngredientImage
+import com.culinary.core.domain.model.IngredientUnitConversion
+import com.culinary.core.domain.model.UnitId
 import com.culinary.core.domain.model.IngredientId
 import com.culinary.core.domain.model.KitchenRecordKind
 import com.culinary.core.domain.usecase.archive.ArchiveImageUseCase
@@ -106,6 +108,14 @@ class IngredientEditorViewModel
                                         result.value.ingredient.allergenNotes
                                             .orEmpty(),
                                     defaultUnit = result.value.defaultUnit ?: it.defaultUnit,
+                                    conversions = result.value.conversions.map { conversion ->
+                                        IngredientConversionDraft(
+                                            fromUnitId = conversion.fromUnitId.value,
+                                            toUnitId = conversion.toUnitId.value,
+                                            factor = conversion.factor.toString(),
+                                            note = conversion.note.orEmpty(),
+                                        )
+                                    },
                                     primaryImageId = primary?.id,
                                     primaryImageBytes = primaryBytes,
                                     referenceImages = referenceImages,
@@ -189,6 +199,37 @@ class IngredientEditorViewModel
             _uiState.update { it.copy(allergenNotes = value) }
         }
 
+        fun addConversion() {
+            _uiState.update { state ->
+                val from = state.defaultUnit?.id?.value ?: state.units.firstOrNull()?.id?.value
+                val to = state.units.firstOrNull { it.id.value != from }?.id?.value
+                if (from == null || to == null) {
+                    state.copy(error = "至少需要两个可用计量单位，才能建立换算关系。")
+                } else {
+                    state.copy(conversions = state.conversions + IngredientConversionDraft(from, to, "1", ""), error = null)
+                }
+            }
+        }
+
+        fun removeConversion(index: Int) {
+            _uiState.update { it.copy(conversions = it.conversions.filterIndexed { i, _ -> i != index }) }
+        }
+
+        fun onConversionFromUnitChange(index: Int, unit: UnitModel) {
+            _uiState.update { state -> state.copy(conversions = state.conversions.mapIndexed { i, row -> if (i == index) row.copy(fromUnitId = unit.id.value) else row }) }
+        }
+
+        fun onConversionToUnitChange(index: Int, unit: UnitModel) {
+            _uiState.update { state -> state.copy(conversions = state.conversions.mapIndexed { i, row -> if (i == index) row.copy(toUnitId = unit.id.value) else row }) }
+        }
+
+        fun onConversionFactorChange(index: Int, value: String) {
+            _uiState.update { state -> state.copy(conversions = state.conversions.mapIndexed { i, row -> if (i == index) row.copy(factor = value) else row }) }
+        }
+
+        fun onConversionNoteChange(index: Int, value: String) {
+            _uiState.update { state -> state.copy(conversions = state.conversions.mapIndexed { i, row -> if (i == index) row.copy(note = value) else row }) }
+        }
         fun onUnitChange(unit: UnitModel) {
             _uiState.update { it.copy(defaultUnit = unit) }
         }
@@ -256,6 +297,30 @@ class IngredientEditorViewModel
                 _uiState.update { it.copy(error = "名称不能为空。") }
                 return
             }
+            val conversions = mutableListOf<IngredientUnitConversion>()
+            val conversionKeys = mutableSetOf<String>()
+            state.conversions.forEachIndexed { index, row ->
+                val factor = row.factor.trim().toDoubleOrNull()
+                if (factor == null || !factor.isFinite() || factor <= 0.0) {
+                    _uiState.update { it.copy(error = "第 " + (index + 1) + " 条换算关系的系数必须是大于 0 的数字。") }
+                    return
+                }
+                if (row.fromUnitId == row.toUnitId) {
+                    _uiState.update { it.copy(error = "换算关系的原单位和目标单位不能相同。") }
+                    return
+                }
+                val key = row.fromUnitId + "|" + row.toUnitId
+                if (!conversionKeys.add(key)) {
+                    _uiState.update { it.copy(error = "存在重复的单位换算关系。") }
+                    return
+                }
+                conversions += IngredientUnitConversion(
+                    fromUnit = UnitId(row.fromUnitId),
+                    toUnit = UnitId(row.toUnitId),
+                    factor = factor,
+                    note = row.note.trim().takeIf { it.isNotEmpty() },
+                )
+            }
             viewModelScope.launch {
                 _uiState.update { it.copy(isSaving = true, error = null) }
                 val result =
@@ -276,6 +341,7 @@ class IngredientEditorViewModel
                             exampleProducts = state.exampleProducts,
                             storageNotes = state.storageNotes,
                             allergenNotes = state.allergenNotes,
+                            conversions = conversions,
                         ),
                     )
                 when (result) {
