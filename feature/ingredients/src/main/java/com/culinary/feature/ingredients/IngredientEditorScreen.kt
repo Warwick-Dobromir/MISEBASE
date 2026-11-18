@@ -84,6 +84,8 @@ fun IngredientEditorRoute(
                 onDescriptionChange = viewModel::onDescriptionChange,
                 onEnglishNameChange = viewModel::onEnglishNameChange,
                 onScientificNameChange = viewModel::onScientificNameChange,
+                onCommonVarietiesChange = viewModel::onCommonVarietiesChange,
+                onEdiblePortionChange = viewModel::onEdiblePortionChange,
                 onFlavorProfileChange = viewModel::onFlavorProfileChange,
                 onSeasonalityChange = viewModel::onSeasonalityChange,
                 onOriginChange = viewModel::onOriginChange,
@@ -143,6 +145,8 @@ internal fun IngredientEditorForm(
     onDescriptionChange: (String) -> Unit,
     onEnglishNameChange: (String) -> Unit,
     onScientificNameChange: (String) -> Unit,
+    onCommonVarietiesChange: (String) -> Unit,
+    onEdiblePortionChange: (String) -> Unit,
     onFlavorProfileChange: (String) -> Unit,
     onSeasonalityChange: (String) -> Unit,
     onOriginChange: (String) -> Unit,
@@ -218,6 +222,20 @@ internal fun IngredientEditorForm(
                 onValueChange = onScientificNameChange,
                 label = { Text("学名") },
                 singleLine = true,
+            )
+            Spacer(modifier = Modifier.height(CulinarySpacing.field))
+            CulinaryTextField(
+                value = state.commonVarieties,
+                onValueChange = onCommonVarietiesChange,
+                label = { Text("常见品种") },
+                minLines = 2,
+            )
+            Spacer(modifier = Modifier.height(CulinarySpacing.field))
+            CulinaryTextField(
+                value = state.ediblePortion,
+                onValueChange = onEdiblePortionChange,
+                label = { Text("可食用部分") },
+                minLines = 2,
             )
             Spacer(modifier = Modifier.height(CulinarySpacing.field))
             SectionHeader(title = "02  图片资料")
