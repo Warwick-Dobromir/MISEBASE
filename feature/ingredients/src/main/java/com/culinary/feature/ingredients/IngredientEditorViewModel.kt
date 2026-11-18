@@ -84,6 +84,12 @@ class IngredientEditorViewModel
                                     englishName =
                                         result.value.ingredient.englishName
                                             .orEmpty(),
+                                    scientificName = result.value.ingredient.scientificName.orEmpty(),
+                                    flavorProfile = result.value.ingredient.flavorProfile.orEmpty(),
+                                    seasonality = result.value.ingredient.seasonality.orEmpty(),
+                                    origin = result.value.ingredient.origin.orEmpty(),
+                                    selectionNotes = result.value.ingredient.selectionNotes.orEmpty(),
+                                    prepNotes = result.value.ingredient.prepNotes.orEmpty(),
                                     exampleProducts =
                                         result.value.ingredient.exampleProducts
                                             .orEmpty(),
@@ -138,6 +144,30 @@ class IngredientEditorViewModel
             _uiState.update { it.copy(englishName = value) }
         }
 
+        fun onScientificNameChange(value: String) {
+            _uiState.update { it.copy(scientificName = value) }
+        }
+
+        fun onFlavorProfileChange(value: String) {
+            _uiState.update { it.copy(flavorProfile = value) }
+        }
+
+        fun onSeasonalityChange(value: String) {
+            _uiState.update { it.copy(seasonality = value) }
+        }
+
+        fun onOriginChange(value: String) {
+            _uiState.update { it.copy(origin = value) }
+        }
+
+        fun onSelectionNotesChange(value: String) {
+            _uiState.update { it.copy(selectionNotes = value) }
+        }
+
+        fun onPrepNotesChange(value: String) {
+            _uiState.update { it.copy(prepNotes = value) }
+        }
+
         fun onExampleProductsChange(value: String) {
             _uiState.update { it.copy(exampleProducts = value) }
         }
@@ -186,6 +216,12 @@ class IngredientEditorViewModel
                             category = state.category,
                             description = state.description,
                             englishName = state.englishName,
+                            scientificName = state.scientificName,
+                            flavorProfile = state.flavorProfile,
+                            seasonality = state.seasonality,
+                            origin = state.origin,
+                            selectionNotes = state.selectionNotes,
+                            prepNotes = state.prepNotes,
                             exampleProducts = state.exampleProducts,
                             storageNotes = state.storageNotes,
                             allergenNotes = state.allergenNotes,
