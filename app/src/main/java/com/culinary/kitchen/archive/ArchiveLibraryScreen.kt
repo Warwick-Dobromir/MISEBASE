@@ -211,8 +211,8 @@ internal fun ArchiveLibraryScreen(
         showSortExitDialog = false
     }
     fun requestSortReturn() {
-        // 排序模式退出始终经过确认；无脏修改时确认后恢复最近一次保存顺序。
-        showSortExitDialog = true
+        // 仅当当前顺序与最近一次保存顺序不同时，才要求确认退出。
+        if (sortDirty) showSortExitDialog = true else finishSorting()
     }
 
     LaunchedEffect(cancelSortRequestVersion) {
@@ -382,16 +382,36 @@ internal fun ArchiveLibraryScreen(
                     thickness = 1.dp,
                     color = MaterialTheme.colorScheme.outlineVariant,
                 )
-                Box(
-                    modifier = Modifier.fillMaxWidth().height(68.dp)
-                        .clickable { requestSortReturn() },
-                    contentAlignment = Alignment.Center,
+                Row(
+                    modifier = Modifier.fillMaxWidth().height(68.dp),
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Text(
-                        text = "取消",
-                        style = MaterialTheme.typography.labelLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
+                    Box(
+                        modifier = Modifier.weight(1f).height(68.dp)
+                            .clickable(enabled = sortDirty && !pendingSave) {
+                                submittedOrder = workingOrder
+                                pendingSave = true
+                                onReorderSubcategories(workingOrder)
+                            },
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(
+                            text = "保存",
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.secondary,
+                        )
+                    }
+                    Box(
+                        modifier = Modifier.weight(1f).height(68.dp)
+                            .clickable { requestSortReturn() },
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(
+                            text = "取消",
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.secondary,
+                        )
+                    }
                 }
             }
         }
