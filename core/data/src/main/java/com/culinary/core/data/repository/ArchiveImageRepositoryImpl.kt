@@ -6,9 +6,12 @@ import com.culinary.core.common.ErrorCode
 import com.culinary.core.common.IdGenerator
 import com.culinary.core.common.Outcome
 import com.culinary.core.data.file.ImageFileStorage
+import com.culinary.core.database.dao.ChangeLogDao
 import com.culinary.core.database.dao.ImageAssetDao
+import com.culinary.core.database.entity.ChangeLogEntity
 import com.culinary.core.database.entity.ImageAssetEntity
 import com.culinary.core.database.model.ImageOwnerTypeDb
+import com.culinary.core.database.model.ChangeActionDb
 import com.culinary.core.database.model.ImageRoleDb
 import com.culinary.core.domain.model.ArchiveImage
 import com.culinary.core.domain.model.ArchiveImageOwner
@@ -21,6 +24,7 @@ class ArchiveImageRepositoryImpl
     @Inject
     constructor(
         private val imageAssetDao: ImageAssetDao,
+        private val changeLogDao: ChangeLogDao,
         private val imageFileStorage: ImageFileStorage,
         private val clock: Clock,
         private val idGenerator: IdGenerator,
@@ -83,6 +87,15 @@ class ArchiveImageRepositoryImpl
                         createdAt = clock.now().toEpochMilli(),
                     )
                 imageAssetDao.insert(entity)
+                changeLogDao.insert(
+                    ChangeLogEntity(
+                        id = idGenerator.newId(),
+                        entityType = "INGREDIENT",
+                        entityId = ingredientId,
+                        action = ChangeActionDb.UPDATE,
+                        createdAt = entity.createdAt,
+                    ),
+                )
                 Outcome.success(
                     ArchiveImage(
                         id = entity.id,
@@ -111,8 +124,24 @@ class ArchiveImageRepositoryImpl
                 val entity =
                     imageAssetDao.findById(imageId)
                         ?: return Outcome.failure(CulinaryError.NotFound("image_asset", imageId))
+                if (entity.ownerType != ImageOwnerTypeDb.INGREDIENT) {
+                    return Outcome.failure(CulinaryError.Validation("ingredient.image", "only ingredient images can be deleted here"))
+                }
                 imageAssetDao.softDelete(imageId, clock.now().toEpochMilli())
-                imageFileStorage.delete(entity.relativePath)
+                when (val result = imageFileStorage.delete(entity.relativePath)) {
+                    is Outcome.Failure -> return result
+                    is Outcome.Success -> Unit
+                }
+                changeLogDao.insert(
+                    ChangeLogEntity(
+                        id = idGenerator.newId(),
+                        entityType = "INGREDIENT",
+                        entityId = entity.ownerId,
+                        action = ChangeActionDb.UPDATE,
+                        createdAt = clock.now().toEpochMilli(),
+                    ),
+                )
+                Outcome.success(Unit)
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Throwable) {
