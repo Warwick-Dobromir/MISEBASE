@@ -1,5 +1,6 @@
 package com.culinary.feature.ingredients
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -20,15 +21,19 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import android.graphics.BitmapFactory
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.culinary.core.designsystem.component.CulinaryRule
@@ -52,6 +57,8 @@ fun IngredientEditorRoute(
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     var showUnitPicker by remember { mutableStateOf(false) }
+    val pickPrimaryImage = rememberIngredientImagePicker(viewModel::onPrimaryImagePicked)
+    val pickReferenceImage = rememberIngredientImagePicker(viewModel::onReferenceImagePicked)
     val saved = state.saved
 
     LaunchedEffect(saved) {
@@ -86,6 +93,10 @@ fun IngredientEditorRoute(
                 onStorageNotesChange = viewModel::onStorageNotesChange,
                 onAllergenNotesChange = viewModel::onAllergenNotesChange,
                 onOpenUnitPicker = { showUnitPicker = true },
+                onPickPrimaryImage = pickPrimaryImage,
+                onRemovePrimaryImage = viewModel::onPrimaryImageRemoved,
+                onPickReferenceImage = pickReferenceImage,
+                onRemoveReferenceImage = viewModel::onReferenceImageRemoved,
                 onSave = viewModel::save,
                 onCancel = onSaved,
             )
@@ -124,6 +135,10 @@ internal fun IngredientEditorForm(
     onStorageNotesChange: (String) -> Unit,
     onAllergenNotesChange: (String) -> Unit,
     onOpenUnitPicker: () -> Unit,
+    onPickPrimaryImage: () -> Unit,
+    onRemovePrimaryImage: () -> Unit,
+    onPickReferenceImage: () -> Unit,
+    onRemoveReferenceImage: (Int) -> Unit,
     onSave: () -> Unit,
     onCancel: () -> Unit = {},
 ) {
@@ -159,6 +174,48 @@ internal fun IngredientEditorForm(
                 onCategorySelect = onCategorySelect,
                 onLegacyCategoryChange = onCategoryChange,
             )
+            SectionHeader(title = "02  图片资料")
+            state.primaryImageBytes?.let { bytes ->
+                val bitmap = remember(bytes) { BitmapFactory.decodeByteArray(bytes, 0, bytes.size)?.asImageBitmap() }
+                bitmap?.let {
+                    Image(
+                        bitmap = it,
+                        contentDescription = "食材主图",
+                        modifier = Modifier.fillMaxWidth().height(180.dp),
+                        contentScale = ContentScale.Crop,
+                    )
+                }
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(CulinarySpacing.lg)) {
+                CulinaryTextButton(
+                    text = if (state.primaryImageBytes == null) "添加主图" else "更换主图",
+                    onClick = onPickPrimaryImage,
+                )
+                if (state.primaryImageBytes != null) {
+                    CulinaryTextButton(text = "删除主图", onClick = onRemovePrimaryImage, danger = true)
+                }
+            }
+            SectionHeader(title = "补充图片")
+            state.referenceImages.forEachIndexed { index, image ->
+                val bitmap = remember(image.bytes) { BitmapFactory.decodeByteArray(image.bytes, 0, image.bytes.size)?.asImageBitmap() }
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(vertical = CulinarySpacing.xs),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(CulinarySpacing.sm),
+                ) {
+                    bitmap?.let {
+                        Image(
+                            bitmap = it,
+                            contentDescription = "食材补充图片",
+                            modifier = Modifier.size(72.dp),
+                            contentScale = ContentScale.Crop,
+                        )
+                    }
+                    CulinaryTextButton(text = "删除", onClick = { onRemoveReferenceImage(index) }, danger = true)
+                }
+            }
+            CulinaryTextButton(text = "添加补充图片", onClick = onPickReferenceImage)
+            SectionHeader(title = "03  计量信息")
             SectionHeader(title = stringResource(R.string.ingredients_default_unit))
             UnitSelectionRow(
                 value =
@@ -188,7 +245,7 @@ internal fun IngredientEditorForm(
                 singleLine = true,
             )
             Spacer(modifier = Modifier.height(CulinarySpacing.field))
-            SectionHeader(title = "02  风味与特性")
+            SectionHeader(title = "04  风味与特性")
             CulinaryTextField(
                 value = state.flavorProfile,
                 onValueChange = onFlavorProfileChange,
@@ -224,7 +281,7 @@ internal fun IngredientEditorForm(
                 minLines = 2,
             )
             Spacer(modifier = Modifier.height(CulinarySpacing.field))
-            SectionHeader(title = "03  烹饪用途")
+            SectionHeader(title = "05  烹饪用途")
             CulinaryTextField(
                 value = state.exampleProducts,
                 onValueChange = onExampleProductsChange,
@@ -232,7 +289,7 @@ internal fun IngredientEditorForm(
                 minLines = 2,
             )
             Spacer(modifier = Modifier.height(CulinarySpacing.field))
-            SectionHeader(title = "04  其他信息")
+            SectionHeader(title = "06  其他信息")
             CulinaryTextField(
                 value = state.storageNotes,
                 onValueChange = onStorageNotesChange,
