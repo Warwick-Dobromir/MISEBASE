@@ -48,8 +48,8 @@ class IngredientRepositoryImpl
             return Outcome.success(IngredientMapper.toDomain(entity))
         }
 
-        override suspend fun save(ingredient: Ingredient): Outcome<IngredientId> =
-            try {
+        override suspend fun save(ingredient: Ingredient): Outcome<IngredientId> {
+            return try {
                 val now = clock.now().toEpochMilli()
                 val existing = dao.findById(ingredient.id.value)
                 val previous = existing?.let(IngredientMapper::toDomain)
@@ -81,12 +81,13 @@ class IngredientRepositoryImpl
             } catch (e: Throwable) {
                 Outcome.failure(DbErrorMapper.map(e))
             }
+        }
 
         override suspend fun saveWithConversions(
             ingredient: Ingredient,
             conversions: List<IngredientUnitConversion>,
-        ): Outcome<IngredientId> =
-            try {
+        ): Outcome<IngredientId> {
+            return try {
                 val existingIngredient = dao.findById(ingredient.id.value)
                 val ingredientChanged = existingIngredient?.let(IngredientMapper::toDomain) != ingredient
                 val existingConversions = conversionDao.listByIngredient(ingredient.id.value)
