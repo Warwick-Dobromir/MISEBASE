@@ -504,6 +504,7 @@ private fun NavGraphBuilder.ingredientGraph(navController: NavHostController) {
         IngredientEditorRoute(
             onSaved = { navController.popBackStack() },
             onCancelled = { navController.popBackStack() },
+            onArchived = { navController.popBackStack() },
         )
     }
 }
