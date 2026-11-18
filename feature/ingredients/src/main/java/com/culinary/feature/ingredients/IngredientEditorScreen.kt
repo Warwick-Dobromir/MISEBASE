@@ -86,6 +86,12 @@ fun IngredientEditorRoute(
                 onCategorySelect = viewModel::onCategorySelect,
                 onDescriptionChange = viewModel::onDescriptionChange,
                 onEnglishNameChange = viewModel::onEnglishNameChange,
+                onScientificNameChange = viewModel::onScientificNameChange,
+                onFlavorProfileChange = viewModel::onFlavorProfileChange,
+                onSeasonalityChange = viewModel::onSeasonalityChange,
+                onOriginChange = viewModel::onOriginChange,
+                onSelectionNotesChange = viewModel::onSelectionNotesChange,
+                onPrepNotesChange = viewModel::onPrepNotesChange,
                 onExampleProductsChange = viewModel::onExampleProductsChange,
                 onStorageNotesChange = viewModel::onStorageNotesChange,
                 onAllergenNotesChange = viewModel::onAllergenNotesChange,
@@ -119,6 +125,12 @@ internal fun IngredientEditorForm(
     onCategorySelect: (Int, String?) -> Unit = { _, _ -> },
     onDescriptionChange: (String) -> Unit,
     onEnglishNameChange: (String) -> Unit,
+    onScientificNameChange: (String) -> Unit = {},
+    onFlavorProfileChange: (String) -> Unit = {},
+    onSeasonalityChange: (String) -> Unit = {},
+    onOriginChange: (String) -> Unit = {},
+    onSelectionNotesChange: (String) -> Unit = {},
+    onPrepNotesChange: (String) -> Unit = {},
     onExampleProductsChange: (String) -> Unit,
     onStorageNotesChange: (String) -> Unit,
     onAllergenNotesChange: (String) -> Unit,
@@ -176,6 +188,49 @@ internal fun IngredientEditorForm(
                 onValueChange = onEnglishNameChange,
                 label = { Text(text = stringResource(R.string.ingredients_english_name)) },
                 singleLine = true,
+            )
+
+            Spacer(modifier = Modifier.height(CulinarySpacing.field))
+            CulinaryTextField(
+                value = state.scientificName,
+                onValueChange = onScientificNameChange,
+                label = { Text(text = "学名") },
+                singleLine = true,
+            )
+            Spacer(modifier = Modifier.height(CulinarySpacing.field))
+            CulinaryTextField(
+                value = state.flavorProfile,
+                onValueChange = onFlavorProfileChange,
+                label = { Text(text = "风味特征") },
+                minLines = 2,
+            )
+            Spacer(modifier = Modifier.height(CulinarySpacing.field))
+            CulinaryTextField(
+                value = state.seasonality,
+                onValueChange = onSeasonalityChange,
+                label = { Text(text = "时令") },
+                singleLine = true,
+            )
+            Spacer(modifier = Modifier.height(CulinarySpacing.field))
+            CulinaryTextField(
+                value = state.origin,
+                onValueChange = onOriginChange,
+                label = { Text(text = "产地") },
+                singleLine = true,
+            )
+            Spacer(modifier = Modifier.height(CulinarySpacing.field))
+            CulinaryTextField(
+                value = state.selectionNotes,
+                onValueChange = onSelectionNotesChange,
+                label = { Text(text = "挑选标准") },
+                minLines = 2,
+            )
+            Spacer(modifier = Modifier.height(CulinarySpacing.field))
+            CulinaryTextField(
+                value = state.prepNotes,
+                onValueChange = onPrepNotesChange,
+                label = { Text(text = "预处理") },
+                minLines = 2,
             )
             Spacer(modifier = Modifier.height(CulinarySpacing.field))
             CulinaryTextField(
