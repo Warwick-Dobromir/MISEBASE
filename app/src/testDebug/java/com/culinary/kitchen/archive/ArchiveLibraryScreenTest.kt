@@ -8,6 +8,8 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.longClick
 import com.culinary.core.data.kitchen.KitchenArchiveCategory
 import com.culinary.core.data.kitchen.KitchenArchiveEntry
 import com.culinary.core.data.kitchen.KitchenArchiveKind
@@ -159,6 +161,16 @@ class ArchiveLibraryScreenTest {
         compose.onNodeWithText("1 个子分类 · 3 条档案").assertIsDisplayed()
         compose.onNodeWithText("基础酱汁").performClick()
         compose.onNodeWithText("0 个子分类 · 1 条档案").assertIsDisplayed()
+    }
+
+    @Test
+    fun `long press no longer enters sorting mode`() {
+        show()
+
+        compose.onNodeWithText("酱汁基础").performTouchInput { longClick() }
+
+        compose.onNodeWithText("保存").assertDoesNotExist()
+        compose.onNodeWithText("取消").assertDoesNotExist()
     }
 
     @Test
