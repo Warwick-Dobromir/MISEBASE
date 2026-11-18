@@ -109,8 +109,9 @@ class ArchiveLibraryScreenTest {
 
         compose.onNodeWithText("保存").assertIsDisplayed()
         compose.onNodeWithText("取消").assertIsDisplayed()
+        compose.onNodeWithContentDescription("返回排序").assertIsDisplayed()
 
-        compose.onNodeWithText("取消").performClick()
+        compose.onNodeWithContentDescription("返回排序").performClick()
         compose.onNodeWithText("确认要返回吗？").assertIsDisplayed()
         compose.onNodeWithText("确认").performClick()
         compose.onNodeWithContentDescription("排列下级分类").assertIsDisplayed()
