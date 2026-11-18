@@ -28,8 +28,9 @@ class ArchiveLibraryScreenTest {
 
     private val categories =
         listOf(
-            category("base", null, "酱汁基础", 0, descendant = 2, childCount = 1),
-            category("basic", "base", "基础酱汁", 2, descendant = 2),
+            category("base", null, "酱汁基础", 0, descendant = 3, childCount = 1),
+            category("basic", "base", "基础酱汁", 2, descendant = 3, childCount = 1),
+            category("deep", "basic", "冷酱", 1, descendant = 1),
             category("empty", null, "空分类", 0),
             category("test", null, "测试 · 基础酱汁", 0, testBatch = "UI-CATEGORY-TEST-V1"),
         )
@@ -38,7 +39,7 @@ class ArchiveLibraryScreenTest {
         listOf(
             entry("s1", "基础高汤酱", "basic", "base / basic"),
             entry("s2", "香菇酱", "basic", "base / basic"),
-            entry("s3", "烟熏酱", "basic", "base / basic"),
+            entry("s3", "烟熏酱", "deep", "base / basic / deep"),
         )
 
     @Test
@@ -148,6 +149,16 @@ class ArchiveLibraryScreenTest {
 
         assertThat(createdParent).isEqualTo("base")
         assertThat(createdName).isEqualTo("冷酱")
+    }
+
+    @Test
+    fun `category row displays recursive archive count`() {
+        show()
+
+        compose.onNodeWithText("酱汁基础").performClick()
+        compose.onNodeWithText("1 个子分类 · 3 条档案").assertIsDisplayed()
+        compose.onNodeWithText("基础酱汁").performClick()
+        compose.onNodeWithText("0 个子分类 · 1 条档案").assertIsDisplayed()
     }
 
     @Test
