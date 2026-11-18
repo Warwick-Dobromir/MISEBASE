@@ -198,6 +198,7 @@ internal fun IngredientEditorForm(
                 singleLine = true,
             )
             Spacer(modifier = Modifier.height(CulinarySpacing.field))
+            ArchiveEditorSectionHeader(index = "02", english = "CHARACTERISTICS", title = "风味与特性")
             CulinaryTextField(
                 value = state.flavorProfile,
                 onValueChange = onFlavorProfileChange,
@@ -233,6 +234,7 @@ internal fun IngredientEditorForm(
                 minLines = 2,
             )
             Spacer(modifier = Modifier.height(CulinarySpacing.field))
+            ArchiveEditorSectionHeader(index = "03", english = "CULINARY APPLICATION", title = "烹饪应用")
             CulinaryTextField(
                 value = state.exampleProducts,
                 onValueChange = onExampleProductsChange,
@@ -240,6 +242,7 @@ internal fun IngredientEditorForm(
                 minLines = 2,
             )
             Spacer(modifier = Modifier.height(CulinarySpacing.field))
+            ArchiveEditorSectionHeader(index = "04", english = "STORAGE & SAFETY", title = "储存与安全")
             CulinaryTextField(
                 value = state.storageNotes,
                 onValueChange = onStorageNotesChange,
@@ -253,6 +256,14 @@ internal fun IngredientEditorForm(
                 label = { Text(text = stringResource(R.string.ingredients_allergen)) },
                 minLines = 2,
             )
+            ArchiveEditorSectionHeader(index = "05", english = "UNIT CONVERSIONS", title = "单位换算")
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                Text(
+                    text = "系统自动换算 · 用于库存与配方计算",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
             Spacer(modifier = Modifier.height(CulinarySpacing.xl))
 
             if (!state.isNew) {
