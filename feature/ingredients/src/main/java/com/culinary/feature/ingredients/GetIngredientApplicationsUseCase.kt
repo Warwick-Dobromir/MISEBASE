@@ -24,9 +24,12 @@ class GetIngredientApplicationsUseCase
 
             sauceRepository.observeActive().first().forEach { sauce ->
                 val current = sauceRepository.findCurrentVersion(sauce.id) ?: return@forEach
-                val usesIngredient = current.components.any { component ->
-                    (component.target as? ComponentTarget.Ingredient)?.id == ingredientId
-                }
+                val usesIngredient = containsIngredient(
+                    current.components.map { it.target },
+                    ingredientId,
+                    mutableSetOf(),
+                    mutableSetOf(),
+                )
                 if (usesIngredient) {
                     result += KitchenRelatedRecord(
                         sourceRecordId = ingredientId.value,
@@ -41,9 +44,12 @@ class GetIngredientApplicationsUseCase
 
             recipeRepository.observeActive().first().forEach { recipe ->
                 val current = recipeRepository.getCurrentVersion(recipe.id) ?: return@forEach
-                val usesIngredient = current.components.any { component ->
-                    (component.target as? ComponentTarget.Ingredient)?.id == ingredientId
-                }
+                val usesIngredient = containsIngredient(
+                    current.components.map { it.target },
+                    ingredientId,
+                    mutableSetOf(),
+                    mutableSetOf(),
+                )
                 if (usesIngredient) {
                     result += KitchenRelatedRecord(
                         sourceRecordId = ingredientId.value,
@@ -61,5 +67,45 @@ class GetIngredientApplicationsUseCase
                     .thenBy { it.sortOrder }
                     .thenBy { it.targetLabel },
             )
+        }
+
+        private suspend fun containsIngredient(
+            targets: List<ComponentTarget>,
+            ingredientId: IngredientId,
+            visitedRecipes: MutableSet<String>,
+            visitedSauces: MutableSet<String>,
+        ): Boolean {
+            targets.forEach { target ->
+                when (target) {
+                    is ComponentTarget.Ingredient -> if (target.id == ingredientId) return true
+                    is ComponentTarget.Recipe -> {
+                        val key = target.versionId.value
+                        if (visitedRecipes.add(key)) {
+                            val version = recipeRepository.getVersion(target.versionId)
+                            if (version != null && containsIngredient(
+                                    version.components.map { it.target },
+                                    ingredientId,
+                                    visitedRecipes,
+                                    visitedSauces,
+                                )
+                            ) return true
+                        }
+                    }
+                    is ComponentTarget.Sauce -> {
+                        val key = target.versionId.value
+                        if (visitedSauces.add(key)) {
+                            val version = (sauceRepository.getVersion(target.versionId) as? com.culinary.core.common.Outcome.Success)?.value
+                            if (version != null && containsIngredient(
+                                    version.components.map { it.target },
+                                    ingredientId,
+                                    visitedRecipes,
+                                    visitedSauces,
+                                )
+                            ) return true
+                        }
+                    }
+                }
+            }
+            return false
         }
     }
