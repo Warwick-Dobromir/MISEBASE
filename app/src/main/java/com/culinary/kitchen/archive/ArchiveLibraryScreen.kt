@@ -786,7 +786,7 @@ internal fun archiveDragOffsetAfterDelta(
         if (!canMove(1) || !move(1)) {
             return ArchiveDragOffsetState(
                 offsetPx = archiveEdgeResistanceOffset(offset, maxEdgeOffsetPx),
-                edgeOverdragPx = offset,
+                edgeOverdragPx = offset.coerceIn(-maxEdgeOffsetPx.coerceAtLeast(1f) * 5f, maxEdgeOffsetPx.coerceAtLeast(1f) * 5f),
             )
         }
         offset -= threshold
@@ -795,7 +795,7 @@ internal fun archiveDragOffsetAfterDelta(
         if (!canMove(-1) || !move(-1)) {
             return ArchiveDragOffsetState(
                 offsetPx = archiveEdgeResistanceOffset(offset, maxEdgeOffsetPx),
-                edgeOverdragPx = offset,
+                edgeOverdragPx = offset.coerceIn(-maxEdgeOffsetPx.coerceAtLeast(1f) * 5f, maxEdgeOffsetPx.coerceAtLeast(1f) * 5f),
             )
         }
         offset += threshold
@@ -804,7 +804,7 @@ internal fun archiveDragOffsetAfterDelta(
     if ((offset < 0f && !canMove(-1)) || (offset > 0f && !canMove(1))) {
         return ArchiveDragOffsetState(
             offsetPx = archiveEdgeResistanceOffset(offset, maxEdgeOffsetPx),
-            edgeOverdragPx = offset,
+            edgeOverdragPx = offset.coerceIn(-maxEdgeOffsetPx.coerceAtLeast(1f) * 5f, maxEdgeOffsetPx.coerceAtLeast(1f) * 5f),
         )
     }
     return ArchiveDragOffsetState(offsetPx = offset)

@@ -70,7 +70,7 @@ class ArchiveAutoScrollVelocityTest {
         assertThat(index).isEqualTo(0)
         assertThat(result.offsetPx).isLessThan(0f)
         assertThat(abs(result.offsetPx)).isAtMost(12f)
-        assertThat(result.edgeOverdragPx).isEqualTo(-150f)
+        assertThat(result.edgeOverdragPx).isEqualTo(-60f)
     }
 
     @Test
