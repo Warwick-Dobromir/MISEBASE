@@ -5,6 +5,8 @@ name: Android APK
 on:
   push:
     branches: [main, fix/archive-category-interactions, fix/archive-sort-feedback, fix/archive-library-completion, fix/archive-library-layout-counts-sort]
+  pull_request:
+    branches: [main]
   workflow_dispatch:
 
 permissions:
