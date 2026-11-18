@@ -1,6 +1,7 @@
 package com.culinary.feature.ingredients
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -32,6 +33,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.culinary.core.designsystem.component.ArchiveEditorTopBar
+import com.culinary.core.designsystem.component.ArchiveEditorSectionHeader
 import com.culinary.core.designsystem.component.CulinaryButton
 import com.culinary.core.designsystem.component.CulinaryRule
 import com.culinary.core.designsystem.component.CulinaryTextField
@@ -49,6 +51,7 @@ import com.culinary.core.domain.model.ArchiveCategory
 @Composable
 fun IngredientEditorRoute(
     onSaved: () -> Unit,
+    onCancelled: () -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: IngredientEditorViewModel = hiltViewModel(),
 ) {
@@ -82,7 +85,8 @@ fun IngredientEditorRoute(
                 onStorageNotesChange = viewModel::onStorageNotesChange,
                 onAllergenNotesChange = viewModel::onAllergenNotesChange,
                 onOpenUnitPicker = { showUnitPicker = true },
-                onSave = viewModel::save,\n                onCancel = onCancelled,
+                onSave = viewModel::save,
+                onCancel = onCancelled,
             )
         }
     }
@@ -114,26 +118,24 @@ internal fun IngredientEditorForm(
     onAllergenNotesChange: (String) -> Unit,
     onOpenUnitPicker: () -> Unit,
     onSave: () -> Unit,
+    onCancel: () -> Unit = {},
 ) {
-    Column(
-        modifier =
-            Modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(bottom = CulinarySpacing.xl),
-    ) {
-        PageHeader(
-            eyebrow = "INGREDIENT",
-            title =
-                stringResource(
-                    if (state.isNew) {
-                        R.string.ingredients_editor_new_title
-                    } else {
-                        R.string.ingredients_editor_edit_title
-                    },
-                ),
+    Column(modifier = Modifier.fillMaxSize()) {
+        ArchiveEditorTopBar(
+            title = if (state.isNew) stringResource(R.string.ingredients_editor_new_title)
+                else stringResource(R.string.ingredients_editor_edit_title),
+            onBack = onCancel,
+            onCancel = onCancel,
+            onSave = onSave,
+            isSaving = state.isSaving,
+            canSave = !state.isLoading && !state.isSaving && state.name.isNotBlank(),
         )
-        Column(modifier = Modifier.padding(horizontal = CulinarySpacing.pageHorizontal)) {
+        Column(
+            modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())
+                .padding(horizontal = CulinarySpacing.pageHorizontal)
+                .padding(bottom = CulinarySpacing.xl),
+        ) {
+            ArchiveEditorSectionHeader(index = "01", english = "IDENTITY", title = "基础信息")
             CulinaryTextField(
                 value = state.name,
                 onValueChange = onNameChange,
@@ -189,20 +191,20 @@ internal fun IngredientEditorForm(
                 minLines = 2,
             )
             Spacer(modifier = Modifier.height(CulinarySpacing.xl))
-            CulinaryButton(
-                text =
-                    stringResource(
-                        if (state.isSaving) {
-                            R.string.ingredients_saving
-                        } else {
-                            R.string.ingredients_save
-                        },
-                    ),
-                onClick = onSave,
-                enabled = !state.isSaving,
-                loading = state.isSaving,
-                modifier = Modifier.fillMaxWidth(),
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(top = CulinarySpacing.lg),
+                horizontalArrangement = Arrangement.spacedBy(CulinarySpacing.md),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                CulinaryTextButton(text = stringResource(R.string.ingredients_cancel), onClick = onCancel)
+                Spacer(modifier = Modifier.weight(1f))
+                CulinaryButton(
+                    text = stringResource(if (state.isSaving) R.string.ingredients_saving else R.string.ingredients_save),
+                    onClick = onSave,
+                    enabled = !state.isSaving,
+                    loading = state.isSaving,
+                )
+            }
         }
     }
 }
