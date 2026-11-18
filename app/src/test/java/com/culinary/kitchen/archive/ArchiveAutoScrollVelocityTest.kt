@@ -19,15 +19,19 @@ class ArchiveAutoScrollVelocityTest {
     @Test
     fun firstItemUsesBoundedElasticResistanceWithoutMovingPastTop() {
         var moveCalls = 0
-        val result = archiveDragOffsetAfterDelta(
-            currentOffsetPx = 0f,
-            currentEdgeOverdragPx = 0f,
-            deltaPx = -80f,
-            rowHeightPx = 100f,
-            maxEdgeOffsetPx = 12f,
-            canMove = { it > 0 },
-            move = { moveCalls++; true },
-        )
+        val result =
+            archiveDragOffsetAfterDelta(
+                currentOffsetPx = 0f,
+                currentEdgeOverdragPx = 0f,
+                deltaPx = -80f,
+                rowHeightPx = 100f,
+                maxEdgeOffsetPx = 12f,
+                canMove = { it > 0 },
+                move = {
+                    moveCalls++
+                    true
+                },
+            )
 
         assertThat(result.offsetPx).isLessThan(0f)
         assertThat(abs(result.offsetPx)).isAtMost(12f)
@@ -38,15 +42,19 @@ class ArchiveAutoScrollVelocityTest {
     @Test
     fun lastItemUsesSymmetricElasticResistanceWithoutMovingPastBottom() {
         var moveCalls = 0
-        val result = archiveDragOffsetAfterDelta(
-            currentOffsetPx = 0f,
-            currentEdgeOverdragPx = 0f,
-            deltaPx = 80f,
-            rowHeightPx = 100f,
-            maxEdgeOffsetPx = 12f,
-            canMove = { it < 0 },
-            move = { moveCalls++; true },
-        )
+        val result =
+            archiveDragOffsetAfterDelta(
+                currentOffsetPx = 0f,
+                currentEdgeOverdragPx = 0f,
+                deltaPx = 80f,
+                rowHeightPx = 100f,
+                maxEdgeOffsetPx = 12f,
+                canMove = { it < 0 },
+                move = {
+                    moveCalls++
+                    true
+                },
+            )
 
         assertThat(result.offsetPx).isGreaterThan(0f)
         assertThat(result.offsetPx).isAtMost(12f)
@@ -57,15 +65,19 @@ class ArchiveAutoScrollVelocityTest {
     @Test
     fun reachingFirstItemRetainsFullPointerDistanceForSmoothReturn() {
         var index = 1
-        val result = archiveDragOffsetAfterDelta(
-            currentOffsetPx = 0f,
-            currentEdgeOverdragPx = 0f,
-            deltaPx = -250f,
-            rowHeightPx = 100f,
-            maxEdgeOffsetPx = 12f,
-            canMove = { delta -> index + delta in 0..2 },
-            move = { delta -> index += delta; true },
-        )
+        val result =
+            archiveDragOffsetAfterDelta(
+                currentOffsetPx = 0f,
+                currentEdgeOverdragPx = 0f,
+                deltaPx = -250f,
+                rowHeightPx = 100f,
+                maxEdgeOffsetPx = 12f,
+                canMove = { delta -> index + delta in 0..2 },
+                move = { delta ->
+                    index += delta
+                    true
+                },
+            )
 
         assertThat(index).isEqualTo(0)
         assertThat(result.offsetPx).isLessThan(0f)
@@ -77,24 +89,32 @@ class ArchiveAutoScrollVelocityTest {
     fun reversingAtBoundaryImmediatelyReleasesElasticOffset() {
         var index = 0
         val canMove: (Int) -> Boolean = { delta -> index + delta in 0..2 }
-        val outward = archiveDragOffsetAfterDelta(
-            currentOffsetPx = 0f,
-            currentEdgeOverdragPx = 0f,
-            deltaPx = -30f,
-            rowHeightPx = 100f,
-            maxEdgeOffsetPx = 12f,
-            canMove = canMove,
-            move = { delta -> index += delta; true },
-        )
-        val inward = archiveDragOffsetAfterDelta(
-            currentOffsetPx = outward.offsetPx,
-            currentEdgeOverdragPx = outward.edgeOverdragPx,
-            deltaPx = 10f,
-            rowHeightPx = 100f,
-            maxEdgeOffsetPx = 12f,
-            canMove = canMove,
-            move = { delta -> index += delta; true },
-        )
+        val outward =
+            archiveDragOffsetAfterDelta(
+                currentOffsetPx = 0f,
+                currentEdgeOverdragPx = 0f,
+                deltaPx = -30f,
+                rowHeightPx = 100f,
+                maxEdgeOffsetPx = 12f,
+                canMove = canMove,
+                move = { delta ->
+                    index += delta
+                    true
+                },
+            )
+        val inward =
+            archiveDragOffsetAfterDelta(
+                currentOffsetPx = outward.offsetPx,
+                currentEdgeOverdragPx = outward.edgeOverdragPx,
+                deltaPx = 10f,
+                rowHeightPx = 100f,
+                maxEdgeOffsetPx = 12f,
+                canMove = canMove,
+                move = { delta ->
+                    index += delta
+                    true
+                },
+            )
 
         assertThat(outward.offsetPx).isLessThan(0f)
         assertThat(inward.offsetPx).isGreaterThan(outward.offsetPx)
@@ -107,24 +127,32 @@ class ArchiveAutoScrollVelocityTest {
     fun reversingPastElasticOriginResumesNormalDragWithoutJump() {
         var index = 0
         val canMove: (Int) -> Boolean = { delta -> index + delta in 0..2 }
-        val outward = archiveDragOffsetAfterDelta(
-            currentOffsetPx = 0f,
-            currentEdgeOverdragPx = 0f,
-            deltaPx = -30f,
-            rowHeightPx = 100f,
-            maxEdgeOffsetPx = 12f,
-            canMove = canMove,
-            move = { delta -> index += delta; true },
-        )
-        val inward = archiveDragOffsetAfterDelta(
-            currentOffsetPx = outward.offsetPx,
-            currentEdgeOverdragPx = outward.edgeOverdragPx,
-            deltaPx = 35f,
-            rowHeightPx = 100f,
-            maxEdgeOffsetPx = 12f,
-            canMove = canMove,
-            move = { delta -> index += delta; true },
-        )
+        val outward =
+            archiveDragOffsetAfterDelta(
+                currentOffsetPx = 0f,
+                currentEdgeOverdragPx = 0f,
+                deltaPx = -30f,
+                rowHeightPx = 100f,
+                maxEdgeOffsetPx = 12f,
+                canMove = canMove,
+                move = { delta ->
+                    index += delta
+                    true
+                },
+            )
+        val inward =
+            archiveDragOffsetAfterDelta(
+                currentOffsetPx = outward.offsetPx,
+                currentEdgeOverdragPx = outward.edgeOverdragPx,
+                deltaPx = 35f,
+                rowHeightPx = 100f,
+                maxEdgeOffsetPx = 12f,
+                canMove = canMove,
+                move = { delta ->
+                    index += delta
+                    true
+                },
+            )
 
         assertThat(inward.offsetPx).isEqualTo(5f)
         assertThat(inward.edgeOverdragPx).isEqualTo(0f)
@@ -133,24 +161,26 @@ class ArchiveAutoScrollVelocityTest {
 
     @Test
     fun continuedOutwardMovementKeepsTruePointerDistanceButCapsVisualOffset() {
-        val first = archiveDragOffsetAfterDelta(
-            currentOffsetPx = 0f,
-            currentEdgeOverdragPx = 0f,
-            deltaPx = -2_000f,
-            rowHeightPx = 100f,
-            maxEdgeOffsetPx = 12f,
-            canMove = { false },
-            move = { false },
-        )
-        val reversed = archiveDragOffsetAfterDelta(
-            currentOffsetPx = first.offsetPx,
-            currentEdgeOverdragPx = first.edgeOverdragPx,
-            deltaPx = 10f,
-            rowHeightPx = 100f,
-            maxEdgeOffsetPx = 12f,
-            canMove = { false },
-            move = { false },
-        )
+        val first =
+            archiveDragOffsetAfterDelta(
+                currentOffsetPx = 0f,
+                currentEdgeOverdragPx = 0f,
+                deltaPx = -2_000f,
+                rowHeightPx = 100f,
+                maxEdgeOffsetPx = 12f,
+                canMove = { false },
+                move = { false },
+            )
+        val reversed =
+            archiveDragOffsetAfterDelta(
+                currentOffsetPx = first.offsetPx,
+                currentEdgeOverdragPx = first.edgeOverdragPx,
+                deltaPx = 10f,
+                rowHeightPx = 100f,
+                maxEdgeOffsetPx = 12f,
+                canMove = { false },
+                move = { false },
+            )
 
         assertThat(abs(first.offsetPx)).isAtMost(12f)
         assertThat(first.edgeOverdragPx).isEqualTo(-2_000f)
@@ -163,42 +193,46 @@ class ArchiveAutoScrollVelocityTest {
 
     @Test
     fun longReverseGestureKeepsEdgeStateUntilFingerReturnsToBoundary() {
-        val outward = archiveDragOffsetAfterDelta(
-            currentOffsetPx = 0f,
-            currentEdgeOverdragPx = 0f,
-            deltaPx = -500f,
-            rowHeightPx = 100f,
-            maxEdgeOffsetPx = 12f,
-            canMove = { false },
-            move = { false },
-        )
-        val stillOutside = archiveDragOffsetAfterDelta(
-            currentOffsetPx = outward.offsetPx,
-            currentEdgeOverdragPx = outward.edgeOverdragPx,
-            deltaPx = 400f,
-            rowHeightPx = 100f,
-            maxEdgeOffsetPx = 12f,
-            canMove = { false },
-            move = { false },
-        )
-        val approaching = archiveDragOffsetAfterDelta(
-            currentOffsetPx = stillOutside.offsetPx,
-            currentEdgeOverdragPx = stillOutside.edgeOverdragPx,
-            deltaPx = 50f,
-            rowHeightPx = 100f,
-            maxEdgeOffsetPx = 12f,
-            canMove = { false },
-            move = { false },
-        )
-        val backAtBoundary = archiveDragOffsetAfterDelta(
-            currentOffsetPx = approaching.offsetPx,
-            currentEdgeOverdragPx = approaching.edgeOverdragPx,
-            deltaPx = 50f,
-            rowHeightPx = 100f,
-            maxEdgeOffsetPx = 12f,
-            canMove = { false },
-            move = { false },
-        )
+        val outward =
+            archiveDragOffsetAfterDelta(
+                currentOffsetPx = 0f,
+                currentEdgeOverdragPx = 0f,
+                deltaPx = -500f,
+                rowHeightPx = 100f,
+                maxEdgeOffsetPx = 12f,
+                canMove = { false },
+                move = { false },
+            )
+        val stillOutside =
+            archiveDragOffsetAfterDelta(
+                currentOffsetPx = outward.offsetPx,
+                currentEdgeOverdragPx = outward.edgeOverdragPx,
+                deltaPx = 400f,
+                rowHeightPx = 100f,
+                maxEdgeOffsetPx = 12f,
+                canMove = { false },
+                move = { false },
+            )
+        val approaching =
+            archiveDragOffsetAfterDelta(
+                currentOffsetPx = stillOutside.offsetPx,
+                currentEdgeOverdragPx = stillOutside.edgeOverdragPx,
+                deltaPx = 50f,
+                rowHeightPx = 100f,
+                maxEdgeOffsetPx = 12f,
+                canMove = { false },
+                move = { false },
+            )
+        val backAtBoundary =
+            archiveDragOffsetAfterDelta(
+                currentOffsetPx = approaching.offsetPx,
+                currentEdgeOverdragPx = approaching.edgeOverdragPx,
+                deltaPx = 50f,
+                rowHeightPx = 100f,
+                maxEdgeOffsetPx = 12f,
+                canMove = { false },
+                move = { false },
+            )
 
         assertThat(outward.edgeOverdragPx).isEqualTo(-500f)
         assertThat(stillOutside.edgeOverdragPx).isEqualTo(-100f)
