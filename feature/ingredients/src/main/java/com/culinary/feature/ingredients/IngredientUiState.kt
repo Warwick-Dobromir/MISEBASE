@@ -28,6 +28,7 @@ data class IngredientDetailUiState(
     val detail: IngredientDetail? = null,
     val categoryPath: List<String> = emptyList(),
     val imageBytes: ByteArray? = null,
+    val referenceImageBytes: List<ByteArray> = emptyList(),
     val isLoading: Boolean = true,
     val isArchiving: Boolean = false,
     val archived: Boolean = false,
