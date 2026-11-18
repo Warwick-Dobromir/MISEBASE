@@ -1,5 +1,8 @@
 package com.culinary.feature.ingredients
 
+import android.graphics.BitmapFactory
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -17,8 +20,11 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
@@ -134,6 +140,27 @@ internal fun IngredientDetailContent(
                 bytes = bytes,
                 modifier = Modifier.padding(horizontal = CulinarySpacing.pageHorizontal),
             )
+        }
+        if (detailState.referenceImageBytes.isNotEmpty()) {
+            Row(
+                modifier = Modifier.horizontalScroll(rememberScrollState())
+                    .padding(horizontal = CulinarySpacing.pageHorizontal),
+                horizontalArrangement = Arrangement.spacedBy(CulinarySpacing.sm),
+            ) {
+                detailState.referenceImageBytes.forEach { bytes ->
+                    val bitmap = remember(bytes) {
+                        BitmapFactory.decodeByteArray(bytes, 0, bytes.size)?.asImageBitmap()
+                    }
+                    bitmap?.let {
+                        Image(
+                            bitmap = it,
+                            contentDescription = "食材补充图片",
+                            modifier = Modifier.size(88.dp),
+                            contentScale = ContentScale.Crop,
+                        )
+                    }
+                }
+            }
         }
         Column(modifier = Modifier.padding(horizontal = CulinarySpacing.pageHorizontal)) {
             Row(horizontalArrangement = Arrangement.spacedBy(CulinarySpacing.xs)) {
