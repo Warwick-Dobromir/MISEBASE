@@ -360,7 +360,7 @@ internal fun ArchiveLibraryScreen(
                 }
             }
         }
-remove old cancel row        SnackbarHost(
+        SnackbarHost(
             hostState = sortSnackbarHostState,
             modifier = Modifier.fillMaxWidth(),
         )
