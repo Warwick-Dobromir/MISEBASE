@@ -57,6 +57,7 @@ fun IngredientEditorRoute(
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     var showUnitPicker by remember { mutableStateOf(false) }
+    var conversionUnitTarget by remember { mutableStateOf<Pair<Int, Boolean>?>(null) }
     val pickPrimaryImage = rememberIngredientImagePicker(viewModel::onPrimaryImagePicked)
     val pickReferenceImage = rememberIngredientImagePicker(viewModel::onReferenceImagePicked)
     val saved = state.saved
@@ -92,7 +93,12 @@ fun IngredientEditorRoute(
                 onExampleProductsChange = viewModel::onExampleProductsChange,
                 onStorageNotesChange = viewModel::onStorageNotesChange,
                 onAllergenNotesChange = viewModel::onAllergenNotesChange,
-                onOpenUnitPicker = { showUnitPicker = true },
+                onOpenUnitPicker = { conversionUnitTarget = null; showUnitPicker = true },
+                onAddConversion = viewModel::addConversion,
+                onRemoveConversion = viewModel::removeConversion,
+                onOpenConversionUnitPicker = { index, from -> conversionUnitTarget = index to from; showUnitPicker = true },
+                onConversionFactorChange = viewModel::onConversionFactorChange,
+                onConversionNoteChange = viewModel::onConversionNoteChange,
                 onPickPrimaryImage = pickPrimaryImage,
                 onRemovePrimaryImage = viewModel::onPrimaryImageRemoved,
                 onPickReferenceImage = pickReferenceImage,
@@ -106,9 +112,15 @@ fun IngredientEditorRoute(
     if (showUnitPicker) {
         IngredientUnitPickerDialog(
             units = state.units,
-            selectedId = state.defaultUnit?.id?.value,
-            onSelect = {
-                viewModel.onUnitChange(it)
+            selectedId = conversionUnitTarget?.let { (index, from) ->
+                state.conversions.getOrNull(index)?.let { if (from) it.fromUnitId else it.toUnitId }
+            } ?: state.defaultUnit?.id?.value,
+            onSelect = { unit ->
+                val target = conversionUnitTarget
+                if (target == null) viewModel.onUnitChange(unit)
+                else if (target.second) viewModel.onConversionFromUnitChange(target.first, unit)
+                else viewModel.onConversionToUnitChange(target.first, unit)
+                conversionUnitTarget = null
                 showUnitPicker = false
             },
             onDismiss = { showUnitPicker = false },
@@ -135,6 +147,11 @@ internal fun IngredientEditorForm(
     onStorageNotesChange: (String) -> Unit,
     onAllergenNotesChange: (String) -> Unit,
     onOpenUnitPicker: () -> Unit,
+    onAddConversion: () -> Unit,
+    onRemoveConversion: (Int) -> Unit,
+    onOpenConversionUnitPicker: (Int, Boolean) -> Unit,
+    onConversionFactorChange: (Int, String) -> Unit,
+    onConversionNoteChange: (Int, String) -> Unit,
     onPickPrimaryImage: () -> Unit,
     onRemovePrimaryImage: () -> Unit,
     onPickReferenceImage: () -> Unit,
@@ -237,6 +254,40 @@ internal fun IngredientEditorForm(
                         ?: stringResource(R.string.ingredients_no_unit),
                 onClick = onOpenUnitPicker,
             )
+            Spacer(modifier = Modifier.height(CulinarySpacing.field))
+            SectionHeader(title = "其他单位与换算关系")
+            state.conversions.forEachIndexed { index, conversion ->
+                val from = state.units.firstOrNull { it.id.value == conversion.fromUnitId }
+                val to = state.units.firstOrNull { it.id.value == conversion.toUnitId }
+                Text(
+                    text = "换算关系 " + (index + 1),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                UnitSelectionRow(
+                    value = from?.let { "${it.name}（${it.symbol}）" } ?: "选择原单位",
+                    onClick = { onOpenConversionUnitPicker(index, true) },
+                )
+                UnitSelectionRow(
+                    value = to?.let { "${it.name}（${it.symbol}）" } ?: "选择目标单位",
+                    onClick = { onOpenConversionUnitPicker(index, false) },
+                )
+                CulinaryTextField(
+                    value = conversion.factor,
+                    onValueChange = { onConversionFactorChange(index, it) },
+                    label = { Text("换算系数：1 原单位 = ? 目标单位") },
+                    singleLine = true,
+                )
+                CulinaryTextField(
+                    value = conversion.note,
+                    onValueChange = { onConversionNoteChange(index, it) },
+                    label = { Text("换算依据（选填）") },
+                    minLines = 2,
+                )
+                CulinaryTextButton(text = "删除换算关系", onClick = { onRemoveConversion(index) }, danger = true)
+                Spacer(modifier = Modifier.height(CulinarySpacing.field))
+            }
+            CulinaryTextButton(text = "添加换算关系", onClick = onAddConversion)
             Spacer(modifier = Modifier.height(CulinarySpacing.field))
             SectionHeader(title = "04  风味与特性")
             CulinaryTextField(
