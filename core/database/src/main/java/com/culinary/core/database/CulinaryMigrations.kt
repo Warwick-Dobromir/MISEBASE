@@ -31,6 +31,7 @@ internal object CulinaryMigrations {
     val MIGRATION_6_7: Migration = MIGRATION_6_7_IMPL
     val MIGRATION_7_8: Migration = MIGRATION_7_8_IMPL
     val MIGRATION_8_9: Migration = MIGRATION_8_9_IMPL
+    val MIGRATION_9_10: Migration = MIGRATION_9_10_IMPL
 
     val ALL: Array<Migration> =
         arrayOf(
@@ -42,6 +43,7 @@ internal object CulinaryMigrations {
             MIGRATION_6_7,
             MIGRATION_7_8,
             MIGRATION_8_9,
+            MIGRATION_9_10,
         )
 }
 
@@ -140,6 +142,29 @@ private val MIGRATION_7_8_IMPL =
             db.execSQL("ALTER TABLE `recipe_version` ADD COLUMN `min_range_qty` REAL")
             db.execSQL("ALTER TABLE `recipe_version` ADD COLUMN `min_range_unit_id` TEXT")
             db.execSQL("ALTER TABLE `recipe` ADD COLUMN `notes` TEXT")
+        }
+    }
+
+/**
+ * v9 → v10：菜谱研发备注拆分为八个独立字段。
+ * 仅新增可空列；旧 notes 与 seed_note 原样保留，历史数据不拆分、不覆盖。
+ */
+private val MIGRATION_9_10_IMPL =
+    object : Migration(9, 10) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            CulinarySchemaExtras.dropPartialIndexes(db)
+            listOf(
+                "product_standard",
+                "raw_material_requirements",
+                "preparation_notes",
+                "process_parameters",
+                "plating_standard",
+                "storage_reheating",
+                "adjustment_record",
+                "test_record",
+            ).forEach { column ->
+                db.execSQL("ALTER TABLE `recipe` ADD COLUMN `$column` TEXT")
+            }
         }
     }
 
