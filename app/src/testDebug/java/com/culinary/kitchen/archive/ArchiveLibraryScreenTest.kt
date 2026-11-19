@@ -7,6 +7,15 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.test.performScrollTo
+import androidx.compose.foundation.layout.Column
+import androidx.compose.material3.Button
+import androidx.compose.material3.Text
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
 import com.culinary.core.data.kitchen.KitchenArchiveCategory
 import com.culinary.core.data.kitchen.KitchenArchiveEntry
 import com.culinary.core.data.kitchen.KitchenArchiveKind
@@ -39,6 +48,58 @@ class ArchiveLibraryScreenTest {
             entry("s2", "香菇酱", "basic", "base / basic"),
             entry("s3", "烟熏酱", "basic", "base / basic"),
         )
+
+
+    @Test
+    fun `returning from archive detail restores the exact directory scroll position`() {
+        val manyEntries =
+            (1..60).map { index ->
+                KitchenArchiveEntry(
+                    id = "scroll-$index",
+                    kind = KitchenArchiveKind.SAUCE,
+                    name = "滚动测试档案 $index",
+                    subtitle = null,
+                    category = "基础酱汁",
+                    searchText = "滚动测试档案 $index",
+                    categoryId = null,
+                    categoryPath = emptyList(),
+                )
+            }
+
+        compose.setContent {
+            CulinaryTheme {
+                val navController = rememberNavController()
+                val savedPosition = remember { mutableStateOf(0 to 0) }
+                NavHost(navController = navController, startDestination = "library") {
+                    composable("library") {
+                        ArchiveLibraryScreen(
+                            section = KitchenArchiveSection.SAUCES,
+                            state = ArchiveLibraryUiState(entries = manyEntries, isLoading = false),
+                            onAdd = {},
+                            onOpenEntry = { navController.navigate("detail") },
+                            getScrollPosition = { _, _ -> savedPosition.value },
+                            onSaveScrollPosition = { _, _, index, offset ->
+                                savedPosition.value = index to offset
+                            },
+                        )
+                    }
+                    composable("detail") {
+                        Column {
+                            Text("档案详情")
+                            Button(onClick = { navController.popBackStack() }) {
+                                Text("返回列表")
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        compose.onNodeWithText("滚动测试档案 45").performScrollTo().performClick()
+        compose.onNodeWithText("档案详情").assertIsDisplayed()
+        compose.onNodeWithText("返回列表").performClick()
+        compose.onNodeWithText("滚动测试档案 45").assertIsDisplayed()
+    }
 
     @Test
     fun `renders category tree and formal category counts`() {
