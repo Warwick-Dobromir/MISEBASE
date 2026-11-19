@@ -5,8 +5,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -35,8 +35,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.culinary.core.designsystem.component.ArchiveEditorSectionHeader
 import com.culinary.core.designsystem.component.ArchiveEditorInlineField
+import com.culinary.core.designsystem.component.ArchiveEditorSectionHeader
 import com.culinary.core.designsystem.component.ArchiveEditorTopBar
 import com.culinary.core.designsystem.component.ConfirmDialog
 import com.culinary.core.designsystem.component.CulinaryLinkText
@@ -163,7 +163,11 @@ internal fun IngredientEditorForm(
             onCancel = { if (isDirty) showDiscard = true else onCancel() },
             onSave = onSave,
             isSaving = state.isSaving,
-            canSave = !state.isLoading && !state.isSaving && state.name.isNotBlank() && (state.isNew || isDirty),
+            canSave =
+                !state.isLoading &&
+                    !state.isSaving &&
+                    state.name.isNotBlank() &&
+                    (state.isNew || isDirty),
         )
         Column(
             modifier = Modifier
