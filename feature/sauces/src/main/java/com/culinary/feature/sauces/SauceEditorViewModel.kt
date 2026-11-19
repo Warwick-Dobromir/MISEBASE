@@ -578,12 +578,10 @@ class SauceEditorViewModel
                     minAmount != null && minUnit == null -> "请选择最小制作范围单位。"
                     minAmount != null &&
                         minUnit != null &&
-                        unit != null &&
                         !minUnit.isSameDimensionAs(unit) ->
                         "最小制作范围必须与默认产量使用同一计量维度。"
                     minAmount != null &&
                         minUnit != null &&
-                        unit != null &&
                         minAmount * minUnit.baseFactor > amount * unit.baseFactor ->
                         "最小制作范围不能大于默认产量。"
                     else -> null
