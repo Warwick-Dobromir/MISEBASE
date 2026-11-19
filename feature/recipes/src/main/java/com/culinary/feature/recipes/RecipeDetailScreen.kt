@@ -25,6 +25,8 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.culinary.core.designsystem.component.ArchiveDetailBar
 import com.culinary.core.designsystem.component.ArchiveDetailFooter
@@ -72,6 +74,7 @@ fun RecipeDetailRoute(
     viewModel: RecipeDetailViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { viewModel.load() }
 
     RecipeDetailScreen(
         state = state,
@@ -110,16 +113,7 @@ private fun RecipeDetailScreen(
             )
         }
         when {
-            state.isLoading -> LoadingRows()
-            state.detail == null ->
-                Text(
-                    text = stringResource(R.string.recipes_load_failed),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(CulinarySpacing.pageHorizontal),
-                )
-
-            else ->
+            state.detail != null ->
                 RecipeDetailContent(
                     detail = state.detail,
                     state = state,
@@ -130,6 +124,15 @@ private fun RecipeDetailScreen(
                     onBack = onBack,
                     onStartTimer = onStartTimer,
                     scrollToStep = scrollToStep,
+                )
+
+            state.isLoading -> LoadingRows()
+            else ->
+                Text(
+                    text = stringResource(R.string.recipes_load_failed),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(CulinarySpacing.pageHorizontal),
                 )
         }
     }
