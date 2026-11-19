@@ -12,7 +12,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   sauce-validation:
@@ -26,15 +26,8 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
       - name: Apply ktlint formatting to sauce module
         run: ./gradlew :feature:sauces:ktlintFormat --no-daemon
-      - name: Commit sauce formatting changes
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add feature/sauces/src
-          if ! git diff --cached --quiet; then
-            git commit -m "style(sauces): apply ktlint formatting"
-            git push origin HEAD:fix/sauce-research-notes-fields-20261119
-          fi
+      - name: Show sauce formatting diff
+        run: git diff -- feature/sauces/src
       - name: Validate sauce domain and editor
         run: |
           ./gradlew \
