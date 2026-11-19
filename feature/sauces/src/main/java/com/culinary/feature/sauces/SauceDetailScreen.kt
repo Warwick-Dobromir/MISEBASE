@@ -332,7 +332,7 @@ internal fun SauceDetailContent(
                     sauce.adjustableNotes?.let { "调整记录" to it },
                     sauce.seedNote?.let { "测试记录" to it },
                 )
-            ArchiveModuleHeader(number = "05", english = "NOTES", chinese = "研发备注")
+            ArchiveModuleHeader(number = "05", english = "RESEARCH NOTES", chinese = "研发备注")
             if (noteFields.isEmpty() && noteImages.isEmpty()) {
                 Text(
                     text = "暂未添加研发备注",
