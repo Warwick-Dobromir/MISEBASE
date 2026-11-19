@@ -118,8 +118,26 @@ class SchemaExportTest {
     }
 
     @Test
+    fun `exports schema version 10 with eight recipe research note fields`() {
+        val v10 = File(schemaDirectory, "10.json")
+        assertThat(v10.exists()).isTrue()
+        assertThat(v10.readText()).contains("\"version\": 10")
+        listOf(
+            "product_standard",
+            "raw_material_requirements",
+            "preparation_notes",
+            "process_parameters",
+            "plating_standard",
+            "storage_reheating",
+            "adjustment_record",
+            "test_record",
+        ).forEach { column -> assertThat(v10.readText()).contains(column) }
+        assertThat(tableCount(v10)).isEqualTo(47)
+    }
+
+    @Test
     fun `registers all forward migrations`() {
-        assertThat(CulinaryMigrations.ALL).hasLength(8)
+        assertThat(CulinaryMigrations.ALL).hasLength(9)
         assertThat(CulinaryMigrations.MIGRATION_1_2.startVersion).isEqualTo(1)
         assertThat(CulinaryMigrations.MIGRATION_1_2.endVersion).isEqualTo(2)
         assertThat(CulinaryMigrations.MIGRATION_2_3.startVersion).isEqualTo(2)
@@ -136,6 +154,8 @@ class SchemaExportTest {
         assertThat(CulinaryMigrations.MIGRATION_7_8.endVersion).isEqualTo(8)
         assertThat(CulinaryMigrations.MIGRATION_8_9.startVersion).isEqualTo(8)
         assertThat(CulinaryMigrations.MIGRATION_8_9.endVersion).isEqualTo(9)
+        assertThat(CulinaryMigrations.MIGRATION_9_10.startVersion).isEqualTo(9)
+        assertThat(CulinaryMigrations.MIGRATION_9_10.endVersion).isEqualTo(10)
     }
 
     private fun tableCount(file: File): Int = Regex("\"tableName\"").findAll(file.readText()).count()
