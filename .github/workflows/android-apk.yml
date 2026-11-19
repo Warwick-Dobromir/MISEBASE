@@ -54,6 +54,14 @@ jobs:
           MISEBASE_RELEASE_STORE_FILE: ${{ runner.temp }}/release.keystore
         run: ./gradlew :app:assembleDebug -PdebugWithReleaseSigning=true --no-daemon
 
+      - name: Upload generated Room schema v10 for verification
+        uses: actions/upload-artifact@v4
+        with:
+          name: MISEBASE-room-schema-v10
+          path: core/database/schemas/com.culinary.core.database.CulinaryDatabase/10.json
+          if-no-files-found: error
+          retention-days: 1
+
       - name: Verify original MISEBASE signing certificate
         run: |
           set -euo pipefail
