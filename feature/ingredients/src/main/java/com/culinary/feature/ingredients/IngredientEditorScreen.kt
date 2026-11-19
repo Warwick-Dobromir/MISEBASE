@@ -360,25 +360,24 @@ private data class IngredientEditorSnapshot(
     val defaultUnitId: String?,
 )
 
-private fun IngredientEditorUiState.toSnapshot(): IngredientEditorSnapshot {
-    return IngredientEditorSnapshot(
-    name = name,
-    category = category,
-    description = description,
-    englishName = englishName,
-    scientificName = scientificName,
-    flavorProfile = flavorProfile,
-    seasonality = seasonality,
-    origin = origin,
-    selectionNotes = selectionNotes,
-    prepNotes = prepNotes,
-    exampleProducts = exampleProducts,
-    storageNotes = storageNotes,
-    allergenNotes = allergenNotes,
-    categoryPathIds = categoryPathIds,
+private fun IngredientEditorUiState.toSnapshot(): IngredientEditorSnapshot =
+    IngredientEditorSnapshot(
+        name = name,
+        category = category,
+        description = description,
+        englishName = englishName,
+        scientificName = scientificName,
+        flavorProfile = flavorProfile,
+        seasonality = seasonality,
+        origin = origin,
+        selectionNotes = selectionNotes,
+        prepNotes = prepNotes,
+        exampleProducts = exampleProducts,
+        storageNotes = storageNotes,
+        allergenNotes = allergenNotes,
+        categoryPathIds = categoryPathIds,
         defaultUnitId = defaultUnit?.id?.value,
     )
-}
 
 @Composable
 private fun IngredientEditorField(
