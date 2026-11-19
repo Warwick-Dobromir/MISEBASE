@@ -17,10 +17,13 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.culinary.core.designsystem.component.ArchiveHeroImage
 import com.culinary.core.designsystem.component.ConfirmDialog
@@ -48,7 +51,8 @@ fun IngredientDetailRoute(
     viewModel: IngredientDetailViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
-    var showArchiveConfirm by remember { mutableStateOf(false) }
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { viewModel.load() }
+    var showArchiveConfirm by rememberSaveable { mutableStateOf(false) }
 
     LaunchedEffect(state.archived) {
         if (state.archived) onArchived()
@@ -64,21 +68,21 @@ fun IngredientDetailRoute(
             )
         }
         when {
-            state.isLoading -> LoadingRows()
-            state.detail == null ->
-                Text(
-                    text = stringResource(R.string.ingredients_load_failed),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(CulinarySpacing.pageHorizontal),
-                )
-
-            else ->
+            state.detail != null ->
                 IngredientDetailContent(
                     detailState = state,
                     onEdit = onEdit,
                     onArchive = { showArchiveConfirm = true },
                     onOpenRelation = onOpenRelation,
+                )
+
+            state.isLoading -> LoadingRows()
+            else ->
+                Text(
+                    text = stringResource(R.string.ingredients_load_failed),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(CulinarySpacing.pageHorizontal),
                 )
         }
     }
