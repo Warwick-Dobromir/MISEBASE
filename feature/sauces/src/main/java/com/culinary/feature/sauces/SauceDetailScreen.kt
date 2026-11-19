@@ -24,10 +24,10 @@ import androidx.compose.ui.layout.positionInParent
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.culinary.core.designsystem.component.ArchiveDetailBar
 import com.culinary.core.designsystem.component.ArchiveDetailFooter
 import com.culinary.core.designsystem.component.ArchiveDetailHeading
@@ -55,6 +55,7 @@ import com.culinary.core.domain.model.SauceDetail
 import com.culinary.core.domain.model.SauceLineView
 import com.culinary.core.domain.model.SauceVersion
 import com.culinary.core.domain.model.SauceVersionId
+
 
 /**
  * 酱汁详情路由。
