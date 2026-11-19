@@ -99,6 +99,7 @@ fun RecipeEditorRoute(
         onEnglishNameChange = viewModel::onEnglishNameChange,
         onDescriptionChange = viewModel::onDescriptionChange,
         onNotesChange = viewModel::onNotesChange,
+        onResearchNoteChange = viewModel::onResearchNoteChange,
         onAddTextNote = viewModel::addTextNote,
         onHeroPicked = viewModel::setHeroImage,
         onHeroClear = viewModel::clearHeroImage,
@@ -312,6 +313,7 @@ private fun RecipeEditorScreen(
     onEnglishNameChange: (String) -> Unit,
     onDescriptionChange: (String) -> Unit,
     onNotesChange: (String) -> Unit,
+    onResearchNoteChange: (RecipeResearchField, String) -> Unit,
     onAddTextNote: () -> Unit,
     onCuisineChange: (String) -> Unit,
     onPrepMinutesChange: (String) -> Unit,
@@ -391,6 +393,7 @@ private fun RecipeEditorScreen(
                 onEnglishNameChange = onEnglishNameChange,
                 onDescriptionChange = onDescriptionChange,
                 onNotesChange = onNotesChange,
+                onResearchNoteChange = onResearchNoteChange,
                 onAddTextNote = onAddTextNote,
                 onHeroPicked = onHeroPicked,
                 onHeroClear = onHeroClear,
@@ -470,6 +473,7 @@ internal fun RecipeEditorForm(
     onEnglishNameChange: (String) -> Unit = {},
     onDescriptionChange: (String) -> Unit = {},
     onNotesChange: (String) -> Unit = {},
+    onResearchNoteChange: (RecipeResearchField, String) -> Unit = { _, _ -> },
     onAddTextNote: () -> Unit = {},
     onHeroPicked: (PendingRecipeImage) -> Unit = {},
     onHeroClear: () -> Unit = {},
@@ -576,6 +580,7 @@ internal fun RecipeEditorForm(
         RecipeNotesSection(
             state = state,
             onNotesChange = onNotesChange,
+            onResearchNoteChange = onResearchNoteChange,
             onAddTextNote = onAddTextNote,
             onNoteImage = onNoteImage,
             onRemoveNoteImage = onRemoveNoteImage,
@@ -1105,25 +1110,70 @@ private fun RecipeRelationsSection(
 private fun RecipeNotesSection(
     state: RecipeEditorUiState,
     onNotesChange: (String) -> Unit,
+    onResearchNoteChange: (RecipeResearchField, String) -> Unit,
     onAddTextNote: () -> Unit,
     onNoteImage: (PendingRecipeImage) -> Unit,
     onRemoveNoteImage: (Int) -> Unit,
 ) {
     ArchiveEditorSectionHeader(
         index = "05",
-        english = "NOTES",
-        title = stringResource(R.string.recipes_notes),
+        english = "RESEARCH NOTES",
+        title = "研发备注",
+    )
+    val fields = listOf(
+        Triple(RecipeResearchField.PRODUCT_STANDARD, "成品标准", "风味、口感、质地、颜色与外观"),
+        Triple(RecipeResearchField.RAW_MATERIAL_REQUIREMENTS, "原料要求", "品种、规格、成熟度与品质"),
+        Triple(RecipeResearchField.PREPARATION_NOTES, "预制说明", "腌制、浸泡、切配及预制要求"),
+        Triple(RecipeResearchField.PROCESS_PARAMETERS, "工艺参数", "温度、时间、火候、比例与顺序"),
+        Triple(RecipeResearchField.PLATING_STANDARD, "出品标准", "重量、装盘、配菜、酱汁与装饰"),
+        Triple(RecipeResearchField.STORAGE_REHEATING, "储存复热", "保存条件、保质要求及复热方式"),
+        Triple(RecipeResearchField.ADJUSTMENT_RECORD, "调整记录", "配方、工艺调整及原因与结果"),
+        Triple(RecipeResearchField.TEST_RECORD, "测试记录", "试制日期、问题反馈及测试结论"),
+    )
+    fields.forEach { (field, title, hint) ->
+        Column(modifier = Modifier.fillMaxWidth().padding(top = CulinarySpacing.sm)) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            Text(
+                text = hint,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Spacer(modifier = Modifier.height(CulinarySpacing.xxs))
+            ArchiveEditorNotesBox(
+                value = when (field) {
+                    RecipeResearchField.PRODUCT_STANDARD -> state.productStandard
+                    RecipeResearchField.RAW_MATERIAL_REQUIREMENTS -> state.rawMaterialRequirements
+                    RecipeResearchField.PREPARATION_NOTES -> state.preparationNotes
+                    RecipeResearchField.PROCESS_PARAMETERS -> state.processParameters
+                    RecipeResearchField.PLATING_STANDARD -> state.platingStandard
+                    RecipeResearchField.STORAGE_REHEATING -> state.storageReheating
+                    RecipeResearchField.ADJUSTMENT_RECORD -> state.adjustmentRecord
+                    RecipeResearchField.TEST_RECORD -> state.testRecord
+                },
+                onValueChange = { onResearchNoteChange(field, it) },
+                placeholder = "填写$title",
+            )
+        }
+    }
+    Spacer(modifier = Modifier.height(CulinarySpacing.md))
+    Text(
+        text = "历史备注",
+        style = MaterialTheme.typography.labelLarge,
+        color = MaterialTheme.colorScheme.onSurface,
     )
     Text(
-        text = "记录研发说明、实验结论与调整记录……",
+        text = "保留旧版本已有内容，不会自动拆分或覆盖",
         style = MaterialTheme.typography.bodySmall,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
-    Spacer(modifier = Modifier.height(CulinarySpacing.sm))
     ArchiveEditorNotesBox(
         value = state.notes,
         onValueChange = onNotesChange,
-        placeholder = "记录研发说明、实验结论与调整记录……",
+        placeholder = "原有研发备注",
     )
     Spacer(modifier = Modifier.height(CulinarySpacing.xs))
     val pickNoteImage = rememberRecipeImagePicker(onNoteImage)
