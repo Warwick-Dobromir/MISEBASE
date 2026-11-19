@@ -51,6 +51,7 @@ class ArchiveLibraryScreenTest {
         )
 
 
+    // Exercises the real list click -> detail route -> back path and saved scroll offset.
     @Test
     fun archiveDetailReturnRestoresExactDirectoryScrollPosition() {
         val manyEntries =
