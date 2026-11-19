@@ -46,7 +46,14 @@ class RecipeDetailViewModel
             load()
             viewModelScope.launch {
                 getRelations(recipeId.value).collect { relations ->
-                    _uiState.update { it.copy(relations = relations) }
+                    _uiState.update {
+                        it.copy(
+                            relations =
+                                relations.filter {
+                                    it.targetKind == KitchenRecordKind.SAUCE || it.targetKind == KitchenRecordKind.RECIPE
+                                },
+                        )
+                    }
                 }
             }
         }
