@@ -28,6 +28,7 @@ import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.culinary.core.designsystem.component.ArchiveDetailBar
 import com.culinary.core.designsystem.component.ArchiveDetailFooter
+import com.culinary.core.designsystem.component.ArchiveDetailHeading
 import com.culinary.core.designsystem.component.ArchiveModuleHeader
 import com.culinary.core.designsystem.component.ArchiveProse
 import com.culinary.core.designsystem.component.ArchiveRelatedRow
@@ -38,7 +39,6 @@ import com.culinary.core.designsystem.component.CulinaryRule
 import com.culinary.core.designsystem.component.ErrorBanner
 import com.culinary.core.designsystem.component.LoadingRows
 import com.culinary.core.designsystem.theme.CulinarySpacing
-import com.culinary.core.designsystem.theme.CulinaryTextStyles
 import com.culinary.core.domain.model.KitchenRecordKind
 import com.culinary.core.domain.model.KitchenRelatedRecord
 
@@ -131,36 +131,17 @@ internal fun IngredientDetailContent(
                     .padding(bottom = CulinarySpacing.xl),
         ) {
             Spacer(modifier = Modifier.height(CulinarySpacing.lg))
-            Column(modifier = Modifier.fillMaxWidth()) {
-                Text(
-                    text =
-                        (
-                            detailState.categoryPath.lastOrNull()
-                                ?: ingredient.category?.takeIf { it.isNotBlank() }
-                                ?: "INGREDIENT"
-                        ).uppercase(),
-                    style = CulinaryTextStyles.eyebrow,
-                    color = MaterialTheme.colorScheme.secondary,
-                )
-                Spacer(modifier = Modifier.height(CulinarySpacing.sm))
-                Text(
-                    text = ingredient.name,
-                    style = MaterialTheme.typography.headlineLarge,
-                    color = MaterialTheme.colorScheme.onSurface,
-                )
-                ingredient.englishName?.takeIf { it.isNotBlank() }?.let { english ->
-                    Text(
-                        text = english,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-                ingredient.description?.takeIf { it.isNotBlank() }?.let { description ->
-                    Spacer(modifier = Modifier.height(CulinarySpacing.sm))
-                    ArchiveProse(description)
-                }
-                Spacer(modifier = Modifier.height(CulinarySpacing.lg))
-            }
+            ArchiveDetailHeading(
+                categoryLabel = "INGREDIENT · " + (
+                    detailState.categoryPath.joinToString(" / ").ifBlank {
+                        ingredient.category?.takeIf { it.isNotBlank() } ?: "未分类"
+                    }
+                ),
+                englishTitle = ingredient.englishName,
+                chineseTitle = ingredient.name,
+                description = ingredient.description,
+            )
+            Spacer(modifier = Modifier.height(CulinarySpacing.lg))
             detailState.imageBytes?.let { bytes ->
                 ArchiveWideImage(bytes = bytes, caption = null)
             }
