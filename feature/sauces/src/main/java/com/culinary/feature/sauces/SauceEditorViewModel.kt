@@ -18,7 +18,6 @@ import com.culinary.core.domain.model.SauceId
 import com.culinary.core.domain.model.SauceImageOwner
 import com.culinary.core.domain.model.SauceImageRole
 import com.culinary.core.domain.model.SauceVersionId
-import com.culinary.core.domain.model.Unit as UnitModel
 import com.culinary.core.domain.usecase.archive.AssignArchiveCategoryUseCase
 import com.culinary.core.domain.usecase.archive.GetArchiveCategoryForRecordUseCase
 import com.culinary.core.domain.usecase.archive.ListArchiveCategoriesUseCase
@@ -43,7 +42,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-
+import com.culinary.core.domain.model.Unit as UnitModel
 
 /**
  * 酱汁档案编辑器。
@@ -561,7 +560,11 @@ class SauceEditorViewModel
             val englishName = state.englishName.trim()
             val amount = state.yieldAmount.toDoubleOrNull()
             val unit = state.yieldUnit ?: state.units.firstOrNull()
-            val minAmount = state.minRangeAmount.trim().takeIf { it.isNotEmpty() }?.toDoubleOrNull()
+            val minAmount =
+                state.minRangeAmount
+                    .trim()
+                    .takeIf { it.isNotEmpty() }
+                    ?.toDoubleOrNull()
             val minUnit = state.minRangeUnit ?: unit
             val message =
                 when {
