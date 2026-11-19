@@ -31,6 +31,14 @@ data class SaveRecipeInput(
     val minimumCapacity: String? = null,
     val allergenNotes: String? = null,
     val notes: String? = null,
+    val productStandard: String? = null,
+    val rawMaterialRequirements: String? = null,
+    val preparationNotes: String? = null,
+    val processParameters: String? = null,
+    val platingStandard: String? = null,
+    val storageReheating: String? = null,
+    val adjustmentRecord: String? = null,
+    val testRecord: String? = null,
 )
 
 /** 保存菜谱档案（不含版本内容）；编辑档案不改变已发布版本。 */
@@ -74,6 +82,14 @@ class SaveRecipeUseCase(
                 difficulty = merge(input.minimumCapacity, existing?.difficulty),
                 allergenNotes = merge(input.allergenNotes, existing?.allergenNotes),
                 notes = merge(input.notes, existing?.notes),
+                productStandard = merge(input.productStandard, existing?.productStandard),
+                rawMaterialRequirements = merge(input.rawMaterialRequirements, existing?.rawMaterialRequirements),
+                preparationNotes = merge(input.preparationNotes, existing?.preparationNotes),
+                processParameters = merge(input.processParameters, existing?.processParameters),
+                platingStandard = merge(input.platingStandard, existing?.platingStandard),
+                storageReheating = merge(input.storageReheating, existing?.storageReheating),
+                adjustmentRecord = merge(input.adjustmentRecord, existing?.adjustmentRecord),
+                testRecord = merge(input.testRecord, existing?.testRecord),
             )
         return transactionRunner.write { repository.save(recipe) }.flatMap { it }
     }
