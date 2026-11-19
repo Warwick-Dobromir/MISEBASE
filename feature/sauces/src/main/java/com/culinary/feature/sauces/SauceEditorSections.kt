@@ -708,12 +708,7 @@ internal fun SauceNotesSection(
 }
 
 @Composable
-private fun ResearchNoteField(
-    label: String,
-    value: String,
-    placeholder: String,
-    onValueChange: (String) -> Unit,
-) {
+private fun ResearchNoteField(label: String, value: String, placeholder: String, onValueChange: (String) -> Unit) {
     Column(modifier = Modifier.fillMaxWidth().padding(bottom = CulinarySpacing.md)) {
         Text(
             text = label,
