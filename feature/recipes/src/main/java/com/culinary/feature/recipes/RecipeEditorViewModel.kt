@@ -196,6 +196,14 @@ class RecipeEditorViewModel
                     cookMinutes = detail.recipe.cookMinutes?.toString().orEmpty(),
                     allergenNotes = detail.recipe.allergenNotes.orEmpty(),
                     notes = detail.recipe.notes.orEmpty(),
+                    productStandard = detail.recipe.productStandard.orEmpty(),
+                    rawMaterialRequirements = detail.recipe.rawMaterialRequirements.orEmpty(),
+                    preparationNotes = detail.recipe.preparationNotes.orEmpty(),
+                    processParameters = detail.recipe.processParameters.orEmpty(),
+                    platingStandard = detail.recipe.platingStandard.orEmpty(),
+                    storageReheating = detail.recipe.storageReheating.orEmpty(),
+                    adjustmentRecord = detail.recipe.adjustmentRecord.orEmpty(),
+                    testRecord = detail.recipe.testRecord.orEmpty(),
                     seedNote = detail.recipe.seedNote.orEmpty(),
                     yieldAmount =
                         version
@@ -305,6 +313,23 @@ class RecipeEditorViewModel
         fun onAllergenNotesChange(value: String) = mutateArchive { it.copy(allergenNotes = value) }
 
         fun onNotesChange(value: String) = mutateArchive { it.copy(notes = value) }
+
+        fun onProductStandardChange(value: String) = mutateArchive { it.copy(productStandard = value) }
+
+        fun onRawMaterialRequirementsChange(value: String) =
+            mutateArchive { it.copy(rawMaterialRequirements = value) }
+
+        fun onPreparationNotesChange(value: String) = mutateArchive { it.copy(preparationNotes = value) }
+
+        fun onProcessParametersChange(value: String) = mutateArchive { it.copy(processParameters = value) }
+
+        fun onPlatingStandardChange(value: String) = mutateArchive { it.copy(platingStandard = value) }
+
+        fun onStorageReheatingChange(value: String) = mutateArchive { it.copy(storageReheating = value) }
+
+        fun onAdjustmentRecordChange(value: String) = mutateArchive { it.copy(adjustmentRecord = value) }
+
+        fun onTestRecordChange(value: String) = mutateArchive { it.copy(testRecord = value) }
 
         fun addTextNote() =
             mutateArchive { state ->
@@ -633,6 +658,14 @@ class RecipeEditorViewModel
                                 minimumCapacity = submission.minimumCapacity,
                                 allergenNotes = submission.allergenNotes,
                                 notes = submission.notes,
+                                productStandard = submission.productStandard,
+                                rawMaterialRequirements = submission.rawMaterialRequirements,
+                                preparationNotes = submission.preparationNotes,
+                                processParameters = submission.processParameters,
+                                platingStandard = submission.platingStandard,
+                                storageReheating = submission.storageReheating,
+                                adjustmentRecord = submission.adjustmentRecord,
+                                testRecord = submission.testRecord,
                             ),
                         )
                 ) {
@@ -888,6 +921,14 @@ class RecipeEditorViewModel
                 cookMinutes = cookMinutes.takeIf { it >= 0 },
                 allergenNotes = state.allergenNotes,
                 notes = state.notes,
+                productStandard = state.productStandard,
+                rawMaterialRequirements = state.rawMaterialRequirements,
+                preparationNotes = state.preparationNotes,
+                processParameters = state.processParameters,
+                platingStandard = state.platingStandard,
+                storageReheating = state.storageReheating,
+                adjustmentRecord = state.adjustmentRecord,
+                testRecord = state.testRecord,
                 yieldAmount = requireNotNull(yieldAmount),
                 yieldUnit = requireNotNull(yieldUnit),
                 minRangeAmount = minAmount,
@@ -975,6 +1016,14 @@ class RecipeEditorViewModel
             val cookMinutes: Int?,
             val allergenNotes: String,
             val notes: String,
+            val productStandard: String,
+            val rawMaterialRequirements: String,
+            val preparationNotes: String,
+            val processParameters: String,
+            val platingStandard: String,
+            val storageReheating: String,
+            val adjustmentRecord: String,
+            val testRecord: String,
             val yieldAmount: Double,
             val yieldUnit: UnitModel,
             val minRangeAmount: Double?,
