@@ -55,7 +55,6 @@ import com.culinary.core.domain.model.SauceDetail
 import com.culinary.core.domain.model.SauceLineView
 import com.culinary.core.domain.model.SauceVersionId
 
-
 /**
  * 酱汁详情路由。
  *
@@ -197,10 +196,30 @@ internal fun SauceDetailContent(
                 description = sauce.description ?: sauce.usageNotes,
             )
             ArchiveYieldRange(
-                yieldAmount = measureAmount(shown?.yield?.amount),
-                yieldUnit = shown?.yield?.unit?.symbol.orEmpty(),
-                minRangeAmount = measureAmount(shown?.minRange?.amount),
-                minRangeUnit = shown?.minRange?.unit?.symbol.orEmpty(),
+                yieldAmount =
+                    measureAmount(
+                        shown
+                            ?.yield
+                            ?.amount,
+                    ),
+                yieldUnit =
+                    shown
+                        ?.yield
+                        ?.unit
+                        ?.symbol
+                        .orEmpty(),
+                minRangeAmount =
+                    measureAmount(
+                        shown
+                            ?.minRange
+                            ?.amount,
+                    ),
+                minRangeUnit =
+                    shown
+                        ?.minRange
+                        ?.unit
+                        ?.symbol
+                        .orEmpty(),
             )
             Spacer(modifier = Modifier.height(CulinarySpacing.lg))
             imageBytes?.let { bytes ->
@@ -429,8 +448,7 @@ private fun categoryLabel(
         else -> "未分类"
     }
 
-private fun measureAmount(value: Double?): String =
-    value?.let(::formatAmount) ?: "—"
+private fun measureAmount(value: Double?): String = value?.let(::formatAmount) ?: "—"
 
 private fun formatAmount(value: Double): String {
     if (value % 1.0 == 0.0) return value.toLong().toString()
