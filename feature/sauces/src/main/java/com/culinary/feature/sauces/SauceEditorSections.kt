@@ -1,11 +1,5 @@
 package com.culinary.feature.sauces
 
-import com.culinary.core.designsystem.component.ArchiveEditorDragHandle
-import com.culinary.core.designsystem.component.ArchiveEditorImageBox
-import com.culinary.core.designsystem.component.ArchiveEditorInlineField
-import com.culinary.core.designsystem.component.ArchiveEditorNotesBox
-import com.culinary.core.designsystem.component.ArchiveEditorSectionHeader
-
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
@@ -37,6 +31,11 @@ import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.culinary.core.designsystem.component.ArchiveEditorDragHandle
+import com.culinary.core.designsystem.component.ArchiveEditorImageBox
+import com.culinary.core.designsystem.component.ArchiveEditorInlineField
+import com.culinary.core.designsystem.component.ArchiveEditorNotesBox
+import com.culinary.core.designsystem.component.ArchiveEditorSectionHeader
 import com.culinary.core.designsystem.component.ArchiveYieldRangeFields
 import com.culinary.core.designsystem.component.CulinaryRule
 import com.culinary.core.designsystem.component.CulinaryTextButton
@@ -44,6 +43,7 @@ import com.culinary.core.designsystem.component.KitchenTimeSegmentsField
 import com.culinary.core.designsystem.icon.CulinaryIcons
 import com.culinary.core.designsystem.theme.CulinarySpacing
 import com.culinary.core.designsystem.theme.CulinaryTextStyles
+
 
 @Suppress("LongMethod") // 头部品牌/分类路径 + 双语标题 + 三栏元数据是一个排版单元
 @Composable
