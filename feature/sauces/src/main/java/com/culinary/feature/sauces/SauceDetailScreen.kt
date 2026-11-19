@@ -309,7 +309,7 @@ internal fun SauceDetailContent(
                     sauce.mainIngredients?.let { "主要原料" to it },
                     sauce.preparationSummary?.let { "预制说明" to it },
                     sauce.keyParameters?.let { "关键参数" to it },
-                    sauce.storageNotes?.let { "储存说明" to it },
+                    sauce.storageNotes?.let { "存储说明" to it },
                     sauce.adjustableNotes?.let { "调整记录" to it },
                     sauce.seedNote?.let { "测试记录" to it },
                 )
