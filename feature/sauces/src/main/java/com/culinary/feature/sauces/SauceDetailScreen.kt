@@ -53,7 +53,6 @@ import com.culinary.core.domain.model.KitchenStep
 import com.culinary.core.domain.model.Sauce
 import com.culinary.core.domain.model.SauceDetail
 import com.culinary.core.domain.model.SauceLineView
-import com.culinary.core.domain.model.SauceVersion
 import com.culinary.core.domain.model.SauceVersionId
 
 
