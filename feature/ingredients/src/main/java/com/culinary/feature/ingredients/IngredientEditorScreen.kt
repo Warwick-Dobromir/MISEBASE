@@ -4,6 +4,7 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
@@ -118,6 +119,7 @@ fun IngredientEditorRoute(
 }
 
 @Suppress("LongMethod") // 食材新建与编辑共用同一档案表单。
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 internal fun IngredientEditorForm(
     state: IngredientEditorUiState,
