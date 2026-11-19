@@ -172,11 +172,12 @@ internal fun IngredientEditorForm(
             canSave = canSave,
         )
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = CulinarySpacing.pageHorizontal)
-                .padding(bottom = CulinarySpacing.xl),
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = CulinarySpacing.pageHorizontal)
+                    .padding(bottom = CulinarySpacing.xl),
         ) {
             ArchiveEditorSectionHeader(index = "01", english = "IDENTITY", title = "基础信息")
             IngredientEditorField(
