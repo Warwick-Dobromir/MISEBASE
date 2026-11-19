@@ -143,6 +143,13 @@ internal fun InventoryDetailScreen(
                     }
                 }
             }
+            state.isLoading -> LoadingRows()
+            else ->
+                EmptyState(
+                    icon = com.culinary.core.designsystem.icon.CulinaryIcons.Inventory,
+                    title = stringResource(R.string.inventory_empty_title),
+                    description = stringResource(R.string.inventory_empty_body),
+                )
         }
     }
 }
