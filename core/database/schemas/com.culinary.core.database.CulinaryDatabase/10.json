@@ -1175,6 +1175,46 @@
             "affinity": "TEXT"
           },
           {
+            "fieldPath": "productStandard",
+            "columnName": "product_standard",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "rawMaterialRequirements",
+            "columnName": "raw_material_requirements",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "preparationNotes",
+            "columnName": "preparation_notes",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "processParameters",
+            "columnName": "process_parameters",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "platingStandard",
+            "columnName": "plating_standard",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "storageReheating",
+            "columnName": "storage_reheating",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "adjustmentRecord",
+            "columnName": "adjustment_record",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "testRecord",
+            "columnName": "test_record",
+            "affinity": "TEXT"
+          },
+          {
             "fieldPath": "seedNote",
             "columnName": "seed_note",
             "affinity": "TEXT"
@@ -1217,46 +1257,6 @@
             "columnName": "revision",
             "affinity": "INTEGER",
             "notNull": true
-          },
-          {
-            "fieldPath": "productStandard",
-            "columnName": "product_standard",
-            "affinity": "TEXT"
-          },
-          {
-            "fieldPath": "rawMaterialRequirements",
-            "columnName": "raw_material_requirements",
-            "affinity": "TEXT"
-          },
-          {
-            "fieldPath": "preparationNotes",
-            "columnName": "preparation_notes",
-            "affinity": "TEXT"
-          },
-          {
-            "fieldPath": "processParameters",
-            "columnName": "process_parameters",
-            "affinity": "TEXT"
-          },
-          {
-            "fieldPath": "platingStandard",
-            "columnName": "plating_standard",
-            "affinity": "TEXT"
-          },
-          {
-            "fieldPath": "storageReheating",
-            "columnName": "storage_reheating",
-            "affinity": "TEXT"
-          },
-          {
-            "fieldPath": "adjustmentRecord",
-            "columnName": "adjustment_record",
-            "affinity": "TEXT"
-          },
-          {
-            "fieldPath": "testRecord",
-            "columnName": "test_record",
-            "affinity": "TEXT"
           }
         ],
         "primaryKey": {
