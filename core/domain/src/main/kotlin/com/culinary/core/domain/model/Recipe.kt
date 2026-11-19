@@ -17,6 +17,14 @@ data class Recipe(
     val ingredientSummary: String? = null,
     /** 研发备注；v8 起新增，历史数据为 null。 */
     val notes: String? = null,
+    val productStandard: String? = null,
+    val rawMaterialRequirements: String? = null,
+    val preparationNotes: String? = null,
+    val processParameters: String? = null,
+    val platingStandard: String? = null,
+    val storageReheating: String? = null,
+    val adjustmentRecord: String? = null,
+    val testRecord: String? = null,
     /** 档案最后更新时间（页脚显示；来自 recipe.updated_at）。 */
     val updatedAtEpochMillis: Long? = null,
     val seedNote: String? = null,
