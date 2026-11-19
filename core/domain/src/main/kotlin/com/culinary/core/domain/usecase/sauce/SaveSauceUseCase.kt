@@ -28,6 +28,7 @@ data class SaveSauceInput(
     val storageNotes: String? = null,
     val flavorProfile: String? = null,
     val adjustableNotes: String? = null,
+    val seedNote: String? = null,
 )
 
 /**
@@ -67,17 +68,18 @@ class SaveSauceUseCase(
                 name = name,
                 normalizedName = NameText.normalize(name),
                 family = input.family.blankToNull(),
-                usageNotes = input.usageNotes.blankToNull() ?: existing?.usageNotes,
-                englishName = input.englishName.blankToNull() ?: existing?.englishName,
+                usageNotes = input.usageNotes.orKeepExisting(existing?.usageNotes),
+                englishName = input.englishName.orKeepExisting(existing?.englishName),
                 description = input.description.blankToNull(),
                 difficulty = input.difficulty,
                 heroCaption = input.heroCaption.blankToNull(),
-                mainIngredients = input.mainIngredients.blankToNull() ?: existing?.mainIngredients,
-                preparationSummary = input.preparationSummary.blankToNull() ?: existing?.preparationSummary,
-                keyParameters = input.keyParameters.blankToNull() ?: existing?.keyParameters,
-                storageNotes = input.storageNotes.blankToNull() ?: existing?.storageNotes,
-                flavorProfile = input.flavorProfile.blankToNull() ?: existing?.flavorProfile,
-                adjustableNotes = input.adjustableNotes.blankToNull() ?: existing?.adjustableNotes,
+                mainIngredients = input.mainIngredients.orKeepExisting(existing?.mainIngredients),
+                preparationSummary = input.preparationSummary.orKeepExisting(existing?.preparationSummary),
+                keyParameters = input.keyParameters.orKeepExisting(existing?.keyParameters),
+                storageNotes = input.storageNotes.orKeepExisting(existing?.storageNotes),
+                flavorProfile = input.flavorProfile.orKeepExisting(existing?.flavorProfile),
+                adjustableNotes = input.adjustableNotes.orKeepExisting(existing?.adjustableNotes),
+                seedNote = input.seedNote.orKeepExisting(existing?.seedNote),
             )
         return transactionRunner.write { repository.save(sauce) }.flatMap { it }
     }
@@ -86,6 +88,10 @@ class SaveSauceUseCase(
         Outcome.failure(CulinaryError.Validation(field = "sauce.name", rule = rule))
 
     private fun String?.blankToNull(): String? = this?.trim()?.takeIf { it.isNotEmpty() }
+
+    /** null means caller did not edit this field; an empty string explicitly clears it. */
+    private fun String?.orKeepExisting(existing: String?): String? =
+        if (this == null) existing else blankToNull()
 
     private companion object {
         const val MAX_NAME_LENGTH = 120
