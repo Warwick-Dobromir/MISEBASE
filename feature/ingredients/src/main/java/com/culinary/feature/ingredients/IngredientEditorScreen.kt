@@ -348,12 +348,18 @@ private fun IngredientClassificationSelector(
         )
         Spacer(modifier = Modifier.height(CulinarySpacing.xs))
         if (formal.isEmpty()) {
-            CulinaryTextField(
+            Text(
+                text = stringResource(R.string.ingredients_category_label),
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            ArchiveEditorInlineField(
                 value = state.category,
                 onValueChange = onLegacyCategoryChange,
-                label = { Text(text = stringResource(R.string.ingredients_category_label)) },
-                singleLine = true,
+                placeholder = "填写分类",
+                modifier = Modifier.fillMaxWidth(),
             )
+            CulinaryRule()
             return
         }
         var level = 0
