@@ -127,10 +127,22 @@ class SaucesUiTest {
         compose.onNodeWithText("保存").assertIsDisplayed()
         compose.onNodeWithText("取消").assertIsDisplayed()
         compose.onNodeWithText("MIN. RANGE", substring = true).performScrollTo().assertIsDisplayed()
-        listOf("原料配方", "制作工艺", "适用范围", "衍生关系", "研发备注")
-            .forEach { label ->
-                compose.onNodeWithText(label).performScrollTo().assertIsDisplayed()
-            }
+        listOf(
+            "原料配方",
+            "制作工艺",
+            "适用范围",
+            "衍生关系",
+            "研发备注",
+            "成品标准",
+            "主要原料",
+            "预制说明",
+            "关键参数",
+            "存储说明",
+            "调整记录",
+            "测试记录",
+        ).forEach { label ->
+            compose.onNodeWithText(label).performScrollTo().assertIsDisplayed()
+        }
     }
 
     @Composable
@@ -171,12 +183,12 @@ class SaucesUiTest {
             onRemoveRelation = {},
             onMoveRelation = { _, _ -> },
             onFlavorProfileChange = {},
-        onMainIngredientsChange = {},
-        onPreparationSummaryChange = {},
-        onKeyParametersChange = {},
-        onStorageNotesChange = {},
-        onAdjustableNotesChange = {},
-        onSeedNoteChange = {},
+            onMainIngredientsChange = {},
+            onPreparationSummaryChange = {},
+            onKeyParametersChange = {},
+            onStorageNotesChange = {},
+            onAdjustableNotesChange = {},
+            onSeedNoteChange = {},
             onAddTextNote = {},
             onNoteImage = {},
             onRemoveNoteImage = {},
