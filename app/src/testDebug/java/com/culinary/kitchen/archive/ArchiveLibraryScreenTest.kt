@@ -7,7 +7,8 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
-import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.hasScrollToIndexAction
+import androidx.compose.ui.test.performScrollToIndex
 import androidx.compose.foundation.layout.Column
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
@@ -95,9 +96,11 @@ class ArchiveLibraryScreenTest {
             }
         }
 
-        compose.onNodeWithText("滚动测试档案 18").performScrollTo().performClick()
+        compose.onNode(hasScrollToIndexAction()).performScrollToIndex(19)
+        compose.onNodeWithText("滚动测试档案 18").performClick()
         compose.onNodeWithText("档案详情").assertIsDisplayed()
         compose.onNodeWithText("返回列表").performClick()
+        assertThat(savedPosition.value.first).isGreaterThan(0)
         compose.onNodeWithText("滚动测试档案 18").assertIsDisplayed()
     }
 
