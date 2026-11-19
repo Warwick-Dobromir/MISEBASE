@@ -53,7 +53,7 @@ class ArchiveLibraryScreenTest {
     @Test
     fun `returning from archive detail restores the exact directory scroll position`() {
         val manyEntries =
-            (1..60).map { index ->
+            (1..40).map { index ->
                 KitchenArchiveEntry(
                     id = "scroll-$index",
                     kind = KitchenArchiveKind.SAUCE,
@@ -95,10 +95,11 @@ class ArchiveLibraryScreenTest {
             }
         }
 
-        compose.onNodeWithText("滚动测试档案 45").performScrollTo().performClick()
+        compose.onNodeWithText("加载更多 ↓").performScrollTo().performClick()
+        compose.onNodeWithText("滚动测试档案 35").performScrollTo().performClick()
         compose.onNodeWithText("档案详情").assertIsDisplayed()
         compose.onNodeWithText("返回列表").performClick()
-        compose.onNodeWithText("滚动测试档案 45").assertIsDisplayed()
+        compose.onNodeWithText("滚动测试档案 35").assertIsDisplayed()
     }
 
     @Test
