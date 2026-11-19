@@ -4,16 +4,16 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.isImeVisible
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
@@ -24,8 +24,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -150,15 +150,17 @@ internal fun IngredientEditorForm(
     }
     val isDirty = baseline.value?.let { it != state.toSnapshot() } ?: false
     val imeVisible = WindowInsets.isImeVisible
-    val editorTitle = if (state.isNew) {
-        stringResource(R.string.ingredients_editor_new_title)
-    } else {
-        stringResource(R.string.ingredients_editor_edit_title)
-    }
-    val canSave = !state.isLoading && !state.isSaving &&
-        state.name.isNotBlank() && (state.isNew || isDirty)
-    val defaultUnitLabel = state.defaultUnit?.let { "${it.name}（${it.symbol}）" }
-        ?: stringResource(R.string.ingredients_no_unit)
+    val editorTitle =
+        if (state.isNew) {
+            stringResource(R.string.ingredients_editor_new_title)
+        } else {
+            stringResource(R.string.ingredients_editor_edit_title)
+        }
+    val canSave = !state.isLoading && !state.isSaving && state.name.isNotBlank() &&
+        (state.isNew || isDirty)
+    val defaultUnitLabel =
+        state.defaultUnit?.let { "${it.name}（${it.symbol}）" }
+            ?: stringResource(R.string.ingredients_no_unit)
     BackHandler(enabled = isDirty && !imeVisible) { showDiscard = true }
     BackHandler(enabled = !isDirty && !imeVisible) { onCancel() }
     Column(modifier = Modifier.fillMaxSize()) {
