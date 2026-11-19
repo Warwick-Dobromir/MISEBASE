@@ -606,7 +606,7 @@ internal fun SauceRelationsSection(
     }
 }
 
-/** 七项研发备注分别录入、独立保存，并在详情页逐项展示。 */
+/** 七项研发备注分别录入、独立保存，并在详情页逐项展示对应内容。 */
 @Composable
 internal fun SauceNotesSection(
     state: SauceEditorUiState,
