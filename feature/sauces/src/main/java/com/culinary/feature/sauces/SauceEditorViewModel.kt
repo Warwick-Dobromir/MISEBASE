@@ -216,7 +216,13 @@ class SauceEditorViewModel
                     lines = lines,
                     steps = steps,
                     application = detail.sauce.usageNotes.orEmpty(),
-                    notes = detail.sauce.adjustableNotes.orEmpty(),
+                    flavorProfile = detail.sauce.flavorProfile.orEmpty(),
+                    mainIngredients = detail.sauce.mainIngredients.orEmpty(),
+                    preparationSummary = detail.sauce.preparationSummary.orEmpty(),
+                    keyParameters = detail.sauce.keyParameters.orEmpty(),
+                    storageNotes = detail.sauce.storageNotes.orEmpty(),
+                    adjustableNotes = detail.sauce.adjustableNotes.orEmpty(),
+                    seedNote = detail.sauce.seedNote.orEmpty(),
                     heroImage = sauceImageList.firstOrNull { it.role == SauceImageRole.PRIMARY },
                     heroCaption = detail.sauce.heroCaption.orEmpty(),
                     noteImages = sauceImageList.filter { it.role == SauceImageRole.REFERENCE },
@@ -302,14 +308,26 @@ class SauceEditorViewModel
 
         fun onApplicationChange(value: String) = mutate { it.copy(application = value) }
 
-        fun onNotesChange(value: String) = mutate { it.copy(notes = value) }
+        fun onFlavorProfileChange(value: String) = mutate { it.copy(flavorProfile = value) }
+
+        fun onMainIngredientsChange(value: String) = mutate { it.copy(mainIngredients = value) }
+
+        fun onPreparationSummaryChange(value: String) = mutate { it.copy(preparationSummary = value) }
+
+        fun onKeyParametersChange(value: String) = mutate { it.copy(keyParameters = value) }
+
+        fun onStorageNotesChange(value: String) = mutate { it.copy(storageNotes = value) }
+
+        fun onAdjustableNotesChange(value: String) = mutate { it.copy(adjustableNotes = value) }
+
+        fun onSeedNoteChange(value: String) = mutate { it.copy(seedNote = value) }
 
         fun onHeroCaptionChange(value: String) = mutate { it.copy(heroCaption = value) }
 
         fun addTextNote() =
             mutate { state ->
-                val marks = if (state.notes.isBlank()) "" else "\n"
-                state.copy(notes = "${state.notes}$marks· ")
+                val marks = if (state.adjustableNotes.isBlank()) "" else "\n"
+                state.copy(adjustableNotes = "${state.adjustableNotes}$marks· ")
             }
 
         fun onLineNameChange(
@@ -585,7 +603,13 @@ class SauceEditorViewModel
                                     difficulty = state.difficulty,
                                     heroCaption = state.heroCaption,
                                     usageNotes = state.application,
-                                    adjustableNotes = state.notes,
+                                    flavorProfile = state.flavorProfile,
+                                    mainIngredients = state.mainIngredients,
+                                    preparationSummary = state.preparationSummary,
+                                    keyParameters = state.keyParameters,
+                                    storageNotes = state.storageNotes,
+                                    adjustableNotes = state.adjustableNotes,
+                                    seedNote = state.seedNote,
                                 ),
                             )
                     ) {
