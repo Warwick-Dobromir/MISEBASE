@@ -299,17 +299,33 @@ internal fun RecipeDetailContent(
             }
             Spacer(modifier = Modifier.height(CulinarySpacing.xl))
 
-            ArchiveModuleHeader(number = "05", english = "NOTES", chinese = "研发备注")
-            val noteText = recipe.notes?.takeIf { it.isNotBlank() } ?: recipe.seedNote?.takeIf { it.isNotBlank() }
-            if (noteText == null && state.noteImages.isEmpty()) {
+            ArchiveModuleHeader(number = "05", english = "RESEARCH NOTES", chinese = "研发备注")
+            val researchNotes = listOfNotNull(
+                recipe.productStandard?.takeIf { it.isNotBlank() }?.let { "成品标准" to it },
+                recipe.rawMaterialRequirements?.takeIf { it.isNotBlank() }?.let { "原料要求" to it },
+                recipe.preparationNotes?.takeIf { it.isNotBlank() }?.let { "预制说明" to it },
+                recipe.processParameters?.takeIf { it.isNotBlank() }?.let { "工艺参数" to it },
+                recipe.platingStandard?.takeIf { it.isNotBlank() }?.let { "出品标准" to it },
+                recipe.storageReheating?.takeIf { it.isNotBlank() }?.let { "储存复热" to it },
+                recipe.adjustmentRecord?.takeIf { it.isNotBlank() }?.let { "调整记录" to it },
+                recipe.testRecord?.takeIf { it.isNotBlank() }?.let { "测试记录" to it },
+                recipe.notes?.takeIf { it.isNotBlank() }?.let { "历史备注" to it },
+                recipe.seedNote?.takeIf { it.isNotBlank() }?.let { "原有测试记录" to it },
+            )
+            if (researchNotes.isEmpty() && state.noteImages.isEmpty()) {
                 Text(
                     text = "暂未添加研发备注",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             } else {
-                noteText?.let { note ->
-                    ArchiveProse(note)
+                researchNotes.forEach { (label, value) ->
+                    Text(
+                        text = label,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    ArchiveProse(value)
                     Spacer(modifier = Modifier.height(CulinarySpacing.sm))
                 }
                 if (state.noteImages.isNotEmpty()) {
