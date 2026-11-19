@@ -489,16 +489,16 @@ fun ArchiveEditorNotesBox(
                 .fillMaxWidth()
                 .background(MaterialTheme.colorScheme.surfaceContainerLow)
                 .border(1.dp, MaterialTheme.colorScheme.outlineVariant)
-                .padding(CulinarySpacing.md),
-        textStyle = MaterialTheme.typography.bodyLarge.copy(color = MaterialTheme.colorScheme.onSurface),
+                .padding(CulinarySpacing.sm),
+        textStyle = MaterialTheme.typography.bodyMedium.copy(color = MaterialTheme.colorScheme.onSurface),
         cursorBrush = SolidColor(MaterialTheme.colorScheme.secondary),
-        minLines = 6,
+        minLines = 2,
         decorationBox = { inner ->
             Box {
                 if (value.isEmpty()) {
                     Text(
                         text = placeholder,
-                        style = MaterialTheme.typography.bodyMedium,
+                        style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.55f),
                     )
                 }
