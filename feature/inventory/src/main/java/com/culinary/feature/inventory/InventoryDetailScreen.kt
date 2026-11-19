@@ -71,15 +71,8 @@ internal fun InventoryDetailScreen(
             )
         }
         when {
-            state.isLoading -> LoadingRows()
-            state.detail == null ->
-                EmptyState(
-                    icon = com.culinary.core.designsystem.icon.CulinaryIcons.Inventory,
-                    title = stringResource(R.string.inventory_empty_title),
-                    description = stringResource(R.string.inventory_empty_body),
-                )
+            state.detail != null -> {
 
-            else -> {
                 val detail = state.detail
                 Column(
                     modifier =
@@ -150,6 +143,13 @@ internal fun InventoryDetailScreen(
                     }
                 }
             }
+            state.isLoading -> LoadingRows()
+            else ->
+                EmptyState(
+                    icon = com.culinary.core.designsystem.icon.CulinaryIcons.Inventory,
+                    title = stringResource(R.string.inventory_empty_title),
+                    description = stringResource(R.string.inventory_empty_body),
+                )
         }
     }
 }

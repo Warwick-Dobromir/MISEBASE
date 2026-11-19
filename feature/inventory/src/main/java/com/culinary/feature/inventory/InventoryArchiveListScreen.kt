@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -139,6 +140,7 @@ private fun ArchiveListScreen(
     onFilterChange: (ArchiveListFilter) -> Unit,
     onRetry: () -> Unit,
 ) {
+    val listState = rememberLazyListState()
     Column(modifier = Modifier.fillMaxSize()) {
         state.error?.let { message ->
             ErrorBanner(
@@ -209,7 +211,7 @@ private fun ArchiveListScreen(
                 )
 
             else ->
-                LazyColumn(modifier = Modifier.fillMaxSize()) {
+                LazyColumn(state = listState, modifier = Modifier.fillMaxSize()) {
                     items(state.rows, key = { it.archive.id }) { row ->
                         ArchiveListRowItem(row = row, onClick = { onOpenArchive(row.archive.id) })
                     }
