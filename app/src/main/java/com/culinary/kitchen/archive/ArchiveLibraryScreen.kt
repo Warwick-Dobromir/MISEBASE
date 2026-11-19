@@ -50,8 +50,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshotFlow
-import kotlinx.coroutines.flow.distinctUntilChanged
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
@@ -186,21 +184,6 @@ internal fun ArchiveLibraryScreen(
         rememberSaveable(section, currentCategoryId, activeSearchQuery, saver = LazyListState.Saver) {
             LazyListState(initialSearchScroll.first, initialSearchScroll.second)
         }
-
-    LaunchedEffect(categoryListState, currentCategoryId) {
-        snapshotFlow {
-            categoryListState.firstVisibleItemIndex to categoryListState.firstVisibleItemScrollOffset
-        }.distinctUntilChanged().collect { (index, offset) ->
-            onSaveScrollPosition(currentCategoryId, null, index, offset)
-        }
-    }
-    LaunchedEffect(searchListState, currentCategoryId, activeSearchQuery) {
-        snapshotFlow {
-            searchListState.firstVisibleItemIndex to searchListState.firstVisibleItemScrollOffset
-        }.distinctUntilChanged().collect { (index, offset) ->
-            activeSearchQuery?.let { onSaveScrollPosition(currentCategoryId, it, index, offset) }
-        }
-    }
 
     LaunchedEffect(categories, currentCategoryId) {
         if (currentCategoryId != null && categories.none { it.id == currentCategoryId }) {
