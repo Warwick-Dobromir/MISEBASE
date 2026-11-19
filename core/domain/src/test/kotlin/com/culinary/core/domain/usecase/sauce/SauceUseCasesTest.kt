@@ -61,6 +61,43 @@ class SauceUseCasesTest {
         }
 
     @Test
+    fun `saves and clears each structured sauce research note independently`() =
+        runBlocking<Unit> {
+            saveSauce(
+                SaveSauceInput(
+                    name = "基础酱",
+                    flavorProfile = "成品标准",
+                    mainIngredients = "主要原料",
+                    preparationSummary = "预制说明",
+                    keyParameters = "关键参数",
+                    storageNotes = "存储说明",
+                    adjustableNotes = "调整记录",
+                    seedNote = "测试记录",
+                ),
+            )
+            val sauceId = sauces.saved.single().id
+
+            saveSauce(
+                SaveSauceInput(
+                    id = sauceId,
+                    name = "基础酱",
+                    flavorProfile = "",
+                    mainIngredients = "更新后的主要原料",
+                    adjustableNotes = "",
+                ),
+            )
+
+            val saved = sauces.saved.single()
+            assertThat(saved.flavorProfile).isNull()
+            assertThat(saved.mainIngredients).isEqualTo("更新后的主要原料")
+            assertThat(saved.preparationSummary).isEqualTo("预制说明")
+            assertThat(saved.keyParameters).isEqualTo("关键参数")
+            assertThat(saved.storageNotes).isEqualTo("存储说明")
+            assertThat(saved.adjustableNotes).isNull()
+            assertThat(saved.seedNote).isEqualTo("测试记录")
+        }
+
+    @Test
     fun `draft numbers component lines from one and keeps optional flags`() =
         runBlocking<Unit> {
             saveSauce(SaveSauceInput(name = "基础酱"))
