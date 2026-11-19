@@ -15,7 +15,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -166,7 +166,7 @@ internal fun SauceDetailContent(
     val shown = detail.currentVersion ?: latestDraft ?: detail.versions.firstOrNull()
     val scrollState = rememberScrollState()
     val density = LocalDensity.current
-    var stepTopPx by remember { mutableIntStateOf(-1) }
+    var stepTopPx by rememberSaveable { mutableIntStateOf(-1) }
 
     LaunchedEffect(scrollToStep, stepTopPx) {
         val target = scrollToStep
