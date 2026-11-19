@@ -93,6 +93,18 @@ data class RecipeStepEditor(
     val pendingImage: PendingRecipeImage? = null,
 )
 
+/** 菜谱研发备注字段。 */
+enum class RecipeResearchField {
+    PRODUCT_STANDARD,
+    RAW_MATERIAL_REQUIREMENTS,
+    PREPARATION_NOTES,
+    PROCESS_PARAMETERS,
+    PLATING_STANDARD,
+    STORAGE_REHEATING,
+    ADJUSTMENT_RECORD,
+    TEST_RECORD,
+}
+
 /** 菜谱编辑器状态。 */
 data class RecipeEditorUiState(
     val recipeId: String? = null,
