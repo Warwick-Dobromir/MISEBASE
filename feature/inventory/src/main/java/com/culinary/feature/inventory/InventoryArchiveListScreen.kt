@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
@@ -17,10 +18,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
 import com.culinary.core.common.Outcome
@@ -118,7 +117,6 @@ fun ArchiveListRoute(
     viewModel: ArchiveListViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
-    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { viewModel.load() }
     ArchiveListScreen(
         state = state,
         onOpenArchive = onOpenArchive,
@@ -139,6 +137,7 @@ private fun ArchiveListScreen(
     onFilterChange: (ArchiveListFilter) -> Unit,
     onRetry: () -> Unit,
 ) {
+    val listState = rememberLazyListState()
     Column(modifier = Modifier.fillMaxSize()) {
         state.error?.let { message ->
             ErrorBanner(
@@ -209,7 +208,7 @@ private fun ArchiveListScreen(
                 )
 
             else ->
-                LazyColumn(modifier = Modifier.fillMaxSize()) {
+                LazyColumn(state = listState, modifier = Modifier.fillMaxSize()) {
                     items(state.rows, key = { it.archive.id }) { row ->
                         ArchiveListRowItem(row = row, onClick = { onOpenArchive(row.archive.id) })
                     }
