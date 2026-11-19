@@ -291,8 +291,9 @@ private fun ingredientCategoryLabel(
     categoryPath: List<String>,
     legacyCategory: String?,
 ): String {
-    val category = categoryPath.joinToString(" / ").ifBlank {
-        legacyCategory?.takeIf { it.isNotBlank() } ?: "未分类"
-    }
+    val category =
+        categoryPath.joinToString(" / ").ifBlank {
+            legacyCategory?.takeIf { it.isNotBlank() } ?: "未分类"
+        }
     return "INGREDIENT · $category"
 }
