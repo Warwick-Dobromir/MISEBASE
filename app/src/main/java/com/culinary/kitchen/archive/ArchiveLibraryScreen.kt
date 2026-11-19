@@ -103,6 +103,8 @@ fun ArchiveLibraryRoute(
         onRenameSubcategory = viewModel::renameSubcategory,
         onDeleteSubcategory = viewModel::deleteSubcategory,
         onReorderSubcategories = viewModel::reorderSubcategories,
+        getScrollPosition = viewModel::getScrollPosition,
+        onSaveScrollPosition = viewModel::saveScrollPosition,
         modifier = modifier,
     )
 }
@@ -121,6 +123,8 @@ internal fun ArchiveLibraryScreen(
     onRenameSubcategory: (String, String) -> Unit = { _, _ -> },
     onDeleteSubcategory: (String) -> Unit = {},
     onReorderSubcategories: (List<String>) -> Unit = {},
+    getScrollPosition: (String?, String?) -> Pair<Int, Int> = { _, _ -> 0 to 0 },
+    onSaveScrollPosition: (String?, String?, Int, Int) -> Unit = { _, _, _, _ -> },
     modifier: Modifier = Modifier,
 ) {
     var currentCategoryId by rememberSaveable(section) { mutableStateOf<String?>(null) }
@@ -135,7 +139,13 @@ internal fun ArchiveLibraryScreen(
     var deleteTargetId by rememberSaveable(section) { mutableStateOf<String?>(null) }
     var deleteModeCategoryId by rememberSaveable(section) { mutableStateOf<String?>(null) }
     var sorting by rememberSaveable(section) { mutableStateOf(false) }
-    val categoryListState = rememberLazyListState()
+    val initialCategoryScroll = remember(section, currentCategoryId) {
+        getScrollPosition(currentCategoryId, null)
+    }
+    val categoryListState =
+        rememberSaveable(section, currentCategoryId, saver = LazyListState.Saver) {
+            LazyListState(initialCategoryScroll.first, initialCategoryScroll.second)
+        }
     var workingOrder by rememberSaveable(section, currentCategoryId) { mutableStateOf(emptyList<String>()) }
     var savedOrder by rememberSaveable(section, currentCategoryId) { mutableStateOf(emptyList<String>()) }
     var pendingSave by rememberSaveable(section, currentCategoryId) { mutableStateOf(false) }
@@ -167,6 +177,14 @@ internal fun ArchiveLibraryScreen(
             }
         }
     val showingSearch = searchOpen && query.isNotBlank()
+    val activeSearchQuery = query.takeIf { showingSearch }
+    val initialSearchScroll = remember(section, currentCategoryId, activeSearchQuery) {
+        getScrollPosition(currentCategoryId, activeSearchQuery)
+    }
+    val searchListState =
+        rememberSaveable(section, currentCategoryId, activeSearchQuery, saver = LazyListState.Saver) {
+            LazyListState(initialSearchScroll.first, initialSearchScroll.second)
+        }
 
     LaunchedEffect(categories, currentCategoryId) {
         if (currentCategoryId != null && categories.none { it.id == currentCategoryId }) {
@@ -265,7 +283,16 @@ internal fun ArchiveLibraryScreen(
                 entries = searchResults,
                 limit = visibleLimit,
                 onLoadMore = { visibleLimit += 20 },
-                onOpenEntry = onOpenEntry,
+                listState = searchListState,
+                onOpenEntry = { entry ->
+                    onSaveScrollPosition(
+                        currentCategoryId,
+                        query,
+                        searchListState.firstVisibleItemIndex,
+                        searchListState.firstVisibleItemScrollOffset,
+                    )
+                    onOpenEntry(entry)
+                },
             )
             return@Column
         }
@@ -346,7 +373,18 @@ internal fun ArchiveLibraryScreen(
                     )
                 }
                 items(directEntries.take(visibleLimit), key = { it.kind.name + it.id }) { entry ->
-                    EntryRow(entry = entry, onClick = { onOpenEntry(entry) })
+                    EntryRow(
+                        entry = entry,
+                        onClick = {
+                            onSaveScrollPosition(
+                                currentCategoryId,
+                                null,
+                                categoryListState.firstVisibleItemIndex,
+                                categoryListState.firstVisibleItemScrollOffset,
+                            )
+                            onOpenEntry(entry)
+                        },
+                    )
                 }
                 if (visibleLimit < directEntries.size) {
                     item {
@@ -1075,6 +1113,7 @@ private fun EntryRow(
 private fun SearchResultList(
     entries: List<KitchenArchiveEntry>,
     limit: Int,
+    listState: LazyListState,
     onLoadMore: () -> Unit,
     onOpenEntry: (KitchenArchiveEntry) -> Unit,
 ) {
@@ -1086,7 +1125,7 @@ private fun SearchResultList(
         )
         return
     }
-    LazyColumn(modifier = Modifier.fillMaxSize()) {
+    LazyColumn(state = listState, modifier = Modifier.fillMaxSize()) {
         item { SectionLabel(stringResource(R.string.kitchen_search_result_count, entries.size)) }
         items(entries.take(limit), key = { it.kind.name + it.id }) { entry ->
             Column(
