@@ -57,9 +57,45 @@ class ArchiveLibraryScreenTest {
 
         compose.onNodeWithText("酱汁基础").performClick()
         compose.onNodeWithText("基础酱汁").performClick()
+        compose.onNodeWithText("档案 01").performClick()
+
+        assertThat(opened?.id).isEqualTo("s1")
+    }
+
+    @Test
+    fun `restores saved category scroll position and saves it before opening an entry`() {
+        var opened: KitchenArchiveEntry? = null
+        var savedPosition: Pair<Int, Int>? = null
+        var savedCategory: String? = null
+        val manyEntries = (1..30).map { index ->
+            entry("s" + index, "档案 " + index.toString().padStart(2, '0'), "basic", "base / basic")
+        }
+        show(
+            entries = manyEntries,
+            onOpenEntry = { opened = it },
+            getScrollPosition = { categoryId, searchQuery ->
+                if (categoryId == "basic" && searchQuery == null) 2 to 17 else 0 to 0
+            },
+            onSaveScrollPosition = { categoryId, searchQuery, index, offset ->
+                if (searchQuery == null) {
+                    savedCategory = categoryId
+                    savedPosition = index to offset
+                }
+            },
+        )
+
+        compose.onNodeWithText("酱汁基础").performClick()
+        compose.onNodeWithText("基础酱汁").performClick()
+        compose.waitForIdle()
+
+        assertThat(savedCategory).isEqualTo("basic")
+        assertThat(savedPosition).isEqualTo(2 to 17)
+
         compose.onNodeWithText("基础高汤酱").performClick()
 
         assertThat(opened?.id).isEqualTo("s1")
+        assertThat(savedCategory).isEqualTo("basic")
+        assertThat(savedPosition).isEqualTo(2 to 17)
     }
 
     @Test
@@ -162,9 +198,12 @@ class ArchiveLibraryScreenTest {
     private fun show(
         section: KitchenArchiveSection = KitchenArchiveSection.SAUCES,
         categories: List<KitchenArchiveCategory> = this.categories,
+        entries: List<KitchenArchiveEntry> = this.entries,
         onAdd: () -> Unit = {},
         onOpenEntry: (KitchenArchiveEntry) -> Unit = {},
         onCreateSubcategory: (String?, String) -> Unit = { _, _ -> },
+        getScrollPosition: (String?, String?) -> Pair<Int, Int> = { _, _ -> 0 to 0 },
+        onSaveScrollPosition: (String?, String?, Int, Int) -> Unit = { _, _, _, _ -> },
     ) {
         compose.setContent {
             CulinaryTheme {
@@ -174,6 +213,8 @@ class ArchiveLibraryScreenTest {
                     onAdd = onAdd,
                     onOpenEntry = onOpenEntry,
                     onCreateSubcategory = onCreateSubcategory,
+                    getScrollPosition = getScrollPosition,
+                    onSaveScrollPosition = onSaveScrollPosition,
                 )
             }
         }
