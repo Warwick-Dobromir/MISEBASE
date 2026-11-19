@@ -24,6 +24,8 @@ import androidx.compose.ui.layout.positionInParent
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.culinary.core.designsystem.component.ArchiveDetailBar
@@ -71,6 +73,7 @@ fun SauceDetailRoute(
     viewModel: SauceDetailViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { viewModel.load() }
 
     SauceDetailScreen(
         state = state,
@@ -109,16 +112,7 @@ internal fun SauceDetailScreen(
             )
         }
         when {
-            state.isLoading -> LoadingRows()
-            state.detail == null ->
-                Text(
-                    text = stringResource(R.string.sauces_load_failed),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(CulinarySpacing.pageHorizontal),
-                )
-
-            else ->
+            state.detail != null ->
                 SauceDetailContent(
                     detail = state.detail,
                     categoryPath = state.categoryPath,
@@ -135,6 +129,15 @@ internal fun SauceDetailScreen(
                     onBack = onBack,
                     onStartTimer = onStartTimer,
                     scrollToStep = scrollToStep,
+                )
+
+            state.isLoading -> LoadingRows()
+            else ->
+                Text(
+                    text = stringResource(R.string.sauces_load_failed),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(CulinarySpacing.pageHorizontal),
                 )
         }
     }
