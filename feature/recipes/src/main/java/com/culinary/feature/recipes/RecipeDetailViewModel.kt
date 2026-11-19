@@ -46,7 +46,12 @@ class RecipeDetailViewModel
             load()
             viewModelScope.launch {
                 getRelations(recipeId.value).collect { relations ->
-                    _uiState.update { it.copy(relations = relations) }
+                    // 菜谱详情只展示编辑器允许维护的酱汁/菜谱关联；技术与制作标准不属于此处关联档案。
+                    val visibleRelations =
+                        relations.filter {
+                            it.targetKind == KitchenRecordKind.SAUCE || it.targetKind == KitchenRecordKind.RECIPE
+                        }
+                    _uiState.update { it.copy(relations = visibleRelations) }
                 }
             }
         }
