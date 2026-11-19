@@ -44,7 +44,6 @@ import com.culinary.core.designsystem.icon.CulinaryIcons
 import com.culinary.core.designsystem.theme.CulinarySpacing
 import com.culinary.core.designsystem.theme.CulinaryTextStyles
 
-
 @Suppress("LongMethod") // 头部品牌/分类路径 + 双语标题 + 三栏元数据是一个排版单元
 @Composable
 internal fun SauceHeaderSection(
@@ -708,7 +707,12 @@ internal fun SauceNotesSection(
 }
 
 @Composable
-private fun ResearchNoteField(label: String, value: String, placeholder: String, onValueChange: (String) -> Unit) {
+private fun ResearchNoteField(
+    label: String,
+    value: String,
+    placeholder: String,
+    onValueChange: (String) -> Unit,
+) {
     Column(modifier = Modifier.fillMaxWidth().padding(bottom = CulinarySpacing.md)) {
         Text(
             text = label,
