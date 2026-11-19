@@ -3,7 +3,6 @@ package com.culinary.kitchen.archive
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
-import androidx.compose.ui.test.waitForIdle
 import com.culinary.core.data.kitchen.KitchenArchiveCategory
 import com.culinary.core.data.kitchen.KitchenArchiveEntry
 import com.culinary.core.data.kitchen.KitchenArchiveKind
