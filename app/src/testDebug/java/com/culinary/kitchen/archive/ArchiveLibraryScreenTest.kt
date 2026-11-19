@@ -52,7 +52,7 @@ class ArchiveLibraryScreenTest {
 
 
     @Test
-    fun `returning from archive detail restores the exact directory scroll position`() {
+    fun archiveDetailReturnRestoresExactDirectoryScrollPosition() {
         val manyEntries =
             (1..20).map { index ->
                 KitchenArchiveEntry(
