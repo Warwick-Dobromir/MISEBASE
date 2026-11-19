@@ -7,6 +7,16 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.test.hasScrollToIndexAction
+import androidx.compose.ui.test.performScrollToIndex
+import androidx.compose.foundation.layout.Column
+import androidx.compose.material3.Button
+import androidx.compose.material3.Text
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
 import com.culinary.core.data.kitchen.KitchenArchiveCategory
 import com.culinary.core.data.kitchen.KitchenArchiveEntry
 import com.culinary.core.data.kitchen.KitchenArchiveKind
@@ -20,7 +30,7 @@ import org.robolectric.annotation.Config
 
 /** 统一资料库页：分类树、分区、搜索、空状态和回调。 */
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [34], qualifiers = "w411dp-h1200dp")
+@Config(sdk = [34], qualifiers = "w411dp-h600dp")
 class ArchiveLibraryScreenTest {
     @get:Rule
     val compose = createComposeRule()
@@ -39,6 +49,61 @@ class ArchiveLibraryScreenTest {
             entry("s2", "香菇酱", "basic", "base / basic"),
             entry("s3", "烟熏酱", "basic", "base / basic"),
         )
+
+
+    // Exercises the real list click -> detail route -> back path and saved scroll offset.
+    @Test
+    fun archiveDetailReturnRestoresExactDirectoryScrollPosition() {
+        val manyEntries =
+            (1..20).map { index ->
+                KitchenArchiveEntry(
+                    id = "scroll-$index",
+                    kind = KitchenArchiveKind.SAUCE,
+                    name = "滚动测试档案 $index",
+                    subtitle = null,
+                    category = "基础酱汁",
+                    searchText = "滚动测试档案 $index",
+                    categoryId = null,
+                    categoryPath = emptyList(),
+                )
+            }
+
+        var savedPosition = 0 to 0
+        compose.setContent {
+            CulinaryTheme {
+                val navController = rememberNavController()
+                NavHost(navController = navController, startDestination = "library") {
+                    composable("library") {
+                        ArchiveLibraryScreen(
+                            section = KitchenArchiveSection.SAUCES,
+                            state = ArchiveLibraryUiState(entries = manyEntries, isLoading = false),
+                            onAdd = {},
+                            onOpenEntry = { navController.navigate("detail") },
+                            getScrollPosition = { _, _ -> savedPosition },
+                            onSaveScrollPosition = { _, _, index, offset ->
+                                savedPosition = index to offset
+                            },
+                        )
+                    }
+                    composable("detail") {
+                        Column {
+                            Text("档案详情")
+                            Button(onClick = { navController.popBackStack() }) {
+                                Text("返回列表")
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        compose.onNode(hasScrollToIndexAction()).performScrollToIndex(19)
+        compose.onNodeWithText("滚动测试档案 18").performClick()
+        compose.onNodeWithText("档案详情").assertIsDisplayed()
+        compose.onNodeWithText("返回列表").performClick()
+        assertThat(savedPosition.first > 0).isTrue()
+        compose.onNodeWithText("滚动测试档案 18").assertIsDisplayed()
+    }
 
     @Test
     fun `renders category tree and formal category counts`() {
