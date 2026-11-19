@@ -43,7 +43,9 @@ class SauceDetailViewModel
             load()
             viewModelScope.launch {
                 getRelations(sauceId.value).collect { relations ->
-                    _uiState.update { it.copy(relations = relations) }
+                    // 制作标准没有独立查看/编辑入口，不作为任何档案的关联项展示。
+                    val visibleRelations = relations.filter { it.targetKind != KitchenRecordKind.PRODUCTION_STANDARD }
+                    _uiState.update { it.copy(relations = visibleRelations) }
                 }
             }
         }
