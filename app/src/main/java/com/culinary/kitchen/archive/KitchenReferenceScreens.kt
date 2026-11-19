@@ -22,8 +22,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.culinary.R
 import com.culinary.core.designsystem.component.ConfirmDialog
@@ -222,7 +220,6 @@ fun KitchenReferenceDetailRoute(
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     var confirmArchive by remember { mutableStateOf(false) }
-    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { viewModel.load() }
 
     LaunchedEffect(state.archived) {
         if (state.archived) onArchived()
