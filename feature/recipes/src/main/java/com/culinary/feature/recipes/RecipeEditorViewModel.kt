@@ -314,22 +314,19 @@ class RecipeEditorViewModel
 
         fun onNotesChange(value: String) = mutateArchive { it.copy(notes = value) }
 
-        fun onProductStandardChange(value: String) = mutateArchive { it.copy(productStandard = value) }
-
-        fun onRawMaterialRequirementsChange(value: String) =
-            mutateArchive { it.copy(rawMaterialRequirements = value) }
-
-        fun onPreparationNotesChange(value: String) = mutateArchive { it.copy(preparationNotes = value) }
-
-        fun onProcessParametersChange(value: String) = mutateArchive { it.copy(processParameters = value) }
-
-        fun onPlatingStandardChange(value: String) = mutateArchive { it.copy(platingStandard = value) }
-
-        fun onStorageReheatingChange(value: String) = mutateArchive { it.copy(storageReheating = value) }
-
-        fun onAdjustmentRecordChange(value: String) = mutateArchive { it.copy(adjustmentRecord = value) }
-
-        fun onTestRecordChange(value: String) = mutateArchive { it.copy(testRecord = value) }
+        fun onResearchNoteChange(field: RecipeResearchField, value: String) =
+            mutateArchive { state ->
+                when (field) {
+                    RecipeResearchField.PRODUCT_STANDARD -> state.copy(productStandard = value)
+                    RecipeResearchField.RAW_MATERIAL_REQUIREMENTS -> state.copy(rawMaterialRequirements = value)
+                    RecipeResearchField.PREPARATION_NOTES -> state.copy(preparationNotes = value)
+                    RecipeResearchField.PROCESS_PARAMETERS -> state.copy(processParameters = value)
+                    RecipeResearchField.PLATING_STANDARD -> state.copy(platingStandard = value)
+                    RecipeResearchField.STORAGE_REHEATING -> state.copy(storageReheating = value)
+                    RecipeResearchField.ADJUSTMENT_RECORD -> state.copy(adjustmentRecord = value)
+                    RecipeResearchField.TEST_RECORD -> state.copy(testRecord = value)
+                }
+            }
 
         fun addTextNote() =
             mutateArchive { state ->
