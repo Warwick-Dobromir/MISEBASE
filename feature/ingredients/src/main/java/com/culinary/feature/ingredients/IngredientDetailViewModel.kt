@@ -42,8 +42,11 @@ class IngredientDetailViewModel
             load()
             viewModelScope.launch {
                 getRelations(ingredientId.value).collect { relations ->
-                    // 制作标准没有独立查看/编辑入口，不作为任何档案的关联项展示。
-                    val visibleRelations = relations.filter { it.targetKind != KitchenRecordKind.PRODUCTION_STANDARD }
+                    // 食材的应用关系只允许指向真实酱汁/菜谱；技术资料与标准类记录不属于应用关系。
+                    val visibleRelations =
+                        relations.filter {
+                            it.targetKind == KitchenRecordKind.SAUCE || it.targetKind == KitchenRecordKind.RECIPE
+                        }
                     _uiState.update { it.copy(relations = visibleRelations) }
                 }
             }
