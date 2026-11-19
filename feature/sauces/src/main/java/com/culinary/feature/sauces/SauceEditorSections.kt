@@ -622,12 +622,51 @@ internal fun SauceNotesSection(
         style = MaterialTheme.typography.bodySmall,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
-    Spacer(modifier = Modifier.height(CulinarySpacing.sm))
-    ArchiveEditorNotesBox(
-        value = state.notes,
-        onValueChange = actions.onNotesChange,
-        placeholder = stringResource(R.string.sauces_notes_placeholder),
+    Spacer(modifier = Modifier.height(CulinarySpacing.md))
+
+    ResearchNoteField(
+        label = "成品标准",
+        value = state.flavorProfile,
+        placeholder = "填写成品应达到的风味、颜色、质地与品质标准……",
+        onValueChange = actions.onFlavorProfileChange,
     )
+    ResearchNoteField(
+        label = "主要原料",
+        value = state.mainIngredients,
+        placeholder = "填写核心原料、关键品种或原料要求……",
+        onValueChange = actions.onMainIngredientsChange,
+    )
+    ResearchNoteField(
+        label = "预制说明",
+        value = state.preparationSummary,
+        placeholder = "填写可提前完成的预处理、预制流程……",
+        onValueChange = actions.onPreparationSummaryChange,
+    )
+    ResearchNoteField(
+        label = "关键参数",
+        value = state.keyParameters,
+        placeholder = "填写温度、时间、比例、酸度等关键控制参数……",
+        onValueChange = actions.onKeyParametersChange,
+    )
+    ResearchNoteField(
+        label = "存储说明",
+        value = state.storageNotes,
+        placeholder = "填写保存条件、容器要求及使用前处理……",
+        onValueChange = actions.onStorageNotesChange,
+    )
+    ResearchNoteField(
+        label = "调整记录",
+        value = state.adjustableNotes,
+        placeholder = "记录配方或工艺调整的内容与原因……",
+        onValueChange = actions.onAdjustableNotesChange,
+    )
+    ResearchNoteField(
+        label = "测试记录",
+        value = state.seedNote,
+        placeholder = "记录试制日期、测试结果、问题与结论……",
+        onValueChange = actions.onSeedNoteChange,
+    )
+
     Spacer(modifier = Modifier.height(CulinarySpacing.xs))
     Row(horizontalArrangement = Arrangement.spacedBy(CulinarySpacing.md)) {
         CulinaryTextButton(
@@ -664,6 +703,28 @@ internal fun SauceNotesSection(
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun ResearchNoteField(
+    label: String,
+    value: String,
+    placeholder: String,
+    onValueChange: (String) -> Unit,
+) {
+    Column(modifier = Modifier.fillMaxWidth().padding(bottom = CulinarySpacing.md)) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurface,
+        )
+        Spacer(modifier = Modifier.height(CulinarySpacing.xs))
+        ArchiveEditorNotesBox(
+            value = value,
+            onValueChange = onValueChange,
+            placeholder = placeholder,
+        )
     }
 }
 
