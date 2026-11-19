@@ -1,0 +1,42 @@
+name: sauce-validation
+
+on:
+  pull_request:
+    paths:
+      - "feature/sauces/**"
+      - "core/domain/**"
+      - ".github/workflows/sauce-validation.yml"
+  push:
+    branches:
+      - fix/sauce-research-notes-fields-20261119
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  sauce-validation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Validate sauce domain and editor
+        run: >-
+          ./gradlew
+          :core:domain:test
+          :feature:sauces:testDebugUnitTest
+          :feature:sauces:ktlintMainSourceSetCheck
+          :feature:sauces:ktlintTestDebugSourceSetCheck
+          :app:assembleDebug
+          --no-daemon
+      - name: Upload debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: MISEBASE-sauce-validation-debug
+          path: app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 14
