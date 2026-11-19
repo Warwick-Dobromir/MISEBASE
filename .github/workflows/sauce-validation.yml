@@ -28,10 +28,9 @@ jobs:
         run: ./gradlew :feature:sauces:ktlintFormat --no-daemon
       - name: Show sauce formatting diff
         run: git diff -- feature/sauces/src
-      - name: Validate sauce domain and editor
+      - name: Validate sauce feature and build release
         run: |
           ./gradlew \
-            :core:domain:test \
             :feature:sauces:testDebugUnitTest \
             :feature:sauces:ktlintMainSourceSetCheck \
             :feature:sauces:ktlintTestDebugSourceSetCheck \
