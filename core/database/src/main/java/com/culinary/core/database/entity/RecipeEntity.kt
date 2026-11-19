@@ -45,6 +45,22 @@ data class RecipeEntity(
     /** 研发备注；v8 起新增，历史数据保持 null。 */
     @ColumnInfo(name = "notes")
     val notes: String? = null,
+    @ColumnInfo(name = "product_standard")
+    val productStandard: String? = null,
+    @ColumnInfo(name = "raw_material_requirements")
+    val rawMaterialRequirements: String? = null,
+    @ColumnInfo(name = "preparation_notes")
+    val preparationNotes: String? = null,
+    @ColumnInfo(name = "process_parameters")
+    val processParameters: String? = null,
+    @ColumnInfo(name = "plating_standard")
+    val platingStandard: String? = null,
+    @ColumnInfo(name = "storage_reheating")
+    val storageReheating: String? = null,
+    @ColumnInfo(name = "adjustment_record")
+    val adjustmentRecord: String? = null,
+    @ColumnInfo(name = "test_record")
+    val testRecord: String? = null,
     @ColumnInfo(name = "seed_note")
     val seedNote: String? = null,
     @ColumnInfo(name = "seed_id")
