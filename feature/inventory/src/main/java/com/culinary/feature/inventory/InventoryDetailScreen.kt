@@ -16,6 +16,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.culinary.core.designsystem.component.CulinaryRule
 import com.culinary.core.designsystem.component.CulinaryTextButton
@@ -40,6 +42,7 @@ fun InventoryDetailRoute(
     viewModel: InventoryDetailViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { viewModel.load() }
     InventoryDetailScreen(
         state = state,
         onIssueBatch = onIssueBatch,
@@ -68,15 +71,8 @@ internal fun InventoryDetailScreen(
             )
         }
         when {
-            state.isLoading -> LoadingRows()
-            state.detail == null ->
-                EmptyState(
-                    icon = com.culinary.core.designsystem.icon.CulinaryIcons.Inventory,
-                    title = stringResource(R.string.inventory_empty_title),
-                    description = stringResource(R.string.inventory_empty_body),
-                )
+            state.detail != null -> {
 
-            else -> {
                 val detail = state.detail
                 Column(
                     modifier =
