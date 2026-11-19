@@ -44,7 +44,7 @@ data class ArchiveLibraryUiState(
 class ArchiveLibraryViewModel
     @Inject
     constructor(
-        savedStateHandle: SavedStateHandle,
+        private val savedStateHandle: SavedStateHandle,
         @ApplicationContext private val context: Context,
         reader: KitchenArchiveReader,
         private val categoryRepository: ArchiveCategoryRepository,
@@ -52,6 +52,37 @@ class ArchiveLibraryViewModel
         private val section =
             KitchenArchiveSection.fromRoute(savedStateHandle.get<String>(LIBRARY_TAB_ARG))
                 ?: KitchenArchiveSection.SAUCES
+
+        /**
+         * 详情页入栈时目录组合可能暂时销毁；将滚动位置保存在当前目录 ViewModel 的
+         * SavedStateHandle 中，返回时按资料库、分类和搜索条件恢复。
+         */
+        fun getScrollPosition(
+            categoryId: String?,
+            searchQuery: String?,
+        ): Pair<Int, Int> {
+            val key = scrollPositionKey(categoryId, searchQuery)
+            val index = savedStateHandle.get<Int>("${key}_index") ?: 0
+            val offset = savedStateHandle.get<Int>("${key}_offset") ?: 0
+            return index.coerceAtLeast(0) to offset.coerceAtLeast(0)
+        }
+
+        fun saveScrollPosition(
+            categoryId: String?,
+            searchQuery: String?,
+            index: Int,
+            offset: Int,
+        ) {
+            val key = scrollPositionKey(categoryId, searchQuery)
+            savedStateHandle["${key}_index"] = index.coerceAtLeast(0)
+            savedStateHandle["${key}_offset"] = offset.coerceAtLeast(0)
+        }
+
+        private fun scrollPositionKey(categoryId: String?, searchQuery: String?): String {
+            val categoryKey = categoryId ?: "root"
+            val modeKey = searchQuery?.let { "search_${it.hashCode()}" } ?: "list"
+            return "archive_scroll_${section.name}_${categoryKey}_${modeKey}"
+        }
 
         /** 在当前资料库根目录或指定分类下新建子库；厨房首页不提供分类编辑入口。 */
         fun createSubcategory(
