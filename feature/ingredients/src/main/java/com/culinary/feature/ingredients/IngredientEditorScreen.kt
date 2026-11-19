@@ -1,14 +1,17 @@
 package com.culinary.feature.ingredients
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.isImeVisible
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
@@ -138,6 +141,17 @@ internal fun IngredientEditorForm(
     onArchive: () -> Unit = {},
 ) {
     var showDelete by remember { mutableStateOf(false) }
+    var showDiscard by remember { mutableStateOf(false) }
+    val baseline = remember(state.ingredientId) { mutableStateOf<IngredientEditorSnapshot?>(null) }
+    LaunchedEffect(state.isLoading, state.ingredientId) {
+        if (!state.isLoading && baseline.value == null) {
+            baseline.value = state.toSnapshot()
+        }
+    }
+    val isDirty = baseline.value?.let { it != state.toSnapshot() } ?: false
+    val imeVisible = WindowInsets.isImeVisible
+    BackHandler(enabled = isDirty && !imeVisible) { showDiscard = true }
+    BackHandler(enabled = !isDirty && !imeVisible) { onCancel() }
     Column(modifier = Modifier.fillMaxSize()) {
         ArchiveEditorTopBar(
             title = if (state.isNew) {
@@ -145,11 +159,11 @@ internal fun IngredientEditorForm(
             } else {
                 stringResource(R.string.ingredients_editor_edit_title)
             },
-            onBack = onCancel,
-            onCancel = onCancel,
+            onBack = { if (isDirty) showDiscard = true else onCancel() },
+            onCancel = { if (isDirty) showDiscard = true else onCancel() },
             onSave = onSave,
             isSaving = state.isSaving,
-            canSave = !state.isLoading && !state.isSaving && state.name.isNotBlank(),
+            canSave = !state.isLoading && !state.isSaving && state.name.isNotBlank() && (state.isNew || isDirty),
         )
         Column(
             modifier = Modifier
@@ -289,6 +303,20 @@ internal fun IngredientEditorForm(
             }
         }
     }
+    if (showDiscard) {
+        ConfirmDialog(
+            title = "放弃未保存修改？",
+            message = "当前食材档案尚有未保存的修改，离开后这些内容会丢失。",
+            confirmLabel = "放弃修改",
+            dismissLabel = "继续编辑",
+            onConfirm = {
+                showDiscard = false
+                onCancel()
+            },
+            onDismiss = { showDiscard = false },
+            destructive = true,
+        )
+    }
     if (showDelete) {
         ConfirmDialog(
             title = stringResource(R.string.ingredients_archive_title),
@@ -304,6 +332,42 @@ internal fun IngredientEditorForm(
         )
     }
 }
+
+private data class IngredientEditorSnapshot(
+    val name: String,
+    val category: String,
+    val description: String,
+    val englishName: String,
+    val scientificName: String,
+    val flavorProfile: String,
+    val seasonality: String,
+    val origin: String,
+    val selectionNotes: String,
+    val prepNotes: String,
+    val exampleProducts: String,
+    val storageNotes: String,
+    val allergenNotes: String,
+    val categoryPathIds: List<String>,
+    val defaultUnitId: String?,
+)
+
+private fun IngredientEditorUiState.toSnapshot() = IngredientEditorSnapshot(
+    name = name,
+    category = category,
+    description = description,
+    englishName = englishName,
+    scientificName = scientificName,
+    flavorProfile = flavorProfile,
+    seasonality = seasonality,
+    origin = origin,
+    selectionNotes = selectionNotes,
+    prepNotes = prepNotes,
+    exampleProducts = exampleProducts,
+    storageNotes = storageNotes,
+    allergenNotes = allergenNotes,
+    categoryPathIds = categoryPathIds,
+    defaultUnitId = defaultUnit?.id?.value,
+)
 
 @Composable
 private fun IngredientEditorField(
