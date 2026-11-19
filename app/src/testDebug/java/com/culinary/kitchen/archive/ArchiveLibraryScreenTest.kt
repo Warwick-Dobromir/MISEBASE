@@ -67,10 +67,10 @@ class ArchiveLibraryScreenTest {
                 )
             }
 
+        var savedPosition = 0 to 0
         compose.setContent {
             CulinaryTheme {
                 val navController = rememberNavController()
-                val savedPosition = remember { mutableStateOf(0 to 0) }
                 NavHost(navController = navController, startDestination = "library") {
                     composable("library") {
                         ArchiveLibraryScreen(
@@ -78,9 +78,9 @@ class ArchiveLibraryScreenTest {
                             state = ArchiveLibraryUiState(entries = manyEntries, isLoading = false),
                             onAdd = {},
                             onOpenEntry = { navController.navigate("detail") },
-                            getScrollPosition = { _, _ -> savedPosition.value },
+                            getScrollPosition = { _, _ -> savedPosition },
                             onSaveScrollPosition = { _, _, index, offset ->
-                                savedPosition.value = index to offset
+                                savedPosition = index to offset
                             },
                         )
                     }
@@ -100,7 +100,7 @@ class ArchiveLibraryScreenTest {
         compose.onNodeWithText("滚动测试档案 18").performClick()
         compose.onNodeWithText("档案详情").assertIsDisplayed()
         compose.onNodeWithText("返回列表").performClick()
-        assertThat(savedPosition.value.first).isGreaterThan(0)
+        assertThat(savedPosition.first > 0).isTrue()
         compose.onNodeWithText("滚动测试档案 18").assertIsDisplayed()
     }
 
