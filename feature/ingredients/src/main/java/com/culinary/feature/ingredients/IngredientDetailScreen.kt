@@ -116,9 +116,7 @@ internal fun IngredientDetailContent(
 ) {
     val detail = detailState.detail ?: return
     val ingredient = detail.ingredient
-    val categoryLabel = "INGREDIENT · " + detailState.categoryPath.joinToString(" / ").ifBlank {
-        ingredient.category?.takeIf { it.isNotBlank() } ?: "未分类"
-    }
+    val categoryLabel = ingredientCategoryLabel(detailState.categoryPath, ingredient.category)
     Column(modifier = Modifier.fillMaxSize()) {
         ArchiveDetailBar(
             editLabel = "编辑档案 ↗",
@@ -288,3 +286,13 @@ private fun IngredientRelationsSection(
 
 private fun formatFactor(value: Double): String =
     if (value % 1.0 == 0.0) value.toLong().toString() else value.toString()
+
+private fun ingredientCategoryLabel(
+    categoryPath: List<String>,
+    legacyCategory: String?,
+): String {
+    val category = categoryPath.joinToString(" / ").ifBlank {
+        legacyCategory?.takeIf { it.isNotBlank() } ?: "未分类"
+    }
+    return "INGREDIENT · $category"
+}
