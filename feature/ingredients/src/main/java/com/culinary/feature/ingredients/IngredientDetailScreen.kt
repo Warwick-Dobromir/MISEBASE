@@ -28,8 +28,6 @@ import com.culinary.core.designsystem.component.ArchiveHeroImage
 import com.culinary.core.designsystem.component.ConfirmDialog
 import com.culinary.core.designsystem.component.CulinaryButton
 import com.culinary.core.designsystem.component.CulinaryButtonVariant
-import com.culinary.core.designsystem.component.CulinaryRelationItem
-import com.culinary.core.designsystem.component.CulinaryRelationSection
 import com.culinary.core.designsystem.component.CulinaryTextButton
 import com.culinary.core.designsystem.component.ErrorBanner
 import com.culinary.core.designsystem.component.LoadingRows
@@ -41,7 +39,6 @@ import com.culinary.core.designsystem.icon.CulinaryIcons
 import com.culinary.core.designsystem.theme.CulinarySpacing
 import com.culinary.core.domain.model.IngredientConversionView
 import com.culinary.core.domain.model.KitchenRecordKind
-import com.culinary.core.domain.model.KitchenRelatedRecord
 
 /** 食材详情路由：档案、默认单位、换算；可编辑或归档。 */
 @Composable
@@ -158,7 +155,6 @@ internal fun IngredientDetailContent(
 
         IngredientSummary(detail = detail, onEdit = onEdit, onArchive = onArchive)
         ConversionsSection(conversions = detail.conversions)
-        IngredientRelationsSection(detailState.relations, onOpenRelation)
     }
 }
 
@@ -227,24 +223,6 @@ private fun IngredientSummary(
             )
         }
     }
-}
-
-@Composable
-private fun IngredientRelationsSection(
-    relations: List<KitchenRelatedRecord>,
-    onOpenRelation: (KitchenRecordKind, String) -> Unit,
-) {
-    CulinaryRelationSection(
-        title = stringResource(R.string.ingredients_relations),
-        items =
-            relations.map { relation ->
-                CulinaryRelationItem(
-                    eyebrow = relation.relationLabel,
-                    title = relation.targetLabel,
-                    onClick = { onOpenRelation(relation.targetKind, relation.targetRecordId) },
-                )
-            },
-    )
 }
 
 @Composable
