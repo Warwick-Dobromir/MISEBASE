@@ -57,7 +57,7 @@ class ArchiveLibraryScreenTest {
 
         compose.onNodeWithText("酱汁基础").performClick()
         compose.onNodeWithText("基础酱汁").performClick()
-        compose.onNodeWithText("基础高汤酱").performClick()
+        compose.onNodeWithText("档案 01").performClick()
 
         assertThat(opened?.id).isEqualTo("s1")
     }
@@ -67,7 +67,11 @@ class ArchiveLibraryScreenTest {
         var opened: KitchenArchiveEntry? = null
         var savedPosition: Pair<Int, Int>? = null
         var savedCategory: String? = null
+        val manyEntries = (1..30).map { index ->
+            entry("s" + index, "档案 " + index.toString().padStart(2, '0'), "basic", "base / basic")
+        }
         show(
+            entries = manyEntries,
             onOpenEntry = { opened = it },
             getScrollPosition = { categoryId, searchQuery ->
                 if (categoryId == "basic" && searchQuery == null) 2 to 17 else 0 to 0
@@ -194,6 +198,7 @@ class ArchiveLibraryScreenTest {
     private fun show(
         section: KitchenArchiveSection = KitchenArchiveSection.SAUCES,
         categories: List<KitchenArchiveCategory> = this.categories,
+        entries: List<KitchenArchiveEntry> = this.entries,
         onAdd: () -> Unit = {},
         onOpenEntry: (KitchenArchiveEntry) -> Unit = {},
         onCreateSubcategory: (String?, String) -> Unit = { _, _ -> },
