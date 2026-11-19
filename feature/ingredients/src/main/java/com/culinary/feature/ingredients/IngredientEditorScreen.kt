@@ -153,16 +153,10 @@ internal fun IngredientEditorForm(
     val isDirty = baseline.value?.let { it != state.toSnapshot() } ?: false
     val imeVisible = WindowInsets.isImeVisible
     val editorTitle =
-        if (state.isNew) {
-            stringResource(R.string.ingredients_editor_new_title)
-        } else {
-            stringResource(R.string.ingredients_editor_edit_title)
-        }
-    val canSave =
-        !state.isLoading &&
-            !state.isSaving &&
-            state.name.isNotBlank() &&
-            (state.isNew || isDirty)
+        stringResource(
+            if (state.isNew) R.string.ingredients_editor_new_title else R.string.ingredients_editor_edit_title,
+        )
+    val canSave = !state.isLoading && !state.isSaving && state.name.isNotBlank() && (state.isNew || isDirty)
     val defaultUnitLabel =
         state.defaultUnit?.let { "${it.name}（${it.symbol}）" }
             ?: stringResource(R.string.ingredients_no_unit)
