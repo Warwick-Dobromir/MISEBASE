@@ -11,7 +11,6 @@ import com.culinary.core.domain.usecase.archive.ArchiveImageUseCase
 import com.culinary.core.domain.usecase.archive.GetArchiveCategoryForRecordUseCase
 import com.culinary.core.domain.usecase.ingredient.ArchiveIngredientUseCase
 import com.culinary.core.domain.usecase.ingredient.GetIngredientDetailUseCase
-import com.culinary.core.domain.usecase.kitchen.ObserveKitchenRelationsUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -28,7 +27,6 @@ class IngredientDetailViewModel
         savedStateHandle: SavedStateHandle,
         private val getIngredientDetail: GetIngredientDetailUseCase,
         private val archiveIngredient: ArchiveIngredientUseCase,
-        private val getRelations: ObserveKitchenRelationsUseCase,
         private val getArchiveCategoryForRecord: GetArchiveCategoryForRecordUseCase =
             GetArchiveCategoryForRecordUseCase(),
         private val archiveImages: ArchiveImageUseCase = ArchiveImageUseCase(),
@@ -40,11 +38,6 @@ class IngredientDetailViewModel
 
         init {
             load()
-            viewModelScope.launch {
-                getRelations(ingredientId.value).collect { relations ->
-                    _uiState.update { it.copy(relations = relations) }
-                }
-            }
         }
 
         fun load() {
