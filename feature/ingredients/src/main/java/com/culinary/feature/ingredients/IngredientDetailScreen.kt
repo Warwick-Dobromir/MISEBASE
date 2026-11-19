@@ -116,6 +116,9 @@ internal fun IngredientDetailContent(
 ) {
     val detail = detailState.detail ?: return
     val ingredient = detail.ingredient
+    val categoryLabel = "INGREDIENT · " + detailState.categoryPath.joinToString(" / ").ifBlank {
+        ingredient.category?.takeIf { it.isNotBlank() } ?: "未分类"
+    }
     Column(modifier = Modifier.fillMaxSize()) {
         ArchiveDetailBar(
             editLabel = "编辑档案 ↗",
@@ -132,11 +135,7 @@ internal fun IngredientDetailContent(
         ) {
             Spacer(modifier = Modifier.height(CulinarySpacing.lg))
             ArchiveDetailHeading(
-                categoryLabel = "INGREDIENT · " + (
-                    detailState.categoryPath.joinToString(" / ").ifBlank {
-                        ingredient.category?.takeIf { it.isNotBlank() } ?: "未分类"
-                    }
-                ),
+                categoryLabel = categoryLabel,
                 englishTitle = ingredient.englishName,
                 chineseTitle = ingredient.name,
                 description = ingredient.description,
