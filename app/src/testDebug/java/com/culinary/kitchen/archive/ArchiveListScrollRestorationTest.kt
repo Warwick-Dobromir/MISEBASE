@@ -77,6 +77,11 @@ class ArchiveListScrollRestorationTest {
 
         compose.onNodeWithText("酱汁基础").performClick()
         compose.onNodeWithText("基础酱汁").performClick()
+        compose.waitForIdle()
+
+        assertThat(savedCategory).isEqualTo("basic")
+        assertThat(savedPosition).isEqualTo(2 to 17)
+
         compose.onNodeWithText("档案 01").performClick()
 
         assertThat(openedId).isEqualTo("s1")
