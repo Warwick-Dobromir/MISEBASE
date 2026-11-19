@@ -62,8 +62,8 @@ class ArchiveLibraryViewModel
             searchQuery: String?,
         ): Pair<Int, Int> {
             val key = scrollPositionKey(categoryId, searchQuery)
-            val index = savedStateHandle.get<Int>("\u0024{key}_index") ?: 0
-            val offset = savedStateHandle.get<Int>("\u0024{key}_offset") ?: 0
+            val index = savedStateHandle.get<Int>(key + "_index") ?: 0
+            val offset = savedStateHandle.get<Int>(key + "_offset") ?: 0
             return index.coerceAtLeast(0) to offset.coerceAtLeast(0)
         }
 
@@ -74,14 +74,14 @@ class ArchiveLibraryViewModel
             offset: Int,
         ) {
             val key = scrollPositionKey(categoryId, searchQuery)
-            savedStateHandle["\u0024{key}_index"] = index.coerceAtLeast(0)
-            savedStateHandle["\u0024{key}_offset"] = offset.coerceAtLeast(0)
+            savedStateHandle[key + "_index"] = index.coerceAtLeast(0)
+            savedStateHandle[key + "_offset"] = offset.coerceAtLeast(0)
         }
 
         private fun scrollPositionKey(categoryId: String?, searchQuery: String?): String {
             val categoryKey = categoryId ?: "root"
-            val modeKey = searchQuery?.let { "search_\u0024{it.hashCode()}" } ?: "list"
-            return "archive_scroll_\u0024{section.name}_\u0024{categoryKey}_\u0024{modeKey}"
+            val modeKey = searchQuery?.let { "search_" + it.hashCode() } ?: "list"
+            return "archive_scroll_" + section.name + "_" + categoryKey + "_" + modeKey
         }
 
         /** 在当前资料库根目录或指定分类下新建子库；厨房首页不提供分类编辑入口。 */
