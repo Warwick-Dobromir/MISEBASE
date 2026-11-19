@@ -156,8 +156,11 @@ internal fun IngredientEditorForm(
         } else {
             stringResource(R.string.ingredients_editor_edit_title)
         }
-    val canSave = !state.isLoading && !state.isSaving && state.name.isNotBlank() &&
-        (state.isNew || isDirty)
+    val canSave =
+        !state.isLoading &&
+            !state.isSaving &&
+            state.name.isNotBlank() &&
+            (state.isNew || isDirty)
     val defaultUnitLabel =
         state.defaultUnit?.let { "${it.name}（${it.symbol}）" }
             ?: stringResource(R.string.ingredients_no_unit)
