@@ -57,7 +57,7 @@ class ArchiveLibraryScreenTest {
 
         compose.onNodeWithText("酱汁基础").performClick()
         compose.onNodeWithText("基础酱汁").performClick()
-        compose.onNodeWithText("档案 01").performClick()
+        compose.onNodeWithText("基础高汤酱").performClick()
 
         assertThat(opened?.id).isEqualTo("s1")
     }
@@ -91,7 +91,7 @@ class ArchiveLibraryScreenTest {
         assertThat(savedCategory).isEqualTo("basic")
         assertThat(savedPosition).isEqualTo(2 to 17)
 
-        compose.onNodeWithText("基础高汤酱").performClick()
+        compose.onNodeWithText("档案 01").performClick()
 
         assertThat(opened?.id).isEqualTo("s1")
         assertThat(savedCategory).isEqualTo("basic")
