@@ -31,15 +31,12 @@ import com.culinary.core.designsystem.component.ArchiveRelatedRow
 import com.culinary.core.designsystem.component.CulinaryRule
 import com.culinary.core.designsystem.component.ArchiveHeroImage
 import com.culinary.core.designsystem.component.ConfirmDialog
-import com.culinary.core.designsystem.component.CulinaryButton
-import com.culinary.core.designsystem.component.CulinaryButtonVariant
 import com.culinary.core.designsystem.component.CulinaryTextButton
 import com.culinary.core.designsystem.component.ErrorBanner
 import com.culinary.core.designsystem.component.LoadingRows
 import com.culinary.core.designsystem.component.SectionHeader
 import com.culinary.core.designsystem.component.StatusBadge
 import com.culinary.core.designsystem.component.StatusTone
-import com.culinary.core.designsystem.icon.CulinaryIcons
 import com.culinary.core.designsystem.theme.CulinarySpacing
 import com.culinary.core.domain.model.IngredientConversionView
 import com.culinary.core.domain.model.KitchenRecordKind
@@ -117,28 +114,29 @@ internal fun IngredientDetailContent(
     onOpenRelation: (KitchenRecordKind, String) -> Unit,
 ) {
     val detail = detailState.detail ?: return
-    Column(
-        modifier =
-            Modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(bottom = CulinarySpacing.xl),
-    ) {
+    Column(modifier = Modifier.fillMaxSize()) {
         ArchiveDetailBar(
             editLabel = "编辑档案 ↗",
             onBack = onBack,
             onEdit = { onEdit(detail.ingredient.id.value) },
         )
-        ArchiveDetailHeading(
-            categoryLabel = detailState.categoryPath.joinToString(" / ").ifBlank {
-                detail.ingredient.category ?: stringResource(R.string.ingredients_uncategorized)
-            },
-            englishTitle = detail.ingredient.englishName,
-            chineseTitle = detail.ingredient.name,
-            description = detail.ingredient.description,
-            modifier = Modifier.padding(horizontal = CulinarySpacing.pageHorizontal),
-        )
-        detailState.imageBytes?.let { bytes ->
+        Column(
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+                    .padding(bottom = CulinarySpacing.xl),
+        ) {
+            Spacer(modifier = Modifier.height(CulinarySpacing.lg))
+            ArchiveDetailHeading(
+                categoryLabel = detailState.categoryPath.joinToString(" / ").ifBlank {
+                    detail.ingredient.category ?: stringResource(R.string.ingredients_uncategorized)
+                },
+                englishTitle = detail.ingredient.englishName,
+                chineseTitle = detail.ingredient.name,
+                description = detail.ingredient.description,
+            )
+            detailState.imageBytes?.let { bytes ->
             ArchiveHeroImage(
                 bytes = bytes,
                 modifier = Modifier.padding(horizontal = CulinarySpacing.pageHorizontal),
@@ -166,7 +164,7 @@ internal fun IngredientDetailContent(
             }
         }
 
-        IngredientSummary(detail = detail, onEdit = onEdit, onArchive = onArchive)
+        IngredientSummary(detail = detail, onArchive = onArchive)
         ConversionsSection(conversions = detail.conversions)
         Column(modifier = Modifier.padding(horizontal = CulinarySpacing.pageHorizontal)) {
             Spacer(modifier = Modifier.height(CulinarySpacing.xl))
@@ -194,6 +192,7 @@ internal fun IngredientDetailContent(
             Spacer(modifier = Modifier.height(CulinarySpacing.xl))
             CulinaryRule()
             Spacer(modifier = Modifier.height(CulinarySpacing.xl))
+            }
         }
     }
 }
@@ -202,7 +201,6 @@ internal fun IngredientDetailContent(
 @Composable
 private fun IngredientSummary(
     detail: com.culinary.core.domain.model.IngredientDetail,
-    onEdit: (String) -> Unit,
     onArchive: () -> Unit,
 ) {
     Column(modifier = Modifier.padding(horizontal = CulinarySpacing.pageHorizontal)) {
@@ -215,17 +213,7 @@ private fun IngredientSummary(
             color = MaterialTheme.colorScheme.onSurface,
         )
 
-        if (!detail.ingredient.description.isNullOrBlank()) {
-            SectionHeader(title = stringResource(R.string.ingredients_description_label))
-            Text(
-                text = detail.ingredient.description.orEmpty(),
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurface,
-            )
-        }
-
         listOfNotNull(
-            detail.ingredient.englishName?.let { stringResource(R.string.ingredients_english_name) to it },
             detail.ingredient.scientificName?.let { "学名" to it },
             detail.ingredient.flavorProfile?.let { "风味" to it },
             detail.ingredient.seasonality?.let { "时令" to it },
@@ -246,22 +234,11 @@ private fun IngredientSummary(
         }
 
         Spacer(modifier = Modifier.height(CulinarySpacing.block))
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(CulinarySpacing.sm),
-        ) {
-            CulinaryButton(
-                text = stringResource(R.string.ingredients_edit),
-                onClick = { onEdit(detail.ingredient.id.value) },
-                variant = CulinaryButtonVariant.Secondary,
-                icon = CulinaryIcons.Edit,
-            )
-            CulinaryTextButton(
-                text = stringResource(R.string.ingredients_archive),
-                onClick = onArchive,
-                danger = true,
-            )
-        }
+        CulinaryTextButton(
+            text = stringResource(R.string.ingredients_archive),
+            onClick = onArchive,
+            danger = true,
+        )
     }
 }
 
