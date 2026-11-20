@@ -24,6 +24,11 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.culinary.core.designsystem.component.ArchiveDetailBar
+import com.culinary.core.designsystem.component.ArchiveDetailHeading
+import com.culinary.core.designsystem.component.ArchiveModuleHeader
+import com.culinary.core.designsystem.component.ArchiveRelatedRow
+import com.culinary.core.designsystem.component.CulinaryRule
 import com.culinary.core.designsystem.component.ArchiveHeroImage
 import com.culinary.core.designsystem.component.ConfirmDialog
 import com.culinary.core.designsystem.component.CulinaryButton
@@ -45,6 +50,7 @@ import com.culinary.core.domain.model.KitchenRecordKind
 fun IngredientDetailRoute(
     onEdit: (String) -> Unit,
     onArchived: () -> Unit,
+    onBack: () -> Unit = {},
     onOpenRelation: (KitchenRecordKind, String) -> Unit = { _, _ -> },
     modifier: Modifier = Modifier,
     viewModel: IngredientDetailViewModel = hiltViewModel(),
@@ -81,6 +87,7 @@ fun IngredientDetailRoute(
                     detailState = state,
                     onEdit = onEdit,
                     onArchive = { showArchiveConfirm = true },
+                    onBack = onBack,
                     onOpenRelation = onOpenRelation,
                 )
         }
@@ -107,6 +114,7 @@ internal fun IngredientDetailContent(
     detailState: IngredientDetailUiState,
     onEdit: (String) -> Unit,
     onArchive: () -> Unit,
+    onBack: () -> Unit,
     onOpenRelation: (KitchenRecordKind, String) -> Unit,
 ) {
     val detail = detailState.detail ?: return
@@ -117,13 +125,19 @@ internal fun IngredientDetailContent(
                 .verticalScroll(rememberScrollState())
                 .padding(bottom = CulinarySpacing.xl),
     ) {
-        PageHeader(
-            eyebrow = "INGREDIENT",
-            title = detail.ingredient.name,
-            supporting =
-                detailState.categoryPath.joinToString(" / ").ifBlank {
-                    detail.ingredient.category ?: stringResource(R.string.ingredients_uncategorized)
-                },
+        ArchiveDetailBar(
+            editLabel = "编辑档案 ↗",
+            onBack = onBack,
+            onEdit = { onEdit(detail.ingredient.id.value) },
+        )
+        ArchiveDetailHeading(
+            categoryLabel = detailState.categoryPath.joinToString(" / ").ifBlank {
+                detail.ingredient.category ?: stringResource(R.string.ingredients_uncategorized)
+            },
+            englishTitle = detail.ingredient.englishName,
+            chineseTitle = detail.ingredient.name,
+            description = detail.ingredient.description,
+            modifier = Modifier.padding(horizontal = CulinarySpacing.pageHorizontal),
         )
         detailState.imageBytes?.let { bytes ->
             ArchiveHeroImage(
@@ -155,6 +169,29 @@ internal fun IngredientDetailContent(
 
         IngredientSummary(detail = detail, onEdit = onEdit, onArchive = onArchive)
         ConversionsSection(conversions = detail.conversions)
+        Column(modifier = Modifier.padding(horizontal = CulinarySpacing.pageHorizontal)) {
+            Spacer(modifier = Modifier.height(CulinarySpacing.xl))
+            ArchiveModuleHeader(number = "01", english = "RELATED RECORDS", chinese = "关联档案")
+            if (detailState.relations.isEmpty()) {
+                Text(
+                    text = "暂未添加关联档案",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            } else {
+                detailState.relations.forEach { relation ->
+                    ArchiveRelatedRow(
+                        title = relation.targetLabel,
+                        subtitle = null,
+                        relationLabel = relation.relationLabel,
+                        onClick = { onOpenRelation(relation.targetKind, relation.targetRecordId) },
+                    )
+                }
+            }
+            Spacer(modifier = Modifier.height(CulinarySpacing.xl))
+            CulinaryRule()
+            Spacer(modifier = Modifier.height(CulinarySpacing.xl))
+        }
     }
 }
 
