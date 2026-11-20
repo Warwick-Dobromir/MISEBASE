@@ -4,19 +4,24 @@ import androidx.lifecycle.SavedStateHandle
 import com.culinary.core.common.CulinaryError
 import com.culinary.core.common.IdGenerator
 import com.culinary.core.common.Outcome
+import com.culinary.core.domain.model.ComponentTarget
 import com.culinary.core.domain.model.EntityStatus
 import com.culinary.core.domain.model.Ingredient
 import com.culinary.core.domain.model.IngredientId
 import com.culinary.core.domain.model.IngredientUnitConversion
+import com.culinary.core.domain.model.KitchenRecordKind
 import com.culinary.core.domain.model.KitchenRelatedRecord
+import com.culinary.core.domain.model.Quantity
 import com.culinary.core.domain.model.Recipe
 import com.culinary.core.domain.model.RecipeId
 import com.culinary.core.domain.model.RecipeVersion
 import com.culinary.core.domain.model.RecipeVersionId
 import com.culinary.core.domain.model.Sauce
+import com.culinary.core.domain.model.SauceComponent
 import com.culinary.core.domain.model.SauceId
 import com.culinary.core.domain.model.SauceVersion
 import com.culinary.core.domain.model.SauceVersionId
+import com.culinary.core.domain.model.VersionStatus
 import com.culinary.core.domain.model.UnitDimension
 import com.culinary.core.domain.model.UnitId
 import com.culinary.core.domain.repository.IngredientRepository
@@ -114,6 +119,89 @@ class IngredientsViewModelTest {
                     ?.single()
                     ?.note,
             ).isEqualTo("测试换算")
+        }
+
+    @Test
+    fun `detail shows sauces and recipes that contain the ingredient`() =
+        runTest {
+            ingredients.items += ingredient()
+            val sauce =
+                Sauce(
+                    id = SauceId("sauce-lemon"),
+                    name = "柠檬酱",
+                    normalizedName = "柠檬酱",
+                    status = EntityStatus.ACTIVE,
+                )
+            val recipe =
+                Recipe(
+                    id = RecipeId("recipe-lemon"),
+                    name = "柠檬烤鸡",
+                    normalizedName = "柠檬烤鸡",
+                    category = com.culinary.core.domain.model.RecipeCategory.MAIN,
+                    status = EntityStatus.ACTIVE,
+                )
+            val unit = units.items.first()
+            val sauceRepository =
+                EmptySauceRepository().apply {
+                    items += sauce
+                    versions[sauce.id] =
+                        listOf(
+                            SauceVersion(
+                                id = SauceVersionId("sauce-lemon-v1"),
+                                sauceId = sauce.id,
+                                versionNo = 1,
+                                status = VersionStatus.PUBLISHED,
+                                yield = Quantity(1.0, unit),
+                                components =
+                                    listOf(
+                                        SauceComponent(
+                                            lineNo = 1,
+                                            target = ComponentTarget.Ingredient(IngredientId(ID)),
+                                            quantity = Quantity(1.0, unit),
+                                        ),
+                                    ),
+                            ),
+                        )
+                }
+            val recipeRepository =
+                EmptyRecipeRepository().apply {
+                    items += recipe
+                    versions[recipe.id] =
+                        listOf(
+                            RecipeVersion(
+                                id = RecipeVersionId("recipe-lemon-v1"),
+                                recipeId = recipe.id,
+                                versionNo = 1,
+                                status = VersionStatus.PUBLISHED,
+                                yield = Quantity(1.0, unit),
+                                components =
+                                    listOf(
+                                        com.culinary.core.domain.model.RecipeComponent(
+                                            lineNo = 1,
+                                            target = ComponentTarget.Ingredient(IngredientId(ID)),
+                                            quantity = Quantity(1.0, unit),
+                                        ),
+                                    ),
+                            ),
+                        )
+                }
+            val viewModel =
+                IngredientDetailViewModel(
+                    savedStateHandle = SavedStateHandle(mapOf(IngredientsRoutes.ARG_INGREDIENT_ID to ID)),
+                    getIngredientDetail = detail,
+                    archiveIngredient = archiveIngredient,
+                    getRelations = emptyRelations(),
+                    sauceRepository = sauceRepository,
+                    recipeRepository = recipeRepository,
+                )
+
+            advanceUntilIdle()
+
+            assertThat(viewModel.uiState.value.relations.map { it.targetKind to it.targetRecordId })
+                .containsExactly(
+                    KitchenRecordKind.SAUCE to sauce.id.value,
+                    KitchenRecordKind.RECIPE to recipe.id.value,
+                ).inOrder()
         }
 
     @Test
@@ -245,10 +333,13 @@ class IngredientsViewModelTest {
 }
 
 private class EmptySauceRepository : SauceRepository {
-    override fun observeActive(): Flow<List<Sauce>> = flowOf(emptyList())
+    val items = mutableListOf<Sauce>()
+    val versions = mutableMapOf<SauceId, List<SauceVersion>>()
+
+    override fun observeActive(): Flow<List<Sauce>> = flowOf(items.toList())
     override suspend fun get(id: SauceId): Outcome<Sauce> = error("unused")
     override suspend fun getVersion(id: SauceVersionId): Outcome<SauceVersion> = error("unused")
-    override suspend fun listVersions(sauceId: SauceId): List<SauceVersion> = emptyList()
+    override suspend fun listVersions(sauceId: SauceId): List<SauceVersion> = versions[sauceId].orEmpty()
     override suspend fun findCurrentVersion(sauceId: SauceId): SauceVersion? = null
     override suspend fun nextVersionNo(sauceId: SauceId): Int = 1
     override suspend fun save(sauce: Sauce): Outcome<SauceId> = error("unused")
@@ -258,11 +349,14 @@ private class EmptySauceRepository : SauceRepository {
 }
 
 private class EmptyRecipeRepository : RecipeRepository {
-    override fun observeActive(): Flow<List<Recipe>> = flowOf(emptyList())
+    val items = mutableListOf<Recipe>()
+    val versions = mutableMapOf<RecipeId, List<RecipeVersion>>()
+
+    override fun observeActive(): Flow<List<Recipe>> = flowOf(items.toList())
     override suspend fun get(id: RecipeId): Outcome<Recipe> = error("unused")
     override suspend fun getVersion(id: RecipeVersionId): RecipeVersion? = null
     override suspend fun getCurrentVersion(recipeId: RecipeId): RecipeVersion? = null
-    override suspend fun listVersions(recipeId: RecipeId): List<RecipeVersion> = emptyList()
+    override suspend fun listVersions(recipeId: RecipeId): List<RecipeVersion> = versions[recipeId].orEmpty()
     override suspend fun nextVersionNo(recipeId: RecipeId): Int = 1
     override suspend fun save(recipe: Recipe): Outcome<RecipeId> = error("unused")
     override suspend fun archive(id: RecipeId): Outcome<Unit> = error("unused")
