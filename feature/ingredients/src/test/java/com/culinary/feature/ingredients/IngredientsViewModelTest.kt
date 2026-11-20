@@ -102,7 +102,7 @@ class IngredientsViewModelTest {
                     savedStateHandle = SavedStateHandle(mapOf(IngredientsRoutes.ARG_INGREDIENT_ID to ID)),
                     getIngredientDetail = detail,
                     archiveIngredient = archiveIngredient,
-                    getRelations = emptyRelations(),
+                    observeRelations = emptyRelations(),
                     sauceRepository = EmptySauceRepository(),
                     recipeRepository = EmptyRecipeRepository(),
                 )
@@ -190,7 +190,7 @@ class IngredientsViewModelTest {
                     savedStateHandle = SavedStateHandle(mapOf(IngredientsRoutes.ARG_INGREDIENT_ID to ID)),
                     getIngredientDetail = detail,
                     archiveIngredient = archiveIngredient,
-                    getRelations = emptyRelations(),
+                    observeRelations = emptyRelations(),
                     sauceRepository = sauceRepository,
                     recipeRepository = recipeRepository,
                 )
@@ -248,7 +248,7 @@ class IngredientsViewModelTest {
                     savedStateHandle = SavedStateHandle(mapOf(IngredientsRoutes.ARG_INGREDIENT_ID to ID)),
                     getIngredientDetail = detail,
                     archiveIngredient = archiveIngredient,
-                    getRelations = emptyRelations(),
+                    observeRelations = emptyRelations(),
                     sauceRepository = EmptySauceRepository(),
                     recipeRepository = EmptyRecipeRepository(),
                 )
