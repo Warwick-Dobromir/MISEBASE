@@ -137,7 +137,7 @@ class IngredientsViewModelTest {
                     id = RecipeId("recipe-lemon"),
                     name = "柠檬烤鸡",
                     normalizedName = "柠檬烤鸡",
-                    category = com.culinary.core.domain.model.RecipeCategory.MAIN,
+                    category = com.culinary.core.domain.model.RecipeCategory.DISH,
                     status = EntityStatus.ACTIVE,
                 )
             val unit = units.items.first()
