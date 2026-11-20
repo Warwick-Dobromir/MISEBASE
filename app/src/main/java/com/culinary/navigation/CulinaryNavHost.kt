@@ -496,6 +496,7 @@ private fun NavGraphBuilder.ingredientGraph(navController: NavHostController) {
         IngredientDetailRoute(
             onEdit = { id -> navController.navigate(IngredientsRoutes.edit(id)) },
             onArchived = { navController.popBackStack() },
+            onBack = { navController.popBackStack() },
             onOpenRelation = navController::openKitchenRelated,
         )
     }
