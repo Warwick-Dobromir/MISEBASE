@@ -122,6 +122,7 @@ class IngredientsUiTest {
                     detailState = IngredientDetailUiState(detail = detail, isLoading = false),
                     onEdit = {},
                     onArchive = {},
+                    onBack = {},
                     onOpenRelation = { _, _ -> },
                 )
             }
