@@ -26,10 +26,10 @@ import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.culinary.core.designsystem.component.ArchiveDetailBar
 import com.culinary.core.designsystem.component.ArchiveDetailHeading
+import com.culinary.core.designsystem.component.ArchiveHeroImage
 import com.culinary.core.designsystem.component.ArchiveModuleHeader
 import com.culinary.core.designsystem.component.ArchiveRelatedRow
 import com.culinary.core.designsystem.component.CulinaryRule
-import com.culinary.core.designsystem.component.ArchiveHeroImage
 import com.culinary.core.designsystem.component.ConfirmDialog
 import com.culinary.core.designsystem.component.CulinaryTextButton
 import com.culinary.core.designsystem.component.ErrorBanner
@@ -137,61 +137,61 @@ internal fun IngredientDetailContent(
                 description = detail.ingredient.description,
             )
             detailState.imageBytes?.let { bytes ->
-            ArchiveHeroImage(
-                bytes = bytes,
-                modifier = Modifier.padding(horizontal = CulinarySpacing.pageHorizontal),
-            )
-        }
-        Column(modifier = Modifier.padding(horizontal = CulinarySpacing.pageHorizontal)) {
-            Row(horizontalArrangement = Arrangement.spacedBy(CulinarySpacing.xs)) {
-                if (detail.ingredient.isSeed) {
+                ArchiveHeroImage(
+                    bytes = bytes,
+                    modifier = Modifier.padding(horizontal = CulinarySpacing.pageHorizontal),
+                )
+            }
+            Column(modifier = Modifier.padding(horizontal = CulinarySpacing.pageHorizontal)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(CulinarySpacing.xs)) {
+                    if (detail.ingredient.isSeed) {
+                        StatusBadge(
+                            text = stringResource(R.string.ingredients_seed_badge),
+                            tone = StatusTone.Accent,
+                        )
+                    }
                     StatusBadge(
-                        text = stringResource(R.string.ingredients_seed_badge),
-                        tone = StatusTone.Accent,
+                        text =
+                            stringResource(
+                                if (detail.ingredient.isActive) {
+                                    R.string.ingredients_active
+                                } else {
+                                    R.string.ingredients_archived
+                                },
+                            ),
+                        tone = if (detail.ingredient.isActive) StatusTone.Success else StatusTone.Neutral,
                     )
                 }
-                StatusBadge(
-                    text =
-                        stringResource(
-                            if (detail.ingredient.isActive) {
-                                R.string.ingredients_active
-                            } else {
-                                R.string.ingredients_archived
-                            },
-                        ),
-                    tone = if (detail.ingredient.isActive) StatusTone.Success else StatusTone.Neutral,
-                )
             }
-        }
 
-        IngredientSummary(detail = detail, onArchive = onArchive)
-        ConversionsSection(conversions = detail.conversions)
-        Column(modifier = Modifier.padding(horizontal = CulinarySpacing.pageHorizontal)) {
-            Spacer(modifier = Modifier.height(CulinarySpacing.xl))
-            ArchiveModuleHeader(number = "01", english = "RELATED RECORDS", chinese = "关联档案")
-            if (detailState.relations.none {
-                    it.targetKind == KitchenRecordKind.SAUCE || it.targetKind == KitchenRecordKind.RECIPE
-                }) {
-                Text(
-                    text = "暂未添加关联档案",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            } else {
-                detailState.relations.filter {
-                    it.targetKind == KitchenRecordKind.SAUCE || it.targetKind == KitchenRecordKind.RECIPE
-                }.forEach { relation ->
-                    ArchiveRelatedRow(
-                        title = relation.targetLabel,
-                        subtitle = null,
-                        relationLabel = relation.relationLabel,
-                        onClick = { onOpenRelation(relation.targetKind, relation.targetRecordId) },
+            IngredientSummary(detail = detail, onArchive = onArchive)
+            ConversionsSection(conversions = detail.conversions)
+            Column(modifier = Modifier.padding(horizontal = CulinarySpacing.pageHorizontal)) {
+                Spacer(modifier = Modifier.height(CulinarySpacing.xl))
+                ArchiveModuleHeader(number = "01", english = "RELATED RECORDS", chinese = "关联档案")
+                val relatedRecords =
+                    detailState.relations.filter {
+                        it.targetKind == KitchenRecordKind.SAUCE || it.targetKind == KitchenRecordKind.RECIPE
+                    }
+                if (relatedRecords.isEmpty()) {
+                    Text(
+                        text = "暂未添加关联档案",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
+                } else {
+                    relatedRecords.forEach { relation ->
+                        ArchiveRelatedRow(
+                            title = relation.targetLabel,
+                            subtitle = null,
+                            relationLabel = relation.relationLabel,
+                            onClick = { onOpenRelation(relation.targetKind, relation.targetRecordId) },
+                        )
+                    }
                 }
-            }
-            Spacer(modifier = Modifier.height(CulinarySpacing.xl))
-            CulinaryRule()
-            Spacer(modifier = Modifier.height(CulinarySpacing.xl))
+                Spacer(modifier = Modifier.height(CulinarySpacing.xl))
+                CulinaryRule()
+                Spacer(modifier = Modifier.height(CulinarySpacing.xl))
             }
         }
     }
