@@ -9,10 +9,20 @@ import com.culinary.core.domain.model.Ingredient
 import com.culinary.core.domain.model.IngredientId
 import com.culinary.core.domain.model.IngredientUnitConversion
 import com.culinary.core.domain.model.KitchenRelatedRecord
+import com.culinary.core.domain.model.Recipe
+import com.culinary.core.domain.model.RecipeId
+import com.culinary.core.domain.model.RecipeVersion
+import com.culinary.core.domain.model.RecipeVersionId
+import com.culinary.core.domain.model.Sauce
+import com.culinary.core.domain.model.SauceId
+import com.culinary.core.domain.model.SauceVersion
+import com.culinary.core.domain.model.SauceVersionId
 import com.culinary.core.domain.model.UnitDimension
 import com.culinary.core.domain.model.UnitId
 import com.culinary.core.domain.repository.IngredientRepository
 import com.culinary.core.domain.repository.KitchenRelationRepository
+import com.culinary.core.domain.repository.RecipeRepository
+import com.culinary.core.domain.repository.SauceRepository
 import com.culinary.core.domain.repository.UnitRepository
 import com.culinary.core.domain.transaction.TransactionRunner
 import com.culinary.core.domain.usecase.ingredient.ArchiveIngredientUseCase
@@ -88,6 +98,8 @@ class IngredientsViewModelTest {
                     getIngredientDetail = detail,
                     archiveIngredient = archiveIngredient,
                     getRelations = emptyRelations(),
+                    sauceRepository = EmptySauceRepository(),
+                    recipeRepository = EmptyRecipeRepository(),
                 )
 
             advanceUntilIdle()
@@ -149,6 +161,8 @@ class IngredientsViewModelTest {
                     getIngredientDetail = detail,
                     archiveIngredient = archiveIngredient,
                     getRelations = emptyRelations(),
+                    sauceRepository = EmptySauceRepository(),
+                    recipeRepository = EmptyRecipeRepository(),
                 )
             advanceUntilIdle()
 
@@ -228,6 +242,32 @@ class IngredientsViewModelTest {
     private companion object {
         const val ID = "ingredient-flour"
     }
+}
+
+private class EmptySauceRepository : SauceRepository {
+    override fun observeActive(): Flow<List<Sauce>> = flowOf(emptyList())
+    override suspend fun get(id: SauceId): Outcome<Sauce> = error("unused")
+    override suspend fun getVersion(id: SauceVersionId): Outcome<SauceVersion> = error("unused")
+    override suspend fun listVersions(sauceId: SauceId): List<SauceVersion> = emptyList()
+    override suspend fun findCurrentVersion(sauceId: SauceId): SauceVersion? = null
+    override suspend fun nextVersionNo(sauceId: SauceId): Int = 1
+    override suspend fun save(sauce: Sauce): Outcome<SauceId> = error("unused")
+    override suspend fun saveDraft(version: SauceVersion): Outcome<SauceVersionId> = error("unused")
+    override suspend fun savePublished(version: SauceVersion): Outcome<SauceVersionId> = error("unused")
+    override suspend fun archive(id: SauceId): Outcome<Unit> = error("unused")
+}
+
+private class EmptyRecipeRepository : RecipeRepository {
+    override fun observeActive(): Flow<List<Recipe>> = flowOf(emptyList())
+    override suspend fun get(id: RecipeId): Outcome<Recipe> = error("unused")
+    override suspend fun getVersion(id: RecipeVersionId): RecipeVersion? = null
+    override suspend fun getCurrentVersion(recipeId: RecipeId): RecipeVersion? = null
+    override suspend fun listVersions(recipeId: RecipeId): List<RecipeVersion> = emptyList()
+    override suspend fun nextVersionNo(recipeId: RecipeId): Int = 1
+    override suspend fun save(recipe: Recipe): Outcome<RecipeId> = error("unused")
+    override suspend fun archive(id: RecipeId): Outcome<Unit> = error("unused")
+    override suspend fun saveDraft(version: RecipeVersion): RecipeVersionId = error("unused")
+    override suspend fun savePublished(version: RecipeVersion): Outcome<RecipeVersionId> = error("unused")
 }
 
 private fun emptyRelations(): ObserveKitchenRelationsUseCase =
