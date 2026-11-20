@@ -5,8 +5,12 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.culinary.core.common.Outcome
 import com.culinary.core.domain.model.ArchiveImageOwner
+import com.culinary.core.domain.model.ComponentTarget
 import com.culinary.core.domain.model.IngredientId
 import com.culinary.core.domain.model.KitchenRecordKind
+import com.culinary.core.domain.model.KitchenRelatedRecord
+import com.culinary.core.domain.repository.RecipeRepository
+import com.culinary.core.domain.repository.SauceRepository
 import com.culinary.core.domain.usecase.archive.ArchiveImageUseCase
 import com.culinary.core.domain.usecase.archive.GetArchiveCategoryForRecordUseCase
 import com.culinary.core.domain.usecase.ingredient.ArchiveIngredientUseCase
@@ -16,6 +20,8 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -29,6 +35,8 @@ class IngredientDetailViewModel
         private val getIngredientDetail: GetIngredientDetailUseCase,
         private val archiveIngredient: ArchiveIngredientUseCase,
         private val observeRelations: ObserveKitchenRelationsUseCase,
+        private val sauceRepository: SauceRepository,
+        private val recipeRepository: RecipeRepository,
         private val getArchiveCategoryForRecord: GetArchiveCategoryForRecordUseCase =
             GetArchiveCategoryForRecordUseCase(),
         private val archiveImages: ArchiveImageUseCase = ArchiveImageUseCase(),
@@ -41,8 +49,63 @@ class IngredientDetailViewModel
         init {
             load()
             viewModelScope.launch {
-                observeRelations(ingredientId.value).collect { relations ->
-                    _uiState.update { it.copy(relations = relations) }
+                combine(
+                    observeRelations(ingredientId.value),
+                    sauceRepository.observeActive(),
+                    recipeRepository.observeActive(),
+                ) { relations, sauces, recipes ->
+                    Triple(relations, sauces, recipes)
+                }.collectLatest { (relations, sauces, recipes) ->
+                    val related = buildList {
+                        addAll(
+                            relations.filter {
+                                it.targetKind == KitchenRecordKind.SAUCE ||
+                                    it.targetKind == KitchenRecordKind.RECIPE
+                            },
+                        )
+                        sauces.forEach { sauce ->
+                            val usesIngredient =
+                                sauceRepository.listVersions(sauce.id).any { version ->
+                                    version.components.any { component ->
+                                        (component.target as? ComponentTarget.Ingredient)?.id == ingredientId
+                                    }
+                                }
+                            if (usesIngredient) {
+                                add(
+                                    KitchenRelatedRecord(
+                                        sourceRecordId = ingredientId.value,
+                                        sourceKind = KitchenRecordKind.INGREDIENT,
+                                        targetRecordId = sauce.id.value,
+                                        targetKind = KitchenRecordKind.SAUCE,
+                                        targetLabel = sauce.name,
+                                        relationLabel = "酱汁组成",
+                                    ),
+                                )
+                            }
+                        }
+                        recipes.forEach { recipe ->
+                            val usesIngredient =
+                                recipeRepository.listVersions(recipe.id).any { version ->
+                                    version.components.any { component ->
+                                        (component.target as? ComponentTarget.Ingredient)?.id == ingredientId
+                                    }
+                                }
+                            if (usesIngredient) {
+                                add(
+                                    KitchenRelatedRecord(
+                                        sourceRecordId = ingredientId.value,
+                                        sourceKind = KitchenRecordKind.INGREDIENT,
+                                        targetRecordId = recipe.id.value,
+                                        targetKind = KitchenRecordKind.RECIPE,
+                                        targetLabel = recipe.name,
+                                        relationLabel = "菜谱组成",
+                                    ),
+                                )
+                            }
+                        }
+                    }.distinctBy { it.targetKind to it.targetRecordId }
+                        .sortedWith(compareBy<KitchenRelatedRecord> { it.targetKind.ordinal }.thenBy { it.targetLabel })
+                    _uiState.update { it.copy(relations = related) }
                 }
             }
         }
