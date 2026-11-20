@@ -10,6 +10,7 @@ import com.culinary.core.domain.model.Ingredient
 import com.culinary.core.domain.model.IngredientDetail
 import com.culinary.core.domain.model.IngredientId
 import com.culinary.core.domain.model.UnitDimension
+import com.culinary.core.domain.model.UnitId
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
