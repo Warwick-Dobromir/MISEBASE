@@ -29,8 +29,8 @@ import com.culinary.core.designsystem.component.ArchiveDetailHeading
 import com.culinary.core.designsystem.component.ArchiveHeroImage
 import com.culinary.core.designsystem.component.ArchiveModuleHeader
 import com.culinary.core.designsystem.component.ArchiveRelatedRow
-import com.culinary.core.designsystem.component.CulinaryRule
 import com.culinary.core.designsystem.component.ConfirmDialog
+import com.culinary.core.designsystem.component.CulinaryRule
 import com.culinary.core.designsystem.component.CulinaryTextButton
 import com.culinary.core.designsystem.component.ErrorBanner
 import com.culinary.core.designsystem.component.LoadingRows
@@ -135,6 +135,7 @@ internal fun IngredientDetailContent(
                 englishTitle = detail.ingredient.englishName,
                 chineseTitle = detail.ingredient.name,
                 description = detail.ingredient.description,
+                modifier = Modifier.padding(horizontal = CulinarySpacing.pageHorizontal),
             )
             detailState.imageBytes?.let { bytes ->
                 ArchiveHeroImage(
