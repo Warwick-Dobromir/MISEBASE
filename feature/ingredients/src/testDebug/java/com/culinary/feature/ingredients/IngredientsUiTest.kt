@@ -7,7 +7,6 @@ import androidx.compose.ui.test.performScrollTo
 import com.culinary.core.designsystem.theme.CulinaryTheme
 import com.culinary.core.domain.model.EntityStatus
 import com.culinary.core.domain.model.Ingredient
-import com.culinary.core.domain.model.IngredientConversionView
 import com.culinary.core.domain.model.IngredientDetail
 import com.culinary.core.domain.model.IngredientId
 import com.culinary.core.domain.model.UnitDimension
@@ -91,16 +90,7 @@ class IngredientsUiTest {
     }
 
     @Test
-    fun `detail shows conversion basis and archive action`() {
-        val conversion =
-            IngredientConversionView(
-                fromUnitId = UnitId("g"),
-                toUnitId = UnitId("kg"),
-                fromUnit = gram(),
-                toUnit = UnitModel(UnitId("kg"), "kg", "千克", "kg", UnitDimension.MASS, 1000.0, false, false, 0),
-                factor = 0.001,
-                note = "测试换算",
-            )
+    fun `detail shows the confirmed ingredient archive fields`() {
         val detail =
             IngredientDetail(
                 ingredient =
@@ -113,7 +103,7 @@ class IngredientsUiTest {
                         category = "粉类",
                     ),
                 defaultUnit = gram(),
-                conversions = listOf(conversion),
+                conversions = emptyList(),
             )
 
         compose.setContent {
@@ -121,15 +111,16 @@ class IngredientsUiTest {
                 IngredientDetailContent(
                     detailState = IngredientDetailUiState(detail = detail, isLoading = false),
                     onEdit = {},
-                    onArchive = {},
+                    onBack = {},
                     onOpenRelation = { _, _ -> },
                 )
             }
         }
 
-        compose.onNodeWithText("测试换算").performScrollTo().assertIsDisplayed()
-        compose.onNodeWithText("归档").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("低筋面粉").assertIsDisplayed()
+        listOf("学名", "常见品种", "常用计量单位", "可食用部分", "风味与特性", "烹饪用途").forEach { label ->
+            compose.onNodeWithText(label).performScrollTo().assertIsDisplayed()
+        }
     }
-
     private fun gram(): UnitModel = UnitModel(UnitId("g"), "g", "克", "g", UnitDimension.MASS, 1.0, true, false, 0)
 }
