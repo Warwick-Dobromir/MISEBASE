@@ -36,7 +36,6 @@ import com.culinary.core.designsystem.component.CulinaryButtonVariant
 import com.culinary.core.designsystem.component.CulinaryTextButton
 import com.culinary.core.designsystem.component.ErrorBanner
 import com.culinary.core.designsystem.component.LoadingRows
-import com.culinary.core.designsystem.component.PageHeader
 import com.culinary.core.designsystem.component.SectionHeader
 import com.culinary.core.designsystem.component.StatusBadge
 import com.culinary.core.designsystem.component.StatusTone
@@ -172,14 +171,18 @@ internal fun IngredientDetailContent(
         Column(modifier = Modifier.padding(horizontal = CulinarySpacing.pageHorizontal)) {
             Spacer(modifier = Modifier.height(CulinarySpacing.xl))
             ArchiveModuleHeader(number = "01", english = "RELATED RECORDS", chinese = "关联档案")
-            if (detailState.relations.isEmpty()) {
+            if (detailState.relations.none {
+                    it.targetKind == KitchenRecordKind.SAUCE || it.targetKind == KitchenRecordKind.RECIPE
+                }) {
                 Text(
                     text = "暂未添加关联档案",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             } else {
-                detailState.relations.forEach { relation ->
+                detailState.relations.filter {
+                    it.targetKind == KitchenRecordKind.SAUCE || it.targetKind == KitchenRecordKind.RECIPE
+                }.forEach { relation ->
                     ArchiveRelatedRow(
                         title = relation.targetLabel,
                         subtitle = null,
