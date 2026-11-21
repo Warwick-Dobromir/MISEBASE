@@ -186,7 +186,12 @@ class CulinaryDatabaseMigrationTest {
 
     @Test
     fun `migrates v9 to v10 and creates ingredient version history`() {
-        helper.createDatabase(DATABASE_NAME, 9).close()
+        val v9 = helper.createDatabase(DATABASE_NAME, 9)
+        v9.execSQL(
+            "INSERT INTO ingredient (id, name, normalized_name, status, created_at, updated_at, revision) " +
+                "VALUES ('migration-ingredient', '迁移食材', '迁移食材', 'ACTIVE', 100, 200, 3)",
+        )
+        v9.close()
 
         val migrated =
             helper.runMigrationsAndValidate(
@@ -212,6 +217,17 @@ class CulinaryDatabaseMigrationTest {
                 assertTrue("example_products" in columns)
                 assertTrue("ingredient_status" in columns)
                 assertTrue("source_revision" in columns)
+            }
+            db.query(
+                "SELECT version_no, name, ingredient_status, source_revision, status " +
+                    "FROM ingredient_version WHERE ingredient_id = 'migration-ingredient'",
+            ).use { cursor ->
+                assertTrue(cursor.moveToFirst())
+                assertEquals(1, cursor.getInt(0))
+                assertEquals("迁移食材", cursor.getString(1))
+                assertEquals("ACTIVE", cursor.getString(2))
+                assertEquals(3, cursor.getInt(3))
+                assertEquals("PUBLISHED", cursor.getString(4))
             }
             assertIntegrity(db)
         }
