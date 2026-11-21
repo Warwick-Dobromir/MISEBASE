@@ -30,6 +30,13 @@ data class IngredientVersionEntity(
     @ColumnInfo(name = "english_name") val englishName: String?,
     @ColumnInfo(name = "example_products") val exampleProducts: String?,
     @ColumnInfo(name = "seed_note") val seedNote: String?,
+    @ColumnInfo(name = "seed_id") val seedId: String?,
+    @ColumnInfo(name = "seed_version") val seedVersion: String?,
+    @ColumnInfo(name = "ingredient_status") val ingredientStatus: String,
+    @ColumnInfo(name = "source_created_at") val sourceCreatedAt: Long,
+    @ColumnInfo(name = "source_updated_at") val sourceUpdatedAt: Long,
+    @ColumnInfo(name = "source_deleted_at") val sourceDeletedAt: Long?,
+    @ColumnInfo(name = "source_revision") val sourceRevision: Int,
     @ColumnInfo(name = "status") val status: String,
     @ColumnInfo(name = "created_at") val createdAt: Long,
 )
