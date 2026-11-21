@@ -7,6 +7,7 @@ import com.culinary.core.data.mapper.IngredientMapper
 import com.culinary.core.data.transaction.DbErrorMapper
 import com.culinary.core.database.dao.IngredientDao
 import com.culinary.core.database.dao.IngredientVersionDao
+import com.culinary.core.database.entity.IngredientVersionEntity
 import com.culinary.core.domain.model.Ingredient
 import com.culinary.core.domain.model.IngredientId
 import com.culinary.core.domain.model.IngredientVersion
