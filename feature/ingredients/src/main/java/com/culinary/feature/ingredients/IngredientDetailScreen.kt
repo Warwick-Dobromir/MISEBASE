@@ -1,22 +1,22 @@
 package com.culinary.feature.ingredients
 
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.culinary.core.designsystem.component.ArchiveDetailBar
 import com.culinary.core.designsystem.component.ArchiveDetailFooter
 import com.culinary.core.designsystem.component.ArchiveDetailHeading
@@ -26,8 +26,8 @@ import com.culinary.core.designsystem.component.ArchiveRelatedRow
 import com.culinary.core.designsystem.component.ArchiveWideImage
 import com.culinary.core.designsystem.component.CulinaryRule
 import com.culinary.core.designsystem.component.ErrorBanner
-import com.culinary.core.designsystem.component.formatArchiveTimestamp
 import com.culinary.core.designsystem.component.LoadingRows
+import com.culinary.core.designsystem.component.formatArchiveTimestamp
 import com.culinary.core.designsystem.theme.CulinarySpacing
 import com.culinary.core.domain.model.IngredientConversionView
 import com.culinary.core.domain.model.KitchenRecordKind
