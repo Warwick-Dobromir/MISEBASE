@@ -40,7 +40,7 @@ class IngredientRepositoryTest {
                 ).addCallback(CulinaryDatabaseCallback())
                 .allowMainThreadQueries()
                 .build()
-        repository = IngredientRepositoryImpl(database.ingredientDao(), clock)
+        repository = IngredientRepositoryImpl(database.ingredientDao(), database.ingredientVersionDao(), clock)
     }
 
     @After
@@ -69,6 +69,20 @@ class IngredientRepositoryTest {
             assertThat(row?.name).isEqualTo("发酵黄油")
             assertThat(row?.createdAt).isEqualTo(NOW)
             assertThat(row?.revision).isEqualTo(2)
+        }
+
+    @Test
+    fun `creates immutable snapshots for each saved revision`() =
+        runBlocking {
+            repository.save(ingredient())
+            repository.save(ingredient(name = "发酵黄油"))
+
+            val versions = repository.listVersions(IngredientId(ID))
+
+            assertThat(versions.map { it.versionNo }).containsExactly(1, 2).inOrder()
+            assertThat(versions.map { it.status }).containsExactly("ACTIVE", "ACTIVE").inOrder()
+            assertThat(database.ingredientVersionDao().listByIngredient(ID).map { it.name })
+                .containsExactly("黄油", "发酵黄油").inOrder()
         }
 
     @Test
