@@ -20,6 +20,7 @@ import com.culinary.core.database.dao.GoodsReceiptItemDao
 import com.culinary.core.database.dao.ImageAssetDao
 import com.culinary.core.database.dao.IngredientAliasDao
 import com.culinary.core.database.dao.IngredientDao
+import com.culinary.core.database.dao.IngredientVersionDao
 import com.culinary.core.database.dao.IngredientUnitConversionDao
 import com.culinary.core.database.dao.InventoryArchiveDao
 import com.culinary.core.database.dao.InventoryArchiveProductDao
@@ -63,6 +64,7 @@ import com.culinary.core.database.entity.GoodsReceiptItemEntity
 import com.culinary.core.database.entity.ImageAssetEntity
 import com.culinary.core.database.entity.IngredientAliasEntity
 import com.culinary.core.database.entity.IngredientEntity
+import com.culinary.core.database.entity.IngredientVersionEntity
 import com.culinary.core.database.entity.IngredientUnitConversionEntity
 import com.culinary.core.database.entity.InventoryArchiveEntity
 import com.culinary.core.database.entity.InventoryArchiveProductEntity
@@ -116,6 +118,7 @@ import com.culinary.core.database.entity.UnitEntity
     entities = [
         UnitEntity::class,
         IngredientEntity::class,
+        IngredientVersionEntity::class,
         IngredientAliasEntity::class,
         IngredientUnitConversionEntity::class,
         SauceEntity::class,
@@ -162,7 +165,7 @@ import com.culinary.core.database.entity.UnitEntity
         InventoryStocktakeEntity::class,
         InventoryStocktakeLineEntity::class,
     ],
-    version = 9,
+    version = 10,
     exportSchema = true,
 )
 @TypeConverters(
@@ -176,6 +179,8 @@ abstract class CulinaryDatabase : RoomDatabase() {
     abstract fun unitDao(): UnitDao
 
     abstract fun ingredientDao(): IngredientDao
+
+    abstract fun ingredientVersionDao(): IngredientVersionDao
 
     abstract fun ingredientAliasDao(): IngredientAliasDao
 
