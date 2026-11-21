@@ -859,7 +859,7 @@ private val MIGRATION_9_10_IMPL =
                     `scientific_name`, `category`, `description`, `flavor_profile`,
                     `seasonality`, `origin`, `selection_notes`, `storage_notes`,
                     `prep_notes`, `allergen_notes`, `default_unit_id`, `english_name`,
-                    `example_products`, `seed_note`, `status`, `updated_at`
+                    `example_products`, `seed_note`, 'PUBLISHED', `updated_at`
                 FROM `ingredient`
                 """.trimIndent(),
             )
