@@ -5,6 +5,7 @@ import com.culinary.core.common.Outcome
 import com.culinary.core.domain.model.EntityStatus
 import com.culinary.core.domain.model.Ingredient
 import com.culinary.core.domain.model.IngredientId
+import com.culinary.core.domain.model.IngredientVersion
 import com.culinary.core.domain.repository.IngredientRepository
 import com.culinary.core.domain.transaction.TransactionRunner
 import com.google.common.truth.Truth.assertThat
@@ -153,6 +154,8 @@ class SaveIngredientUseCaseTest {
             saved += ingredient
             return Outcome.success(ingredient.id)
         }
+
+        override suspend fun listVersions(id: IngredientId): List<IngredientVersion> = emptyList()
 
         override suspend fun archive(id: IngredientId): Outcome<Unit> {
             archived += id
