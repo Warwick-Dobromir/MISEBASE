@@ -1,6 +1,9 @@
 package com.culinary.feature.ingredients
 
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -176,8 +179,7 @@ internal fun IngredientDetailContent(
                 }
             }
 
-            // 食材版本数据尚未建立前不显示虚构版本；真实版本能力在独立迁移中接入。
-            Spacer(Modifier.height(CulinarySpacing.xl))
+                        Spacer(Modifier.height(CulinarySpacing.xl))
             CulinaryRule()
             Text(
                 "MISEBASE",
