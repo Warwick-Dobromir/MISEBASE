@@ -11,6 +11,7 @@ import com.culinary.core.domain.usecase.archive.ArchiveImageUseCase
 import com.culinary.core.domain.usecase.archive.GetArchiveCategoryForRecordUseCase
 import com.culinary.core.domain.usecase.ingredient.ArchiveIngredientUseCase
 import com.culinary.core.domain.usecase.ingredient.GetIngredientDetailUseCase
+import com.culinary.core.domain.usecase.kitchen.ObserveKitchenRelationsUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -30,6 +31,7 @@ class IngredientDetailViewModel
         private val getArchiveCategoryForRecord: GetArchiveCategoryForRecordUseCase =
             GetArchiveCategoryForRecordUseCase(),
         private val archiveImages: ArchiveImageUseCase = ArchiveImageUseCase(),
+        private val observeKitchenRelations: ObserveKitchenRelationsUseCase,
     ) : ViewModel() {
         private val ingredientId =
             IngredientId(savedStateHandle.get<String>(IngredientsRoutes.ARG_INGREDIENT_ID).orEmpty())
@@ -38,6 +40,14 @@ class IngredientDetailViewModel
 
         init {
             load()
+            viewModelScope.launch {
+                observeKitchenRelations(ingredientId.value).collect { relations ->
+                    _uiState.update { it.copy(relations = relations.filter { relation ->
+                        relation.targetKind == KitchenRecordKind.SAUCE ||
+                            relation.targetKind == KitchenRecordKind.RECIPE
+                    }) }
+                }
+            }
         }
 
         fun load() {
