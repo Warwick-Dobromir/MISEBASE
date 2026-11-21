@@ -79,10 +79,10 @@ class IngredientRepositoryTest {
 
             val versions = repository.listVersions(IngredientId(ID))
 
-            assertThat(versions.map { it.versionNo }).containsExactly(1, 2).inOrder()
+            assertThat(versions.map { it.versionNo }).containsExactly(2, 1).inOrder()
             assertThat(versions.map { it.status }).containsExactly("PUBLISHED", "PUBLISHED").inOrder()
             assertThat(database.ingredientVersionDao().listByIngredient(ID).map { it.name })
-                .containsExactly("黄油", "发酵黄油").inOrder()
+                .containsExactly("发酵黄油", "黄油").inOrder()
         }
 
     @Test
