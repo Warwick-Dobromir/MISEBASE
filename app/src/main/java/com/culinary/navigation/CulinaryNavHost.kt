@@ -439,7 +439,6 @@ private fun NavGraphBuilder.kitchenReferenceGraph(navController: NavHostControll
             },
             onArchived = { navController.popBackStack() },
             onOpenRelation = navController::openKitchenRelated,
-            onBack = { navController.popBackStack() },
         )
     }
     composable(
@@ -498,6 +497,7 @@ private fun NavGraphBuilder.ingredientGraph(navController: NavHostController) {
             onEdit = { id -> navController.navigate(IngredientsRoutes.edit(id)) },
             onArchived = { navController.popBackStack() },
             onOpenRelation = navController::openKitchenRelated,
+            onBack = { navController.popBackStack() },
         )
     }
     composable(IngredientsRoutes.EDIT) {
