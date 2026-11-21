@@ -24,7 +24,7 @@ import javax.inject.Provider
  * 启动协调：全新库、持久化 v10 库的二次启动、v1→v10 迁移、版本过高与损坏六条路径。
  *
  * 回归重点：`EXPECTED_SCHEMA_VERSION` 必须与 `CulinaryDatabase` 的 v10 对齐；否则
- * 已持久化的 v4 库在第二次启动时会被误判为 `Incompatible`。
+ * 已持久化的 v10 库在第二次启动时会被误判为 `Incompatible`。
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [34])
@@ -138,7 +138,7 @@ class StartupCoordinatorTest {
 
     private fun buildRoom(): CulinaryDatabase = DatabaseFactory.create(context, writeExecutor, readExecutor)
 
-    private fun createPersistedV4Database() {
+    private fun createPersistedV10Database() {
         context.deleteDatabase(DATABASE_NAME)
         val built = buildRoom()
         built.openHelper.writableDatabase
