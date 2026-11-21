@@ -31,6 +31,7 @@ internal object CulinaryMigrations {
     val MIGRATION_6_7: Migration = MIGRATION_6_7_IMPL
     val MIGRATION_7_8: Migration = MIGRATION_7_8_IMPL
     val MIGRATION_8_9: Migration = MIGRATION_8_9_IMPL
+    val MIGRATION_9_10: Migration = MIGRATION_9_10_IMPL
 
     val ALL: Array<Migration> =
         arrayOf(
@@ -42,6 +43,7 @@ internal object CulinaryMigrations {
             MIGRATION_6_7,
             MIGRATION_7_8,
             MIGRATION_8_9,
+            MIGRATION_9_10,
         )
 }
 
@@ -803,3 +805,44 @@ private val V9_ARCHIVE_BACKFILL =
             "`id`, `archive_id`, `product_id`, `conversion_ratio`, `is_default`, `created_at`) " +
             "SELECT 'ap_' || `id`, 'arch_' || `id`, `id`, 1.0, 1, `created_at` FROM `product`",
     )
+
+
+/** v9 → v10：新增食材专属不可变历史快照表，不修改现有档案及其他库。 */
+private val MIGRATION_9_10_IMPL =
+    object : Migration(9, 10) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            CulinarySchemaExtras.dropPartialIndexes(db)
+            db.execSQL(
+                """
+                CREATE TABLE IF NOT EXISTS `ingredient_version` (
+                    `id` TEXT NOT NULL,
+                    `ingredient_id` TEXT NOT NULL,
+                    `version_no` INTEGER NOT NULL,
+                    `name` TEXT NOT NULL,
+                    `normalized_name` TEXT NOT NULL,
+                    `scientific_name` TEXT,
+                    `category` TEXT,
+                    `description` TEXT,
+                    `flavor_profile` TEXT,
+                    `seasonality` TEXT,
+                    `origin` TEXT,
+                    `selection_notes` TEXT,
+                    `storage_notes` TEXT,
+                    `prep_notes` TEXT,
+                    `allergen_notes` TEXT,
+                    `default_unit_id` TEXT,
+                    `english_name` TEXT,
+                    `example_products` TEXT,
+                    `seed_note` TEXT,
+                    `status` TEXT NOT NULL,
+                    `created_at` INTEGER NOT NULL,
+                    PRIMARY KEY(`id`)
+                )
+                """.trimIndent(),
+            )
+            db.execSQL(
+                "CREATE UNIQUE INDEX IF NOT EXISTS `index_ingredient_version_ingredient_id_version_no` " +
+                    "ON `ingredient_version` (`ingredient_id`, `version_no`)",
+            )
+        }
+    }
