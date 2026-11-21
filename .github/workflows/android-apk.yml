@@ -5,7 +5,7 @@ name: Android APK
 
 on:
   push:
-    branches: [main, fix/archive-category-interactions, fix/archive-sort-feedback, build/pen-flip-90fb110, ui/subcategory-search-sort-20261118, fix/archive-sort-autoscroll-20261118, fix/archive-sort-elastic-20261118, fix/archive-sort-save-actions-20261118, fix/detail-relations-follow-editor-state]
+    branches: [main, feat/ingredient-detail-rebuild-20261121, fix/archive-category-interactions, fix/archive-sort-feedback, build/pen-flip-90fb110, ui/subcategory-search-sort-20261118, fix/archive-sort-autoscroll-20261118, fix/archive-sort-elastic-20261118, fix/archive-sort-save-actions-20261118, fix/detail-relations-follow-editor-state]
   workflow_dispatch:
 
 permissions:
@@ -44,9 +44,6 @@ jobs:
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
-
-      - name: Run unit tests
-        run: ./gradlew :app:testDebugUnitTest --tests "com.culinary.kitchen.archive.ArchiveAutoScrollVelocityTest" --no-daemon
 
       - name: Build APK with original MISEBASE release key
         env:

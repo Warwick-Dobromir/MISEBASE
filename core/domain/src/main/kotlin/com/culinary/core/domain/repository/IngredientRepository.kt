@@ -3,6 +3,7 @@ package com.culinary.core.domain.repository
 import com.culinary.core.common.Outcome
 import com.culinary.core.domain.model.Ingredient
 import com.culinary.core.domain.model.IngredientId
+import com.culinary.core.domain.model.IngredientVersion
 import kotlinx.coroutines.flow.Flow
 
 /**
@@ -16,6 +17,8 @@ interface IngredientRepository {
     suspend fun get(id: IngredientId): Outcome<Ingredient>
 
     suspend fun save(ingredient: Ingredient): Outcome<IngredientId>
+
+    suspend fun listVersions(id: IngredientId): List<IngredientVersion>
 
     suspend fun archive(id: IngredientId): Outcome<Unit>
 }

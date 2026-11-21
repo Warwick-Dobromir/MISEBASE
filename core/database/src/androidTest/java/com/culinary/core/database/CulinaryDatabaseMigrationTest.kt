@@ -184,6 +184,55 @@ class CulinaryDatabaseMigrationTest {
         }
     }
 
+    @Test
+    fun `migrates v9 to v10 and creates ingredient version history`() {
+        val v9 = helper.createDatabase(DATABASE_NAME, 9)
+        v9.execSQL(
+            "INSERT INTO ingredient (id, name, normalized_name, status, created_at, updated_at, revision) " +
+                "VALUES ('migration-ingredient', '迁移食材', '迁移食材', 'ACTIVE', 100, 200, 3)",
+        )
+        v9.close()
+
+        val migrated =
+            helper.runMigrationsAndValidate(
+                DATABASE_NAME,
+                10,
+                true,
+                CulinaryMigrations.MIGRATION_9_10,
+            )
+        migrated.use { db ->
+            assertEquals(
+                10,
+                db.query("PRAGMA user_version").use { cursor ->
+                    cursor.moveToFirst()
+                    cursor.getInt(0)
+                },
+            )
+            db.query("PRAGMA table_info(ingredient_version)").use { cursor ->
+                val columns = mutableSetOf<String>()
+                while (cursor.moveToNext()) columns += cursor.getString(1)
+                assertTrue("ingredient_id" in columns)
+                assertTrue("version_no" in columns)
+                assertTrue("scientific_name" in columns)
+                assertTrue("example_products" in columns)
+                assertTrue("ingredient_status" in columns)
+                assertTrue("source_revision" in columns)
+            }
+            db.query(
+                "SELECT version_no, name, ingredient_status, source_revision, status " +
+                    "FROM ingredient_version WHERE ingredient_id = 'migration-ingredient'",
+            ).use { cursor ->
+                assertTrue(cursor.moveToFirst())
+                assertEquals(1, cursor.getInt(0))
+                assertEquals("迁移食材", cursor.getString(1))
+                assertEquals("ACTIVE", cursor.getString(2))
+                assertEquals(3, cursor.getInt(3))
+                assertEquals("PUBLISHED", cursor.getString(4))
+            }
+            assertIntegrity(db)
+        }
+    }
+
     private fun seedV1(db: androidx.sqlite.db.SupportSQLiteDatabase) {
         db.execSQL(
             "INSERT INTO unit (id, code, name, symbol, dimension, base_factor, is_base, " +

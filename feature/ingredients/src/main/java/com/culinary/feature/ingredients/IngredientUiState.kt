@@ -3,6 +3,7 @@ package com.culinary.feature.ingredients
 import com.culinary.core.common.CulinaryError
 import com.culinary.core.domain.model.ArchiveCategory
 import com.culinary.core.domain.model.IngredientDetail
+import com.culinary.core.domain.model.IngredientVersion
 import com.culinary.core.domain.model.KitchenRelatedRecord
 import com.culinary.core.domain.model.Unit as UnitModel
 
@@ -32,6 +33,7 @@ data class IngredientDetailUiState(
     val archived: Boolean = false,
     val error: String? = null,
     val relations: List<KitchenRelatedRecord> = emptyList(),
+    val versions: List<IngredientVersion> = emptyList(),
 )
 
 /** 食材编辑器状态。 */

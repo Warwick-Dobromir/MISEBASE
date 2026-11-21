@@ -15,7 +15,5 @@ jobs:
           distribution: temurin
           java-version: "21"
       - uses: gradle/actions/setup-gradle@v4
-      - name: Quality gates
-        run: ./gradlew ktlintCheck detekt lintDebug test assembleDebug --no-daemon
-      - name: Release build (R8)
-        run: ./gradlew :app:assembleRelease --no-daemon
+      - name: Code quality and tests
+        run: ./gradlew ktlintCheck detekt lintDebug test --no-daemon
