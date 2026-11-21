@@ -100,6 +100,9 @@ import com.culinary.core.database.entity.StorageLocationEntity
 import com.culinary.core.database.entity.SupplierEntity
 import com.culinary.core.database.entity.UnitEntity
 
+/** Single source of truth for Room and startup compatibility checks. */
+const val CULINARY_DATABASE_SCHEMA_VERSION: Int = 10
+
 /**
  * CULINARY 数据库（schema v10）。
  *
@@ -166,7 +169,7 @@ import com.culinary.core.database.entity.UnitEntity
         InventoryStocktakeEntity::class,
         InventoryStocktakeLineEntity::class,
     ],
-    version = 10,
+    version = CULINARY_DATABASE_SCHEMA_VERSION,
     exportSchema = true,
 )
 @TypeConverters(
