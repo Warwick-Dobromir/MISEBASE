@@ -21,6 +21,7 @@ import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.culinary.core.designsystem.component.ArchiveDetailBar
 import com.culinary.core.designsystem.component.ArchiveDetailHeading
+import com.culinary.core.designsystem.component.ArchiveDetailFooter
 import com.culinary.core.designsystem.component.ArchiveMetaGrid
 import com.culinary.core.designsystem.component.ArchiveMetaItem
 import com.culinary.core.designsystem.component.ArchiveRelatedRow
@@ -179,13 +180,13 @@ internal fun IngredientDetailContent(
                 }
             }
 
-                        Spacer(Modifier.height(CulinarySpacing.xl))
-            CulinaryRule()
-            Text(
-                "MISEBASE",
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.padding(top = CulinarySpacing.md, bottom = CulinarySpacing.xl),
+                        val currentVersion = detailState.versions.firstOrNull()
+            ArchiveDetailFooter(
+                updatedLabel = currentVersion?.createdAt
+                    ?.let { formatArchiveTimestamp(it) }
+                    ?.let { "最后更新 $it" }
+                    ?: "最后更新信息暂不可用",
+                versionLabel = currentVersion?.let { "正式版本 v${it.versionNo}" },
             )
         }
     }
