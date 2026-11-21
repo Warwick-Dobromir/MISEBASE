@@ -834,6 +834,13 @@ private val MIGRATION_9_10_IMPL =
                     `english_name` TEXT,
                     `example_products` TEXT,
                     `seed_note` TEXT,
+                    `seed_id` TEXT,
+                    `seed_version` TEXT,
+                    `ingredient_status` TEXT NOT NULL,
+                    `source_created_at` INTEGER NOT NULL,
+                    `source_updated_at` INTEGER NOT NULL,
+                    `source_deleted_at` INTEGER,
+                    `source_revision` INTEGER NOT NULL,
                     `status` TEXT NOT NULL,
                     `created_at` INTEGER NOT NULL,
                     PRIMARY KEY(`id`)
@@ -852,14 +859,17 @@ private val MIGRATION_9_10_IMPL =
                     `scientific_name`, `category`, `description`, `flavor_profile`,
                     `seasonality`, `origin`, `selection_notes`, `storage_notes`,
                     `prep_notes`, `allergen_notes`, `default_unit_id`, `english_name`,
-                    `example_products`, `seed_note`, `status`, `created_at`
+                    `example_products`, `seed_note`, `seed_id`, `seed_version`, `ingredient_status`,
+                    `source_created_at`, `source_updated_at`, `source_deleted_at`, `source_revision`,
+                    `status`, `created_at`
                 )
                 SELECT
                     `id` || '-v01', `id`, 1, `name`, `normalized_name`,
                     `scientific_name`, `category`, `description`, `flavor_profile`,
                     `seasonality`, `origin`, `selection_notes`, `storage_notes`,
                     `prep_notes`, `allergen_notes`, `default_unit_id`, `english_name`,
-                    `example_products`, `seed_note`, 'PUBLISHED', `updated_at`
+                    `example_products`, `seed_note`, `seed_id`, `seed_version`, `status`,
+                    `created_at`, `updated_at`, `deleted_at`, `revision`, 'PUBLISHED', `updated_at`
                 FROM `ingredient`
                 """.trimIndent(),
             )
