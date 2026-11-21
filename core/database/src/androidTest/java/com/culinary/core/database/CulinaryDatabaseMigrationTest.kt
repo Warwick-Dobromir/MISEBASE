@@ -210,6 +210,8 @@ class CulinaryDatabaseMigrationTest {
                 assertTrue("version_no" in columns)
                 assertTrue("scientific_name" in columns)
                 assertTrue("example_products" in columns)
+                assertTrue("ingredient_status" in columns)
+                assertTrue("source_revision" in columns)
             }
             assertIntegrity(db)
         }
