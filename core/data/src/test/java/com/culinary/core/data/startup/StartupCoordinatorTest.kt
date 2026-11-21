@@ -23,7 +23,7 @@ import javax.inject.Provider
 /**
  * 启动协调：全新库、持久化 v10 库的二次启动、v1→v10 迁移、版本过高与损坏六条路径。
  *
- * 回归重点：`EXPECTED_SCHEMA_VERSION` 必须与 `CulinaryDatabase` 的 v5 对齐；否则
+ * 回归重点：`EXPECTED_SCHEMA_VERSION` 必须与 `CulinaryDatabase` 的 v10 对齐；否则
  * 已持久化的 v4 库在第二次启动时会被误判为 `Incompatible`。
  */
 @RunWith(RobolectricTestRunner::class)
@@ -59,7 +59,7 @@ class StartupCoordinatorTest {
     @Test
     fun `reports ready again for a persisted schema v10 database`() =
         runBlocking {
-            createPersistedV4Database()
+            createPersistedV10Database()
 
             val state = coordinator().start()
 
