@@ -11,7 +11,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
@@ -24,6 +23,7 @@ import com.culinary.core.designsystem.component.ArchiveMetaItem
 import com.culinary.core.designsystem.component.ArchiveRelatedRow
 import com.culinary.core.designsystem.component.ArchiveWideImage
 import com.culinary.core.designsystem.component.CulinaryRule
+import com.culinary.core.designsystem.component.formatArchiveTimestamp
 import com.culinary.core.designsystem.component.ErrorBanner
 import com.culinary.core.designsystem.component.LoadingRows
 import com.culinary.core.designsystem.theme.CulinarySpacing
@@ -140,7 +140,7 @@ internal fun IngredientDetailContent(
                 IngredientConversions(detail.conversions)
             }
 
-            if (sauceRelations.isNotEmpty() || recipeRelations.isNotEmpty()) {
+            IngredientVersionHistory(detailState.versions)\n\n            if (sauceRelations.isNotEmpty() || recipeRelations.isNotEmpty()) {
                 IngredientSectionHeading("RELATED ARCHIVES", "关联档案")
                 if (sauceRelations.isNotEmpty()) {
                     Text(
@@ -185,6 +185,50 @@ internal fun IngredientDetailContent(
                 color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.padding(top = CulinarySpacing.md, bottom = CulinarySpacing.xl),
             )
+        }
+    }
+}
+
+
+@Composable
+private fun IngredientVersionHistory(versions: List<com.culinary.core.domain.model.IngredientVersion>) {
+    if (versions.isEmpty()) return
+    Column(modifier = Modifier.fillMaxWidth().padding(top = CulinarySpacing.lg)) {
+        CulinaryRule()
+        Text(
+            "VERSIONS",
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.secondary,
+            modifier = Modifier.padding(top = CulinarySpacing.md),
+        )
+        Text(
+            "版本历史",
+            style = MaterialTheme.typography.titleSmall,
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.padding(bottom = CulinarySpacing.sm),
+        )
+        versions.forEachIndexed { index, version ->
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(vertical = CulinarySpacing.xs),
+                horizontalArrangement = androidx.compose.foundation.layout.Arrangement.SpaceBetween,
+            ) {
+                Text(
+                    "v" + version.versionNo.toString().padStart(2, '0'),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+                Text(
+                    if (index == 0) "已发布 · 当前" else "已发布",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Text(
+                    formatArchiveTimestamp(version.createdAt).orEmpty(),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            CulinaryRule()
         }
     }
 }
