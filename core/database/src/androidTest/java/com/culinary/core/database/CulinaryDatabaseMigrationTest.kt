@@ -184,6 +184,37 @@ class CulinaryDatabaseMigrationTest {
         }
     }
 
+    @Test
+    fun `migrates v9 to v10 and creates ingredient version history`() {
+        helper.createDatabase(DATABASE_NAME, 9).close()
+
+        val migrated =
+            helper.runMigrationsAndValidate(
+                DATABASE_NAME,
+                10,
+                true,
+                CulinaryMigrations.MIGRATION_9_10,
+            )
+        migrated.use { db ->
+            assertEquals(
+                10,
+                db.query("PRAGMA user_version").use { cursor ->
+                    cursor.moveToFirst()
+                    cursor.getInt(0)
+                },
+            )
+            db.query("PRAGMA table_info(ingredient_version)").use { cursor ->
+                val columns = mutableSetOf<String>()
+                while (cursor.moveToNext()) columns += cursor.getString(1)
+                assertTrue("ingredient_id" in columns)
+                assertTrue("version_no" in columns)
+                assertTrue("scientific_name" in columns)
+                assertTrue("example_products" in columns)
+            }
+            assertIntegrity(db)
+        }
+    }
+
     private fun seedV1(db: androidx.sqlite.db.SupportSQLiteDatabase) {
         db.execSQL(
             "INSERT INTO unit (id, code, name, symbol, dimension, base_factor, is_base, " +
