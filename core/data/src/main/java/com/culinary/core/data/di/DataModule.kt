@@ -16,6 +16,7 @@ import com.culinary.core.database.CulinaryDatabase
 import com.culinary.core.database.DatabaseFactory
 import com.culinary.core.database.dao.CalculationRecordDao
 import com.culinary.core.database.dao.IngredientDao
+import com.culinary.core.database.dao.IngredientVersionDao
 import com.culinary.core.database.dao.UnitDao
 import dagger.Module
 import dagger.Provides
@@ -65,6 +66,10 @@ object DataModule {
     @Provides
     @Singleton
     fun provideIngredientDao(database: CulinaryDatabase): IngredientDao = database.ingredientDao()
+
+    @Provides
+    @Singleton
+    fun provideIngredientVersionDao(database: CulinaryDatabase): IngredientVersionDao = database.ingredientVersionDao()
 
     @Provides
     @Singleton
