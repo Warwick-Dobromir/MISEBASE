@@ -11,6 +11,7 @@ import com.culinary.core.domain.usecase.archive.ArchiveImageUseCase
 import com.culinary.core.domain.usecase.archive.GetArchiveCategoryForRecordUseCase
 import com.culinary.core.domain.usecase.ingredient.ArchiveIngredientUseCase
 import com.culinary.core.domain.usecase.ingredient.GetIngredientDetailUseCase
+import com.culinary.core.domain.usecase.ingredient.ListIngredientVersionsUseCase
 import com.culinary.core.domain.usecase.kitchen.ObserveKitchenRelationsUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -32,6 +33,7 @@ class IngredientDetailViewModel
             GetArchiveCategoryForRecordUseCase(),
         private val archiveImages: ArchiveImageUseCase = ArchiveImageUseCase(),
         private val observeKitchenRelations: ObserveKitchenRelationsUseCase,
+        private val listIngredientVersions: ListIngredientVersionsUseCase,
     ) : ViewModel() {
         private val ingredientId =
             IngredientId(savedStateHandle.get<String>(IngredientsRoutes.ARG_INGREDIENT_ID).orEmpty())
@@ -59,6 +61,7 @@ class IngredientDetailViewModel
                             runCatching {
                                 getArchiveCategoryForRecord(KitchenRecordKind.INGREDIENT, ingredientId.value)
                             }.getOrNull()
+                        val versions = runCatching { listIngredientVersions(ingredientId) }.getOrDefault(emptyList())
                         val image =
                             runCatching {
                                 archiveImages.primary(ArchiveImageOwner.INGREDIENT, ingredientId.value)
@@ -68,6 +71,7 @@ class IngredientDetailViewModel
                                 detail = result.value,
                                 categoryPath = category?.path.orEmpty(),
                                 imageBytes = image,
+                                versions = versions,
                                 isLoading = false,
                                 isArchiving = false,
                             )
