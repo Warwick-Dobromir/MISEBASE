@@ -1,23 +1,30 @@
 package com.culinary.feature.ingredients
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.culinary.core.designsystem.component.ArchiveDetailBar
 import com.culinary.core.designsystem.component.ArchiveDetailFooter
 import com.culinary.core.designsystem.component.ArchiveDetailHeading
 import com.culinary.core.designsystem.component.ArchiveMetaGrid
@@ -28,6 +35,7 @@ import com.culinary.core.designsystem.component.CulinaryRule
 import com.culinary.core.designsystem.component.ErrorBanner
 import com.culinary.core.designsystem.component.LoadingRows
 import com.culinary.core.designsystem.component.formatArchiveTimestamp
+import com.culinary.core.designsystem.icon.CulinaryIcons
 import com.culinary.core.designsystem.theme.CulinarySpacing
 import com.culinary.core.domain.model.IngredientConversionView
 import com.culinary.core.domain.model.KitchenRecordKind
@@ -77,6 +85,54 @@ fun IngredientDetailRoute(
 }
 
 @Composable
+private fun IngredientDetailBar(
+    categoryPath: String,
+    onBack: () -> Unit,
+    onEdit: () -> Unit,
+) {
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = CulinarySpacing.pageHorizontal)
+                .height(64.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Row(
+                modifier = Modifier
+                    .clickable(onClick = onBack)
+                    .defaultMinSize(minHeight = 44.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Icon(
+                    imageVector = CulinaryIcons.Back,
+                    contentDescription = "返回",
+                    tint = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.padding(end = CulinarySpacing.sm),
+                )
+                Text(
+                    categoryPath,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                )
+            }
+            Spacer(modifier = Modifier.weight(1f))
+            Text(
+                "编辑档案",
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.secondary,
+                modifier = Modifier
+                    .clickable(onClick = onEdit)
+                    .defaultMinSize(minHeight = 44.dp)
+                    .padding(vertical = CulinarySpacing.sm),
+            )
+        }
+        CulinaryRule()
+    }
+}
+
+@Composable
 internal fun IngredientDetailContent(
     detailState: IngredientDetailUiState,
     onBack: () -> Unit,
@@ -89,8 +145,9 @@ internal fun IngredientDetailContent(
     val recipeRelations = detailState.relations.filter { it.targetKind == KitchenRecordKind.RECIPE }
 
     Column(modifier = Modifier.fillMaxSize()) {
-        ArchiveDetailBar(
-            editLabel = "编辑档案",
+        IngredientDetailBar(
+            categoryPath = detailState.categoryPath.joinToString(" / ")
+                .ifBlank { ingredient.category ?: "未分类" },
             onBack = onBack,
             onEdit = { onEdit(ingredient.id.value) },
         )
@@ -100,13 +157,6 @@ internal fun IngredientDetailContent(
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = CulinarySpacing.pageHorizontal),
         ) {
-            Text(
-                text = detailState.categoryPath.joinToString(" / ")
-                    .ifBlank { ingredient.category ?: "未分类" },
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(top = CulinarySpacing.md, bottom = CulinarySpacing.md),
-            )
             ArchiveDetailHeading(
                 categoryLabel = ingredient.category,
                 englishTitle = ingredient.englishName,
