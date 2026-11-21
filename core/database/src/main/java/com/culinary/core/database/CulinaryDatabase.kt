@@ -101,7 +101,7 @@ import com.culinary.core.database.entity.SupplierEntity
 import com.culinary.core.database.entity.UnitEntity
 
 /**
- * CULINARY 数据库（schema v7）。
+ * CULINARY 数据库（schema v10）。
  *
  * `exportSchema = true`：每个版本必须提交 `schemas/` JSON，迁移测试依赖它。
  * v2 新增计算记录与 recipe_version.servings；v3 新增 kitchen_reference；
@@ -111,7 +111,7 @@ import com.culinary.core.database.entity.UnitEntity
  * v7 新增 recipe_version.steps_json（菜谱步骤标题/说明/时间，与酱汁同构）；
  * v8 新增 sauce_version/recipe_version 的最小制作范围数值与单位（可空，历史数据保持 null）。
  * v9 新增库存档案与档案-商品关联、批次生产日期/冻结/回收/临时标记、冻结与库位转移记录、
- * 出库单与明细、打印任务、盘点单与明细，并为批次/流水补充档案归属；历史数据按商品回填。
+ * 出库单与明细、打印任务、盘点单与明细，并为批次/流水补充档案归属；历史数据按商品回填；\n * v10 新增独立食材历史快照表，旧食材按当前档案回填为 v01。
  */
 @Suppress("TooManyFunctions")
 @Database(
