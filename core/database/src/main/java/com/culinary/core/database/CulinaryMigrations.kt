@@ -844,5 +844,24 @@ private val MIGRATION_9_10_IMPL =
                 "CREATE UNIQUE INDEX IF NOT EXISTS `index_ingredient_version_ingredient_id_version_no` " +
                     "ON `ingredient_version` (`ingredient_id`, `version_no`)",
             )
+            // 迁移时为既有食材建立真实 v01 快照，避免老档案出现空历史。
+            db.execSQL(
+                """
+                INSERT INTO `ingredient_version` (
+                    `id`, `ingredient_id`, `version_no`, `name`, `normalized_name`,
+                    `scientific_name`, `category`, `description`, `flavor_profile`,
+                    `seasonality`, `origin`, `selection_notes`, `storage_notes`,
+                    `prep_notes`, `allergen_notes`, `default_unit_id`, `english_name`,
+                    `example_products`, `seed_note`, `status`, `created_at`
+                )
+                SELECT
+                    `id` || '-v01', `id`, 1, `name`, `normalized_name`,
+                    `scientific_name`, `category`, `description`, `flavor_profile`,
+                    `seasonality`, `origin`, `selection_notes`, `storage_notes`,
+                    `prep_notes`, `allergen_notes`, `default_unit_id`, `english_name`,
+                    `example_products`, `seed_note`, `status`, `updated_at`
+                FROM `ingredient`
+                """.trimIndent(),
+            )
         }
     }
