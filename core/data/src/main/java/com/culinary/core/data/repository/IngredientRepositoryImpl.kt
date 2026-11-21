@@ -79,7 +79,7 @@ class IngredientRepositoryImpl
                         englishName = savedEntity.englishName,
                         exampleProducts = savedEntity.exampleProducts,
                         seedNote = savedEntity.seedNote,
-                        status = savedEntity.status.name,
+                        status = "PUBLISHED",
                         createdAt = now,
                     ),
                 )
