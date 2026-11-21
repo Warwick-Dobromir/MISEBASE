@@ -142,7 +142,9 @@ internal fun IngredientDetailContent(
                 IngredientConversions(detail.conversions)
             }
 
-            IngredientVersionHistory(detailState.versions)\n\n            if (sauceRelations.isNotEmpty() || recipeRelations.isNotEmpty()) {
+            IngredientVersionHistory(detailState.versions)
+
+            if (sauceRelations.isNotEmpty() || recipeRelations.isNotEmpty()) {
                 IngredientSectionHeading("RELATED ARCHIVES", "关联档案")
                 if (sauceRelations.isNotEmpty()) {
                     Text(
