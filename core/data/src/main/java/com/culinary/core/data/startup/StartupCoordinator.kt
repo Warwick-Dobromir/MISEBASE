@@ -6,6 +6,7 @@ import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteDatabaseCorruptException
 import android.database.sqlite.SQLiteException
 import com.culinary.core.database.CulinaryDatabase
+import com.culinary.core.database.CULINARY_DATABASE_SCHEMA_VERSION
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
@@ -105,7 +106,7 @@ class StartupCoordinator(
          * 保持同步。** 升级 Schema 时必须同时修改两处，并补“已持久化库再次启动”的回归测试；
          * 否则会把当前版本的库误判为“更新版本”，把应用锁在 [StartupState.Incompatible]。
          */
-        const val EXPECTED_SCHEMA_VERSION = 10
+        const val EXPECTED_SCHEMA_VERSION = CULINARY_DATABASE_SCHEMA_VERSION
 
         val SQLITE_HEADER: ByteArray = "SQLite format 3\u0000".toByteArray(Charsets.ISO_8859_1)
 
