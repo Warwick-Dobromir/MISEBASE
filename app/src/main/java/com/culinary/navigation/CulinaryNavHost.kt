@@ -439,6 +439,7 @@ private fun NavGraphBuilder.kitchenReferenceGraph(navController: NavHostControll
             },
             onArchived = { navController.popBackStack() },
             onOpenRelation = navController::openKitchenRelated,
+            onBack = { navController.popBackStack() },
         )
     }
     composable(
