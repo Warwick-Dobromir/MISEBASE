@@ -192,8 +192,6 @@ internal fun IngredientDetailContent(
                 IngredientConversions(detail.conversions)
             }
 
-            IngredientVersionHistory(detailState.versions)
-
             if (sauceRelations.isNotEmpty() || recipeRelations.isNotEmpty()) {
                 IngredientSectionHeading("RELATED ARCHIVES", "关联档案")
                 if (sauceRelations.isNotEmpty()) {
@@ -230,7 +228,9 @@ internal fun IngredientDetailContent(
                 }
             }
 
-                        val currentVersion = detailState.versions.firstOrNull()
+            IngredientVersionHistory(detailState.versions)
+
+            val currentVersion = detailState.versions.firstOrNull()
             ArchiveDetailFooter(
                 updatedLabel = currentVersion?.createdAt
                     ?.let { formatArchiveTimestamp(it) }
