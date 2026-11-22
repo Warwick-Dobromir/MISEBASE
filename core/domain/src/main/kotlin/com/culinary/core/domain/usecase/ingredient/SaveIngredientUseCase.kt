@@ -26,6 +26,7 @@ data class SaveIngredientInput(
     val flavorProfile: String? = null,
     val culinaryUse: String? = null,
     val edibleParts: String? = null,
+    val isActive: Boolean = true,
 )
 
 /**
@@ -74,6 +75,7 @@ class SaveIngredientUseCase(
                 flavorProfile = input.flavorProfile.blankToNull(),
                 culinaryUse = input.culinaryUse.blankToNull(),
                 edibleParts = input.edibleParts.blankToNull(),
+                status = if (input.isActive) EntityStatus.ACTIVE else EntityStatus.ARCHIVED,
             )
 
         return transactionRunner.write { repository.save(ingredient) }.flatMap { it }
