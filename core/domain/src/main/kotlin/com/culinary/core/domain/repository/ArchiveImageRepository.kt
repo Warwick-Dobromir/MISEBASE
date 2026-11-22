@@ -11,4 +11,12 @@ interface ArchiveImageRepository {
     ): List<ArchiveImage>
 
     suspend fun read(imageId: String): ByteArray?
+
+    suspend fun addPrimaryIngredientImage(
+        ingredientId: String,
+        bytes: ByteArray,
+        mimeType: String,
+    ): com.culinary.core.common.Outcome<ArchiveImage>
+
+    suspend fun delete(imageId: String): com.culinary.core.common.Outcome<Unit>
 }
