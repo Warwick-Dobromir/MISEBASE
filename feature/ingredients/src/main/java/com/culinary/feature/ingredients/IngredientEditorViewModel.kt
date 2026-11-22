@@ -102,6 +102,7 @@ class IngredientEditorViewModel
                                     flavorProfile = result.value.ingredient.flavorProfile.orEmpty(),
                                     culinaryUse = result.value.ingredient.culinaryUse.orEmpty(),
                                     edibleParts = result.value.ingredient.edibleParts.orEmpty(),
+                                    isActive = result.value.ingredient.isActive,
                                     defaultUnit = result.value.defaultUnit ?: it.defaultUnit,
                                     imageId = primaryImage?.id,
                                     imageBytes = primaryBytes,
@@ -164,6 +165,7 @@ class IngredientEditorViewModel
         fun onFlavorProfileChange(value: String) { _uiState.update { it.copy(flavorProfile = value, isDirty = true) } }
         fun onCulinaryUseChange(value: String) { _uiState.update { it.copy(culinaryUse = value, isDirty = true) } }
         fun onEdiblePartsChange(value: String) { _uiState.update { it.copy(edibleParts = value, isDirty = true) } }
+        fun onActiveChange(value: Boolean) { _uiState.update { it.copy(isActive = value, isDirty = true) } }
 
         fun onUnitChange(unit: UnitModel) {
             _uiState.update { it.copy(defaultUnit = unit, isDirty = true) }
@@ -213,6 +215,7 @@ class IngredientEditorViewModel
                             flavorProfile = state.flavorProfile,
                             culinaryUse = state.culinaryUse,
                             edibleParts = state.edibleParts,
+                            isActive = state.isActive,
                         ),
                     )
                 when (result) {
