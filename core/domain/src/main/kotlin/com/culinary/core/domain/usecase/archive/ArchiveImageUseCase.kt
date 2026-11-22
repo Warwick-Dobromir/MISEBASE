@@ -24,6 +24,14 @@ class ArchiveImageUseCase @javax.inject.Inject constructor(
     }
 
     /** 步骤图片：stepNo（1 起）→ 原始字节；无图片的步骤不返回键。 */
+    suspend fun addPrimaryIngredientImage(
+        ingredientId: String,
+        bytes: ByteArray,
+        mimeType: String,
+    ) = repository.addPrimaryIngredientImage(ingredientId, bytes, mimeType)
+
+    suspend fun delete(imageId: String) = repository.delete(imageId)
+
     suspend fun stepImages(
         owner: ArchiveImageOwner,
         ownerId: String,
