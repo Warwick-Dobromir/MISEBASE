@@ -122,11 +122,11 @@ class IngredientEditorViewModel
         }
 
         fun onNameChange(value: String) {
-            _uiState.update { it.copy(name = value, error = null) }
+            _uiState.update { it.copy(name = value, isDirty = true, error = null) }
         }
 
         fun onCategoryChange(value: String) {
-            _uiState.update { it.copy(category = value, categoryPathIds = emptyList()) }
+            _uiState.update { it.copy(category = value, categoryPathIds = emptyList(), isDirty = true) }
         }
 
         fun onCategorySelect(level: Int, categoryId: String?) {
@@ -134,36 +134,36 @@ class IngredientEditorViewModel
                 val base = state.categoryPathIds.take(level.coerceAtLeast(0))
                 val next = if (categoryId == null) base else base + categoryId
                 val leafName = next.lastOrNull()?.let { id -> state.categories.firstOrNull { it.id == id }?.name }.orEmpty()
-                state.copy(category = leafName, categoryPathIds = next, error = null)
+                state.copy(category = leafName, categoryPathIds = next, isDirty = true, error = null)
             }
         }
 
         fun onDescriptionChange(value: String) {
-            _uiState.update { it.copy(description = value) }
+            _uiState.update { it.copy(description = value, isDirty = true) }
         }
 
         fun onEnglishNameChange(value: String) {
-            _uiState.update { it.copy(englishName = value) }
+            _uiState.update { it.copy(englishName = value, isDirty = true) }
         }
 
         fun onExampleProductsChange(value: String) {
-            _uiState.update { it.copy(exampleProducts = value) }
+            _uiState.update { it.copy(exampleProducts = value, isDirty = true) }
         }
 
         fun onStorageNotesChange(value: String) {
-            _uiState.update { it.copy(storageNotes = value) }
+            _uiState.update { it.copy(storageNotes = value, isDirty = true) }
         }
 
         fun onAllergenNotesChange(value: String) {
-            _uiState.update { it.copy(allergenNotes = value) }
+            _uiState.update { it.copy(allergenNotes = value, isDirty = true) }
         }
 
         fun onUnitChange(unit: UnitModel) {
-            _uiState.update { it.copy(defaultUnit = unit) }
+            _uiState.update { it.copy(defaultUnit = unit, isDirty = true) }
         }
 
         fun onImagePicked(image: PendingIngredientImage) {
-            _uiState.update { it.copy(pendingImage = image, imageRemoved = false, error = null) }
+            _uiState.update { it.copy(pendingImage = image, imageRemoved = false, isDirty = true, error = null) }
         }
 
         fun onImageRemoved() {
@@ -172,6 +172,7 @@ class IngredientEditorViewModel
                     pendingImage = null,
                     imageBytes = null,
                     imageRemoved = it.imageId != null,
+                    isDirty = true,
                     error = null,
                 )
             }
@@ -247,7 +248,7 @@ class IngredientEditorViewModel
                                 is Outcome.Success -> Unit
                             }
                         }
-                        _uiState.update { it.copy(isSaving = false, saved = true) }
+                        _uiState.update { it.copy(isSaving = false, isDirty = false, saved = true) }
                     }
                     is Outcome.Failure ->
                         _uiState.update {
