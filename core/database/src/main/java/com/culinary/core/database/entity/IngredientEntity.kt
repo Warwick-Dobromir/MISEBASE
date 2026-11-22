@@ -47,6 +47,10 @@ data class IngredientEntity(
     val description: String? = null,
     @ColumnInfo(name = "flavor_profile")
     val flavorProfile: String? = null,
+    @ColumnInfo(name = "culinary_use")
+    val culinaryUse: String? = null,
+    @ColumnInfo(name = "edible_parts")
+    val edibleParts: String? = null,
     @ColumnInfo(name = "seasonality")
     val seasonality: String? = null,
     @ColumnInfo(name = "origin")
