@@ -504,7 +504,10 @@ private fun NavGraphBuilder.ingredientGraph(navController: NavHostController) {
         )
     }
     composable(IngredientsRoutes.EDIT) {
-        IngredientEditorRoute(onSaved = { navController.popBackStack() })
+        IngredientEditorRoute(
+            onSaved = { navController.popBackStack() },
+            onCancelled = { navController.popBackStack() },
+        )
     }
 }
 
