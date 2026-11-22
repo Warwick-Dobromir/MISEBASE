@@ -1,5 +1,6 @@
 package com.culinary.feature.ingredients
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -13,7 +14,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -25,8 +25,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.culinary.core.designsystem.component.ArchiveDetailBar
 import com.culinary.core.designsystem.component.ArchiveDetailFooter
 import com.culinary.core.designsystem.component.ArchiveDetailHeading
-import com.culinary.core.designsystem.component.ArchiveMetaGrid
-import com.culinary.core.designsystem.component.ArchiveMetaItem
 import com.culinary.core.designsystem.component.ArchiveRelatedRow
 import com.culinary.core.designsystem.component.ArchiveWideImage
 import com.culinary.core.designsystem.component.CulinaryRule
@@ -51,10 +49,6 @@ fun IngredientDetailRoute(
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { viewModel.load() }
 
-    LaunchedEffect(state.archived) {
-        if (state.archived) onArchived()
-    }
-
     Column(modifier = modifier.fillMaxSize()) {
         state.error?.let { message ->
             ErrorBanner(
@@ -77,6 +71,7 @@ fun IngredientDetailRoute(
                 onBack = onBack,
                 onEdit = onEdit,
                 onOpenRelation = onOpenRelation,
+                onToggleActive = viewModel::toggleActive,
             )
         }
     }
@@ -88,6 +83,7 @@ internal fun IngredientDetailContent(
     onBack: () -> Unit,
     onEdit: (String) -> Unit,
     onOpenRelation: (KitchenRecordKind, String) -> Unit,
+    onToggleActive: () -> Unit,
 ) {
     val detail = detailState.detail ?: return
     val ingredient = detail.ingredient
@@ -118,26 +114,27 @@ internal fun IngredientDetailContent(
                 ArchiveWideImage(bytes = bytes, caption = null)
             }
 
-            ArchiveMetaGrid(
-                items = listOf(
-                    ArchiveMetaItem("STATUS", if (ingredient.isActive) "在用" else "已归档"),
-                    ArchiveMetaItem("DEFAULT UNIT", detail.defaultUnit?.let { "${it.name}（${it.symbol}）" }.orEmpty()),
-                ),
+            IngredientSectionHeading("BASIC INFORMATION", "基本信息")
+            IngredientBasicInformation(
+                category = detailState.categoryPath.joinToString(" / ").ifBlank { ingredient.category ?: "未分类" },
+                englishName = ingredient.englishName,
+                scientificName = ingredient.scientificName,
+                exampleProducts = ingredient.exampleProducts,
+                edibleParts = ingredient.edibleParts,
+                defaultUnit = detail.defaultUnit?.let { "${it.name}（${it.symbol}）" },
             )
-
-            IngredientFieldSection(
-                fields = listOf(
-                    "学名" to ingredient.scientificName,
-                    "风味" to ingredient.flavorProfile,
-                    "时令" to ingredient.seasonality,
-                    "产地" to ingredient.origin,
-                    "挑选" to ingredient.selectionNotes,
-                    "储存" to ingredient.storageNotes,
-                    "预处理" to ingredient.prepNotes,
-                    "示例商品 / 规格" to ingredient.exampleProducts,
-                    "过敏原提示" to ingredient.allergenNotes,
-                ),
-            )
+            Row(modifier = Modifier.fillMaxWidth().clickable(onClick = onToggleActive).padding(vertical = CulinarySpacing.sm), verticalAlignment = Alignment.CenterVertically) {
+                Text("档案状态", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.weight(1f))
+                Text(if (ingredient.isActive) "在用 · 点击归档" else "已归档 · 点击恢复在用", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.secondary)
+            }
+            CulinaryRule()
+            IngredientSectionHeading("FLAVOR PROFILE", "风味与特性")
+            Text(ingredient.flavorProfile?.takeIf { it.isNotBlank() } ?: "尚未填写", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.padding(vertical = CulinarySpacing.sm))
+            CulinaryRule()
+            IngredientSectionHeading("CULINARY USE", "烹饪用途")
+            Text(ingredient.culinaryUse?.takeIf { it.isNotBlank() } ?: "尚未填写", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.padding(vertical = CulinarySpacing.sm))
+            CulinaryRule()
+            IngredientFieldSection(fields = listOf("时令" to ingredient.seasonality, "产地" to ingredient.origin, "挑选" to ingredient.selectionNotes, "储存" to ingredient.storageNotes, "预处理" to ingredient.prepNotes, "过敏原提示" to ingredient.allergenNotes))
 
             if (detail.conversions.isNotEmpty()) {
                 IngredientConversions(detail.conversions)
@@ -235,6 +232,18 @@ private fun IngredientVersionHistory(versions: List<com.culinary.core.domain.mod
         }
         Spacer(modifier = Modifier.height(CulinarySpacing.xl))
     }
+}
+
+@Composable
+private fun IngredientBasicInformation(category: String, englishName: String?, scientificName: String?, exampleProducts: String?, edibleParts: String?, defaultUnit: String?) {
+    val rows = listOf("所属分类" to category, "英文名称" to englishName, "学名" to scientificName, "常见品种" to exampleProducts, "常用计量单位" to defaultUnit, "可食用部分" to edibleParts).filter { !it.second.isNullOrBlank() }
+    rows.forEach { (label, value) ->
+        Row(modifier = Modifier.fillMaxWidth().padding(vertical = CulinarySpacing.sm), verticalAlignment = Alignment.CenterVertically) {
+            Text(label, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.weight(1f))
+            Text(value.orEmpty(), style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurface)
+        }
+    }
+    CulinaryRule()
 }
 
 @Composable
