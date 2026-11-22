@@ -32,6 +32,7 @@ internal object CulinaryMigrations {
     val MIGRATION_7_8: Migration = MIGRATION_7_8_IMPL
     val MIGRATION_8_9: Migration = MIGRATION_8_9_IMPL
     val MIGRATION_9_10: Migration = MIGRATION_9_10_IMPL
+    val MIGRATION_10_11: Migration = MIGRATION_10_11_IMPL
 
     val ALL: Array<Migration> =
         arrayOf(
@@ -44,6 +45,7 @@ internal object CulinaryMigrations {
             MIGRATION_7_8,
             MIGRATION_8_9,
             MIGRATION_9_10,
+            MIGRATION_10_11,
         )
 }
 
@@ -427,6 +429,18 @@ private val MIGRATION_8_9_IMPL =
 
             // CHECK 与 append-only 触发器随旧表删除；onOpen 的 CulinarySchemaExtras.apply
             // 会用新谓词重建，旧状态约束不会再拦住 FROZEN/RECYCLED。
+        }
+    }
+
+/** v10 → v11：增加食材烹饪用途与可食用部分，旧档案和历史快照数据保持不变。 */
+private val MIGRATION_10_11_IMPL =
+    object : Migration(10, 11) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            CulinarySchemaExtras.dropPartialIndexes(db)
+            db.execSQL("ALTER TABLE `ingredient` ADD COLUMN `culinary_use` TEXT")
+            db.execSQL("ALTER TABLE `ingredient` ADD COLUMN `edible_parts` TEXT")
+            db.execSQL("ALTER TABLE `ingredient_version` ADD COLUMN `culinary_use` TEXT")
+            db.execSQL("ALTER TABLE `ingredient_version` ADD COLUMN `edible_parts` TEXT")
         }
     }
 
