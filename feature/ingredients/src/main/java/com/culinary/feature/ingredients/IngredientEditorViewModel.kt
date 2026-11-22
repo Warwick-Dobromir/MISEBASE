@@ -35,7 +35,7 @@ class IngredientEditorViewModel
         private val getIngredientDetail: GetIngredientDetailUseCase,
         private val saveIngredient: SaveIngredientUseCase,
         private val listUnits: ListUnitsUseCase,
-        private val archiveImages: ArchiveImageUseCase,
+        private val archiveImages: ArchiveImageUseCase = ArchiveImageUseCase(),
         private val listArchiveCategories: ListArchiveCategoriesUseCase = ListArchiveCategoriesUseCase(),
         private val getArchiveCategoryForRecord: GetArchiveCategoryForRecordUseCase = GetArchiveCategoryForRecordUseCase(),
         private val assignArchiveCategory: AssignArchiveCategoryUseCase = AssignArchiveCategoryUseCase(),
