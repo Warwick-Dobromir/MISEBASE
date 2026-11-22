@@ -10,9 +10,9 @@ class ArchiveImageUseCase @javax.inject.Inject constructor(
     suspend fun list(
         owner: ArchiveImageOwner,
         ownerId: String,
-    ): List<ArchiveImage> = repository?.list(owner, ownerId).orEmpty()
+    ): List<ArchiveImage> = repository.list(owner, ownerId)
 
-    suspend fun read(imageId: String): ByteArray? = repository?.read(imageId)
+    suspend fun read(imageId: String): ByteArray? = repository.read(imageId)
 
     suspend fun primary(
         owner: ArchiveImageOwner,
@@ -20,7 +20,7 @@ class ArchiveImageUseCase @javax.inject.Inject constructor(
     ): ByteArray? {
         val images = repository?.list(owner, ownerId).orEmpty()
         val image = images.firstOrNull { it.role == "PRIMARY" } ?: images.firstOrNull()
-        return image?.let { repository?.read(it.id) }
+        return image?.let { repository.read(it.id) }
     }
 
     /** 步骤图片：stepNo（1 起）→ 原始字节；无图片的步骤不返回键。 */
@@ -41,7 +41,7 @@ class ArchiveImageUseCase @javax.inject.Inject constructor(
         images.forEach { image ->
             val stepNo = image.stepNo ?: return@forEach
             if (stepNo <= 0 || result.containsKey(stepNo)) return@forEach
-            val bytes = repository?.read(image.id) ?: return@forEach
+            val bytes = repository.read(image.id) ?: return@forEach
             result[stepNo] = bytes
         }
         return result
