@@ -4,15 +4,19 @@ import com.culinary.core.domain.model.ArchiveImage
 import com.culinary.core.domain.model.ArchiveImageOwner
 import com.culinary.core.domain.repository.ArchiveImageRepository
 
-class ArchiveImageUseCase @javax.inject.Inject constructor(
-    private val repository: ArchiveImageRepository,
+class ArchiveImageUseCase private constructor(
+    private val repository: ArchiveImageRepository?,
 ) {
+    @javax.inject.Inject
+    constructor(repository: ArchiveImageRepository) : this(repository)
+
+    constructor() : this(null)
     suspend fun list(
         owner: ArchiveImageOwner,
         ownerId: String,
-    ): List<ArchiveImage> = repository.list(owner, ownerId)
+    ): List<ArchiveImage> = repository?.list(owner, ownerId).orEmpty()
 
-    suspend fun read(imageId: String): ByteArray? = repository.read(imageId)
+    suspend fun read(imageId: String): ByteArray? = repository?.read(imageId)
 
     suspend fun primary(
         owner: ArchiveImageOwner,
@@ -20,7 +24,7 @@ class ArchiveImageUseCase @javax.inject.Inject constructor(
     ): ByteArray? {
         val images = repository?.list(owner, ownerId).orEmpty()
         val image = images.firstOrNull { it.role == "PRIMARY" } ?: images.firstOrNull()
-        return image?.let { repository.read(it.id) }
+        return image?.let { repository?.read(it.id) }
     }
 
     /** 步骤图片：stepNo（1 起）→ 原始字节；无图片的步骤不返回键。 */
@@ -28,9 +32,23 @@ class ArchiveImageUseCase @javax.inject.Inject constructor(
         ingredientId: String,
         bytes: ByteArray,
         mimeType: String,
-    ) = repository.addPrimaryIngredientImage(ingredientId, bytes, mimeType)
+    ) = repository?.addPrimaryIngredientImage(ingredientId, bytes, mimeType)
+        ?: com.culinary.core.common.Outcome.failure(
+            com.culinary.core.common.CulinaryError.Data(
+                message = "archive image repository unavailable",
+                code = com.culinary.core.common.ErrorCode.FILE_001,
+                retryable = false,
+            ),
+        )
 
-    suspend fun delete(imageId: String) = repository.delete(imageId)
+    suspend fun delete(imageId: String) = repository?.delete(imageId)
+        ?: com.culinary.core.common.Outcome.failure(
+            com.culinary.core.common.CulinaryError.Data(
+                message = "archive image repository unavailable",
+                code = com.culinary.core.common.ErrorCode.FILE_001,
+                retryable = false,
+            ),
+        )
 
     suspend fun stepImages(
         owner: ArchiveImageOwner,
@@ -41,7 +59,7 @@ class ArchiveImageUseCase @javax.inject.Inject constructor(
         images.forEach { image ->
             val stepNo = image.stepNo ?: return@forEach
             if (stepNo <= 0 || result.containsKey(stepNo)) return@forEach
-            val bytes = repository.read(image.id) ?: return@forEach
+            val bytes = repository?.read(image.id) ?: return@forEach
             result[stepNo] = bytes
         }
         return result
