@@ -99,6 +99,9 @@ class IngredientEditorViewModel
                                     allergenNotes =
                                         result.value.ingredient.allergenNotes
                                             .orEmpty(),
+                                    flavorProfile = result.value.ingredient.flavorProfile.orEmpty(),
+                                    culinaryUse = result.value.ingredient.culinaryUse.orEmpty(),
+                                    edibleParts = result.value.ingredient.edibleParts.orEmpty(),
                                     defaultUnit = result.value.defaultUnit ?: it.defaultUnit,
                                     imageId = primaryImage?.id,
                                     imageBytes = primaryBytes,
@@ -158,6 +161,10 @@ class IngredientEditorViewModel
             _uiState.update { it.copy(allergenNotes = value, isDirty = true) }
         }
 
+        fun onFlavorProfileChange(value: String) { _uiState.update { it.copy(flavorProfile = value, isDirty = true) } }
+        fun onCulinaryUseChange(value: String) { _uiState.update { it.copy(culinaryUse = value, isDirty = true) } }
+        fun onEdiblePartsChange(value: String) { _uiState.update { it.copy(edibleParts = value, isDirty = true) } }
+
         fun onUnitChange(unit: UnitModel) {
             _uiState.update { it.copy(defaultUnit = unit, isDirty = true) }
         }
@@ -203,6 +210,9 @@ class IngredientEditorViewModel
                             exampleProducts = state.exampleProducts,
                             storageNotes = state.storageNotes,
                             allergenNotes = state.allergenNotes,
+                            flavorProfile = state.flavorProfile,
+                            culinaryUse = state.culinaryUse,
+                            edibleParts = state.edibleParts,
                         ),
                     )
                 when (result) {
