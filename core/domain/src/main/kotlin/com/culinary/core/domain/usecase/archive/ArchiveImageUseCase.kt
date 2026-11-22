@@ -8,7 +8,6 @@ class ArchiveImageUseCase private constructor(
     private val repository: ArchiveImageRepository?,
     @Suppress("UNUSED_PARAMETER") marker: Unit,
 ) {
-    @javax.inject.Inject
     constructor(repository: ArchiveImageRepository) : this(repository, Unit)
 
     constructor() : this(null, Unit)
