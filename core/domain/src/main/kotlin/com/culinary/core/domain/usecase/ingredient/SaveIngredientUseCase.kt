@@ -23,6 +23,9 @@ data class SaveIngredientInput(
     val exampleProducts: String? = null,
     val storageNotes: String? = null,
     val allergenNotes: String? = null,
+    val flavorProfile: String? = null,
+    val culinaryUse: String? = null,
+    val edibleParts: String? = null,
 )
 
 /**
@@ -68,6 +71,9 @@ class SaveIngredientUseCase(
                 exampleProducts = input.exampleProducts.blankToNull() ?: existing?.exampleProducts,
                 storageNotes = input.storageNotes.blankToNull() ?: existing?.storageNotes,
                 allergenNotes = input.allergenNotes.blankToNull() ?: existing?.allergenNotes,
+                flavorProfile = input.flavorProfile.blankToNull(),
+                culinaryUse = input.culinaryUse.blankToNull(),
+                edibleParts = input.edibleParts.blankToNull(),
             )
 
         return transactionRunner.write { repository.save(ingredient) }.flatMap { it }
