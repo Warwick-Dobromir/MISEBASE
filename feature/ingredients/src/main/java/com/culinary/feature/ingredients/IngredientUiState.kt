@@ -52,6 +52,7 @@ data class IngredientEditorUiState(
     val flavorProfile: String = "",
     val culinaryUse: String = "",
     val edibleParts: String = "",
+    val isActive: Boolean = true,
     val imageId: String? = null,
     val imageBytes: ByteArray? = null,
     val pendingImage: PendingIngredientImage? = null,
