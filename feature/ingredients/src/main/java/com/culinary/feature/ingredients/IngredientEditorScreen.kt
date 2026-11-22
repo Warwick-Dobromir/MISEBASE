@@ -31,15 +31,18 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.culinary.core.designsystem.component.CulinaryButton
+import com.culinary.core.designsystem.component.ArchiveEditorImageBox
+import com.culinary.core.designsystem.component.ArchiveEditorInlineField
+import com.culinary.core.designsystem.component.ArchiveEditorSectionHeader
+import com.culinary.core.designsystem.component.ArchiveEditorTopBar
+import com.culinary.core.designsystem.component.CulinaryRule
 import com.culinary.core.designsystem.component.CulinaryRule
 import com.culinary.core.designsystem.component.CulinaryTextField
 import com.culinary.core.designsystem.component.ErrorBanner
 import com.culinary.core.designsystem.component.LoadingRows
-import com.culinary.core.designsystem.component.PageHeader
-import com.culinary.core.designsystem.component.SectionHeader
 import com.culinary.core.designsystem.icon.CulinaryIcons
 import com.culinary.core.designsystem.theme.CulinarySpacing
+import com.culinary.core.designsystem.theme.CulinaryTextStyles
 import com.culinary.core.designsystem.theme.CulinaryTextStyles
 import com.culinary.core.domain.model.ArchiveCategory
 
@@ -47,6 +50,7 @@ import com.culinary.core.domain.model.ArchiveCategory
 @Composable
 fun IngredientEditorRoute(
     onSaved: () -> Unit,
+    onCancelled: () -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: IngredientEditorViewModel = hiltViewModel(),
 ) {
@@ -81,6 +85,9 @@ fun IngredientEditorRoute(
                 onAllergenNotesChange = viewModel::onAllergenNotesChange,
                 onOpenUnitPicker = { showUnitPicker = true },
                 onSave = viewModel::save,
+                onImagePicked = viewModel::onImagePicked,
+                onImageRemoved = viewModel::onImageRemoved,
+                onCancelled = onCancelled,
             )
         }
     }
@@ -112,95 +119,124 @@ internal fun IngredientEditorForm(
     onAllergenNotesChange: (String) -> Unit,
     onOpenUnitPicker: () -> Unit,
     onSave: () -> Unit,
+    onImagePicked: (PendingIngredientImage) -> Unit,
+    onImageRemoved: () -> Unit,
+    onCancelled: () -> Unit,
 ) {
-    Column(
-        modifier =
-            Modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(bottom = CulinarySpacing.xl),
-    ) {
-        PageHeader(
-            eyebrow = "INGREDIENT",
-            title =
-                stringResource(
-                    if (state.isNew) {
-                        R.string.ingredients_editor_new_title
-                    } else {
-                        R.string.ingredients_editor_edit_title
-                    },
-                ),
+    Column(modifier = Modifier.fillMaxSize()) {
+        ArchiveEditorTopBar(
+            title = if (state.isNew) "新建食材" else "编辑食材",
+            onBack = onCancelled,
+            onCancel = onCancelled,
+            onSave = onSave,
+            isSaving = state.isSaving,
+            canSave = !state.isLoading && !state.isSaving,
         )
-        Column(modifier = Modifier.padding(horizontal = CulinarySpacing.pageHorizontal)) {
-            CulinaryTextField(
-                value = state.name,
-                onValueChange = onNameChange,
-                label = { Text(text = stringResource(R.string.ingredients_name_label)) },
-                singleLine = true,
-            )
-            Spacer(modifier = Modifier.height(CulinarySpacing.field))
-            IngredientClassificationSelector(
-                state = state,
-                onCategorySelect = onCategorySelect,
-                onLegacyCategoryChange = onCategoryChange,
-            )
-            SectionHeader(title = stringResource(R.string.ingredients_default_unit))
+        Column(
+            modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())
+                .padding(horizontal = CulinarySpacing.pageHorizontal)
+                .padding(bottom = CulinarySpacing.xl),
+        ) {
+            Column(modifier = Modifier.fillMaxWidth().padding(top = CulinarySpacing.lg)) {
+                Text(
+                    text = state.category.ifBlank { "INGREDIENT · 食材档案" },
+                    style = CulinaryTextStyles.eyebrow,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Spacer(modifier = Modifier.height(CulinarySpacing.sm))
+                ArchiveEditorInlineField(
+                    value = state.englishName,
+                    onValueChange = onEnglishNameChange,
+                    placeholder = "Ingredient name",
+                    textStyle = CulinaryTextStyles.pageTitle,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Spacer(modifier = Modifier.height(CulinarySpacing.xxs))
+                ArchiveEditorInlineField(
+                    value = state.name,
+                    onValueChange = onNameChange,
+                    placeholder = "食材名称",
+                    textStyle = MaterialTheme.typography.headlineSmall,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Spacer(modifier = Modifier.height(CulinarySpacing.sm))
+                ArchiveEditorInlineField(
+                    value = state.description,
+                    onValueChange = onDescriptionChange,
+                    placeholder = "描述食材特征与用途……",
+                    textStyle = MaterialTheme.typography.bodySmall,
+                    singleLine = false,
+                    minLines = 2,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Spacer(modifier = Modifier.height(CulinarySpacing.lg))
+                IngredientClassificationSelector(
+                    state = state,
+                    onCategorySelect = onCategorySelect,
+                    onLegacyCategoryChange = onCategoryChange,
+                )
+            }
+
+            Column(modifier = Modifier.fillMaxWidth().padding(top = CulinarySpacing.xl)) {
+                Text(
+                    text = "HERO MEDIA",
+                    style = CulinaryTextStyles.eyebrow,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Spacer(modifier = Modifier.height(CulinarySpacing.xs))
+                ArchiveEditorImageBox(
+                    imageBytes = state.pendingImage?.bytes ?: state.imageBytes,
+                    onPick = { /* wired by the route-level picker below */ },
+                    onClear = if (state.pendingImage != null || state.imageId != null) onImageRemoved else null,
+                    emptyLabel = "添加食材图片",
+                    replaceLabel = "替换",
+                    deleteLabel = "删除",
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+
+            ArchiveEditorSectionHeader(index = "01", english = "DEFAULT UNIT", title = "默认单位")
             UnitSelectionRow(
-                value =
-                    state.defaultUnit?.let { "${it.name}（${it.symbol}）" }
-                        ?: stringResource(R.string.ingredients_no_unit),
+                value = state.defaultUnit?.let { "${it.name}（${it.symbol}）" }
+                    ?: stringResource(R.string.ingredients_no_unit),
                 onClick = onOpenUnitPicker,
             )
-            Spacer(modifier = Modifier.height(CulinarySpacing.field))
-            CulinaryTextField(
-                value = state.description,
-                onValueChange = onDescriptionChange,
-                label = { Text(text = stringResource(R.string.ingredients_description_label)) },
-                minLines = 3,
-            )
-            Spacer(modifier = Modifier.height(CulinarySpacing.field))
-            CulinaryTextField(
-                value = state.englishName,
-                onValueChange = onEnglishNameChange,
-                label = { Text(text = stringResource(R.string.ingredients_english_name)) },
-                singleLine = true,
-            )
-            Spacer(modifier = Modifier.height(CulinarySpacing.field))
-            CulinaryTextField(
+            ArchiveEditorSectionHeader(index = "02", english = "PRODUCTS / SPECS", title = "示例商品 / 规格")
+            ArchiveEditorInlineField(
                 value = state.exampleProducts,
                 onValueChange = onExampleProductsChange,
-                label = { Text(text = stringResource(R.string.ingredients_example_products)) },
+                placeholder = "例如：全脂牛奶 1L；全脂牛奶 250ml",
+                singleLine = false,
                 minLines = 2,
-            )
-            Spacer(modifier = Modifier.height(CulinarySpacing.field))
-            CulinaryTextField(
-                value = state.storageNotes,
-                onValueChange = onStorageNotesChange,
-                label = { Text(text = stringResource(R.string.ingredients_storage)) },
-                minLines = 2,
-            )
-            Spacer(modifier = Modifier.height(CulinarySpacing.field))
-            CulinaryTextField(
-                value = state.allergenNotes,
-                onValueChange = onAllergenNotesChange,
-                label = { Text(text = stringResource(R.string.ingredients_allergen)) },
-                minLines = 2,
-            )
-            Spacer(modifier = Modifier.height(CulinarySpacing.xl))
-            CulinaryButton(
-                text =
-                    stringResource(
-                        if (state.isSaving) {
-                            R.string.ingredients_saving
-                        } else {
-                            R.string.ingredients_save
-                        },
-                    ),
-                onClick = onSave,
-                enabled = !state.isSaving,
-                loading = state.isSaving,
                 modifier = Modifier.fillMaxWidth(),
             )
+            ArchiveEditorSectionHeader(index = "03", english = "STORAGE", title = "储存条件")
+            ArchiveEditorInlineField(
+                value = state.storageNotes,
+                onValueChange = onStorageNotesChange,
+                placeholder = "例如：冷藏 0–4°C",
+                singleLine = false,
+                minLines = 2,
+                modifier = Modifier.fillMaxWidth(),
+            )
+            ArchiveEditorSectionHeader(index = "04", english = "ALLERGENS", title = "过敏原提示")
+            ArchiveEditorInlineField(
+                value = state.allergenNotes,
+                onValueChange = onAllergenNotesChange,
+                placeholder = "填写过敏原信息",
+                singleLine = false,
+                minLines = 2,
+                modifier = Modifier.fillMaxWidth(),
+            )
+            Spacer(modifier = Modifier.height(CulinarySpacing.xl))
+            CulinaryRule()
+            Spacer(modifier = Modifier.height(CulinarySpacing.md))
+            Text(
+                text = if (state.isNew) "新建食材档案" else "编辑食材档案",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Spacer(modifier = Modifier.height(CulinarySpacing.xl))
         }
     }
 }
