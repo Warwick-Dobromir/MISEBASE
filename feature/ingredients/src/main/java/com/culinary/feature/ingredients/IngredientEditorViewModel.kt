@@ -5,8 +5,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.culinary.core.common.Outcome
 import com.culinary.core.domain.model.ArchiveLibrary
+import com.culinary.core.domain.model.ArchiveImageOwner
 import com.culinary.core.domain.model.IngredientId
 import com.culinary.core.domain.model.KitchenRecordKind
+import com.culinary.core.domain.usecase.archive.ArchiveImageUseCase
 import com.culinary.core.domain.usecase.archive.AssignArchiveCategoryUseCase
 import com.culinary.core.domain.usecase.archive.GetArchiveCategoryForRecordUseCase
 import com.culinary.core.domain.usecase.archive.ListArchiveCategoriesUseCase
@@ -33,6 +35,7 @@ class IngredientEditorViewModel
         private val getIngredientDetail: GetIngredientDetailUseCase,
         private val saveIngredient: SaveIngredientUseCase,
         private val listUnits: ListUnitsUseCase,
+        private val archiveImages: ArchiveImageUseCase,
         private val listArchiveCategories: ListArchiveCategoriesUseCase = ListArchiveCategoriesUseCase(),
         private val getArchiveCategoryForRecord: GetArchiveCategoryForRecordUseCase = GetArchiveCategoryForRecordUseCase(),
         private val assignArchiveCategory: AssignArchiveCategoryUseCase = AssignArchiveCategoryUseCase(),
@@ -71,6 +74,11 @@ class IngredientEditorViewModel
                                     getArchiveCategoryForRecord(KitchenRecordKind.INGREDIENT, routeId)
                                 }.getOrNull()
                             val categoryPath = buildIngredientCategoryPath(assignedCategory?.id, categories)
+                            val primaryImage = runCatching {
+                                archiveImages.list(ArchiveImageOwner.INGREDIENT, routeId)
+                                    .firstOrNull { it.role == "PRIMARY" }
+                            }.getOrNull()
+                            val primaryBytes = primaryImage?.let { runCatching { archiveImages.read(it.id) }.getOrNull() }
                             _uiState.update {
                                 it.copy(
                                     name = result.value.ingredient.name,
@@ -92,6 +100,8 @@ class IngredientEditorViewModel
                                         result.value.ingredient.allergenNotes
                                             .orEmpty(),
                                     defaultUnit = result.value.defaultUnit ?: it.defaultUnit,
+                                    imageId = primaryImage?.id,
+                                    imageBytes = primaryBytes,
                                     isLoading = false,
                                 )
                             }
@@ -152,6 +162,21 @@ class IngredientEditorViewModel
             _uiState.update { it.copy(defaultUnit = unit) }
         }
 
+        fun onImagePicked(image: PendingIngredientImage) {
+            _uiState.update { it.copy(pendingImage = image, imageRemoved = false, error = null) }
+        }
+
+        fun onImageRemoved() {
+            _uiState.update {
+                it.copy(
+                    pendingImage = null,
+                    imageBytes = null,
+                    imageRemoved = it.imageId != null,
+                    error = null,
+                )
+            }
+        }
+
         fun clearError() {
             _uiState.update { it.copy(error = null) }
         }
@@ -190,6 +215,32 @@ class IngredientEditorViewModel
                                 is Outcome.Failure -> {
                                     _uiState.update {
                                         it.copy(isSaving = false, error = IngredientErrorMessages.describe(assignment.error))
+                                    }
+                                    return@launch
+                                }
+                                is Outcome.Success -> Unit
+                            }
+                        }
+                        val imageState = _uiState.value
+                        if (imageState.pendingImage != null) {
+                            when (val imageResult = archiveImages.addPrimaryIngredientImage(
+                                result.value.value,
+                                imageState.pendingImage.bytes,
+                                imageState.pendingImage.mimeType,
+                            )) {
+                                is Outcome.Failure -> {
+                                    _uiState.update {
+                                        it.copy(isSaving = false, error = IngredientErrorMessages.describe(imageResult.error))
+                                    }
+                                    return@launch
+                                }
+                                is Outcome.Success -> Unit
+                            }
+                        } else if (imageState.imageRemoved && imageState.imageId != null) {
+                            when (val imageResult = archiveImages.delete(imageState.imageId)) {
+                                is Outcome.Failure -> {
+                                    _uiState.update {
+                                        it.copy(isSaving = false, error = IngredientErrorMessages.describe(imageResult.error))
                                     }
                                     return@launch
                                 }
