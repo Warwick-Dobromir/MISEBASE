@@ -26,9 +26,7 @@ import com.culinary.core.domain.repository.RecipeRepository
 import com.culinary.core.domain.repository.SauceImageRepository
 import com.culinary.core.domain.repository.SauceRepository
 import com.culinary.core.domain.repository.UnitRepository
-import com.culinary.core.domain.usecase.archive.ArchiveImageUseCase
 import dagger.Binds
-import dagger.Provides
 import dagger.Module
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
@@ -89,11 +87,4 @@ abstract class RepositoryModule {
     @Binds
     @Singleton
     abstract fun bindArchiveImageRepository(impl: ArchiveImageRepositoryImpl): ArchiveImageRepository
-
-    companion object {
-        @Provides
-        @Singleton
-        fun provideArchiveImageUseCase(repository: ArchiveImageRepository): ArchiveImageUseCase =
-            ArchiveImageUseCase(repository)
-    }
 }
