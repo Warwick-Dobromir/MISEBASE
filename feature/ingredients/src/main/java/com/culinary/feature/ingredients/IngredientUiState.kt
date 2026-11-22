@@ -36,6 +36,9 @@ data class IngredientDetailUiState(
     val versions: List<IngredientVersion> = emptyList(),
 )
 
+/** 待保存的食材主图。 */
+data class PendingIngredientImage(val bytes: ByteArray, val mimeType: String)
+
 /** 食材编辑器状态。 */
 data class IngredientEditorUiState(
     val ingredientId: String? = null,
@@ -46,6 +49,10 @@ data class IngredientEditorUiState(
     val exampleProducts: String = "",
     val storageNotes: String = "",
     val allergenNotes: String = "",
+    val imageId: String? = null,
+    val imageBytes: ByteArray? = null,
+    val pendingImage: PendingIngredientImage? = null,
+    val imageRemoved: Boolean = false,
     val categories: List<ArchiveCategory> = emptyList(),
     val categoryPathIds: List<String> = emptyList(),
     val defaultUnit: UnitModel? = null,
