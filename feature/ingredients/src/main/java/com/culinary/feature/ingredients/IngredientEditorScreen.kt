@@ -1,5 +1,6 @@
 package com.culinary.feature.ingredients
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -35,6 +36,7 @@ import com.culinary.core.designsystem.component.ArchiveEditorImageBox
 import com.culinary.core.designsystem.component.ArchiveEditorInlineField
 import com.culinary.core.designsystem.component.ArchiveEditorSectionHeader
 import com.culinary.core.designsystem.component.ArchiveEditorTopBar
+import com.culinary.core.designsystem.component.ConfirmDialog
 import com.culinary.core.designsystem.component.CulinaryRule
 import com.culinary.core.designsystem.component.CulinaryTextField
 import com.culinary.core.designsystem.component.ErrorBanner
@@ -122,14 +124,17 @@ internal fun IngredientEditorForm(
     onCancelled: () -> Unit,
 ) {
     val pickImage = rememberIngredientImagePicker(onImagePicked)
+    var showDiscard by remember { mutableStateOf(false) }
+    val cancel = { if (state.isDirty) showDiscard = true else onCancelled() }
+    BackHandler(enabled = state.isDirty) { showDiscard = true }
     Column(modifier = Modifier.fillMaxSize()) {
         ArchiveEditorTopBar(
             title = if (state.isNew) "新建食材" else "编辑食材",
-            onBack = onCancelled,
-            onCancel = onCancelled,
+            onBack = cancel,
+            onCancel = cancel,
             onSave = onSave,
             isSaving = state.isSaving,
-            canSave = !state.isLoading && !state.isSaving,
+            canSave = !state.isLoading && !state.isSaving && (state.isNew || state.isDirty),
         )
         Column(
             modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())
@@ -237,6 +242,20 @@ internal fun IngredientEditorForm(
             )
             Spacer(modifier = Modifier.height(CulinarySpacing.xl))
         }
+    }
+    if (showDiscard) {
+        ConfirmDialog(
+            title = "放弃本次修改？",
+            message = "尚有未保存的食材档案内容，确认离开将丢弃这些修改。",
+            confirmLabel = "放弃修改",
+            dismissLabel = "继续编辑",
+            onConfirm = {
+                showDiscard = false
+                onCancelled()
+            },
+            onDismiss = { showDiscard = false },
+            destructive = true,
+        )
     }
 }
 
