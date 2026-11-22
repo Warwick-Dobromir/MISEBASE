@@ -123,6 +123,7 @@ internal fun IngredientEditorForm(
     onImageRemoved: () -> Unit,
     onCancelled: () -> Unit,
 ) {
+    val pickImage = rememberIngredientImagePicker(onImagePicked)
     Column(modifier = Modifier.fillMaxSize()) {
         ArchiveEditorTopBar(
             title = if (state.isNew) "新建食材" else "编辑食材",
@@ -186,7 +187,7 @@ internal fun IngredientEditorForm(
                 Spacer(modifier = Modifier.height(CulinarySpacing.xs))
                 ArchiveEditorImageBox(
                     imageBytes = state.pendingImage?.bytes ?: state.imageBytes,
-                    onPick = { /* wired by the route-level picker below */ },
+                    onPick = pickImage,
                     onClear = if (state.pendingImage != null || state.imageId != null) onImageRemoved else null,
                     emptyLabel = "添加食材图片",
                     replaceLabel = "替换",
