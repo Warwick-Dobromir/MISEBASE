@@ -6,6 +6,8 @@ import androidx.lifecycle.viewModelScope
 import com.culinary.core.common.Outcome
 import com.culinary.core.domain.model.ArchiveImageOwner
 import com.culinary.core.domain.model.IngredientId
+import com.culinary.core.domain.model.EntityStatus
+import com.culinary.core.domain.repository.IngredientRepository
 import com.culinary.core.domain.model.KitchenRecordKind
 import com.culinary.core.domain.usecase.archive.ArchiveImageUseCase
 import com.culinary.core.domain.usecase.archive.GetArchiveCategoryForRecordUseCase
@@ -34,6 +36,7 @@ class IngredientDetailViewModel
         private val archiveImages: ArchiveImageUseCase = ArchiveImageUseCase(),
         private val observeKitchenRelations: ObserveKitchenRelationsUseCase,
         private val listIngredientVersions: ListIngredientVersionsUseCase,
+        private val ingredientRepository: IngredientRepository,
     ) : ViewModel() {
         private val ingredientId =
             IngredientId(savedStateHandle.get<String>(IngredientsRoutes.ARG_INGREDIENT_ID).orEmpty())
@@ -86,6 +89,22 @@ class IngredientDetailViewModel
                                 error = IngredientErrorMessages.describe(result.error),
                             )
                         }
+                }
+            }
+        }
+
+        fun toggleActive() {
+            viewModelScope.launch {
+                _uiState.update { it.copy(isArchiving = true, error = null) }
+                when (val current = ingredientRepository.get(ingredientId)) {
+                    is Outcome.Failure -> _uiState.update { it.copy(isArchiving = false, error = IngredientErrorMessages.describe(current.error)) }
+                    is Outcome.Success -> {
+                        val next = current.value.copy(status = if (current.value.isActive) EntityStatus.ARCHIVED else EntityStatus.ACTIVE)
+                        when (val saved = ingredientRepository.save(next)) {
+                            is Outcome.Success -> load()
+                            is Outcome.Failure -> _uiState.update { it.copy(isArchiving = false, error = IngredientErrorMessages.describe(saved.error)) }
+                        }
+                    }
                 }
             }
         }
