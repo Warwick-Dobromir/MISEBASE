@@ -136,6 +136,7 @@ fun CulinaryNavHost(
     val ownsTopBar =
         currentRoute == SaucesRoutes.DETAIL ||
             currentRoute == IngredientsRoutes.DETAIL ||
+            currentRoute == IngredientsRoutes.EDIT ||
             currentRoute == RecipesRoutes.DETAIL
     val showBottomBar = topLevel != null
     val archiveSorting = remember { mutableStateOf(false) }
