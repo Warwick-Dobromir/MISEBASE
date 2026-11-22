@@ -82,6 +82,9 @@ fun IngredientEditorRoute(
                 onExampleProductsChange = viewModel::onExampleProductsChange,
                 onStorageNotesChange = viewModel::onStorageNotesChange,
                 onAllergenNotesChange = viewModel::onAllergenNotesChange,
+                onFlavorProfileChange = viewModel::onFlavorProfileChange,
+                onCulinaryUseChange = viewModel::onCulinaryUseChange,
+                onEdiblePartsChange = viewModel::onEdiblePartsChange,
                 onOpenUnitPicker = { showUnitPicker = true },
                 onSave = viewModel::save,
                 onImagePicked = viewModel::onImagePicked,
@@ -116,6 +119,9 @@ internal fun IngredientEditorForm(
     onExampleProductsChange: (String) -> Unit,
     onStorageNotesChange: (String) -> Unit,
     onAllergenNotesChange: (String) -> Unit,
+    onFlavorProfileChange: (String) -> Unit,
+    onCulinaryUseChange: (String) -> Unit,
+    onEdiblePartsChange: (String) -> Unit,
     onOpenUnitPicker: () -> Unit,
     onSave: () -> Unit,
     onImagePicked: (PendingIngredientImage) -> Unit,
@@ -139,7 +145,8 @@ internal fun IngredientEditorForm(
                 .padding(horizontal = CulinarySpacing.pageHorizontal)
                 .padding(bottom = CulinarySpacing.xl),
         ) {
-            Column(modifier = Modifier.fillMaxWidth().padding(top = CulinarySpacing.lg)) {
+            Column(modifier = Modifier.fillMaxWidth().padding(top = CulinarySpacing.xl)) {
+                ArchiveEditorSectionHeader(index = "", english = "BASIC INFORMATION", title = "基本信息")
                 Text(
                     text = state.category.ifBlank { "INGREDIENT · 食材档案" },
                     style = CulinaryTextStyles.eyebrow,
@@ -177,6 +184,10 @@ internal fun IngredientEditorForm(
                     onCategorySelect = onCategorySelect,
                     onLegacyCategoryChange = onCategoryChange,
                 )
+                ArchiveEditorInlineField(value = state.edibleParts, onValueChange = onEdiblePartsChange, placeholder = "可食用部分，例如：果汁、果肉、果皮", singleLine = false, minLines = 2, modifier = Modifier.fillMaxWidth())
+                ArchiveEditorSectionHeader(index = "", english = "DEFAULT UNIT", title = "常用计量单位")
+                UnitSelectionRow(value = state.defaultUnit?.let { "${it.name}（${it.symbol}）" } ?: stringResource(R.string.ingredients_no_unit), onClick = onOpenUnitPicker)
+                ArchiveEditorInlineField(value = state.exampleProducts, onValueChange = onExampleProductsChange, placeholder = "常见品种 / 商品规格", singleLine = false, minLines = 2, modifier = Modifier.fillMaxWidth())
             }
 
             Column(modifier = Modifier.fillMaxWidth().padding(top = CulinarySpacing.xl)) {
@@ -197,22 +208,7 @@ internal fun IngredientEditorForm(
                 )
             }
 
-            ArchiveEditorSectionHeader(index = "01", english = "DEFAULT UNIT", title = "默认单位")
-            UnitSelectionRow(
-                value = state.defaultUnit?.let { "${it.name}（${it.symbol}）" }
-                    ?: stringResource(R.string.ingredients_no_unit),
-                onClick = onOpenUnitPicker,
-            )
-            ArchiveEditorSectionHeader(index = "02", english = "PRODUCTS / SPECS", title = "示例商品 / 规格")
-            ArchiveEditorInlineField(
-                value = state.exampleProducts,
-                onValueChange = onExampleProductsChange,
-                placeholder = "例如：全脂牛奶 1L；全脂牛奶 250ml",
-                singleLine = false,
-                minLines = 2,
-                modifier = Modifier.fillMaxWidth(),
-            )
-            ArchiveEditorSectionHeader(index = "03", english = "STORAGE", title = "储存条件")
+            ArchiveEditorSectionHeader(index = "01", english = "STORAGE", title = "储存条件")
             ArchiveEditorInlineField(
                 value = state.storageNotes,
                 onValueChange = onStorageNotesChange,
@@ -221,6 +217,10 @@ internal fun IngredientEditorForm(
                 minLines = 2,
                 modifier = Modifier.fillMaxWidth(),
             )
+            ArchiveEditorSectionHeader(index = "02", english = "FLAVOR PROFILE", title = "风味与特性")
+            ArchiveEditorInlineField(value = state.flavorProfile, onValueChange = onFlavorProfileChange, placeholder = "描述风味、香气、质地与主要特征", singleLine = false, minLines = 3, modifier = Modifier.fillMaxWidth())
+            ArchiveEditorSectionHeader(index = "03", english = "CULINARY USE", title = "烹饪用途")
+            ArchiveEditorInlineField(value = state.culinaryUse, onValueChange = onCulinaryUseChange, placeholder = "例如：酱汁、海鲜调味、甜点、基础处理", singleLine = false, minLines = 3, modifier = Modifier.fillMaxWidth())
             ArchiveEditorSectionHeader(index = "04", english = "ALLERGENS", title = "过敏原提示")
             ArchiveEditorInlineField(
                 value = state.allergenNotes,
