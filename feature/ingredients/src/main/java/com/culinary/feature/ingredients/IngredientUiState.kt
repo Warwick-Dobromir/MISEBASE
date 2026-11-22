@@ -59,6 +59,7 @@ data class IngredientEditorUiState(
     val units: List<UnitModel> = emptyList(),
     val isLoading: Boolean = true,
     val isSaving: Boolean = false,
+    val isDirty: Boolean = false,
     val saved: Boolean = false,
     val error: String? = null,
 ) {
