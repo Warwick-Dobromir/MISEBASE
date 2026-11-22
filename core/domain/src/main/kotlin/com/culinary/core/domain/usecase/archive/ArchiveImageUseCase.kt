@@ -6,11 +6,12 @@ import com.culinary.core.domain.repository.ArchiveImageRepository
 
 class ArchiveImageUseCase private constructor(
     private val repository: ArchiveImageRepository?,
+    @Suppress("UNUSED_PARAMETER") marker: Unit,
 ) {
     @javax.inject.Inject
-    constructor(repository: ArchiveImageRepository) : this(repository)
+    constructor(repository: ArchiveImageRepository) : this(repository, Unit)
 
-    constructor() : this(null)
+    constructor() : this(null, Unit)
     suspend fun list(
         owner: ArchiveImageOwner,
         ownerId: String,
