@@ -1,6 +1,5 @@
 package com.culinary.feature.ingredients
 
-import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -126,7 +125,6 @@ internal fun IngredientEditorForm(
     val pickImage = rememberIngredientImagePicker(onImagePicked)
     var showDiscard by remember { mutableStateOf(false) }
     val cancel = { if (state.isDirty) showDiscard = true else onCancelled() }
-    BackHandler(enabled = state.isDirty) { showDiscard = true }
     Column(modifier = Modifier.fillMaxSize()) {
         ArchiveEditorTopBar(
             title = if (state.isNew) "新建食材" else "编辑食材",
