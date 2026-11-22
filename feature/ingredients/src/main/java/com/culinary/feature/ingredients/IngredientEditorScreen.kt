@@ -85,6 +85,7 @@ fun IngredientEditorRoute(
                 onFlavorProfileChange = viewModel::onFlavorProfileChange,
                 onCulinaryUseChange = viewModel::onCulinaryUseChange,
                 onEdiblePartsChange = viewModel::onEdiblePartsChange,
+                onActiveChange = viewModel::onActiveChange,
                 onOpenUnitPicker = { showUnitPicker = true },
                 onSave = viewModel::save,
                 onImagePicked = viewModel::onImagePicked,
@@ -122,6 +123,7 @@ internal fun IngredientEditorForm(
     onFlavorProfileChange: (String) -> Unit,
     onCulinaryUseChange: (String) -> Unit,
     onEdiblePartsChange: (String) -> Unit,
+    onActiveChange: (Boolean) -> Unit,
     onOpenUnitPicker: () -> Unit,
     onSave: () -> Unit,
     onImagePicked: (PendingIngredientImage) -> Unit,
@@ -185,6 +187,11 @@ internal fun IngredientEditorForm(
                     onLegacyCategoryChange = onCategoryChange,
                 )
                 ArchiveEditorInlineField(value = state.edibleParts, onValueChange = onEdiblePartsChange, placeholder = "可食用部分，例如：果汁、果肉、果皮", singleLine = false, minLines = 2, modifier = Modifier.fillMaxWidth())
+                Row(modifier = Modifier.fillMaxWidth().clickable { onActiveChange(!state.isActive) }.padding(vertical = CulinarySpacing.sm), verticalAlignment = Alignment.CenterVertically) {
+                    Text("档案状态", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.weight(1f))
+                    Text(if (state.isActive) "在用" else "已归档", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.secondary)
+                }
+                CulinaryRule()
                 ArchiveEditorSectionHeader(index = "", english = "DEFAULT UNIT", title = "常用计量单位")
                 UnitSelectionRow(value = state.defaultUnit?.let { "${it.name}（${it.symbol}）" } ?: stringResource(R.string.ingredients_no_unit), onClick = onOpenUnitPicker)
                 ArchiveEditorInlineField(value = state.exampleProducts, onValueChange = onExampleProductsChange, placeholder = "常见品种 / 商品规格", singleLine = false, minLines = 2, modifier = Modifier.fillMaxWidth())
