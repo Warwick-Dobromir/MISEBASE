@@ -69,6 +69,8 @@ class IngredientRepositoryImpl
                         category = savedEntity.category,
                         description = savedEntity.description,
                         flavorProfile = savedEntity.flavorProfile,
+                        culinaryUse = savedEntity.culinaryUse,
+                        edibleParts = savedEntity.edibleParts,
                         seasonality = savedEntity.seasonality,
                         origin = savedEntity.origin,
                         selectionNotes = savedEntity.selectionNotes,
