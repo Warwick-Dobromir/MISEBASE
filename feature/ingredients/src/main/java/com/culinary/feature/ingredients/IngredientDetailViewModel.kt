@@ -31,7 +31,7 @@ class IngredientDetailViewModel
         private val archiveIngredient: ArchiveIngredientUseCase,
         private val getArchiveCategoryForRecord: GetArchiveCategoryForRecordUseCase =
             GetArchiveCategoryForRecordUseCase(),
-        private val archiveImages: ArchiveImageUseCase = ArchiveImageUseCase(),
+        private val archiveImages: ArchiveImageUseCase,
         private val observeKitchenRelations: ObserveKitchenRelationsUseCase,
         private val listIngredientVersions: ListIngredientVersionsUseCase,
     ) : ViewModel() {
