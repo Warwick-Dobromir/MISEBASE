@@ -101,10 +101,10 @@ import com.culinary.core.database.entity.SupplierEntity
 import com.culinary.core.database.entity.UnitEntity
 
 /** Single source of truth for Room and startup compatibility checks. */
-const val CULINARY_DATABASE_SCHEMA_VERSION: Int = 10
+const val CULINARY_DATABASE_SCHEMA_VERSION: Int = 11
 
 /**
- * CULINARY 数据库（schema v10）。
+ * CULINARY 数据库（schema v11）。
  *
  * `exportSchema = true`：每个版本必须提交 `schemas/` JSON，迁移测试依赖它。
  * v2 新增计算记录与 recipe_version.servings；v3 新增 kitchen_reference；
