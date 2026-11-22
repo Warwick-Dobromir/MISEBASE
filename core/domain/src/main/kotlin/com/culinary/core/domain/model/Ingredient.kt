@@ -16,6 +16,8 @@ data class Ingredient(
     val scientificName: String? = null,
     val description: String? = null,
     val flavorProfile: String? = null,
+    val culinaryUse: String? = null,
+    val edibleParts: String? = null,
     val seasonality: String? = null,
     val origin: String? = null,
     val selectionNotes: String? = null,
