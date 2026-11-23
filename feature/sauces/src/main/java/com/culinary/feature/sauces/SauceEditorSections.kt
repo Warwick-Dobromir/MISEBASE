@@ -257,7 +257,6 @@ internal fun SauceIngredientsSection(
     state: SauceEditorUiState,
     actions: SauceEditorActions,
 ) {
-    var showPicker by remember { mutableStateOf(false) }
     ArchiveEditorSectionHeader(
         index = "01",
         english = "INGREDIENTS",
@@ -286,19 +285,9 @@ internal fun SauceIngredientsSection(
     }
     CulinaryTextButton(
         text = stringResource(R.string.sauces_add_ingredient),
-        onClick = { showPicker = true },
+        onClick = actions.onAddIngredient,
         modifier = Modifier.padding(top = CulinarySpacing.xxs),
     )
-    if (showPicker) {
-        SauceIngredientPickerDialog(
-            ingredients = state.ingredients,
-            onSelect = {
-                actions.onAddIngredient(it)
-                showPicker = false
-            },
-            onDismiss = { showPicker = false },
-        )
-    }
 }
 
 @Suppress("LongMethod") // 名称/英文名/数量/单位/可选/删除共享同一行布局

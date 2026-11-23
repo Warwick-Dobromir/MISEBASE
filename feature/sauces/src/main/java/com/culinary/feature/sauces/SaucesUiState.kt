@@ -40,7 +40,7 @@ data class SauceDetailUiState(
 /** 编辑器中的组成行；名称覆盖只作用于当前酱汁配方。 */
 data class SauceLineEditor(
     val key: String,
-    val target: ComponentTarget,
+    val target: ComponentTarget?,
     val name: String,
     val nameEn: String,
     val originalName: String,
@@ -49,11 +49,12 @@ data class SauceLineEditor(
     val unit: UnitModel,
     val isOptional: Boolean = false,
 ) {
-    val isReadOnly: Boolean get() = target !is ComponentTarget.Ingredient
+    val isReadOnly: Boolean get() = target != null && target !is ComponentTarget.Ingredient
 
     val kindLabel: String
         get() =
             when (target) {
+                null -> "食材"
                 is ComponentTarget.Ingredient -> "食材"
                 is ComponentTarget.Recipe -> "子菜谱"
                 is ComponentTarget.Sauce -> "子酱汁"

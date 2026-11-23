@@ -23,6 +23,8 @@ import com.culinary.core.domain.usecase.archive.ClearArchiveCategoryAssignmentUs
 import com.culinary.core.domain.usecase.archive.GetArchiveCategoryForRecordUseCase
 import com.culinary.core.domain.usecase.archive.ListArchiveCategoriesUseCase
 import com.culinary.core.domain.usecase.ingredient.ListIngredientsUseCase
+import com.culinary.core.domain.usecase.ingredient.SaveIngredientInput
+import com.culinary.core.domain.usecase.ingredient.SaveIngredientUseCase
 import com.culinary.core.domain.usecase.kitchen.ObserveKitchenRelationsUseCase
 import com.culinary.core.domain.usecase.sauce.ArchiveSauceUseCase
 import com.culinary.core.domain.usecase.sauce.GetSauceDetailUseCase
@@ -66,6 +68,7 @@ class SauceEditorViewModel
         private val archiveSauce: ArchiveSauceUseCase,
         private val listUnits: ListUnitsUseCase,
         private val listIngredients: ListIngredientsUseCase,
+        private val saveIngredient: SaveIngredientUseCase,
         private val listSauces: ListSaucesUseCase,
         private val observeRelations: ObserveKitchenRelationsUseCase,
         private val saveSauceRelations: SaveSauceRelationsUseCase,
@@ -403,6 +406,24 @@ class SauceEditorViewModel
             to: Int,
         ) = mutate { state -> state.copy(lines = state.lines.move(from, to)) }
 
+        fun addBlankIngredient() {
+            mutate { state ->
+                val unit = state.units.firstOrNull() ?: return@mutate state
+                state.copy(
+                    lines = state.lines + SauceLineEditor(
+                        key = "line-${keyCounter++}",
+                        target = null,
+                        name = "",
+                        nameEn = "",
+                        originalName = "",
+                        originalNameEn = "",
+                        amount = "0",
+                        unit = unit,
+                    ),
+                )
+            }
+        }
+
         fun addIngredient(ingredient: Ingredient) {
             mutate { state ->
                 val unit =
@@ -562,6 +583,42 @@ class SauceEditorViewModel
             _uiState.update { it.copy(error = null) }
         }
 
+        private suspend fun resolveDraftLines(state: SauceEditorUiState): List<com.culinary.core.domain.usecase.sauce.SauceDraftLineInput>? {
+            val result = mutableListOf<com.culinary.core.domain.usecase.sauce.SauceDraftLineInput>()
+            state.lines.forEachIndexed { index, line ->
+                if (line.target == null && line.name.isBlank()) return@forEachIndexed
+                val amount = line.amount.toDoubleOrNull()
+                if (amount == null || !amount.isFinite() || amount <= 0.0) {
+                    _uiState.update { it.copy(error = "第 ${index + 1} 行数量必须是大于 0 的数字。") }
+                    return null
+                }
+                val target = line.target ?: when (
+                    val created = saveIngredient(
+                        SaveIngredientInput(
+                            name = line.name,
+                            englishName = line.nameEn,
+                            defaultUnitId = line.unit.id,
+                        ),
+                    )
+                ) {
+                    is Outcome.Success -> ComponentTarget.Ingredient(created.value)
+                    is Outcome.Failure -> {
+                        fail(created.error)
+                        return null
+                    }
+                }
+                result += com.culinary.core.domain.usecase.sauce.SauceDraftLineInput(
+                    target = target,
+                    amount = amount,
+                    unit = line.unit,
+                    isOptional = line.isOptional,
+                    labelOverride = if (line.isReadOnly) null else line.labelOverride,
+                    labelOverrideEn = if (line.isReadOnly) null else line.labelOverrideEn,
+                )
+            }
+            return result
+        }
+
         @Suppress("LongMethod", "CyclomaticComplexMethod") // 统一保存覆盖新建/已发布/草稿三态
         fun save() {
             val state = _uiState.value
@@ -654,17 +711,7 @@ class SauceEditorViewModel
                                     sauceId = sauceId,
                                     yieldAmount = requireNotNull(amount),
                                     yieldUnit = requireNotNull(unit),
-                                    components =
-                                        state.lines.map { line ->
-                                            com.culinary.core.domain.usecase.sauce.SauceDraftLineInput(
-                                                target = line.target,
-                                                amount = line.amount.toDoubleOrNull() ?: 0.0,
-                                                unit = line.unit,
-                                                isOptional = line.isOptional,
-                                                labelOverride = if (line.isReadOnly) null else line.labelOverride,
-                                                labelOverrideEn = if (line.isReadOnly) null else line.labelOverrideEn,
-                                            )
-                                        },
+                                    components = resolveDraftLines(state) ?: return@launch,
                                     instructions = SauceStepCodec.toInstructions(state.steps),
                                     stepsJson = SauceStepCodec.encode(state.steps),
                                     versionId = state.editingDraftId?.let { SauceVersionId(it) },
