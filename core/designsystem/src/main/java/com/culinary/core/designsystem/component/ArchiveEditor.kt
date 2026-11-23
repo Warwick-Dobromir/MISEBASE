@@ -4,7 +4,9 @@ import android.graphics.BitmapFactory
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.awaitLongPressOrCancellation
 import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
@@ -41,6 +43,7 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onGloballyPositioned
@@ -394,37 +397,42 @@ fun ArchiveEditorReorderableRow(
             }
             .shadow(if (dragging) 7.dp else 0.dp, androidx.compose.ui.graphics.RectangleShape)
             .pointerInput(scrollState) {
-                detectDragGesturesAfterLongPress(
-                    onDragStart = {
-                        dragging = true
-                        dragOffsetY = 0f
-                        edgeOverdragY = 0f
-                    },
-                    onDragEnd = {
+                awaitEachGesture {
+                    val down = awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Initial)
+                    val longPress = awaitLongPressOrCancellation(down.id, pass = PointerEventPass.Initial)
+                        ?: return@awaitEachGesture
+                    dragging = true
+                    dragOffsetY = 0f
+                    edgeOverdragY = 0f
+                    var previousY = longPress.position.y
+                    try {
+                        while (true) {
+                            val event = awaitPointerEvent(PointerEventPass.Initial)
+                            val change = event.changes.firstOrNull { it.id == longPress.id } ?: break
+                            if (!change.pressed) break
+                            val deltaY = change.position.y - previousY
+                            previousY = change.position.y
+                            if (deltaY != 0f) {
+                                change.consume()
+                                val next = archiveEditorDragOffsetAfterDelta(
+                                    currentOffsetPx = dragOffsetY,
+                                    currentEdgeOverdragPx = edgeOverdragY,
+                                    deltaPx = deltaY,
+                                    rowHeightPx = rowHeightPx.toFloat(),
+                                    maxEdgeOffsetPx = maxEdgeOffsetPx,
+                                    canMove = currentCanMove,
+                                    move = currentOnMove,
+                                )
+                                dragOffsetY = next.offsetPx
+                                edgeOverdragY = next.edgeOverdragPx
+                            }
+                        }
+                    } finally {
                         dragging = false
                         dragOffsetY = 0f
                         edgeOverdragY = 0f
-                    },
-                    onDragCancel = {
-                        dragging = false
-                        dragOffsetY = 0f
-                        edgeOverdragY = 0f
-                    },
-                    onDrag = { change, amount ->
-                        change.consume()
-                        val next = archiveEditorDragOffsetAfterDelta(
-                            currentOffsetPx = dragOffsetY,
-                            currentEdgeOverdragPx = edgeOverdragY,
-                            deltaPx = amount.y,
-                            rowHeightPx = rowHeightPx.toFloat(),
-                            maxEdgeOffsetPx = maxEdgeOffsetPx,
-                            canMove = currentCanMove,
-                            move = currentOnMove,
-                        )
-                        dragOffsetY = next.offsetPx
-                        edgeOverdragY = next.edgeOverdragPx
-                    },
-                )
+                    }
+                }
             },
     ) { content() }
 }
