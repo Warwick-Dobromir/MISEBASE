@@ -10,6 +10,7 @@ import com.culinary.core.domain.model.KitchenStep
 import com.culinary.core.domain.model.KitchenRelatedRecord
 import com.culinary.core.domain.model.RecipeComponentKind
 import com.culinary.core.domain.model.RecipeDetail
+import com.culinary.core.domain.model.RecipeCategory
 import com.culinary.core.domain.model.RecipeId
 import com.culinary.core.domain.model.RecipeImage
 import com.culinary.core.domain.model.PendingRecipeImage
