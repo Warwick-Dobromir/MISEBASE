@@ -18,7 +18,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RectangleShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Icon
@@ -66,6 +65,209 @@ import kotlin.math.sign
  * 只提供排版、输入和轻量交互，不读取业务数据；字段映射留在各自模块。
  */
 
+/** 顶部操作栏：返回 / 居中标题 / 保存。 */
+@Composable
+fun ArchiveEditorTopBar(
+    title: String,
+    onBack: () -> Unit,
+    onSave: () -> Unit,
+    isSaving: Boolean,
+    canSave: Boolean,
+    modifier: Modifier = Modifier,
+    onCancel: (() -> Unit)? = null,
+    cancelLabel: String = "取消",
+    saveLabel: String = "保存",
+    centerTitle: Boolean = false,
+) {
+    Column(modifier = modifier.fillMaxWidth()) {
+        if (centerTitle) {
+            Box(
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .height(56.dp)
+                        .padding(horizontal = CulinarySpacing.xs),
+            ) {
+                Icon(
+                    imageVector = CulinaryIcons.Back,
+                    contentDescription = "返回",
+                    tint = MaterialTheme.colorScheme.onSurface,
+                    modifier =
+                        Modifier
+                            .align(Alignment.CenterStart)
+                            .size(44.dp)
+                            .clickable(role = androidx.compose.ui.semantics.Role.Button, onClick = onBack)
+                            .padding(12.dp),
+                )
+                Text(
+                    text = title,
+                    style = CulinaryTextStyles.eyebrow,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.align(Alignment.Center).fillMaxWidth().padding(horizontal = 56.dp),
+                )
+                Text(
+                    text = saveLabel,
+                    style = MaterialTheme.typography.titleSmall,
+                    color =
+                        if (canSave && !isSaving) {
+                            MaterialTheme.colorScheme.onSurface
+                        } else {
+                            MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
+                        },
+                    modifier =
+                        Modifier
+                            .align(Alignment.CenterEnd)
+                            .clickable(
+                                enabled = canSave && !isSaving,
+                                role = androidx.compose.ui.semantics.Role.Button,
+                                onClick = onSave,
+                            ).padding(horizontal = CulinarySpacing.sm, vertical = CulinarySpacing.sm),
+                )
+            }
+        } else {
+            Row(
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .height(56.dp)
+                        .padding(horizontal = CulinarySpacing.xs),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Icon(
+                    imageVector = CulinaryIcons.Back,
+                    contentDescription = "返回",
+                    tint = MaterialTheme.colorScheme.onSurface,
+                    modifier =
+                        Modifier
+                            .size(44.dp)
+                            .clickable(role = androidx.compose.ui.semantics.Role.Button, onClick = onBack)
+                            .padding(12.dp),
+                )
+                if (onCancel != null) {
+                    Text(
+                        text = cancelLabel,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier =
+                            Modifier
+                                .clickable(role = androidx.compose.ui.semantics.Role.Button, onClick = onCancel)
+                                .padding(horizontal = CulinarySpacing.xs, vertical = CulinarySpacing.sm),
+                    )
+                }
+                Spacer(modifier = Modifier.weight(1f))
+                Text(
+                    text = title,
+                    style = CulinaryTextStyles.eyebrow,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+                Spacer(modifier = Modifier.weight(1f))
+                Text(
+                    text = saveLabel,
+                    style = MaterialTheme.typography.titleSmall,
+                    color =
+                        if (canSave && !isSaving) {
+                            MaterialTheme.colorScheme.onSurface
+                        } else {
+                            MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
+                        },
+                    modifier =
+                        Modifier
+                            .clickable(
+                                enabled = canSave && !isSaving,
+                                role = androidx.compose.ui.semantics.Role.Button,
+                                onClick = onSave,
+                            ).padding(horizontal = CulinarySpacing.sm, vertical = CulinarySpacing.sm),
+                )
+            }
+        }
+        CulinaryRule()
+    }
+}
+/** 分节标题：编号 / 英文 / 中文 / 副标题 / 右侧动作。 */
+@Composable
+fun ArchiveEditorSectionHeader(
+    index: String,
+    english: String,
+    title: String,
+    modifier: Modifier = Modifier,
+    subtitle: String? = null,
+    action: (@Composable () -> Unit)? = null,
+    showRule: Boolean = true,
+) {
+    Column(modifier = modifier.fillMaxWidth().padding(top = CulinarySpacing.xl, bottom = CulinarySpacing.sm)) {
+        if (showRule) {
+            CulinaryRule()
+        }
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(top = CulinarySpacing.md),
+            verticalAlignment = Alignment.Bottom,
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = if (index.isBlank()) english else "$index / $english",
+                    style = CulinaryTextStyles.eyebrow,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Spacer(modifier = Modifier.height(CulinarySpacing.xxs))
+                Text(
+                    text = title,
+                    style = CulinaryTextStyles.sectionTitle,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+                subtitle?.takeIf { it.isNotBlank() }?.let { value ->
+                    Spacer(modifier = Modifier.height(CulinarySpacing.xxs))
+                    Text(
+                        text = value,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+            action?.invoke()
+        }
+    }
+}
+
+/** 行内无边框输入；编辑式档案不使用 Material 外框。 */
+@Composable
+fun ArchiveEditorInlineField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    placeholder: String,
+    modifier: Modifier = Modifier,
+    textStyle: TextStyle = MaterialTheme.typography.bodyLarge,
+    singleLine: Boolean = true,
+    minLines: Int = 1,
+    keyboardType: KeyboardType = KeyboardType.Text,
+    textAlign: TextAlign = TextAlign.Start,
+    enabled: Boolean = true,
+) {
+    BasicTextField(
+        value = value,
+        onValueChange = onValueChange,
+        modifier = modifier,
+        enabled = enabled,
+        singleLine = singleLine,
+        textStyle = textStyle.copy(color = MaterialTheme.colorScheme.onSurface, textAlign = textAlign),
+        cursorBrush = SolidColor(MaterialTheme.colorScheme.secondary),
+        keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
+        minLines = minLines,
+        decorationBox = { inner ->
+            Box {
+                if (value.isEmpty()) {
+                    Text(
+                        text = placeholder,
+                        style = textStyle.copy(textAlign = textAlign),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.55f),
+                        maxLines = if (singleLine) 1 else 3,
+                    )
+                }
+                inner()
+            }
+        },
+    )
+}
 
 /** Drag offset state shared with the archive category sorter. */
 private data class ArchiveEditorDragOffsetState(
@@ -190,7 +392,7 @@ fun ArchiveEditorReorderableRow(
                 scaleY = if (dragging) 1.045f else 1f
                 translationY = if (dragging) dragOffsetY else 0f
             }
-            .shadow(if (dragging) 7.dp else 0.dp, RectangleShape)
+            .shadow(if (dragging) 7.dp else 0.dp, androidx.compose.ui.graphics.RectangleShape)
             .pointerInput(scrollState) {
                 detectDragGesturesAfterLongPress(
                     onDragStart = {
@@ -227,6 +429,7 @@ fun ArchiveEditorReorderableRow(
     ) { content() }
 }
 
+/** 拖动排序手柄；只作用于手柄，避免和文本输入抢手势。 */
 @Composable
 fun ArchiveEditorDragHandle(
     modifier: Modifier = Modifier,
