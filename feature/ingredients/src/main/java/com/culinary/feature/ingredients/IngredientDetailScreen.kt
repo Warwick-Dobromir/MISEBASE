@@ -144,7 +144,7 @@ internal fun IngredientDetailContent(
             }
 
             if (sauceRelations.isNotEmpty() || recipeRelations.isNotEmpty()) {
-                ArchiveModuleHeader(number = "05", english = "RELATED ARCHIVES", chinese = "关联档案")
+                ArchiveModuleHeader(number = if (detail.conversions.isNotEmpty()) "06" else "05", english = "RELATED ARCHIVES", chinese = "关联档案")
                 if (sauceRelations.isNotEmpty()) {
                     Text(
                         "关联酱汁",
@@ -270,9 +270,8 @@ private fun IngredientFieldSection(fields: List<Pair<String, String?>>) {
 }
 
 @Composable
-@Composable
 private fun IngredientConversions(conversions: List<IngredientConversionView>) {
-    IngredientSectionHeading("CONVERSIONS", "换算依据")
+    ArchiveModuleHeader(number = "05", english = "CONVERSIONS", chinese = "换算依据")
     conversions.forEach { conversion ->
         val from = conversion.fromUnit?.symbol ?: conversion.fromUnitId.value
         val to = conversion.toUnit?.symbol ?: conversion.toUnitId.value
