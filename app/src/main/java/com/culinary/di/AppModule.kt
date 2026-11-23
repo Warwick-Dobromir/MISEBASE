@@ -2,6 +2,8 @@ package com.culinary.di
 
 import android.content.Context
 import com.culinary.core.common.Clock
+import com.culinary.core.domain.repository.ArchiveCategoryRepository
+import com.culinary.core.domain.usecase.archive.ClearArchiveCategoryAssignmentUseCase
 import com.culinary.cooking.CookingAlert
 import com.culinary.cooking.ToneCookingAlert
 import com.culinary.crash.CrashLogWriter
@@ -23,6 +25,11 @@ object AppModule {
         @ApplicationContext context: Context,
         clock: Clock,
     ): CrashLogWriter = CrashLogWriter(File(context.filesDir, "crash-logs"), clock)
+
+    @Provides
+    fun provideClearArchiveCategoryAssignmentUseCase(
+        repository: ArchiveCategoryRepository,
+    ): ClearArchiveCategoryAssignmentUseCase = ClearArchiveCategoryAssignmentUseCase(repository)
 
     /** 制作模式计时结束提示音；无状态，单例即可。 */
     @Provides
