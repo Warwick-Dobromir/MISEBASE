@@ -572,7 +572,6 @@ private fun RecipeBasics(
     onNameChange: (String) -> Unit,
     onEnglishNameChange: (String) -> Unit,
     onDescriptionChange: (String) -> Unit,
-    onOpenCategoryPicker: () -> Unit,
     onOpenArchiveCategoryPicker: () -> Unit,
     onArchiveCategorySelect: (String?) -> Unit,
     onYieldAmountChange: (String) -> Unit,
