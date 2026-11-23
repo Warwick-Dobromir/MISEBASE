@@ -8,7 +8,6 @@ import com.culinary.core.domain.model.IngredientId
 import com.culinary.core.domain.model.KitchenRecordKind
 import com.culinary.core.domain.model.KitchenStep
 import com.culinary.core.domain.model.KitchenRelatedRecord
-import com.culinary.core.domain.model.RecipeCategory
 import com.culinary.core.domain.model.RecipeComponentKind
 import com.culinary.core.domain.model.RecipeDetail
 import com.culinary.core.domain.model.RecipeId
@@ -25,7 +24,6 @@ import com.culinary.core.domain.model.Unit as UnitModel
 data class RecipeRow(
     val id: String,
     val name: String,
-    val category: RecipeCategory,
     val isActive: Boolean,
 )
 
