@@ -7,7 +7,6 @@ import com.culinary.core.domain.model.KitchenRecordKind
 import com.culinary.core.domain.repository.ArchiveCategoryRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
-import javax.inject.Inject
 
 class ListArchiveCategoriesUseCase(
     private val repository: ArchiveCategoryRepository? = null,
@@ -36,7 +35,7 @@ class AssignArchiveCategoryUseCase(
     ): Outcome<Unit> = repository?.assign(kind, recordId, categoryId) ?: Outcome.success(Unit)
 }
 
-class ClearArchiveCategoryAssignmentUseCase @Inject constructor(
+class ClearArchiveCategoryAssignmentUseCase(
     private val repository: ArchiveCategoryRepository? = null,
 ) {
     suspend operator fun invoke(
