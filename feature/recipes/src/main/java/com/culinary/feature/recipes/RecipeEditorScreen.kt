@@ -121,7 +121,7 @@ fun RecipeEditorRoute(
         onOpenYieldUnit = { picker = EditorPicker.YIELD_UNIT },
         onMinRangeAmountChange = viewModel::onMinRangeAmountChange,
         onOpenMinRangeUnit = { picker = EditorPicker.MIN_RANGE_UNIT },
-        onAddIngredient = { picker = EditorPicker.INGREDIENT },
+        onAddIngredient = viewModel::addBlankIngredient,
         onAddRecipe = { picker = EditorPicker.RECIPE },
         onAddSauce = { picker = EditorPicker.SAUCE },
         onAddRelationSauce = { picker = EditorPicker.RELATION_SAUCE },
@@ -129,6 +129,8 @@ fun RecipeEditorRoute(
         onRemoveRelation = viewModel::removeRelation,
         onOpenRelation = onOpenRelation,
         onMoveRelation = viewModel::moveRelation,
+        onLineNameChange = viewModel::onLineNameChange,
+        onLineNameEnChange = viewModel::onLineNameEnChange,
         onLineAmountChange = viewModel::onLineAmountChange,
         onOpenLineUnit = { key ->
             lineUnitKey = key
@@ -335,6 +337,12 @@ private fun RecipeEditorScreen(
     onRemoveRelation: (String) -> Unit,
     onOpenRelation: (KitchenRecordKind, String) -> Unit,
     onMoveRelation: (Int, Int) -> Unit,
+    onLineNameChange: (String, String) -> Unit,
+    onLineNameEnChange: (String, String) -> Unit,
+    onLineNameChange: (String, String) -> Unit,
+    onLineNameEnChange: (String, String) -> Unit,
+    onLineNameChange: (String, String) -> Unit,
+    onLineNameEnChange: (String, String) -> Unit,
     onLineAmountChange: (String, String) -> Unit,
     onOpenLineUnit: (String) -> Unit,
     onMoveLine: (Int, Int) -> Unit,
@@ -420,7 +428,11 @@ private fun RecipeEditorScreen(
                 onRemoveRelation = onRemoveRelation,
                 onOpenRelation = onOpenRelation,
                 onMoveRelation = onMoveRelation,
-                onLineAmountChange = onLineAmountChange,
+                onLineNameChange = onLineNameChange,
+                onLineNameEnChange = onLineNameEnChange,
+                onLineNameChange = onLineNameChange,
+            onLineNameEnChange = onLineNameEnChange,
+            onLineAmountChange = onLineAmountChange,
                 onOpenLineUnit = onOpenLineUnit,
                 onMoveLine = onMoveLine,
                 onToggleOptional = onToggleOptional,
@@ -823,6 +835,8 @@ private fun RecipeComponentsEditor(
     state.lines.forEachIndexed { index, line ->
         RecipeLineRowEditor(
             line = line,
+            onNameChange = { onLineNameChange(line.key, it) },
+            onNameEnChange = { onLineNameEnChange(line.key, it) },
             onAmountChange = { onLineAmountChange(line.key, it) },
             onUnitClick = { onOpenLineUnit(line.key) },
             onMove = { direction ->
@@ -873,6 +887,8 @@ private fun RecipeComponentsEditor(
 @Composable
 private fun RecipeLineRowEditor(
     line: RecipeLineEditor,
+    onNameChange: (String) -> Unit,
+    onNameEnChange: (String) -> Unit,
     onAmountChange: (String) -> Unit,
     onUnitClick: () -> Unit,
     onMove: (Int) -> Unit,
@@ -887,16 +903,33 @@ private fun RecipeLineRowEditor(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = line.name,
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurface,
-                    )
-                    Text(
-                        text = recipeLineKindLabel(line),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
+                    if (line.kind == RecipeComponentKind.INGREDIENT && line.ingredientId == null) {
+                        ArchiveEditorInlineField(
+                            value = line.name,
+                            onValueChange = onNameChange,
+                            placeholder = "原料名称",
+                            textStyle = MaterialTheme.typography.bodyLarge,
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                        ArchiveEditorInlineField(
+                            value = line.nameEn,
+                            onValueChange = onNameEnChange,
+                            placeholder = "English name",
+                            textStyle = MaterialTheme.typography.bodySmall,
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                    } else {
+                        Text(
+                            text = line.name,
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurface,
+                        )
+                        Text(
+                            text = recipeLineKindLabel(line),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
                 }
                 Column(horizontalAlignment = Alignment.End) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -913,18 +946,15 @@ private fun RecipeLineRowEditor(
                             text = line.unit.symbol,
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier =
-                                Modifier
-                                    .clickable(onClick = onUnitClick)
-                                    .padding(start = 4.dp, end = 4.dp, top = 8.dp, bottom = 8.dp),
+                            modifier = Modifier.clickable(onClick = onUnitClick)
+                                .padding(start = 4.dp, end = 4.dp, top = 8.dp, bottom = 8.dp),
                         )
                     }
                     Text(
                         text = stringResource(R.string.recipes_optional),
                         style = MaterialTheme.typography.labelSmall,
-                        color =
-                            if (line.isOptional) MaterialTheme.colorScheme.secondary
-                            else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                        color = if (line.isOptional) MaterialTheme.colorScheme.secondary
+                        else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
                         modifier = Modifier.clickable(onClick = onToggleOptional).padding(4.dp),
                     )
                 }

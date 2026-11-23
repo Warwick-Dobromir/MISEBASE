@@ -61,6 +61,7 @@ data class RecipeLineEditor(
     val key: String,
     val kind: RecipeComponentKind,
     val name: String,
+    val nameEn: String = "",
     val amount: String,
     val unit: UnitModel,
     val isOptional: Boolean = false,

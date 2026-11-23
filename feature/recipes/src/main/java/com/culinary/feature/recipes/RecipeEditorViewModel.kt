@@ -18,6 +18,8 @@ import com.culinary.core.domain.usecase.archive.ClearArchiveCategoryAssignmentUs
 import com.culinary.core.domain.usecase.archive.GetArchiveCategoryForRecordUseCase
 import com.culinary.core.domain.usecase.archive.ListArchiveCategoriesUseCase
 import com.culinary.core.domain.usecase.ingredient.ListIngredientsUseCase
+import com.culinary.core.domain.usecase.ingredient.SaveIngredientInput
+import com.culinary.core.domain.usecase.ingredient.SaveIngredientUseCase
 import com.culinary.core.domain.usecase.recipe.ArchiveRecipeUseCase
 import com.culinary.core.domain.usecase.recipe.GetRecipeDetailUseCase
 import com.culinary.core.domain.usecase.recipe.ListRecipeOptionsUseCase
@@ -79,6 +81,7 @@ class RecipeEditorViewModel
             ClearArchiveCategoryAssignmentUseCase(),
         private val listUnits: ListUnitsUseCase,
         private val listIngredients: ListIngredientsUseCase,
+        private val saveIngredient: SaveIngredientUseCase,
         private val listRecipeOptions: ListRecipeOptionsUseCase,
         private val listSauceOptions: ListSauceOptionsUseCase,
     ) : ViewModel() {
@@ -179,6 +182,9 @@ class RecipeEditorViewModel
                         key = "line-${lineKey++}",
                         kind = component.kind,
                         name = component.label,
+                        nameEn = component.ingredientId?.let { id ->
+                            _uiState.value.ingredients.firstOrNull { it.id == id }?.englishName
+                        }.orEmpty(),
                         amount = formatAmount(component.quantity.amount),
                         unit = unit,
                         isOptional = component.isOptional,
@@ -468,6 +474,23 @@ class RecipeEditorViewModel
 
         fun onServingsChange(value: String) = mutateVersion { it.copy(servings = value) }
 
+        fun addBlankIngredient() {
+            mutateVersion { state ->
+                val unit = state.units.firstOrNull() ?: return@mutateVersion state
+                state.copy(
+                    lines = state.lines + RecipeLineEditor(
+                        key = "line-${lineKey++}",
+                        kind = RecipeComponentKind.INGREDIENT,
+                        name = "",
+                        nameEn = "",
+                        amount = "0",
+                        unit = unit,
+                        ingredientId = null,
+                    ),
+                )
+            }
+        }
+
         fun addIngredient(ingredient: Ingredient) {
             mutateVersion { state ->
                 val unit =
@@ -481,6 +504,7 @@ class RecipeEditorViewModel
                                 key = "line-${lineKey++}",
                                 kind = RecipeComponentKind.INGREDIENT,
                                 name = ingredient.name,
+                                nameEn = ingredient.englishName.orEmpty(),
                                 amount = "",
                                 unit = unit,
                                 ingredientId = ingredient.id,
@@ -527,6 +551,24 @@ class RecipeEditorViewModel
                                 sauceVersionNo = current.versionNo,
                             ),
                 )
+            }
+        }
+
+        fun onLineNameChange(
+            key: String,
+            value: String,
+        ) {
+            mutateVersion { state ->
+                state.copy(lines = state.lines.map { if (it.key == key && it.ingredientId == null) it.copy(name = value) else it })
+            }
+        }
+
+        fun onLineNameEnChange(
+            key: String,
+            value: String,
+        ) {
+            mutateVersion { state ->
+                state.copy(lines = state.lines.map { if (it.key == key && it.ingredientId == null) it.copy(nameEn = value) else it })
             }
         }
 
@@ -712,10 +754,53 @@ class RecipeEditorViewModel
                 }
                 return
             }
+            val resolvedLines = mutableListOf<RecipeLineInput>()
+            for (line in submission.lines) {
+                val target = when (line.kind) {
+                    RecipeComponentKind.INGREDIENT -> {
+                        val ingredientId = line.ingredientId ?: when (
+                            val created = saveIngredient(
+                                SaveIngredientInput(
+                                    name = line.name,
+                                    englishName = line.nameEn,
+                                    defaultUnitId = line.unit.id,
+                                ),
+                            )
+                        ) {
+                            is Outcome.Success -> created.value
+                            is Outcome.Failure -> {
+                                fail(created.error)
+                                return
+                            }
+                        }
+                        RecipeLineTarget.Ingredient(ingredientId)
+                    }
+                    RecipeComponentKind.RECIPE -> {
+                        val recipeId = requireNotNull(line.recipeId)
+                        line.recipeVersionId?.let { RecipeLineTarget.RecipePinned(recipeId, it) }
+                            ?: RecipeLineTarget.RecipeCurrent(recipeId)
+                    }
+                    RecipeComponentKind.SAUCE ->
+                        RecipeLineTarget.SaucePinned(requireNotNull(line.sauceId), requireNotNull(line.sauceVersionId))
+                }
+                val amount = line.amount.toDoubleOrNull() ?: return fail(
+                    com.culinary.core.common.CulinaryError.Validation(
+                        field = "recipe.component.quantity",
+                        rule = "must be a finite positive number",
+                    ),
+                )
+                resolvedLines += RecipeLineInput(
+                    target = target,
+                    amount = amount,
+                    unit = line.unit,
+                    isOptional = line.isOptional,
+                )
+            }
             val input =
                 submission.toVersionInput(
                     recipeId = recipeId,
                     versionId = state.editingDraftId?.let(::RecipeVersionId),
+                    resolvedLines = resolvedLines,
                 )
             val versionId =
                 when (val saved = saveRecipeDraft(input)) {
@@ -977,51 +1062,28 @@ class RecipeEditorViewModel
             return value
         }
 
-        private fun parseLines(state: RecipeEditorUiState): List<RecipeLineInput>? {
-            val result = mutableListOf<RecipeLineInput>()
+        private fun parseLines(state: RecipeEditorUiState): List<RecipeLineEditor>? {
+            val result = mutableListOf<RecipeLineEditor>()
             state.lines.forEachIndexed { index, line ->
+                if (line.kind == RecipeComponentKind.INGREDIENT && line.ingredientId == null && line.name.isBlank()) {
+                    return@forEachIndexed
+                }
                 val amount = line.amount.toDoubleOrNull()
                 if (amount == null || !amount.isFinite() || amount <= 0.0) {
                     _uiState.update { it.copy(error = "第 ${index + 1} 行数量必须是大于 0 的数字。") }
                     return null
                 }
-                val target =
+                val targetIsValid =
                     when (line.kind) {
-                        RecipeComponentKind.INGREDIENT ->
-                            line.ingredientId?.let { RecipeLineTarget.Ingredient(it) }
-
-                        RecipeComponentKind.RECIPE -> {
-                            val recipeId = line.recipeId
-                            if (recipeId == null) {
-                                null
-                            } else if (line.recipeVersionId != null) {
-                                RecipeLineTarget.RecipePinned(recipeId, line.recipeVersionId)
-                            } else {
-                                RecipeLineTarget.RecipeCurrent(recipeId)
-                            }
-                        }
-
-                        RecipeComponentKind.SAUCE -> {
-                            val sauceId = line.sauceId
-                            val versionId = line.sauceVersionId
-                            if (sauceId == null || versionId == null) {
-                                null
-                            } else {
-                                RecipeLineTarget.SaucePinned(sauceId, versionId)
-                            }
-                        }
+                        RecipeComponentKind.INGREDIENT -> line.ingredientId != null || line.name.isNotBlank()
+                        RecipeComponentKind.RECIPE -> line.recipeId != null
+                        RecipeComponentKind.SAUCE -> line.sauceId != null && line.sauceVersionId != null
                     }
-                if (target == null) {
+                if (!targetIsValid) {
                     _uiState.update { it.copy(error = "第 ${index + 1} 行的目标已失效。") }
                     return null
                 }
-                result +=
-                    RecipeLineInput(
-                        target = target,
-                        amount = amount,
-                        unit = line.unit,
-                        isOptional = line.isOptional,
-                    )
+                result += line
             }
             return result
         }
@@ -1053,19 +1115,20 @@ class RecipeEditorViewModel
             val minRangeAmount: Double?,
             val minRangeUnit: UnitModel?,
             val servings: Int,
-            val lines: List<RecipeLineInput>,
+            val lines: List<RecipeLineEditor>,
             val steps: List<RecipeStepEditor>,
         ) {
             fun toVersionInput(
                 recipeId: RecipeId,
                 versionId: RecipeVersionId?,
+                resolvedLines: List<RecipeLineInput>,
             ): RecipeVersionInput =
                 RecipeVersionInput(
                     recipeId = recipeId,
                     yieldAmount = yieldAmount,
                     yieldUnit = yieldUnit,
                     servings = servings,
-                    components = lines,
+                    components = resolvedLines,
                     instructions =
                         KitchenStepCodec.toInstructions(
                             steps.map { KitchenStep(it.key, it.title, it.body, it.timeSeconds) },
