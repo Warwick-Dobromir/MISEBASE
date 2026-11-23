@@ -92,6 +92,7 @@ class SauceEditorViewModel
         private var originalCategoryPathIds: List<String> = emptyList()
         private var originalFamily: String = ""
         private var hasNonCategoryChanges = false
+        private var originalEditorSnapshot: SauceEditorUiState? = null
 
         init {
             load()
@@ -128,6 +129,7 @@ class SauceEditorViewModel
                     }
                 } else {
                     _uiState.update { it.copy(isLoading = false, isDirty = false, editingVersionNo = 1) }
+                    originalEditorSnapshot = contentSnapshot(_uiState.value)
                 }
             }
         }
@@ -260,6 +262,8 @@ class SauceEditorViewModel
                     isDirty = false,
                 )
             }
+            originalEditorSnapshot = contentSnapshot(_uiState.value)
+            hasNonCategoryChanges = false
         }
 
         private fun fallbackLabel(target: ComponentTarget): String =
@@ -269,10 +273,45 @@ class SauceEditorViewModel
                 is ComponentTarget.Sauce -> "子酱汁（只读保留）"
             }
 
+        private fun contentSnapshot(state: SauceEditorUiState): SauceEditorUiState =
+            state.copy(
+                units = emptyList(),
+                ingredients = emptyList(),
+                categories = emptyList(),
+                sauceOptions = emptyList(),
+                isDirty = false,
+                versionDirty = false,
+                isLoading = false,
+                isSaving = false,
+                error = null,
+                savedSauceId = null,
+                archived = false,
+            )
+
+        private fun hasContentChanges(state: SauceEditorUiState): Boolean =
+            originalEditorSnapshot?.let { contentSnapshot(state) != it } ?: true
+
+        private fun hasVersionChanges(state: SauceEditorUiState): Boolean {
+            val original = originalEditorSnapshot ?: return true
+            return state.yieldAmount != original.yieldAmount ||
+                state.yieldUnit != original.yieldUnit ||
+                state.minRangeAmount != original.minRangeAmount ||
+                state.minRangeUnit != original.minRangeUnit ||
+                state.lines != original.lines ||
+                state.steps != original.steps ||
+                state.heroImage != original.heroImage ||
+                state.heroImagePending != original.heroImagePending ||
+                state.noteImages != original.noteImages ||
+                state.noteImagesPending != original.noteImagesPending ||
+                state.removedImageIds != original.removedImageIds
+        }
+
         private fun mutate(transform: (SauceEditorUiState) -> SauceEditorUiState) {
-            hasNonCategoryChanges = true
             _uiState.update { state ->
-                transform(state).copy(isDirty = true, versionDirty = true, error = null)
+                val updated = transform(state).copy(error = null)
+                val dirty = hasContentChanges(updated)
+                hasNonCategoryChanges = dirty
+                updated.copy(isDirty = dirty, versionDirty = hasVersionChanges(updated))
             }
         }
 
@@ -300,12 +339,10 @@ class SauceEditorViewModel
                         next.isEmpty() -> ""
                         else -> next.lastOrNull()?.let { id -> state.categories.firstOrNull { it.id == id }?.name }.orEmpty()
                     }
-                state.copy(
-                    categoryPathIds = next,
-                    family = leafName,
-                    isDirty = hasNonCategoryChanges || next != originalCategoryPathIds,
-                    error = null,
-                )
+                val updated = state.copy(categoryPathIds = next, family = leafName, error = null)
+                val dirty = hasContentChanges(updated)
+                hasNonCategoryChanges = dirty
+                updated.copy(isDirty = dirty, versionDirty = hasVersionChanges(updated))
             }
         }
 
