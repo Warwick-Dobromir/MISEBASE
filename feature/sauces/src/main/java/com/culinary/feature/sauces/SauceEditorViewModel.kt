@@ -592,19 +592,40 @@ class SauceEditorViewModel
                     _uiState.update { it.copy(error = "第 ${index + 1} 行数量必须是大于 0 的数字。") }
                     return null
                 }
-                val target = line.target ?: when (
-                    val created = saveIngredient(
-                        SaveIngredientInput(
-                            name = line.name,
-                            englishName = line.nameEn,
-                            defaultUnitId = line.unit.id,
-                        ),
-                    )
-                ) {
-                    is Outcome.Success -> ComponentTarget.Ingredient(created.value)
-                    is Outcome.Failure -> {
-                        fail(created.error)
-                        return null
+                val target = line.target ?: run {
+                    val existing = state.ingredients.firstOrNull {
+                        it.name.trim().equals(line.name.trim(), ignoreCase = true)
+                    }
+                    val input =
+                        if (existing == null) {
+                            SaveIngredientInput(
+                                name = line.name,
+                                englishName = line.nameEn,
+                                defaultUnitId = line.unit.id,
+                            )
+                        } else {
+                            SaveIngredientInput(
+                                name = existing.name,
+                                id = existing.id,
+                                defaultUnitId = existing.defaultUnitId,
+                                category = existing.category,
+                                description = existing.description,
+                                englishName = line.nameEn.ifBlank { existing.englishName.orEmpty() },
+                                exampleProducts = existing.exampleProducts,
+                                storageNotes = existing.storageNotes,
+                                allergenNotes = existing.allergenNotes,
+                                flavorProfile = existing.flavorProfile,
+                                culinaryUse = existing.culinaryUse,
+                                edibleParts = existing.edibleParts,
+                                isActive = existing.isActive,
+                            )
+                        }
+                    when (val created = saveIngredient(input)) {
+                        is Outcome.Success -> ComponentTarget.Ingredient(created.value)
+                        is Outcome.Failure -> {
+                            fail(created.error)
+                            return null
+                        }
                     }
                 }
                 result += com.culinary.core.domain.usecase.sauce.SauceDraftLineInput(

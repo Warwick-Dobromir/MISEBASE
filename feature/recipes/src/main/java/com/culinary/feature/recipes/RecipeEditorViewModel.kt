@@ -758,19 +758,40 @@ class RecipeEditorViewModel
             for (line in submission.lines) {
                 val target = when (line.kind) {
                     RecipeComponentKind.INGREDIENT -> {
-                        val ingredientId = line.ingredientId ?: when (
-                            val created = saveIngredient(
-                                SaveIngredientInput(
-                                    name = line.name,
-                                    englishName = line.nameEn,
-                                    defaultUnitId = line.unit.id,
-                                ),
-                            )
-                        ) {
-                            is Outcome.Success -> created.value
-                            is Outcome.Failure -> {
-                                fail(created.error)
-                                return
+                        val ingredientId = line.ingredientId ?: run {
+                            val existing = state.ingredients.firstOrNull {
+                                it.name.trim().equals(line.name.trim(), ignoreCase = true)
+                            }
+                            val input =
+                                if (existing == null) {
+                                    SaveIngredientInput(
+                                        name = line.name,
+                                        englishName = line.nameEn,
+                                        defaultUnitId = line.unit.id,
+                                    )
+                                } else {
+                                    SaveIngredientInput(
+                                        name = existing.name,
+                                        id = existing.id,
+                                        defaultUnitId = existing.defaultUnitId,
+                                        category = existing.category,
+                                        description = existing.description,
+                                        englishName = line.nameEn.ifBlank { existing.englishName.orEmpty() },
+                                        exampleProducts = existing.exampleProducts,
+                                        storageNotes = existing.storageNotes,
+                                        allergenNotes = existing.allergenNotes,
+                                        flavorProfile = existing.flavorProfile,
+                                        culinaryUse = existing.culinaryUse,
+                                        edibleParts = existing.edibleParts,
+                                        isActive = existing.isActive,
+                                    )
+                                }
+                            when (val created = saveIngredient(input)) {
+                                is Outcome.Success -> created.value
+                                is Outcome.Failure -> {
+                                    fail(created.error)
+                                    return
+                                }
                             }
                         }
                         RecipeLineTarget.Ingredient(ingredientId)
