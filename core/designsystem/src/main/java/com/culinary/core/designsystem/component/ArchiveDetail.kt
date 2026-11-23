@@ -92,10 +92,17 @@ fun ArchiveDetailBar(
             ) {
                 Icon(
                     imageVector = CulinaryIcons.Back,
-                    contentDescription = backLabel ?: "返回",
+                    contentDescription = backLabel?.let { "返回$it" } ?: "返回",
                     tint = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier.size(18.dp),
                 )
+                if (!backLabel.isNullOrBlank()) {
+                    Text(
+                        text = backLabel,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface,
+                    )
+                }
             }
             Spacer(modifier = Modifier.weight(1f))
             Text(
