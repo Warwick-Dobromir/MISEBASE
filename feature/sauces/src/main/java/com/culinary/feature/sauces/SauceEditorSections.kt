@@ -617,7 +617,7 @@ internal fun SauceNotesSection(
 ) {
     ArchiveEditorSectionHeader(
         index = "05",
-        english = "NOTES",
+        english = "R&D RECORDS",
         title = stringResource(R.string.sauces_notes),
     )
     Text(
@@ -626,11 +626,14 @@ internal fun SauceNotesSection(
         color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
     Spacer(modifier = Modifier.height(CulinarySpacing.sm))
-    ArchiveEditorNotesBox(
-        value = state.notes,
-        onValueChange = actions.onNotesChange,
-        placeholder = stringResource(R.string.sauces_notes_placeholder),
-    )
+    SauceResearchField("成品标准", state.productStandard, actions.onProductStandardChange)
+    SauceResearchField("质地", state.texture, actions.onTextureChange)
+    SauceResearchField("主要原料", state.mainIngredients, actions.onMainIngredientsChange)
+    SauceResearchField("预制说明", state.preparationSummary, actions.onPreparationSummaryChange)
+    SauceResearchField("关键参数", state.keyParameters, actions.onKeyParametersChange)
+    SauceResearchField("储存说明", state.storageNotes, actions.onStorageNotesChange)
+    SauceResearchField("调整记录", state.notes, actions.onNotesChange)
+    SauceResearchField("测试记录", state.testRecords, actions.onTestRecordsChange)
     Spacer(modifier = Modifier.height(CulinarySpacing.xs))
     Row(horizontalArrangement = Arrangement.spacedBy(CulinarySpacing.md)) {
         CulinaryTextButton(
@@ -667,6 +670,31 @@ internal fun SauceNotesSection(
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun SauceResearchField(
+    label: String,
+    value: String,
+    onValueChange: (String) -> Unit,
+) {
+    Column(modifier = Modifier.fillMaxWidth().padding(bottom = CulinarySpacing.sm)) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        ArchiveEditorInlineField(
+            value = value,
+            onValueChange = onValueChange,
+            placeholder = "填写$label",
+            textStyle = MaterialTheme.typography.bodyMedium,
+            singleLine = false,
+            minLines = 2,
+            modifier = Modifier.fillMaxWidth(),
+        )
+        CulinaryRule()
     }
 }
 

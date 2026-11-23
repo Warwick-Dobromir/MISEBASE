@@ -18,6 +18,7 @@ data class SaveSauceInput(
     val id: SauceId? = null,
     val family: String? = null,
     val usageNotes: String? = null,
+    val texture: String? = null,
     val englishName: String? = null,
     val description: String? = null,
     val difficulty: SauceDifficulty? = null,
@@ -28,6 +29,7 @@ data class SaveSauceInput(
     val storageNotes: String? = null,
     val flavorProfile: String? = null,
     val adjustableNotes: String? = null,
+    val seedNote: String? = null,
 )
 
 /**
@@ -68,6 +70,7 @@ class SaveSauceUseCase(
                 normalizedName = NameText.normalize(name),
                 family = input.family.blankToNull(),
                 usageNotes = input.usageNotes.blankToNull() ?: existing?.usageNotes,
+                texture = input.texture.blankToNull(),
                 englishName = input.englishName.blankToNull() ?: existing?.englishName,
                 description = input.description.blankToNull(),
                 difficulty = input.difficulty,
@@ -78,6 +81,7 @@ class SaveSauceUseCase(
                 storageNotes = input.storageNotes.blankToNull() ?: existing?.storageNotes,
                 flavorProfile = input.flavorProfile.blankToNull() ?: existing?.flavorProfile,
                 adjustableNotes = input.adjustableNotes.blankToNull() ?: existing?.adjustableNotes,
+                seedNote = input.seedNote.blankToNull(),
             )
         return transactionRunner.write { repository.save(sauce) }.flatMap { it }
     }

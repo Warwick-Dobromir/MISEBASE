@@ -225,7 +225,14 @@ class SauceEditorViewModel
                     lines = lines,
                     steps = steps,
                     application = detail.sauce.usageNotes.orEmpty(),
+                    productStandard = detail.sauce.flavorProfile.orEmpty(),
+                    texture = detail.sauce.texture.orEmpty(),
+                    mainIngredients = detail.sauce.mainIngredients.orEmpty(),
+                    preparationSummary = detail.sauce.preparationSummary.orEmpty(),
+                    keyParameters = detail.sauce.keyParameters.orEmpty(),
+                    storageNotes = detail.sauce.storageNotes.orEmpty(),
                     notes = detail.sauce.adjustableNotes.orEmpty(),
+                    testRecords = detail.sauce.seedNote.orEmpty(),
                     heroImage = sauceImageList.firstOrNull { it.role == SauceImageRole.PRIMARY },
                     heroCaption = detail.sauce.heroCaption.orEmpty(),
                     noteImages = sauceImageList.filter { it.role == SauceImageRole.REFERENCE },
@@ -312,6 +319,20 @@ class SauceEditorViewModel
         fun onMinRangeUnitChange(unit: UnitModel) = mutate { it.copy(minRangeUnit = unit) }
 
         fun onApplicationChange(value: String) = mutate { it.copy(application = value) }
+
+        fun onProductStandardChange(value: String) = mutate { it.copy(productStandard = value) }
+
+        fun onTextureChange(value: String) = mutate { it.copy(texture = value) }
+
+        fun onMainIngredientsChange(value: String) = mutate { it.copy(mainIngredients = value) }
+
+        fun onPreparationSummaryChange(value: String) = mutate { it.copy(preparationSummary = value) }
+
+        fun onKeyParametersChange(value: String) = mutate { it.copy(keyParameters = value) }
+
+        fun onStorageNotesChange(value: String) = mutate { it.copy(storageNotes = value) }
+
+        fun onTestRecordsChange(value: String) = mutate { it.copy(testRecords = value) }
 
         fun onNotesChange(value: String) = mutate { it.copy(notes = value) }
 
@@ -596,7 +617,14 @@ class SauceEditorViewModel
                                     difficulty = state.difficulty,
                                     heroCaption = state.heroCaption,
                                     usageNotes = state.application,
+                                    flavorProfile = state.productStandard,
+                                    texture = state.texture,
+                                    mainIngredients = state.mainIngredients,
+                                    preparationSummary = state.preparationSummary,
+                                    keyParameters = state.keyParameters,
+                                    storageNotes = state.storageNotes,
                                     adjustableNotes = state.notes,
+                                    seedNote = state.testRecords,
                                 ),
                             )
                     ) {
