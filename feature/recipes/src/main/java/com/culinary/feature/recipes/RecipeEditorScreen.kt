@@ -851,52 +851,55 @@ private fun RecipeLineRowEditor(
                 modifier = Modifier.fillMaxWidth().padding(vertical = CulinarySpacing.sm),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = line.name,
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurface,
-                )
-                Text(
-                    text = recipeLineKindLabel(line),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-            Column(horizontalAlignment = Alignment.End) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    ArchiveEditorInlineField(
-                        value = line.amount,
-                        onValueChange = onAmountChange,
-                        placeholder = "0",
-                        textStyle = CulinaryTextStyles.numeralS,
-                        textAlign = androidx.compose.ui.text.style.TextAlign.End,
-                        keyboardType = KeyboardType.Decimal,
-                        modifier = Modifier.width(58.dp),
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = line.name,
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSurface,
                     )
                     Text(
-                        text = line.unit.symbol,
+                        text = recipeLineKindLabel(line),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier
-                            .clickable(onClick = onUnitClick)
-                            .padding(start = 4.dp, end = 4.dp, top = 8.dp, bottom = 8.dp),
                     )
                 }
-                Text(
-                    text = stringResource(R.string.recipes_optional),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = if (line.isOptional) MaterialTheme.colorScheme.secondary
-                    else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
-                    modifier = Modifier.clickable(onClick = onToggleOptional).padding(4.dp),
+                Column(horizontalAlignment = Alignment.End) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        ArchiveEditorInlineField(
+                            value = line.amount,
+                            onValueChange = onAmountChange,
+                            placeholder = "0",
+                            textStyle = CulinaryTextStyles.numeralS,
+                            textAlign = androidx.compose.ui.text.style.TextAlign.End,
+                            keyboardType = KeyboardType.Decimal,
+                            modifier = Modifier.width(58.dp),
+                        )
+                        Text(
+                            text = line.unit.symbol,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier =
+                                Modifier
+                                    .clickable(onClick = onUnitClick)
+                                    .padding(start = 4.dp, end = 4.dp, top = 8.dp, bottom = 8.dp),
+                        )
+                    }
+                    Text(
+                        text = stringResource(R.string.recipes_optional),
+                        style = MaterialTheme.typography.labelSmall,
+                        color =
+                            if (line.isOptional) MaterialTheme.colorScheme.secondary
+                            else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                        modifier = Modifier.clickable(onClick = onToggleOptional).padding(4.dp),
+                    )
+                }
+                Icon(
+                    imageVector = CulinaryIcons.Close,
+                    contentDescription = stringResource(R.string.recipes_remove_line),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(20.dp).clickable(onClick = onRemove).padding(2.dp),
                 )
             }
-            Icon(
-                imageVector = CulinaryIcons.Close,
-                contentDescription = stringResource(R.string.recipes_remove_line),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(20.dp).clickable(onClick = onRemove).padding(2.dp),
-            )
         }
     }
 }
