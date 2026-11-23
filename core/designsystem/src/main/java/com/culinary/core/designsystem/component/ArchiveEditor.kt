@@ -62,57 +62,116 @@ fun ArchiveEditorTopBar(
     isSaving: Boolean,
     canSave: Boolean,
     modifier: Modifier = Modifier,
+    onCancel: (() -> Unit)? = null,
+    cancelLabel: String = "取消",
     saveLabel: String = "保存",
+    centerTitle: Boolean = false,
 ) {
     Column(modifier = modifier.fillMaxWidth()) {
-        Box(
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .height(56.dp)
-                    .padding(horizontal = CulinarySpacing.xs),
-        ) {
-            Icon(
-                imageVector = CulinaryIcons.Back,
-                contentDescription = "返回",
-                tint = MaterialTheme.colorScheme.onSurface,
+        if (centerTitle) {
+            Box(
                 modifier =
                     Modifier
-                        .align(Alignment.CenterStart)
-                        .size(44.dp)
-                        .clickable(role = androidx.compose.ui.semantics.Role.Button, onClick = onBack)
-                        .padding(12.dp),
-            )
-            Text(
-                text = title,
-                style = CulinaryTextStyles.eyebrow,
-                color = MaterialTheme.colorScheme.onSurface,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.align(Alignment.Center).fillMaxWidth().padding(horizontal = 56.dp),
-            )
-            Text(
-                text = saveLabel,
-                style = MaterialTheme.typography.titleSmall,
-                color =
-                    if (canSave && !isSaving) {
-                        MaterialTheme.colorScheme.onSurface
-                    } else {
-                        MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
-                    },
+                        .fillMaxWidth()
+                        .height(56.dp)
+                        .padding(horizontal = CulinarySpacing.xs),
+            ) {
+                Icon(
+                    imageVector = CulinaryIcons.Back,
+                    contentDescription = "返回",
+                    tint = MaterialTheme.colorScheme.onSurface,
+                    modifier =
+                        Modifier
+                            .align(Alignment.CenterStart)
+                            .size(44.dp)
+                            .clickable(role = androidx.compose.ui.semantics.Role.Button, onClick = onBack)
+                            .padding(12.dp),
+                )
+                Text(
+                    text = title,
+                    style = CulinaryTextStyles.eyebrow,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.align(Alignment.Center).fillMaxWidth().padding(horizontal = 56.dp),
+                )
+                Text(
+                    text = saveLabel,
+                    style = MaterialTheme.typography.titleSmall,
+                    color =
+                        if (canSave && !isSaving) {
+                            MaterialTheme.colorScheme.onSurface
+                        } else {
+                            MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
+                        },
+                    modifier =
+                        Modifier
+                            .align(Alignment.CenterEnd)
+                            .clickable(
+                                enabled = canSave && !isSaving,
+                                role = androidx.compose.ui.semantics.Role.Button,
+                                onClick = onSave,
+                            ).padding(horizontal = CulinarySpacing.sm, vertical = CulinarySpacing.sm),
+                )
+            }
+        } else {
+            Row(
                 modifier =
                     Modifier
-                        .align(Alignment.CenterEnd)
-                        .clickable(
-                            enabled = canSave && !isSaving,
-                            role = androidx.compose.ui.semantics.Role.Button,
-                            onClick = onSave,
-                        ).padding(horizontal = CulinarySpacing.sm, vertical = CulinarySpacing.sm),
-            )
+                        .fillMaxWidth()
+                        .height(56.dp)
+                        .padding(horizontal = CulinarySpacing.xs),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Icon(
+                    imageVector = CulinaryIcons.Back,
+                    contentDescription = "返回",
+                    tint = MaterialTheme.colorScheme.onSurface,
+                    modifier =
+                        Modifier
+                            .size(44.dp)
+                            .clickable(role = androidx.compose.ui.semantics.Role.Button, onClick = onBack)
+                            .padding(12.dp),
+                )
+                if (onCancel != null) {
+                    Text(
+                        text = cancelLabel,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier =
+                            Modifier
+                                .clickable(role = androidx.compose.ui.semantics.Role.Button, onClick = onCancel)
+                                .padding(horizontal = CulinarySpacing.xs, vertical = CulinarySpacing.sm),
+                    )
+                }
+                Spacer(modifier = Modifier.weight(1f))
+                Text(
+                    text = title,
+                    style = CulinaryTextStyles.eyebrow,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+                Spacer(modifier = Modifier.weight(1f))
+                Text(
+                    text = saveLabel,
+                    style = MaterialTheme.typography.titleSmall,
+                    color =
+                        if (canSave && !isSaving) {
+                            MaterialTheme.colorScheme.onSurface
+                        } else {
+                            MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
+                        },
+                    modifier =
+                        Modifier
+                            .clickable(
+                                enabled = canSave && !isSaving,
+                                role = androidx.compose.ui.semantics.Role.Button,
+                                onClick = onSave,
+                            ).padding(horizontal = CulinarySpacing.sm, vertical = CulinarySpacing.sm),
+                )
+            }
         }
         CulinaryRule()
     }
 }
-
 /** 分节标题：编号 / 英文 / 中文 / 副标题 / 右侧动作。 */
 @Composable
 fun ArchiveEditorSectionHeader(
