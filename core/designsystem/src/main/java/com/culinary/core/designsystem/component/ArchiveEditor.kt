@@ -6,7 +6,6 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
-import androidx.compose.foundation.gestures.awaitLongPressOrCancellation
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.Image
@@ -62,6 +61,7 @@ import com.culinary.core.designsystem.theme.CulinarySpacing
 import com.culinary.core.designsystem.theme.CulinaryTextStyles
 import kotlin.math.pow
 import kotlin.math.sign
+import kotlinx.coroutines.withTimeoutOrNull
 
 /**
  * 酱汁/菜谱共用的编辑页视觉组件。
@@ -400,12 +400,27 @@ fun ArchiveEditorReorderableRow(
             .pointerInput(scrollState) {
                 awaitEachGesture {
                     val down = awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Initial)
-                    val longPress = awaitLongPressOrCancellation(down.id, pass = PointerEventPass.Initial)
-                        ?: return@awaitEachGesture
+                    val longPressReached =
+                        withTimeoutOrNull(viewConfiguration.longPressTimeoutMillis) {
+                            while (true) {
+                                val event = awaitPointerEvent(PointerEventPass.Initial)
+                                val change = event.changes.firstOrNull { it.id == down.id }
+                                    ?: return@withTimeoutOrNull false
+                                if (!change.pressed) return@withTimeoutOrNull false
+                                val deltaX = change.position.x - down.position.x
+                                val deltaY = change.position.y - down.position.y
+                                val touchSlop = viewConfiguration.touchSlop
+                                if (deltaX * deltaX + deltaY * deltaY > touchSlop * touchSlop) {
+                                    return@withTimeoutOrNull false
+                                }
+                            }
+                            false
+                        } ?: true
+                    if (!longPressReached) return@awaitEachGesture
                     dragging = true
                     dragOffsetY = 0f
                     edgeOverdragY = 0f
-                    var previousY = longPress.position.y
+                    var previousY = down.position.y
                     try {
                         while (true) {
                             val event = awaitPointerEvent(PointerEventPass.Initial)
