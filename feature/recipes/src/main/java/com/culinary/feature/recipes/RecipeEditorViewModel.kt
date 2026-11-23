@@ -115,7 +115,7 @@ class RecipeEditorViewModel
                                     )
                                 }
                         _uiState.update { it.copy(relations = relations) }
-                        if (originalRelations == null) originalRelations = relations
+                        if (originalRelations == null) originalRelations = relations.map { it.copy(name = "") }
                     }
                 }
             }
@@ -294,7 +294,7 @@ class RecipeEditorViewModel
 
         private fun hasUnsavedChanges(state: RecipeEditorUiState): Boolean {
             val contentChanged = originalEditorState?.let { state.editableContentSnapshot() != it } ?: true
-            val relationsChanged = originalRelations?.let { state.relations != it } ?: false
+            val relationsChanged = originalRelations?.let { baseline -> state.relations.map { it.copy(name = "") } != baseline } ?: false
             return contentChanged || relationsChanged
         }
 
@@ -867,6 +867,8 @@ class RecipeEditorViewModel
                     error = null,
                 )
             }
+            originalEditorState = _uiState.value.editableContentSnapshot()
+            originalRelations = _uiState.value.relations.map { it.copy(name = "") }
         }
 
         @Suppress("LongMethod", "CyclomaticComplexMethod", "ReturnCount")
@@ -1186,6 +1188,8 @@ class RecipeEditorViewModel
 
 private fun RecipeEditorUiState.editableContentSnapshot(): RecipeEditorUiState =
     copy(
+        lines = lines.map { it.copy(key = "") },
+        steps = steps.map { it.copy(key = "") },
         units = emptyList(),
         ingredients = emptyList(),
         recipeOptions = emptyList(),
@@ -1207,4 +1211,12 @@ private fun RecipeEditorUiState.editableContentSnapshot(): RecipeEditorUiState =
     )
 
 private fun RecipeEditorUiState.versionContentSnapshot(): List<Any?> =
-    listOf(yieldAmount, yieldUnit, minRangeAmount, minRangeUnit, servings, lines, steps)
+    listOf(
+        yieldAmount,
+        yieldUnit,
+        minRangeAmount,
+        minRangeUnit,
+        servings,
+        lines.map { it.copy(key = "") },
+        steps.map { it.copy(key = "") },
+    )

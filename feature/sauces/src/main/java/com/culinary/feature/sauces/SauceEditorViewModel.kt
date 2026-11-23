@@ -723,6 +723,7 @@ class SauceEditorViewModel
                     _uiState.update {
                         it.copy(isSaving = false, isDirty = false, savedSauceId = sauceId.value)
                     }
+                    originalEditorState = _uiState.value.editableContentSnapshot()
                     return@launch
                 }
                 val versionId =
@@ -799,6 +800,7 @@ class SauceEditorViewModel
                         isDirty = false,
                     )
                 }
+                originalEditorState = _uiState.value.editableContentSnapshot()
             }
         }
 
@@ -942,6 +944,8 @@ class SauceEditorViewModel
 
 private fun SauceEditorUiState.editableContentSnapshot(): SauceEditorUiState =
     copy(
+        lines = lines.map { it.copy(key = "") },
+        steps = steps.map { it.copy(key = "") },
         units = emptyList(),
         ingredients = emptyList(),
         categories = emptyList(),

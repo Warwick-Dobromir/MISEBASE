@@ -259,7 +259,28 @@ class IngredientEditorViewModel
                                 is Outcome.Success -> Unit
                             }
                         }
-                        _uiState.update { it.copy(isSaving = false, isDirty = false, saved = true) }
+                        val persistedPrimaryImage =
+                            runCatching {
+                                archiveImages.list(ArchiveImageOwner.INGREDIENT, result.value.value)
+                                    .firstOrNull { it.role == "PRIMARY" }
+                            }.getOrNull()
+                        val persistedPrimaryBytes =
+                            persistedPrimaryImage?.let { image ->
+                                runCatching { archiveImages.read(image.id) }.getOrNull()
+                            }
+                        _uiState.update {
+                            it.copy(
+                                ingredientId = result.value.value,
+                                imageId = persistedPrimaryImage?.id,
+                                imageBytes = persistedPrimaryBytes,
+                                pendingImage = null,
+                                imageRemoved = false,
+                                isSaving = false,
+                                isDirty = false,
+                                saved = true,
+                            )
+                        }
+                        originalEditorState = _uiState.value.editableContentSnapshot()
                     }
                     is Outcome.Failure ->
                         _uiState.update {
