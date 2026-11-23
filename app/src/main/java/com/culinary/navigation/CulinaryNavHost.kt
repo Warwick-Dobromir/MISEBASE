@@ -140,8 +140,12 @@ fun CulinaryNavHost(
             currentRoute == RecipesRoutes.DETAIL
     val showBottomBar = topLevel != null
     val archiveSorting = remember { mutableStateOf(false) }
+    val archiveBackLabel = remember { mutableStateOf("厨房") }
     LaunchedEffect(currentRoute) {
-        if (currentRoute != LIBRARY_TAB_ROUTE) archiveSorting.value = false
+        if (currentRoute != LIBRARY_TAB_ROUTE) {
+            archiveSorting.value = false
+            archiveBackLabel.value = "厨房"
+        }
     }
     val detailContext =
         when (currentRoute) {
@@ -178,7 +182,7 @@ fun CulinaryNavHost(
                         showBack = (!showBottomBar && currentRoute != null) || isKitchenArchive,
                         title =
                             if (isKitchenArchive) {
-                                stringResource(R.string.destination_kitchen)
+                                archiveBackLabel.value
                             } else {
                                 detailContext
                             },
@@ -209,6 +213,7 @@ fun CulinaryNavHost(
                     .padding(padding)
                     .imePadding(),
             onArchiveSortingChanged = { archiveSorting.value = it },
+            onArchiveBackLabelChanged = { archiveBackLabel.value = it },
         )
     }
 }
@@ -262,6 +267,7 @@ private fun AppNavGraph(
     navController: NavHostController,
     modifier: Modifier = Modifier,
     onArchiveSortingChanged: (Boolean) -> Unit,
+    onArchiveBackLabelChanged: (String) -> Unit,
 ) {
     NavHost(
         navController = navController,
@@ -275,7 +281,7 @@ private fun AppNavGraph(
         homeGraph(navController)
         homePlaceholderGraph()
         kitchenReferenceGraph(navController)
-        libraryGraph(navController, onArchiveSortingChanged)
+        libraryGraph(navController, onArchiveSortingChanged, onArchiveBackLabelChanged)
         sauceGraph(navController)
         ingredientGraph(navController)
         recipeGraph(navController)
@@ -337,6 +343,7 @@ private fun NavGraphBuilder.homePlaceholderGraph() {
 private fun NavGraphBuilder.libraryGraph(
     navController: NavHostController,
     onArchiveSortingChanged: (Boolean) -> Unit,
+    onArchiveBackLabelChanged: (String) -> Unit,
 ) {
     composable(LIBRARY_ROUTE) {
         KitchenRoute(
@@ -360,6 +367,7 @@ private fun NavGraphBuilder.libraryGraph(
             onAdd = { navController.openArchiveAdd(section) },
             onOpenEntry = { archiveEntry -> navController.openArchiveEntry(archiveEntry) },
             onBack = { navController.popBackStack() },
+            onBackLabelChanged = onArchiveBackLabelChanged,
             onSortingChanged = onArchiveSortingChanged,
         )
     }

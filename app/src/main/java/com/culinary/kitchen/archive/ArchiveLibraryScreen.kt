@@ -84,6 +84,7 @@ fun ArchiveLibraryRoute(
     onAdd: () -> Unit,
     onOpenEntry: (KitchenArchiveEntry) -> Unit,
     onBack: () -> Unit = {},
+    onBackLabelChanged: (String) -> Unit = {},
     onSortingChanged: (Boolean) -> Unit = {},
     cancelSortRequestVersion: Int = 0,
     modifier: Modifier = Modifier,
@@ -96,6 +97,7 @@ fun ArchiveLibraryRoute(
         onAdd = onAdd,
         onOpenEntry = onOpenEntry,
         onBack = onBack,
+        onBackLabelChanged = onBackLabelChanged,
         onSortingChanged = onSortingChanged,
         cancelSortRequestVersion = cancelSortRequestVersion,
         onCreateSubcategory = viewModel::createSubcategory,
@@ -116,6 +118,7 @@ internal fun ArchiveLibraryScreen(
     onAdd: () -> Unit,
     onOpenEntry: (KitchenArchiveEntry) -> Unit,
     onBack: () -> Unit = {},
+    onBackLabelChanged: (String) -> Unit = {},
     onSortingChanged: (Boolean) -> Unit = {},
     cancelSortRequestVersion: Int = 0,
     onCreateSubcategory: (String?, String) -> Unit = { _, _ -> },
@@ -156,6 +159,13 @@ internal fun ArchiveLibraryScreen(
     val categories = state.categories
     val entries = state.entries.filter { it.kind == section.kind }
     val currentCategory = categories.firstOrNull { it.id == currentCategoryId }
+    val archiveBackLabel =
+        if (currentCategory?.parentId == null) {
+            "厨房"
+        } else {
+            categories.firstOrNull { it.id == currentCategory.parentId }?.name ?: "厨房"
+        }
+    LaunchedEffect(archiveBackLabel) { onBackLabelChanged(archiveBackLabel) }
     // 测试分类在数据库启动清理后不应再出现；页面同时不展示任何遗留测试节点。
     val children = categories.filter { it.parentId == currentCategoryId && !it.isTest }
     val formalChildren = children
@@ -300,10 +310,7 @@ internal fun ArchiveLibraryScreen(
                 ArchiveContextHeader(
                     section = section,
                     currentCategory = currentCategory,
-                    parentName =
-                        currentCategory?.parentId?.let { parentId ->
-                            categories.firstOrNull { it.id == parentId }?.name
-                        } ?: "厨房",
+                    parentName = archiveBackLabel,
                     categoryPath =
                         currentCategory?.let { category -> categoryPath(category, categories) }.orEmpty(),
                     childCount = children.size,
@@ -452,12 +459,7 @@ internal fun ArchiveLibraryScreen(
         }
 
         ArchiveBackFloatButton(
-            label =
-                when {
-                    currentCategory == null -> "厨房"
-                    currentCategory.parentId == null -> "厨房"
-                    else -> categories.firstOrNull { it.id == currentCategory.parentId }?.name ?: "厨房"
-                },
+            label = archiveBackLabel,
             onClick = {
                 if (sorting) requestSortReturn()
                 else if (currentCategory == null) onBack()
