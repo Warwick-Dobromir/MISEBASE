@@ -1,10 +1,9 @@
 package com.culinary.feature.sauces
 
 import com.culinary.core.designsystem.component.ArchiveEditorDragHandle
-import com.culinary.core.designsystem.component.ArchiveEditorReorderableRow
 import com.culinary.core.designsystem.component.ArchiveEditorImageBox
 import com.culinary.core.designsystem.component.ArchiveEditorInlineField
-import com.culinary.core.designsystem.component.ArchiveEditorNotesBox
+import com.culinary.core.designsystem.component.ArchiveEditorReorderableRow
 import com.culinary.core.designsystem.component.ArchiveEditorSectionHeader
 
 import androidx.compose.foundation.background

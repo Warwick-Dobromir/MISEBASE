@@ -612,8 +612,8 @@ class SauceEditorViewModel
                     amount = amount,
                     unit = line.unit,
                     isOptional = line.isOptional,
-                    labelOverride = if (line.isReadOnly) null else line.labelOverride,
-                    labelOverrideEn = if (line.isReadOnly) null else line.labelOverrideEn,
+                    labelOverride = if (line.target == null || line.isReadOnly) null else line.labelOverride,
+                    labelOverrideEn = if (line.target == null || line.isReadOnly) null else line.labelOverrideEn,
                 )
             }
             return result

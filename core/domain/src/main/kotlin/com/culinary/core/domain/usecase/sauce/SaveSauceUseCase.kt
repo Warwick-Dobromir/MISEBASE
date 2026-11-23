@@ -70,7 +70,7 @@ class SaveSauceUseCase(
                 normalizedName = NameText.normalize(name),
                 family = input.family.blankToNull(),
                 usageNotes = input.usageNotes.blankToNull() ?: existing?.usageNotes,
-                texture = input.texture.blankToNull(),
+                texture = input.texture.blankToNull() ?: existing?.texture,
                 englishName = input.englishName.blankToNull() ?: existing?.englishName,
                 description = input.description.blankToNull(),
                 difficulty = input.difficulty,
@@ -81,7 +81,7 @@ class SaveSauceUseCase(
                 storageNotes = input.storageNotes.blankToNull() ?: existing?.storageNotes,
                 flavorProfile = input.flavorProfile.blankToNull() ?: existing?.flavorProfile,
                 adjustableNotes = input.adjustableNotes.blankToNull() ?: existing?.adjustableNotes,
-                seedNote = input.seedNote.blankToNull(),
+                seedNote = input.seedNote.blankToNull() ?: existing?.seedNote,
             )
         return transactionRunner.write { repository.save(sauce) }.flatMap { it }
     }
