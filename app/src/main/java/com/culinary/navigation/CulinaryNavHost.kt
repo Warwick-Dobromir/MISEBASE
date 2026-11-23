@@ -178,7 +178,7 @@ fun CulinaryNavHost(
                         showBack = (!showBottomBar && currentRoute != null) || isKitchenArchive,
                         title =
                             if (isKitchenArchive) {
-                                stringResource(R.string.destination_kitchen)
+                                navController.previousDestinationLabel()
                             } else {
                                 detailContext
                             },
@@ -365,6 +365,34 @@ private fun NavGraphBuilder.libraryGraph(
     }
 }
 
+private fun NavHostController.previousDestinationLabel(): String {
+    val previous = previousBackStackEntry ?: return "厨房"
+    return when (previous.destination.route) {
+        LIBRARY_ROUTE -> "厨房"
+        LIBRARY_TAB_ROUTE -> {
+            val section = previous.arguments?.keySet()?.asSequence()
+                ?.mapNotNull { key -> previous.arguments?.getString(key) }
+                ?.firstOrNull()
+            when (section) {
+                "sauces" -> "酱汁库"
+                "ingredients" -> "食材库"
+                "recipes" -> "菜谱库"
+                else -> "厨房"
+            }
+        }
+        SaucesRoutes.DETAIL, SaucesRoutes.LIST -> "酱汁库"
+        IngredientsRoutes.DETAIL, IngredientsRoutes.LIST -> "食材库"
+        RecipesRoutes.DETAIL, RecipesRoutes.LIST -> "菜谱库"
+        KITCHEN_REFERENCE_DETAIL_ROUTE -> when (previous.arguments?.getString(KITCHEN_REFERENCE_KIND_ARG)) {
+            "TECHNIQUE", "technique" -> "烹饪技术"
+            "PRODUCTION_STANDARD", "production-standard" -> "制作标准"
+            "STORAGE_STANDARD", "storage-standard" -> "储存标准"
+            else -> "厨房"
+        }
+        else -> "厨房"
+    }
+}
+
 private fun NavHostController.openArchiveEntry(entry: KitchenArchiveEntry) {
     when (entry.kind) {
         KitchenArchiveKind.SAUCE -> navigate(SaucesRoutes.detail(entry.id))
@@ -472,6 +500,7 @@ private fun NavGraphBuilder.sauceGraph(navController: NavHostController) {
             onEdit = { sauceId -> navController.navigate(SaucesRoutes.edit(sauceId)) },
             onOpenRelation = navController::openKitchenRelated,
             onBack = { navController.popBackStack() },
+            backLabel = navController.previousDestinationLabel(),
             onStartTimer = { stepNo ->
                 val sauceId = entry.arguments?.getString(SaucesRoutes.ARG_SAUCE_ID).orEmpty()
                 navController.navigate(CookingRoute.route(CookingSource.SAUCE, sauceId, stepNo))
@@ -502,6 +531,7 @@ private fun NavGraphBuilder.ingredientGraph(navController: NavHostController) {
             onArchived = { navController.popBackStack() },
             onOpenRelation = navController::openKitchenRelated,
             onBack = { navController.popBackStack() },
+            backLabel = navController.previousDestinationLabel(),
         )
     }
     composable(IngredientsRoutes.EDIT) {
@@ -527,6 +557,7 @@ private fun NavGraphBuilder.recipeGraph(navController: NavHostController) {
             onEdit = { id -> navController.navigate(RecipesRoutes.edit(id)) },
             onOpenRelation = navController::openKitchenRelated,
             onBack = { navController.popBackStack() },
+            backLabel = navController.previousDestinationLabel(),
             onStartTimer = { stepNo ->
                 val recipeId = entry.arguments?.getString(RecipesRoutes.ARG_RECIPE_ID).orEmpty()
                 navController.navigate(CookingRoute.route(CookingSource.RECIPE, recipeId, stepNo))
