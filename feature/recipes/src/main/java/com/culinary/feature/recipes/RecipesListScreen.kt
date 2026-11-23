@@ -119,7 +119,6 @@ private fun RecipeListRow(
 ) {
     ArchiveListItem(
         title = row.name,
-        subtitle = recipeCategoryLabel(row.category),
         meta =
             stringResource(
                 if (row.isActive) R.string.recipes_active else R.string.recipes_archived,
