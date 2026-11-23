@@ -404,14 +404,14 @@ private fun categoryEyebrow(
     if (categoryPath.isNotEmpty()) {
         "RECIPE · " + categoryPath.joinToString(" / ")
     } else {
-        "RECIPE · " + recipeCategoryLabel(recipe.category).uppercase()
+        "RECIPE · 菜谱档案"
     }
 
 @Composable
 private fun categoryLabel(
     recipe: Recipe,
     categoryPath: List<String>,
-): String = categoryPath.lastOrNull() ?: recipeCategoryLabel(recipe.category)
+): String = categoryPath.lastOrNull() ?: "菜谱档案"
 
 private fun measureAmount(value: Double?): String =
     value?.let(::formatRecipeAmount) ?: "—"
