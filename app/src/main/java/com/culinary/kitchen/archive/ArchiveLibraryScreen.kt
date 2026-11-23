@@ -303,7 +303,7 @@ internal fun ArchiveLibraryScreen(
                     parentName =
                         currentCategory?.parentId?.let { parentId ->
                             categories.firstOrNull { it.id == parentId }?.name
-                        } ?: stringResource(R.string.kitchen_title),
+                        } ?: section.title(),
                     categoryPath =
                         currentCategory?.let { category -> categoryPath(category, categories) }.orEmpty(),
                     childCount = children.size,
@@ -454,7 +454,7 @@ internal fun ArchiveLibraryScreen(
         ArchiveBackFloatButton(
             label = currentCategory?.parentId?.let { parentId ->
                 categories.firstOrNull { it.id == parentId }?.name
-            } ?: stringResource(R.string.kitchen_title),
+            } ?: section.title(),
             onClick = {
                 if (sorting) requestSortReturn()
                 else if (currentCategory == null) onBack()
