@@ -235,6 +235,7 @@ internal fun SauceEditorScreen(
     BackHandler(enabled = state.isDirty && !imeVisible) { showDiscard = true }
     BackHandler(enabled = !state.isDirty && !imeVisible) { onCancelled() }
 
+    val editorScrollState = rememberScrollState()
     Column(modifier = modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         ArchiveEditorTopBar(
             title =
@@ -263,12 +264,12 @@ internal fun SauceEditorScreen(
                 modifier =
                     Modifier
                         .fillMaxSize()
-                        .verticalScroll(rememberScrollState())
+                        .verticalScroll(editorScrollState)
                         .padding(horizontal = CulinarySpacing.pageHorizontal),
             ) {
                 SauceHeaderSection(state, actions)
                 SauceHeroSection(state, actions)
-                SauceIngredientsSection(state, actions)
+                SauceIngredientsSection(state, actions, editorScrollState)
                 SauceMethodSection(state, actions)
                 SauceApplicationSection(state, actions)
                 SauceRelationsSection(state, actions)

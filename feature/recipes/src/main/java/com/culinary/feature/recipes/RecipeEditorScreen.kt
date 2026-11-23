@@ -526,11 +526,12 @@ internal fun RecipeEditorForm(
     onRemoveStep: (String) -> Unit = {},
     onMoveStep: (Int, Int) -> Unit = { _, _ -> },
 ) {
+    val editorScrollState = rememberScrollState()
     Column(
         modifier =
             Modifier
                 .fillMaxSize()
-                .verticalScroll(rememberScrollState())
+                .verticalScroll(editorScrollState)
                 .padding(horizontal = CulinarySpacing.pageHorizontal),
     ) {
         RecipeBasics(
@@ -555,6 +556,7 @@ internal fun RecipeEditorForm(
             onAddIngredient = onAddIngredient,
             onAddRecipe = onAddRecipe,
             onAddSauce = onAddSauce,
+            scrollState = editorScrollState,
             onLineNameChange = onLineNameChange,
             onLineNameEnChange = onLineNameEnChange,
             onLineAmountChange = onLineAmountChange,
@@ -818,6 +820,7 @@ private fun RecipeComponentsEditor(
     onAddIngredient: () -> Unit,
     onAddRecipe: () -> Unit,
     onAddSauce: () -> Unit,
+    scrollState: androidx.compose.foundation.ScrollState,
     onLineNameChange: (String, String) -> Unit,
     onLineNameEnChange: (String, String) -> Unit,
     onLineAmountChange: (String, String) -> Unit,
@@ -839,10 +842,17 @@ private fun RecipeComponentsEditor(
             onNameEnChange = { onLineNameEnChange(line.key, it) },
             onAmountChange = { onLineAmountChange(line.key, it) },
             onUnitClick = { onOpenLineUnit(line.key) },
+            canMove = { direction -> index + direction in state.lines.indices },
             onMove = { direction ->
                 val target = index + direction
-                if (target in state.lines.indices) onMoveLine(index, target)
+                if (target in state.lines.indices) {
+                    onMoveLine(index, target)
+                    true
+                } else {
+                    false
+                }
             },
+            scrollState = scrollState,
             onToggleOptional = { onToggleOptional(line.key) },
             onRemove = { onRemoveLine(line.key) },
         )
@@ -891,11 +901,13 @@ private fun RecipeLineRowEditor(
     onNameEnChange: (String) -> Unit,
     onAmountChange: (String) -> Unit,
     onUnitClick: () -> Unit,
-    onMove: (Int) -> Unit,
+    canMove: (Int) -> Boolean,
+    onMove: (Int) -> Boolean,
+    scrollState: androidx.compose.foundation.ScrollState,
     onToggleOptional: () -> Unit,
     onRemove: () -> Unit,
 ) {
-    ArchiveEditorReorderableRow(onMove = onMove) {
+    ArchiveEditorReorderableRow(canMove = canMove, onMove = onMove, scrollState = scrollState) {
         Column(modifier = Modifier.fillMaxWidth()) {
             CulinaryRule()
             Row(

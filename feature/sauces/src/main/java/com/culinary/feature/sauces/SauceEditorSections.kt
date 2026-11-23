@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.ScrollState
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
@@ -256,6 +257,7 @@ internal fun SauceHeroSection(
 internal fun SauceIngredientsSection(
     state: SauceEditorUiState,
     actions: SauceEditorActions,
+    scrollState: ScrollState,
 ) {
     ArchiveEditorSectionHeader(
         index = "01",
@@ -272,7 +274,16 @@ internal fun SauceIngredientsSection(
             onUnitClick = { actions.onOpenLineUnit(line.key) },
             onToggleOptional = { actions.onToggleOptional(line.key) },
             onRemove = { actions.onRemoveLine(line.key) },
-            onMove = { delta -> actions.onMoveLine(index, index + delta) },
+            canMove = { delta -> index + delta in state.lines.indices },
+            onMove = { delta ->
+                if (index + delta in state.lines.indices) {
+                    actions.onMoveLine(index, index + delta)
+                    true
+                } else {
+                    false
+                }
+            },
+            scrollState = scrollState,
         )
     }
     if (state.lines.isEmpty()) {
@@ -300,9 +311,11 @@ private fun SauceIngredientRow(
     onUnitClick: () -> Unit,
     onToggleOptional: () -> Unit,
     onRemove: () -> Unit,
-    onMove: (Int) -> Unit,
+    canMove: (Int) -> Boolean,
+    onMove: (Int) -> Boolean,
+    scrollState: ScrollState,
 ) {
-    ArchiveEditorReorderableRow(onMove = onMove) {
+    ArchiveEditorReorderableRow(canMove = canMove, onMove = onMove, scrollState = scrollState) {
         Column(modifier = Modifier.fillMaxWidth()) {
             CulinaryRule()
             Row(

@@ -5,10 +5,12 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
+import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.shape.RectangleShape
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -26,6 +28,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -35,10 +40,17 @@ import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInWindow
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.Modifier
+import kotlin.math.pow
+import kotlin.math.sign
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
@@ -56,253 +68,167 @@ import com.culinary.core.designsystem.theme.CulinaryTextStyles
  */
 
 
-/** 组成行整行长按拖动排序；拖动时整行抬起并跟随手指，松手后提交位置。 */
+/** Drag offset state shared with the archive category sorter. */
+private data class ArchiveEditorDragOffsetState(
+    val offsetPx: Float,
+    val edgeOverdragPx: Float = 0f,
+)
+
+private fun archiveEditorEdgeResistance(
+    overdragPx: Float,
+    maxOffsetPx: Float,
+): Float {
+    val limit = maxOffsetPx.coerceAtLeast(1f)
+    val maxRaw = limit * 5f
+    val raw = overdragPx.coerceIn(-maxRaw, maxRaw)
+    val progress = (kotlin.math.abs(raw) / maxRaw).coerceIn(0f, 1f)
+    return limit * progress.pow(1.15f) * raw.sign
+}
+
+private fun archiveEditorDragOffsetAfterDelta(
+    currentOffsetPx: Float,
+    currentEdgeOverdragPx: Float,
+    deltaPx: Float,
+    rowHeightPx: Float,
+    maxEdgeOffsetPx: Float,
+    canMove: (Int) -> Boolean,
+    move: (Int) -> Boolean,
+): ArchiveEditorDragOffsetState {
+    val threshold = rowHeightPx.coerceAtLeast(1f)
+    var offset = currentOffsetPx + deltaPx
+    if (currentEdgeOverdragPx != 0f) {
+        val updatedRaw = currentEdgeOverdragPx + deltaPx
+        if (updatedRaw != 0f && updatedRaw.sign == currentEdgeOverdragPx.sign) {
+            return ArchiveEditorDragOffsetState(
+                archiveEditorEdgeResistance(updatedRaw, maxEdgeOffsetPx),
+                updatedRaw,
+            )
+        }
+        offset = updatedRaw
+    }
+    while (offset >= threshold) {
+        if (!canMove(1) || !move(1)) {
+            return ArchiveEditorDragOffsetState(archiveEditorEdgeResistance(offset, maxEdgeOffsetPx), offset)
+        }
+        offset -= threshold
+    }
+    while (offset <= -threshold) {
+        if (!canMove(-1) || !move(-1)) {
+            return ArchiveEditorDragOffsetState(archiveEditorEdgeResistance(offset, maxEdgeOffsetPx), offset)
+        }
+        offset += threshold
+    }
+    if ((offset < 0f && !canMove(-1)) || (offset > 0f && !canMove(1))) {
+        return ArchiveEditorDragOffsetState(archiveEditorEdgeResistance(offset, maxEdgeOffsetPx), offset)
+    }
+    return ArchiveEditorDragOffsetState(offset)
+}
+
+/**
+ * Whole-row long-press sorting. The row follows the pointer, crosses siblings by row-height
+ * thresholds, resists movement beyond the list bounds, and scrolls its parent near screen edges.
+ */
 @Composable
 fun ArchiveEditorReorderableRow(
-    onMove: (Int) -> Unit,
+    canMove: (Int) -> Boolean,
+    onMove: (Int) -> Boolean,
+    scrollState: androidx.compose.foundation.ScrollState,
     modifier: Modifier = Modifier,
     content: @Composable () -> Unit,
 ) {
     var dragging by remember { mutableStateOf(false) }
-    var dragOffset by remember { mutableFloatStateOf(0f) }
+    var dragOffsetY by remember { mutableFloatStateOf(0f) }
+    var edgeOverdragY by remember { mutableFloatStateOf(0f) }
+    var rowHeightPx by remember { mutableIntStateOf(0) }
+    var rowTopInWindowPx by remember { mutableFloatStateOf(0f) }
     val density = androidx.compose.ui.platform.LocalDensity.current
+    val screenHeightPx = with(density) {
+        androidx.compose.ui.platform.LocalConfiguration.current.screenHeightDp.dp.toPx()
+    }
+    val maxEdgeOffsetPx = with(density) { 12.dp.toPx() }
+    val autoScrollEdgePx = with(density) { 144.dp.toPx() }
+    val currentCanMove by rememberUpdatedState(canMove)
+    val currentOnMove by rememberUpdatedState(onMove)
+
+    LaunchedEffect(dragging, scrollState, screenHeightPx) {
+        var previousFrameNanos = 0L
+        while (dragging) {
+            val frameNanos = withFrameNanos { it }
+            val frameSeconds =
+                if (previousFrameNanos == 0L) 0f
+                else ((frameNanos - previousFrameNanos) / 1_000_000_000f).coerceIn(0f, 0.05f)
+            previousFrameNanos = frameNanos
+            if (frameSeconds > 0f && rowHeightPx > 0) {
+                val center = rowTopInWindowPx + rowHeightPx / 2f + dragOffsetY
+                val topProgress = ((autoScrollEdgePx - center) / autoScrollEdgePx).coerceIn(0f, 1f)
+                val bottomProgress =
+                    ((center - (screenHeightPx - autoScrollEdgePx)) / autoScrollEdgePx).coerceIn(0f, 1f)
+                val direction =
+                    when {
+                        topProgress > 0f && topProgress >= bottomProgress -> -1f
+                        bottomProgress > 0f -> 1f
+                        else -> 0f
+                    }
+                val progress = maxOf(topProgress, bottomProgress)
+                if (direction != 0f) {
+                    val speed = with(density) { 900.dp.toPx() } * progress * progress
+                    val consumed = scrollState.scrollBy(direction * speed * frameSeconds)
+                    dragOffsetY += consumed
+                    if (edgeOverdragY != 0f) {
+                        edgeOverdragY += consumed
+                        dragOffsetY = archiveEditorEdgeResistance(edgeOverdragY, maxEdgeOffsetPx)
+                    }
+                }
+            }
+        }
+    }
+
     Box(
         modifier = modifier
+            .onSizeChanged { rowHeightPx = it.height }
+            .onGloballyPositioned { rowTopInWindowPx = it.positionInWindow().y }
             .graphicsLayer {
-                translationY = dragOffset
-                scaleX = if (dragging) 1.035f else 1f
-                scaleY = if (dragging) 1.035f else 1f
-                shadowElevation = if (dragging) 8.dp.toPx() else 0f
-                clip = false
+                scaleX = if (dragging) 1.045f else 1f
+                scaleY = if (dragging) 1.045f else 1f
+                translationY = if (dragging) dragOffsetY else 0f
             }
-            .pointerInput(onMove) {
+            .shadow(if (dragging) 7.dp else 0.dp, RectangleShape)
+            .pointerInput(scrollState) {
                 detectDragGesturesAfterLongPress(
-                    onDragStart = { dragging = true },
+                    onDragStart = {
+                        dragging = true
+                        dragOffsetY = 0f
+                        edgeOverdragY = 0f
+                    },
                     onDragEnd = {
-                        val threshold = with(density) { 76.dp.toPx() }
-                        val steps = (dragOffset / threshold).toInt()
-                        if (steps != 0) onMove(steps)
-                        dragOffset = 0f
                         dragging = false
+                        dragOffsetY = 0f
+                        edgeOverdragY = 0f
                     },
                     onDragCancel = {
-                        dragOffset = 0f
                         dragging = false
+                        dragOffsetY = 0f
+                        edgeOverdragY = 0f
                     },
                     onDrag = { change, amount ->
                         change.consume()
-                        dragOffset += amount.y
+                        val next = archiveEditorDragOffsetAfterDelta(
+                            currentOffsetPx = dragOffsetY,
+                            currentEdgeOverdragPx = edgeOverdragY,
+                            deltaPx = amount.y,
+                            rowHeightPx = rowHeightPx.toFloat(),
+                            maxEdgeOffsetPx = maxEdgeOffsetPx,
+                            canMove = currentCanMove,
+                            move = currentOnMove,
+                        )
+                        dragOffsetY = next.offsetPx
+                        edgeOverdragY = next.edgeOverdragPx
                     },
                 )
             },
     ) { content() }
 }
 
-/** 顶部操作栏：返回 / 居中标题 / 保存。 */
-@Composable
-fun ArchiveEditorTopBar(
-    title: String,
-    onBack: () -> Unit,
-    onSave: () -> Unit,
-    isSaving: Boolean,
-    canSave: Boolean,
-    modifier: Modifier = Modifier,
-    onCancel: (() -> Unit)? = null,
-    cancelLabel: String = "取消",
-    saveLabel: String = "保存",
-    centerTitle: Boolean = false,
-) {
-    Column(modifier = modifier.fillMaxWidth()) {
-        if (centerTitle) {
-            Box(
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .height(56.dp)
-                        .padding(horizontal = CulinarySpacing.xs),
-            ) {
-                Icon(
-                    imageVector = CulinaryIcons.Back,
-                    contentDescription = "返回",
-                    tint = MaterialTheme.colorScheme.onSurface,
-                    modifier =
-                        Modifier
-                            .align(Alignment.CenterStart)
-                            .size(44.dp)
-                            .clickable(role = androidx.compose.ui.semantics.Role.Button, onClick = onBack)
-                            .padding(12.dp),
-                )
-                Text(
-                    text = title,
-                    style = CulinaryTextStyles.eyebrow,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.align(Alignment.Center).fillMaxWidth().padding(horizontal = 56.dp),
-                )
-                Text(
-                    text = saveLabel,
-                    style = MaterialTheme.typography.titleSmall,
-                    color =
-                        if (canSave && !isSaving) {
-                            MaterialTheme.colorScheme.onSurface
-                        } else {
-                            MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
-                        },
-                    modifier =
-                        Modifier
-                            .align(Alignment.CenterEnd)
-                            .clickable(
-                                enabled = canSave && !isSaving,
-                                role = androidx.compose.ui.semantics.Role.Button,
-                                onClick = onSave,
-                            ).padding(horizontal = CulinarySpacing.sm, vertical = CulinarySpacing.sm),
-                )
-            }
-        } else {
-            Row(
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .height(56.dp)
-                        .padding(horizontal = CulinarySpacing.xs),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Icon(
-                    imageVector = CulinaryIcons.Back,
-                    contentDescription = "返回",
-                    tint = MaterialTheme.colorScheme.onSurface,
-                    modifier =
-                        Modifier
-                            .size(44.dp)
-                            .clickable(role = androidx.compose.ui.semantics.Role.Button, onClick = onBack)
-                            .padding(12.dp),
-                )
-                if (onCancel != null) {
-                    Text(
-                        text = cancelLabel,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier =
-                            Modifier
-                                .clickable(role = androidx.compose.ui.semantics.Role.Button, onClick = onCancel)
-                                .padding(horizontal = CulinarySpacing.xs, vertical = CulinarySpacing.sm),
-                    )
-                }
-                Spacer(modifier = Modifier.weight(1f))
-                Text(
-                    text = title,
-                    style = CulinaryTextStyles.eyebrow,
-                    color = MaterialTheme.colorScheme.onSurface,
-                )
-                Spacer(modifier = Modifier.weight(1f))
-                Text(
-                    text = saveLabel,
-                    style = MaterialTheme.typography.titleSmall,
-                    color =
-                        if (canSave && !isSaving) {
-                            MaterialTheme.colorScheme.onSurface
-                        } else {
-                            MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
-                        },
-                    modifier =
-                        Modifier
-                            .clickable(
-                                enabled = canSave && !isSaving,
-                                role = androidx.compose.ui.semantics.Role.Button,
-                                onClick = onSave,
-                            ).padding(horizontal = CulinarySpacing.sm, vertical = CulinarySpacing.sm),
-                )
-            }
-        }
-        CulinaryRule()
-    }
-}
-/** 分节标题：编号 / 英文 / 中文 / 副标题 / 右侧动作。 */
-@Composable
-fun ArchiveEditorSectionHeader(
-    index: String,
-    english: String,
-    title: String,
-    modifier: Modifier = Modifier,
-    subtitle: String? = null,
-    action: (@Composable () -> Unit)? = null,
-    showRule: Boolean = true,
-) {
-    Column(modifier = modifier.fillMaxWidth().padding(top = CulinarySpacing.xl, bottom = CulinarySpacing.sm)) {
-        if (showRule) {
-            CulinaryRule()
-        }
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(top = CulinarySpacing.md),
-            verticalAlignment = Alignment.Bottom,
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = if (index.isBlank()) english else "$index / $english",
-                    style = CulinaryTextStyles.eyebrow,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                Spacer(modifier = Modifier.height(CulinarySpacing.xxs))
-                Text(
-                    text = title,
-                    style = CulinaryTextStyles.sectionTitle,
-                    color = MaterialTheme.colorScheme.onSurface,
-                )
-                subtitle?.takeIf { it.isNotBlank() }?.let { value ->
-                    Spacer(modifier = Modifier.height(CulinarySpacing.xxs))
-                    Text(
-                        text = value,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-            }
-            action?.invoke()
-        }
-    }
-}
-
-/** 行内无边框输入；编辑式档案不使用 Material 外框。 */
-@Composable
-fun ArchiveEditorInlineField(
-    value: String,
-    onValueChange: (String) -> Unit,
-    placeholder: String,
-    modifier: Modifier = Modifier,
-    textStyle: TextStyle = MaterialTheme.typography.bodyLarge,
-    singleLine: Boolean = true,
-    minLines: Int = 1,
-    keyboardType: KeyboardType = KeyboardType.Text,
-    textAlign: TextAlign = TextAlign.Start,
-    enabled: Boolean = true,
-) {
-    BasicTextField(
-        value = value,
-        onValueChange = onValueChange,
-        modifier = modifier,
-        enabled = enabled,
-        singleLine = singleLine,
-        textStyle = textStyle.copy(color = MaterialTheme.colorScheme.onSurface, textAlign = textAlign),
-        cursorBrush = SolidColor(MaterialTheme.colorScheme.secondary),
-        keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
-        minLines = minLines,
-        decorationBox = { inner ->
-            Box {
-                if (value.isEmpty()) {
-                    Text(
-                        text = placeholder,
-                        style = textStyle.copy(textAlign = textAlign),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.55f),
-                        maxLines = if (singleLine) 1 else 3,
-                    )
-                }
-                inner()
-            }
-        },
-    )
-}
-
-/** 拖动排序手柄；只作用于手柄，避免和文本输入抢手势。 */
 @Composable
 fun ArchiveEditorDragHandle(
     modifier: Modifier = Modifier,
