@@ -136,6 +136,9 @@ class IngredientEditorViewModel
             }
         }
 
+        fun hasUnsavedChanges(): Boolean =
+            originalEditorState?.let { _uiState.value.editableContentSnapshot() != it } ?: _uiState.value.isDirty
+
         fun onNameChange(value: String) = mutate { it.copy(name = value) }
 
         fun onCategoryChange(value: String) =

@@ -91,6 +91,7 @@ fun IngredientEditorRoute(
                 onImagePicked = viewModel::onImagePicked,
                 onImageRemoved = viewModel::onImageRemoved,
                 onCancelled = onCancelled,
+                hasUnsavedChanges = viewModel::hasUnsavedChanges,
             )
         }
     }
@@ -129,10 +130,11 @@ internal fun IngredientEditorForm(
     onImagePicked: (PendingIngredientImage) -> Unit,
     onImageRemoved: () -> Unit,
     onCancelled: () -> Unit,
+    hasUnsavedChanges: () -> Boolean = { state.isDirty },
 ) {
     val pickImage = rememberIngredientImagePicker(onImagePicked)
     var showDiscard by remember { mutableStateOf(false) }
-    val cancel = { if (state.isDirty) showDiscard = true else onCancelled() }
+    val cancel = { if (hasUnsavedChanges()) showDiscard = true else onCancelled() }
     Column(modifier = Modifier.fillMaxSize()) {
         ArchiveEditorTopBar(
             title = if (state.isNew) "新建食材" else "编辑食材",

@@ -303,7 +303,7 @@ internal fun ArchiveLibraryScreen(
                     parentName =
                         currentCategory?.parentId?.let { parentId ->
                             categories.firstOrNull { it.id == parentId }?.name
-                        } ?: section.title(),
+                        } ?: "厨房",
                     categoryPath =
                         currentCategory?.let { category -> categoryPath(category, categories) }.orEmpty(),
                     childCount = children.size,
@@ -455,8 +455,8 @@ internal fun ArchiveLibraryScreen(
             label =
                 when {
                     currentCategory == null -> "厨房"
-                    currentCategory.parentId == null -> section.title()
-                    else -> categories.firstOrNull { it.id == currentCategory.parentId }?.name ?: section.title()
+                    currentCategory.parentId == null -> "厨房"
+                    else -> categories.firstOrNull { it.id == currentCategory.parentId }?.name ?: "厨房"
                 },
             onClick = {
                 if (sorting) requestSortReturn()

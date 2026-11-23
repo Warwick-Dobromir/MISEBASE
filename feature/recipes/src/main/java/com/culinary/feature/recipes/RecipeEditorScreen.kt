@@ -95,6 +95,7 @@ fun RecipeEditorRoute(
 
     RecipeEditorScreen(
         state = state,
+        onHasUnsavedChanges = viewModel::hasUnsavedChanges,
         onNameChange = viewModel::onNameChange,
         onEnglishNameChange = viewModel::onEnglishNameChange,
         onDescriptionChange = viewModel::onDescriptionChange,
@@ -357,12 +358,13 @@ private fun RecipeEditorScreen(
     onCancel: () -> Unit,
     onDismissError: () -> Unit,
     modifier: Modifier = Modifier,
+    onHasUnsavedChanges: () -> Boolean = { state.isDirty },
 ) {
     var showDiscard by remember { mutableStateOf(false) }
     var showArchive by remember { mutableStateOf(false) }
     val imeVisible = WindowInsets.isImeVisible
-    BackHandler(enabled = state.isDirty && !imeVisible) { showDiscard = true }
-    BackHandler(enabled = !state.isDirty && !imeVisible) { onCancel() }
+    BackHandler(enabled = onHasUnsavedChanges() && !imeVisible) { showDiscard = true }
+    BackHandler(enabled = !onHasUnsavedChanges() && !imeVisible) { onCancel() }
     Column(modifier = modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         ArchiveEditorTopBar(
             title =
@@ -373,7 +375,7 @@ private fun RecipeEditorScreen(
                 },
             isSaving = state.isSaving,
             canSave = !state.isLoading && (state.isDirty || state.isNew),
-            onBack = { if (state.isDirty) showDiscard = true else onCancel() },
+            onBack = { if (onHasUnsavedChanges()) showDiscard = true else onCancel() },
             onSave = onSave,
             centerTitle = true,
         )

@@ -298,6 +298,8 @@ class RecipeEditorViewModel
             return contentChanged || relationsChanged
         }
 
+        fun hasUnsavedChanges(): Boolean = hasUnsavedChanges(_uiState.value)
+
         private fun hasVersionChanges(state: RecipeEditorUiState): Boolean =
             originalEditorState?.let { state.versionContentSnapshot() != it.versionContentSnapshot() } ?: true
 

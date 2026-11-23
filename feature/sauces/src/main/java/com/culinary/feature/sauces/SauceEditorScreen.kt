@@ -72,6 +72,7 @@ fun SauceEditorRoute(
         state = state,
         onSaved = viewModel::save,
         onCancelled = onCancelled,
+        onHasUnsavedChanges = viewModel::hasUnsavedChanges,
         onArchive = viewModel::archive,
         onOpenSauce = onOpenSauce,
         onDismissError = viewModel::clearError,
@@ -176,6 +177,7 @@ internal fun SauceEditorScreen(
     onNoteImage: (PendingSauceImage) -> Unit,
     onRemoveNoteImage: (Int) -> Unit,
     modifier: Modifier = Modifier,
+    onHasUnsavedChanges: () -> Boolean = { state.isDirty },
 ) {
     var showDiscard by remember { mutableStateOf(false) }
     var showDelete by remember { mutableStateOf(false) }
@@ -232,8 +234,8 @@ internal fun SauceEditorScreen(
         )
 
     val imeVisible = WindowInsets.isImeVisible
-    BackHandler(enabled = state.isDirty && !imeVisible) { showDiscard = true }
-    BackHandler(enabled = !state.isDirty && !imeVisible) { onCancelled() }
+    BackHandler(enabled = onHasUnsavedChanges() && !imeVisible) { showDiscard = true }
+    BackHandler(enabled = !onHasUnsavedChanges() && !imeVisible) { onCancelled() }
 
     val editorScrollState = rememberScrollState()
     Column(modifier = modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
@@ -246,7 +248,7 @@ internal fun SauceEditorScreen(
                 },
             isSaving = state.isSaving,
             canSave = !state.isLoading && (state.isDirty || state.isNew),
-            onBack = { if (state.isDirty) showDiscard = true else onCancelled() },
+            onBack = { if (onHasUnsavedChanges()) showDiscard = true else onCancelled() },
             onSave = onSaved,
             centerTitle = true,
         )

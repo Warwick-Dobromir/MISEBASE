@@ -405,12 +405,6 @@ fun ArchiveEditorReorderableRow(
         modifier = modifier
             .onSizeChanged { rowHeightPx = it.height }
             .onGloballyPositioned { rowTopInWindowPx = it.positionInWindow().y }
-            .graphicsLayer {
-                scaleX = animatedScale
-                scaleY = animatedScale
-                translationY = animatedDragOffsetY
-            }
-            .shadow(if (dragging) 7.dp else 0.dp, androidx.compose.ui.graphics.RectangleShape)
             .pointerInput(scrollState) {
                 awaitEachGesture {
                     val down = awaitFirstDown(
@@ -471,7 +465,14 @@ fun ArchiveEditorReorderableRow(
                         }
                     }
                 }
-            },
+            }
+            .graphicsLayer {
+                scaleX = animatedScale
+                scaleY = animatedScale
+                translationY = animatedDragOffsetY
+            }
+            .shadow(if (dragging) 7.dp else 0.dp, androidx.compose.ui.graphics.RectangleShape)
+,
     ) { content() }
 }
 
