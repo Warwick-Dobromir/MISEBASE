@@ -53,27 +53,24 @@ import com.culinary.core.designsystem.theme.CulinaryTextStyles
  * 只提供排版、输入和轻量交互，不读取业务数据；字段映射留在各自模块。
  */
 
-/** 顶部操作栏：返回 / 取消 / 标题 / 保存。 */
+/** 顶部操作栏：返回 / 居中标题 / 保存。 */
 @Composable
 fun ArchiveEditorTopBar(
     title: String,
     onBack: () -> Unit,
-    onCancel: () -> Unit,
     onSave: () -> Unit,
     isSaving: Boolean,
     canSave: Boolean,
     modifier: Modifier = Modifier,
-    cancelLabel: String = "取消",
     saveLabel: String = "保存",
 ) {
     Column(modifier = modifier.fillMaxWidth()) {
-        Row(
+        Box(
             modifier =
                 Modifier
                     .fillMaxWidth()
                     .height(56.dp)
                     .padding(horizontal = CulinarySpacing.xs),
-            verticalAlignment = Alignment.CenterVertically,
         ) {
             Icon(
                 imageVector = CulinaryIcons.Back,
@@ -81,26 +78,18 @@ fun ArchiveEditorTopBar(
                 tint = MaterialTheme.colorScheme.onSurface,
                 modifier =
                     Modifier
+                        .align(Alignment.CenterStart)
                         .size(44.dp)
                         .clickable(role = androidx.compose.ui.semantics.Role.Button, onClick = onBack)
                         .padding(12.dp),
             )
             Text(
-                text = cancelLabel,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier =
-                    Modifier
-                        .clickable(role = androidx.compose.ui.semantics.Role.Button, onClick = onCancel)
-                        .padding(horizontal = CulinarySpacing.xs, vertical = CulinarySpacing.sm),
-            )
-            Spacer(modifier = Modifier.weight(1f))
-            Text(
                 text = title,
                 style = CulinaryTextStyles.eyebrow,
                 color = MaterialTheme.colorScheme.onSurface,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.align(Alignment.Center).fillMaxWidth().padding(horizontal = 56.dp),
             )
-            Spacer(modifier = Modifier.weight(1f))
             Text(
                 text = saveLabel,
                 style = MaterialTheme.typography.titleSmall,
@@ -112,6 +101,7 @@ fun ArchiveEditorTopBar(
                     },
                 modifier =
                     Modifier
+                        .align(Alignment.CenterEnd)
                         .clickable(
                             enabled = canSave && !isSaving,
                             role = androidx.compose.ui.semantics.Role.Button,
