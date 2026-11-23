@@ -69,19 +69,19 @@ class SaveSauceUseCase(
                 name = name,
                 normalizedName = NameText.normalize(name),
                 family = input.family.blankToNull(),
-                usageNotes = input.usageNotes.blankToNull() ?: existing?.usageNotes,
-                texture = input.texture.blankToNull() ?: existing?.texture,
+                usageNotes = mergeText(input.usageNotes, existing?.usageNotes),
+                texture = mergeText(input.texture, existing?.texture),
                 englishName = input.englishName.blankToNull() ?: existing?.englishName,
                 description = input.description.blankToNull(),
                 difficulty = input.difficulty,
                 heroCaption = input.heroCaption.blankToNull(),
-                mainIngredients = input.mainIngredients.blankToNull() ?: existing?.mainIngredients,
-                preparationSummary = input.preparationSummary.blankToNull() ?: existing?.preparationSummary,
-                keyParameters = input.keyParameters.blankToNull() ?: existing?.keyParameters,
-                storageNotes = input.storageNotes.blankToNull() ?: existing?.storageNotes,
-                flavorProfile = input.flavorProfile.blankToNull() ?: existing?.flavorProfile,
-                adjustableNotes = input.adjustableNotes.blankToNull() ?: existing?.adjustableNotes,
-                seedNote = input.seedNote.blankToNull() ?: existing?.seedNote,
+                mainIngredients = mergeText(input.mainIngredients, existing?.mainIngredients),
+                preparationSummary = mergeText(input.preparationSummary, existing?.preparationSummary),
+                keyParameters = mergeText(input.keyParameters, existing?.keyParameters),
+                storageNotes = mergeText(input.storageNotes, existing?.storageNotes),
+                flavorProfile = mergeText(input.flavorProfile, existing?.flavorProfile),
+                adjustableNotes = mergeText(input.adjustableNotes, existing?.adjustableNotes),
+                seedNote = mergeText(input.seedNote, existing?.seedNote),
             )
         return transactionRunner.write { repository.save(sauce) }.flatMap { it }
     }
@@ -90,6 +90,10 @@ class SaveSauceUseCase(
         Outcome.failure(CulinaryError.Validation(field = "sauce.name", rule = rule))
 
     private fun String?.blankToNull(): String? = this?.trim()?.takeIf { it.isNotEmpty() }
+
+    /** null 保留旧值；空串清空；非空写入。 */
+    private fun mergeText(incoming: String?, existing: String?): String? =
+        if (incoming == null) existing else incoming.blankToNull()
 
     private companion object {
         const val MAX_NAME_LENGTH = 120

@@ -28,6 +28,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -265,25 +266,27 @@ internal fun SauceIngredientsSection(
         subtitle = "基础配方",
     )
     state.lines.forEachIndexed { index, line ->
-        SauceIngredientRow(
-            line = line,
-            onNameChange = { actions.onLineNameChange(line.key, it) },
-            onNameEnChange = { actions.onLineNameEnChange(line.key, it) },
-            onAmountChange = { actions.onLineAmountChange(line.key, it) },
-            onUnitClick = { actions.onOpenLineUnit(line.key) },
-            onToggleOptional = { actions.onToggleOptional(line.key) },
-            onRemove = { actions.onRemoveLine(line.key) },
-            canMove = { delta -> index + delta in state.lines.indices },
-            onMove = { delta ->
-                if (index + delta in state.lines.indices) {
-                    actions.onMoveLine(index, index + delta)
-                    true
-                } else {
-                    false
-                }
-            },
-            scrollState = scrollState,
-        )
+        key(line.key) {
+            SauceIngredientRow(
+                line = line,
+                onNameChange = { actions.onLineNameChange(line.key, it) },
+                onNameEnChange = { actions.onLineNameEnChange(line.key, it) },
+                onAmountChange = { actions.onLineAmountChange(line.key, it) },
+                onUnitClick = { actions.onOpenLineUnit(line.key) },
+                onToggleOptional = { actions.onToggleOptional(line.key) },
+                onRemove = { actions.onRemoveLine(line.key) },
+                canMove = { delta -> index + delta in state.lines.indices },
+                onMove = { delta ->
+                    if (index + delta in state.lines.indices) {
+                        actions.onMoveLine(index, index + delta)
+                        true
+                    } else {
+                        false
+                    }
+                },
+                scrollState = scrollState,
+            )
+        }
     }
     if (state.lines.isEmpty()) {
         Text(

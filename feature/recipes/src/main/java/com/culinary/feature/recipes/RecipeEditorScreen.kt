@@ -31,6 +31,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -835,26 +836,28 @@ private fun RecipeComponentsEditor(
         subtitle = "基础配方",
     )
     state.lines.forEachIndexed { index, line ->
-        RecipeLineRowEditor(
-            line = line,
-            onNameChange = { onLineNameChange(line.key, it) },
-            onNameEnChange = { onLineNameEnChange(line.key, it) },
-            onAmountChange = { onLineAmountChange(line.key, it) },
-            onUnitClick = { onOpenLineUnit(line.key) },
-            canMove = { direction -> index + direction in state.lines.indices },
-            onMove = { direction ->
-                val target = index + direction
-                if (target in state.lines.indices) {
-                    onMoveLine(index, target)
-                    true
-                } else {
-                    false
-                }
-            },
-            scrollState = scrollState,
-            onToggleOptional = { onToggleOptional(line.key) },
-            onRemove = { onRemoveLine(line.key) },
-        )
+        key(line.key) {
+            RecipeLineRowEditor(
+                line = line,
+                onNameChange = { onLineNameChange(line.key, it) },
+                onNameEnChange = { onLineNameEnChange(line.key, it) },
+                onAmountChange = { onLineAmountChange(line.key, it) },
+                onUnitClick = { onOpenLineUnit(line.key) },
+                canMove = { direction -> index + direction in state.lines.indices },
+                onMove = { direction ->
+                    val target = index + direction
+                    if (target in state.lines.indices) {
+                        onMoveLine(index, target)
+                        true
+                    } else {
+                        false
+                    }
+                },
+                scrollState = scrollState,
+                onToggleOptional = { onToggleOptional(line.key) },
+                onRemove = { onRemoveLine(line.key) },
+            )
+        }
     }
     if (state.lines.isEmpty()) {
         Text(
