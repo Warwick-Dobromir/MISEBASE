@@ -1,6 +1,7 @@
 package com.culinary.feature.sauces
 
 import com.culinary.core.designsystem.component.ArchiveEditorDragHandle
+import com.culinary.core.designsystem.component.ArchiveEditorReorderableRow
 import com.culinary.core.designsystem.component.ArchiveEditorImageBox
 import com.culinary.core.designsystem.component.ArchiveEditorInlineField
 import com.culinary.core.designsystem.component.ArchiveEditorNotesBox
@@ -312,14 +313,14 @@ private fun SauceIngredientRow(
     onRemove: () -> Unit,
     onMove: (Int) -> Unit,
 ) {
-    Column(modifier = Modifier.fillMaxWidth()) {
-        CulinaryRule()
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(vertical = CulinarySpacing.sm),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            ArchiveEditorDragHandle(onMove = onMove)
-            Column(modifier = Modifier.weight(1f).padding(start = CulinarySpacing.xs)) {
+    ArchiveEditorReorderableRow(onMove = onMove) {
+        Column(modifier = Modifier.fillMaxWidth()) {
+            CulinaryRule()
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(vertical = CulinarySpacing.sm),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+            Column(modifier = Modifier.weight(1f)) {
                 if (line.isReadOnly) {
                     Text(
                         text = line.name,

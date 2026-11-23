@@ -6,6 +6,12 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.unit.dp
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -52,6 +58,49 @@ import com.culinary.core.designsystem.theme.CulinaryTextStyles
  *
  * 只提供排版、输入和轻量交互，不读取业务数据；字段映射留在各自模块。
  */
+
+
+/** 组成行整行长按拖动排序；拖动时整行抬起并跟随手指，松手后提交位置。 */
+@Composable
+fun ArchiveEditorReorderableRow(
+    onMove: (Int) -> Unit,
+    modifier: Modifier = Modifier,
+    content: @Composable () -> Unit,
+) {
+    var dragging by remember { mutableStateOf(false) }
+    var dragOffset by remember { mutableFloatStateOf(0f) }
+    val density = androidx.compose.ui.platform.LocalDensity.current
+    Box(
+        modifier = modifier
+            .graphicsLayer {
+                translationY = dragOffset
+                scaleX = if (dragging) 1.035f else 1f
+                scaleY = if (dragging) 1.035f else 1f
+                shadowElevation = if (dragging) 8.dp.toPx() else 0f
+                clip = false
+            }
+            .pointerInput(onMove) {
+                detectDragGesturesAfterLongPress(
+                    onDragStart = { dragging = true },
+                    onDragEnd = {
+                        val threshold = with(density) { 76.dp.toPx() }
+                        val steps = (dragOffset / threshold).toInt()
+                        if (steps != 0) onMove(steps)
+                        dragOffset = 0f
+                        dragging = false
+                    },
+                    onDragCancel = {
+                        dragOffset = 0f
+                        dragging = false
+                    },
+                    onDrag = { change, amount ->
+                        change.consume()
+                        dragOffset += amount.y
+                    },
+                )
+            },
+    ) { content() }
+}
 
 /** 顶部操作栏：返回 / 居中标题 / 保存。 */
 @Composable
