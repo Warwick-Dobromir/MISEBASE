@@ -449,7 +449,6 @@ internal fun RecipeEditorForm(
     state: RecipeEditorUiState,
     onArchive: () -> Unit = {},
     onNameChange: (String) -> Unit,
-    onOpenCategoryPicker: () -> Unit,
     onEnglishNameChange: (String) -> Unit = {},
     onDescriptionChange: (String) -> Unit = {},
     onNotesChange: (String) -> Unit = {},
