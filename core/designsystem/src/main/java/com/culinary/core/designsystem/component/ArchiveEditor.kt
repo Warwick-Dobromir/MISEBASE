@@ -471,8 +471,7 @@ fun ArchiveEditorReorderableRow(
                 scaleY = animatedScale
                 translationY = animatedDragOffsetY
             }
-            .shadow(if (dragging) 7.dp else 0.dp, androidx.compose.ui.graphics.RectangleShape)
-,
+            .shadow(if (dragging) 7.dp else 0.dp, androidx.compose.ui.graphics.RectangleShape),
     ) { content() }
 }
 
