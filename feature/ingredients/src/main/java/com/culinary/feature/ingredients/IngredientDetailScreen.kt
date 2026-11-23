@@ -45,6 +45,7 @@ fun IngredientDetailRoute(
     onOpenRelation: (KitchenRecordKind, String) -> Unit = { _, _ -> },
     modifier: Modifier = Modifier,
     onBack: () -> Unit = {},
+    backLabel: String = "厨房",
     viewModel: IngredientDetailViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -70,6 +71,7 @@ fun IngredientDetailRoute(
             else -> IngredientDetailContent(
                 detailState = state,
                 onBack = onBack,
+                backLabel = backLabel,
                 onEdit = onEdit,
                 onOpenRelation = onOpenRelation,
                 onToggleActive = viewModel::toggleActive,
@@ -82,6 +84,7 @@ fun IngredientDetailRoute(
 internal fun IngredientDetailContent(
     detailState: IngredientDetailUiState,
     onBack: () -> Unit,
+    backLabel: String = "厨房",
     onEdit: (String) -> Unit,
     onOpenRelation: (KitchenRecordKind, String) -> Unit,
     onToggleActive: () -> Unit,
@@ -95,6 +98,7 @@ internal fun IngredientDetailContent(
         ArchiveDetailBar(
             editLabel = "编辑档案 ↗",
             onBack = onBack,
+            backLabel = backLabel,
             onEdit = { onEdit(ingredient.id.value) },
         )
         Column(
