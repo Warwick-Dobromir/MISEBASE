@@ -760,7 +760,7 @@ class RecipeEditorViewModel
                     is Outcome.Failure -> return fail(imageResult.error)
                     is Outcome.Success -> Unit
                 }
-                    _uiState.update {
+                _uiState.update {
                     it.copy(
                         isSaving = false,
                         recipeId = recipeId.value,
@@ -768,6 +768,8 @@ class RecipeEditorViewModel
                         savedRecipeId = recipeId.value,
                     )
                 }
+                originalEditorState = _uiState.value.editableContentSnapshot()
+                originalRelations = _uiState.value.relations.map { it.copy(name = "") }
                 return
             }
             val resolvedLines = mutableListOf<RecipeLineInput>()
