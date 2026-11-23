@@ -67,6 +67,7 @@ fun SauceDetailRoute(
     onEdit: (String) -> Unit,
     onOpenRelation: (KitchenRecordKind, String) -> Unit = { _, _ -> },
     onBack: () -> Unit = {},
+    backLabel: String = "厨房",
     onStartTimer: (Int) -> Unit = {},
     scrollToStep: Int? = null,
     modifier: Modifier = Modifier,
@@ -83,6 +84,7 @@ fun SauceDetailRoute(
         onDismissError = viewModel::clearError,
         onOpenRelation = onOpenRelation,
         onBack = onBack,
+        backLabel = backLabel,
         onStartTimer = onStartTimer,
         scrollToStep = scrollToStep,
         modifier = modifier,
@@ -99,6 +101,7 @@ internal fun SauceDetailScreen(
     onOpenRelation: (KitchenRecordKind, String) -> Unit,
     modifier: Modifier = Modifier,
     onBack: () -> Unit = {},
+    backLabel: String = "厨房",
     onStartTimer: (Int) -> Unit = {},
     scrollToStep: Int? = null,
 ) {
@@ -136,6 +139,7 @@ internal fun SauceDetailScreen(
                     stepImages = state.stepImages,
                     noteImages = state.noteImages,
                     onBack = onBack,
+                    backLabel = backLabel,
                     onStartTimer = onStartTimer,
                     scrollToStep = scrollToStep,
                 )
@@ -158,6 +162,7 @@ internal fun SauceDetailContent(
     stepImages: Map<Int, ByteArray> = emptyMap(),
     noteImages: List<ByteArray> = emptyList(),
     onBack: () -> Unit = {},
+    backLabel: String = "厨房",
     onStartTimer: (Int) -> Unit = {},
     scrollToStep: Int? = null,
 ) {
@@ -180,6 +185,7 @@ internal fun SauceDetailContent(
         ArchiveDetailBar(
             editLabel = "编辑档案 ↗",
             onBack = onBack,
+            backLabel = backLabel,
             onEdit = { onEdit(sauce.id.value) },
         )
         Column(
