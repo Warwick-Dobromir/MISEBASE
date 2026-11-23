@@ -160,10 +160,11 @@ internal fun ArchiveLibraryScreen(
     val entries = state.entries.filter { it.kind == section.kind }
     val currentCategory = categories.firstOrNull { it.id == currentCategoryId }
     val archiveBackLabel =
-        if (currentCategory?.parentId == null) {
-            "厨房"
-        } else {
-            categories.firstOrNull { it.id == currentCategory.parentId }?.name ?: "厨房"
+        when {
+            currentCategory == null -> "厨房"
+            currentCategory.parentId == null -> stringResource(section.titleRes)
+            else -> categories.firstOrNull { it.id == currentCategory.parentId }?.name
+                ?: stringResource(section.titleRes)
         }
     LaunchedEffect(archiveBackLabel) { onBackLabelChanged(archiveBackLabel) }
     // 测试分类在数据库启动清理后不应再出现；页面同时不展示任何遗留测试节点。
