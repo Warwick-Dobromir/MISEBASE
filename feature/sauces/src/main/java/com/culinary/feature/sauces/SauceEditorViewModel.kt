@@ -86,6 +86,9 @@ class SauceEditorViewModel
         val uiState: StateFlow<SauceEditorUiState> = _uiState.asStateFlow()
 
         private var keyCounter = 0
+        private var originalCategoryPathIds: List<String> = emptyList()
+        private var originalFamily: String = ""
+        private var hasNonCategoryChanges = false
 
         init {
             load()
@@ -195,6 +198,9 @@ class SauceEditorViewModel
                     .getOrNull()
             val categoryPath =
                 assignedCategory?.let { buildCategoryPathIds(it.id, _uiState.value.categories) }.orEmpty()
+            originalCategoryPathIds = categoryPath
+            originalFamily = detail.sauce.family.orEmpty()
+            hasNonCategoryChanges = false
             _uiState.update {
                 it.copy(
                     name = detail.sauce.name,
@@ -254,6 +260,7 @@ class SauceEditorViewModel
             }
 
         private fun mutate(transform: (SauceEditorUiState) -> SauceEditorUiState) {
+            hasNonCategoryChanges = true
             _uiState.update { state ->
                 transform(state).copy(isDirty = true, versionDirty = true, error = null)
             }
@@ -278,14 +285,15 @@ class SauceEditorViewModel
                         base + categoryId
                     }
                 val leafName =
-                    next
-                        .lastOrNull()
-                        ?.let { id -> state.categories.firstOrNull { it.id == id }?.name }
-                        ?: state.family
+                    when {
+                        next == originalCategoryPathIds -> originalFamily
+                        next.isEmpty() -> ""
+                        else -> next.lastOrNull()?.let { id -> state.categories.firstOrNull { it.id == id }?.name }.orEmpty()
+                    }
                 state.copy(
                     categoryPathIds = next,
                     family = leafName,
-                    isDirty = true,
+                    isDirty = hasNonCategoryChanges || next != originalCategoryPathIds,
                     error = null,
                 )
             }
@@ -602,6 +610,9 @@ class SauceEditorViewModel
                         is Outcome.Failure -> return@launch fail(result.error)
                         is Outcome.Success -> Unit
                     }
+                    originalCategoryPathIds = state.categoryPathIds
+                    originalFamily = state.family
+                    hasNonCategoryChanges = false
                     _uiState.update {
                         it.copy(isSaving = false, isDirty = false, savedSauceId = sauceId.value)
                     }
@@ -678,6 +689,9 @@ class SauceEditorViewModel
                     is Outcome.Failure -> return@launch fail(imageResult.error)
                     is Outcome.Success -> Unit
                 }
+                originalCategoryPathIds = state.categoryPathIds
+                originalFamily = state.family
+                hasNonCategoryChanges = false
                 _uiState.update {
                     it.copy(
                         isSaving = false,
