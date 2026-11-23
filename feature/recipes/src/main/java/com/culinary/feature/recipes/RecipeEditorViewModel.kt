@@ -92,6 +92,8 @@ class RecipeEditorViewModel
 
         private var lineKey = 0
         private var stepKey = 0
+        private var originalArchiveCategoryId: String? = null
+        private var hasNonCategoryChanges = false
 
         init {
             load()
@@ -161,6 +163,8 @@ class RecipeEditorViewModel
             val assignedCategory =
                 runCatching { getArchiveCategoryForRecord(KitchenRecordKind.RECIPE, detail.recipe.id.value) }
                     .getOrNull()
+            originalArchiveCategoryId = assignedCategory?.id
+            hasNonCategoryChanges = false
             var decodedKeys = 0
             val steps =
                 runCatching {
@@ -274,12 +278,14 @@ class RecipeEditorViewModel
         }
 
         private fun mutateArchive(transform: (RecipeEditorUiState) -> RecipeEditorUiState) {
+            hasNonCategoryChanges = true
             _uiState.update { state ->
                 transform(state).copy(isDirty = true, error = null)
             }
         }
 
         private fun mutateVersion(transform: (RecipeEditorUiState) -> RecipeEditorUiState) {
+            hasNonCategoryChanges = true
             _uiState.update { state ->
                 transform(state).copy(isDirty = true, versionDirty = true, error = null)
             }
@@ -315,7 +321,15 @@ class RecipeEditorViewModel
                 state.copy(notes = "${state.notes}$separator· ")
             }
 
-        fun onArchiveCategorySelect(categoryId: String?) = mutateArchive { it.copy(archiveCategoryId = categoryId) }
+        fun onArchiveCategorySelect(categoryId: String?) {
+            _uiState.update { state ->
+                state.copy(
+                    archiveCategoryId = categoryId,
+                    isDirty = hasNonCategoryChanges || categoryId != originalArchiveCategoryId,
+                    error = null,
+                )
+            }
+        }
 
         fun addSauceRelation(option: SauceOption) {
             mutateArchive { state ->
@@ -654,6 +668,8 @@ class RecipeEditorViewModel
                     is Outcome.Failure -> return fail(imageResult.error)
                     is Outcome.Success -> Unit
                 }
+                originalArchiveCategoryId = state.archiveCategoryId
+                hasNonCategoryChanges = false
                 _uiState.update {
                     it.copy(
                         isSaving = false,
@@ -685,6 +701,8 @@ class RecipeEditorViewModel
                     is Outcome.Failure -> return fail(result.error)
                 }
             }
+            originalArchiveCategoryId = state.archiveCategoryId
+            hasNonCategoryChanges = false
             _uiState.update {
                 it.copy(
                     isSaving = false,
