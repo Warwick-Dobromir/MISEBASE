@@ -35,6 +35,15 @@ class AssignArchiveCategoryUseCase(
     ): Outcome<Unit> = repository?.assign(kind, recordId, categoryId) ?: Outcome.success(Unit)
 }
 
+class ClearArchiveCategoryAssignmentUseCase(
+    private val repository: ArchiveCategoryRepository? = null,
+) {
+    suspend operator fun invoke(
+        kind: KitchenRecordKind,
+        recordId: String,
+    ): Outcome<Unit> = repository?.clearAssignment(kind, recordId) ?: Outcome.success(Unit)
+}
+
 class ClearArchiveCategoryTestBatchUseCase(
     private val repository: ArchiveCategoryRepository? = null,
 ) {

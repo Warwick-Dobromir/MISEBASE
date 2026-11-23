@@ -19,6 +19,7 @@ import com.culinary.core.domain.model.SauceImageOwner
 import com.culinary.core.domain.model.SauceImageRole
 import com.culinary.core.domain.model.SauceVersionId
 import com.culinary.core.domain.usecase.archive.AssignArchiveCategoryUseCase
+import com.culinary.core.domain.usecase.archive.ClearArchiveCategoryAssignmentUseCase
 import com.culinary.core.domain.usecase.archive.GetArchiveCategoryForRecordUseCase
 import com.culinary.core.domain.usecase.archive.ListArchiveCategoriesUseCase
 import com.culinary.core.domain.usecase.ingredient.ListIngredientsUseCase
@@ -73,6 +74,8 @@ class SauceEditorViewModel
         private val getArchiveCategoryForRecord: GetArchiveCategoryForRecordUseCase =
             GetArchiveCategoryForRecordUseCase(),
         private val assignArchiveCategory: AssignArchiveCategoryUseCase = AssignArchiveCategoryUseCase(),
+        private val clearArchiveCategoryAssignment: ClearArchiveCategoryAssignmentUseCase =
+            ClearArchiveCategoryAssignmentUseCase(),
     ) : ViewModel() {
         private val routeSauceId: String? =
             savedStateHandle
@@ -595,14 +598,9 @@ class SauceEditorViewModel
                 _uiState.update { it.copy(sauceId = sauceId.value) }
                 // 分类是档案元数据；仅改分类时不创建新版本。
                 if (state.sauceId != null && !state.versionDirty) {
-                    state.categoryPathIds.lastOrNull()?.let { categoryId ->
-                        when (
-                            val result =
-                                assignArchiveCategory(KitchenRecordKind.SAUCE, sauceId.value, categoryId)
-                        ) {
-                            is Outcome.Failure -> return@launch fail(result.error)
-                            is Outcome.Success -> Unit
-                        }
+                    when (val result = persistCategoryAssignment(sauceId.value, state.categoryPathIds.lastOrNull())) {
+                        is Outcome.Failure -> return@launch fail(result.error)
+                        is Outcome.Success -> Unit
                     }
                     _uiState.update {
                         it.copy(isSaving = false, isDirty = false, savedSauceId = sauceId.value)
@@ -639,12 +637,10 @@ class SauceEditorViewModel
                         is Outcome.Success -> saved.value
                         is Outcome.Failure -> return@launch fail(saved.error)
                     }
-                state.categoryPathIds.lastOrNull()?.let { categoryId ->
-                    when (val result = assignArchiveCategory(KitchenRecordKind.SAUCE, sauceId.value, categoryId)) {
+                    when (val result = persistCategoryAssignment(sauceId.value, state.categoryPathIds.lastOrNull())) {
                         is Outcome.Failure -> return@launch fail(result.error)
                         is Outcome.Success -> Unit
                     }
-                }
                 var hasPublished = state.hasPublishedVersion
                 if (!hasPublished) {
                     when (val result = publishSauceVersion(versionId)) {
@@ -792,6 +788,13 @@ class SauceEditorViewModel
                 }
             }
         }
+
+        private suspend fun persistCategoryAssignment(recordId: String, categoryId: String?): Outcome<Unit> =
+            if (categoryId == null) {
+                clearArchiveCategoryAssignment(KitchenRecordKind.SAUCE, recordId)
+            } else {
+                assignArchiveCategory(KitchenRecordKind.SAUCE, recordId, categoryId)
+            }
 
         private fun fail(error: com.culinary.core.common.CulinaryError) {
             _uiState.update {

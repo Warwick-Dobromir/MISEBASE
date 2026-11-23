@@ -112,6 +112,18 @@ class ArchiveCategoryRepositoryImpl
             return result.flatMap { it }
         }
 
+        override suspend fun clearAssignment(
+            kind: KitchenRecordKind,
+            recordId: String,
+        ): Outcome<Unit> {
+            val result =
+                transactionRunner.write<Outcome<Unit>> {
+                    assignmentDao.deleteByRecord(kind.name, recordId)
+                    Outcome.success(Unit)
+                }
+            return result.flatMap { it }
+        }
+
         override suspend fun clearTestBatch(testBatch: String): Outcome<Int> {
             val result =
                 transactionRunner.write<Outcome<Int>> {

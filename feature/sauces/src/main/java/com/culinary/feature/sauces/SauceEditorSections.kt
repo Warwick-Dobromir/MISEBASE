@@ -129,11 +129,12 @@ private fun SauceClassificationSelector(
             val parentId = if (level == 0) null else state.categoryPathIds.getOrNull(level - 1)
             val options = formal.filter { it.parentId == parentId }
             if (options.isEmpty()) break
+            val currentLevel = level
             CategoryLevelField(
-                level = level,
-                selectedId = state.categoryPathIds.getOrNull(level),
+                level = currentLevel,
+                selectedId = state.categoryPathIds.getOrNull(currentLevel),
                 options = options,
-                onSelect = { id -> actions.onCategorySelect(level, id) },
+                onSelect = { id -> actions.onCategorySelect(currentLevel, id) },
             )
             level++
             if (level > 32) break

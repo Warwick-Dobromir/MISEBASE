@@ -26,6 +26,12 @@ interface ArchiveCategoryRepository {
         categoryId: String,
     ): Outcome<Unit>
 
+    /** 清除单条档案的分类归属。 */
+    suspend fun clearAssignment(
+        kind: KitchenRecordKind,
+        recordId: String,
+    ): Outcome<Unit>
+
     suspend fun clearTestBatch(testBatch: String): Outcome<Int>
 
     suspend fun libraryOf(kind: KitchenRecordKind): ArchiveLibrary

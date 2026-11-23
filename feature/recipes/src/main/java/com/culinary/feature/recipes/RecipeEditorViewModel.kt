@@ -14,6 +14,7 @@ import com.culinary.core.domain.model.RecipeDetail
 import com.culinary.core.domain.model.RecipeId
 import com.culinary.core.domain.model.RecipeVersionId
 import com.culinary.core.domain.usecase.archive.AssignArchiveCategoryUseCase
+import com.culinary.core.domain.usecase.archive.ClearArchiveCategoryAssignmentUseCase
 import com.culinary.core.domain.usecase.archive.GetArchiveCategoryForRecordUseCase
 import com.culinary.core.domain.usecase.archive.ListArchiveCategoriesUseCase
 import com.culinary.core.domain.usecase.ingredient.ListIngredientsUseCase
@@ -74,6 +75,8 @@ class RecipeEditorViewModel
         private val getArchiveCategoryForRecord: GetArchiveCategoryForRecordUseCase =
             GetArchiveCategoryForRecordUseCase(),
         private val assignArchiveCategory: AssignArchiveCategoryUseCase = AssignArchiveCategoryUseCase(),
+        private val clearArchiveCategoryAssignment: ClearArchiveCategoryAssignmentUseCase =
+            ClearArchiveCategoryAssignmentUseCase(),
         private val listUnits: ListUnitsUseCase,
         private val listIngredients: ListIngredientsUseCase,
         private val listRecipeOptions: ListRecipeOptionsUseCase,
@@ -795,8 +798,14 @@ class RecipeEditorViewModel
         }
 
         private suspend fun persistCategory(recipeId: RecipeId): Boolean {
-            val categoryId = _uiState.value.archiveCategoryId ?: return true
-            return when (val result = assignArchiveCategory(KitchenRecordKind.RECIPE, recipeId.value, categoryId)) {
+            val categoryId = _uiState.value.archiveCategoryId
+            val result =
+                if (categoryId == null) {
+                    clearArchiveCategoryAssignment(KitchenRecordKind.RECIPE, recipeId.value)
+                } else {
+                    assignArchiveCategory(KitchenRecordKind.RECIPE, recipeId.value, categoryId)
+                }
+            return when (result) {
                 is Outcome.Success -> true
                 is Outcome.Failure -> {
                     fail(result.error)

@@ -746,7 +746,7 @@ private fun RecipeCategoryLevelField(
                         text = "清除",
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.clickable { onSelect(selected.parentId) },
+                        modifier = Modifier.clickable { onSelect(null) },
                     )
                 }
                 Icon(
