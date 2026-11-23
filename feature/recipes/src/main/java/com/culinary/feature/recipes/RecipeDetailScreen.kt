@@ -68,6 +68,7 @@ fun RecipeDetailRoute(
     onEdit: (String) -> Unit,
     onOpenRelation: (KitchenRecordKind, String) -> Unit = { _, _ -> },
     onBack: () -> Unit = {},
+    backLabel: String = "厨房",
     onStartTimer: (Int) -> Unit = {},
     scrollToStep: Int? = null,
     modifier: Modifier = Modifier,
@@ -84,6 +85,7 @@ fun RecipeDetailRoute(
         onDismissError = viewModel::clearError,
         onOpenRelation = onOpenRelation,
         onBack = onBack,
+        backLabel = backLabel,
         onStartTimer = onStartTimer,
         scrollToStep = scrollToStep,
         modifier = modifier,
@@ -100,6 +102,7 @@ private fun RecipeDetailScreen(
     onOpenRelation: (KitchenRecordKind, String) -> Unit,
     modifier: Modifier = Modifier,
     onBack: () -> Unit = {},
+    backLabel: String = "厨房",
     onStartTimer: (Int) -> Unit = {},
     scrollToStep: Int? = null,
 ) {
@@ -131,6 +134,7 @@ private fun RecipeDetailScreen(
                     onDismissError = onDismissError,
                     onOpenRelation = onOpenRelation,
                     onBack = onBack,
+                    backLabel = backLabel,
                     onStartTimer = onStartTimer,
                     scrollToStep = scrollToStep,
                 )
@@ -147,6 +151,7 @@ internal fun RecipeDetailContent(
     onDismissError: () -> Unit,
     onOpenRelation: (KitchenRecordKind, String) -> Unit,
     onBack: () -> Unit = {},
+    backLabel: String = "厨房",
     onStartTimer: (Int) -> Unit = {},
     scrollToStep: Int? = null,
 ) {
@@ -169,6 +174,7 @@ internal fun RecipeDetailContent(
         ArchiveDetailBar(
             editLabel = "编辑档案 ↗",
             onBack = onBack,
+            backLabel = backLabel,
             onEdit = { onEdit(recipe.id.value) },
         )
         Column(
