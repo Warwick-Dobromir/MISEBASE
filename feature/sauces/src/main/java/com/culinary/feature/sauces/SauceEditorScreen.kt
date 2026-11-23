@@ -226,6 +226,7 @@ internal fun SauceEditorScreen(
             canSave = !state.isLoading && (state.isDirty || state.isNew),
             onBack = { if (state.isDirty) showDiscard = true else onCancelled() },
             onSave = onSaved,
+            centerTitle = true,
         )
         state.error?.let { message ->
             ErrorBanner(
