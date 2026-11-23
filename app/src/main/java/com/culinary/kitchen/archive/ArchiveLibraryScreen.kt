@@ -452,9 +452,12 @@ internal fun ArchiveLibraryScreen(
         }
 
         ArchiveBackFloatButton(
-            label = currentCategory?.parentId?.let { parentId ->
-                categories.firstOrNull { it.id == parentId }?.name
-            } ?: section.title(),
+            label =
+                when {
+                    currentCategory == null -> "厨房"
+                    currentCategory.parentId == null -> section.title()
+                    else -> categories.firstOrNull { it.id == currentCategory.parentId }?.name ?: section.title()
+                },
             onClick = {
                 if (sorting) requestSortReturn()
                 else if (currentCategory == null) onBack()

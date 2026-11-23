@@ -1,6 +1,13 @@
 package com.culinary.core.designsystem.component
 
 import android.graphics.BitmapFactory
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.snap
+import androidx.compose.animation.core.spring
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.awaitLongPressOrCancellation
+import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -383,48 +390,71 @@ fun ArchiveEditorReorderableRow(
         }
     }
 
+    val animatedDragOffsetY by animateFloatAsState(
+        targetValue = if (dragging) dragOffsetY else 0f,
+        animationSpec = if (dragging) snap() else spring(dampingRatio = 0.72f, stiffness = 520f),
+        label = "archive-row-drag-offset",
+    )
+    val animatedScale by animateFloatAsState(
+        targetValue = if (dragging) 1.045f else 1f,
+        animationSpec = spring(dampingRatio = 0.72f, stiffness = 520f),
+        label = "archive-row-drag-scale",
+    )
+
     Box(
         modifier = modifier
             .onSizeChanged { rowHeightPx = it.height }
             .onGloballyPositioned { rowTopInWindowPx = it.positionInWindow().y }
             .graphicsLayer {
-                scaleX = if (dragging) 1.045f else 1f
-                scaleY = if (dragging) 1.045f else 1f
-                translationY = if (dragging) dragOffsetY else 0f
+                scaleX = animatedScale
+                scaleY = animatedScale
+                translationY = animatedDragOffsetY
             }
             .shadow(if (dragging) 7.dp else 0.dp, androidx.compose.ui.graphics.RectangleShape)
             .pointerInput(scrollState) {
-                detectDragGesturesAfterLongPress(
-                    onDragStart = {
+                awaitEachGesture {
+                    val down = awaitFirstDown(
+                        requireUnconsumed = false,
+                        pass = PointerEventPass.Initial,
+                    )
+                    val longPress = awaitLongPressOrCancellation(
+                        pointerId = down.id,
+                        pass = PointerEventPass.Initial,
+                    )
+                    if (longPress != null) {
                         dragging = true
                         dragOffsetY = 0f
                         edgeOverdragY = 0f
-                    },
-                    onDragEnd = {
-                        dragging = false
-                        dragOffsetY = 0f
-                        edgeOverdragY = 0f
-                    },
-                    onDragCancel = {
-                        dragging = false
-                        dragOffsetY = 0f
-                        edgeOverdragY = 0f
-                    },
-                    onDrag = { change, amount ->
-                        change.consume()
-                        val next = archiveEditorDragOffsetAfterDelta(
-                            currentOffsetPx = dragOffsetY,
-                            currentEdgeOverdragPx = edgeOverdragY,
-                            deltaPx = amount.y,
-                            rowHeightPx = rowHeightPx.toFloat(),
-                            maxEdgeOffsetPx = maxEdgeOffsetPx,
-                            canMove = currentCanMove,
-                            move = currentOnMove,
-                        )
-                        dragOffsetY = next.offsetPx
-                        edgeOverdragY = next.edgeOverdragPx
-                    },
-                )
+                        var previousPosition = longPress.position
+                        try {
+                            while (true) {
+                                val event = awaitPointerEvent(PointerEventPass.Initial)
+                                val change = event.changes.firstOrNull { it.id == down.id } ?: break
+                                val deltaY = change.position.y - previousPosition.y
+                                if (deltaY != 0f) {
+                                    change.consume()
+                                    val next = archiveEditorDragOffsetAfterDelta(
+                                        currentOffsetPx = dragOffsetY,
+                                        currentEdgeOverdragPx = edgeOverdragY,
+                                        deltaPx = deltaY,
+                                        rowHeightPx = rowHeightPx.toFloat(),
+                                        maxEdgeOffsetPx = maxEdgeOffsetPx,
+                                        canMove = currentCanMove,
+                                        move = currentOnMove,
+                                    )
+                                    dragOffsetY = next.offsetPx
+                                    edgeOverdragY = next.edgeOverdragPx
+                                }
+                                previousPosition = change.position
+                                if (!change.pressed) break
+                            }
+                        } finally {
+                            dragging = false
+                            dragOffsetY = 0f
+                            edgeOverdragY = 0f
+                        }
+                    }
+                }
             },
     ) { content() }
 }

@@ -91,7 +91,7 @@ class SauceEditorViewModel
         private var keyCounter = 0
         private var originalCategoryPathIds: List<String> = emptyList()
         private var originalFamily: String = ""
-        private var hasNonCategoryChanges = false
+        private var originalEditorState: SauceEditorUiState? = null
 
         init {
             load()
@@ -128,6 +128,7 @@ class SauceEditorViewModel
                     }
                 } else {
                     _uiState.update { it.copy(isLoading = false, isDirty = false, editingVersionNo = 1) }
+                    originalEditorState = _uiState.value.editableContentSnapshot()
                 }
             }
         }
@@ -203,7 +204,6 @@ class SauceEditorViewModel
                 assignedCategory?.let { buildCategoryPathIds(it.id, _uiState.value.categories) }.orEmpty()
             originalCategoryPathIds = categoryPath
             originalFamily = detail.sauce.family.orEmpty()
-            hasNonCategoryChanges = false
             _uiState.update {
                 it.copy(
                     name = detail.sauce.name,
@@ -260,6 +260,7 @@ class SauceEditorViewModel
                     isDirty = false,
                 )
             }
+            originalEditorState = _uiState.value.editableContentSnapshot()
         }
 
         private fun fallbackLabel(target: ComponentTarget): String =
@@ -270,9 +271,10 @@ class SauceEditorViewModel
             }
 
         private fun mutate(transform: (SauceEditorUiState) -> SauceEditorUiState) {
-            hasNonCategoryChanges = true
             _uiState.update { state ->
-                transform(state).copy(isDirty = true, versionDirty = true, error = null)
+                val next = transform(state)
+                val dirty = originalEditorState?.let { next.editableContentSnapshot() != it } ?: true
+                next.copy(isDirty = dirty, versionDirty = dirty, error = null)
             }
         }
 
@@ -300,12 +302,9 @@ class SauceEditorViewModel
                         next.isEmpty() -> ""
                         else -> next.lastOrNull()?.let { id -> state.categories.firstOrNull { it.id == id }?.name }.orEmpty()
                     }
-                state.copy(
-                    categoryPathIds = next,
-                    family = leafName,
-                    isDirty = hasNonCategoryChanges || next != originalCategoryPathIds,
-                    error = null,
-                )
+                val updated = state.copy(categoryPathIds = next, family = leafName, error = null)
+                val dirty = originalEditorState?.let { updated.editableContentSnapshot() != it } ?: true
+                updated.copy(isDirty = dirty)
             }
         }
 
@@ -938,3 +937,25 @@ class SauceEditorViewModel
             return toMutableList().apply { add(to, removeAt(from)) }
         }
     }
+
+
+private fun SauceEditorUiState.editableContentSnapshot(): SauceEditorUiState =
+    copy(
+        units = emptyList(),
+        ingredients = emptyList(),
+        categories = emptyList(),
+        sauceOptions = emptyList(),
+        imageBytes = emptyMap(),
+        updatedAtEpochMillis = null,
+        editingDraftId = null,
+        editingVersionNo = null,
+        hasPublishedVersion = false,
+        isTestRecord = false,
+        isDirty = false,
+        isLoading = false,
+        isSaving = false,
+        error = null,
+        savedSauceId = null,
+        archived = false,
+        versionDirty = false,
+    )

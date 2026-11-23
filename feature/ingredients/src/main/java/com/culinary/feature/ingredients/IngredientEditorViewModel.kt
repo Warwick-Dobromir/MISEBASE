@@ -47,6 +47,7 @@ class IngredientEditorViewModel
 
         private val _uiState = MutableStateFlow(IngredientEditorUiState(ingredientId = routeId))
         val uiState: StateFlow<IngredientEditorUiState> = _uiState.asStateFlow()
+        private var originalEditorState: IngredientEditorUiState? = null
 
         init {
             load()
@@ -109,6 +110,7 @@ class IngredientEditorViewModel
                                     isLoading = false,
                                 )
                             }
+                            originalEditorState = _uiState.value.editableContentSnapshot()
                         }
 
                         is Outcome.Failure ->
@@ -121,71 +123,64 @@ class IngredientEditorViewModel
                     }
                 } else {
                     _uiState.update { it.copy(isLoading = false) }
+                    originalEditorState = _uiState.value.editableContentSnapshot()
                 }
             }
         }
 
-        fun onNameChange(value: String) {
-            _uiState.update { it.copy(name = value, isDirty = true, error = null) }
-        }
-
-        fun onCategoryChange(value: String) {
-            _uiState.update { it.copy(category = value, categoryPathIds = emptyList(), isDirty = true) }
-        }
-
-        fun onCategorySelect(level: Int, categoryId: String?) {
+        private fun mutate(transform: (IngredientEditorUiState) -> IngredientEditorUiState) {
             _uiState.update { state ->
-                val base = state.categoryPathIds.take(level.coerceAtLeast(0))
-                val next = if (categoryId == null) base else base + categoryId
-                val leafName = next.lastOrNull()?.let { id -> state.categories.firstOrNull { it.id == id }?.name }.orEmpty()
-                state.copy(category = leafName, categoryPathIds = next, isDirty = true, error = null)
+                val next = transform(state)
+                val dirty = originalEditorState?.let { next.editableContentSnapshot() != it } ?: true
+                next.copy(isDirty = dirty, error = null)
             }
         }
 
-        fun onDescriptionChange(value: String) {
-            _uiState.update { it.copy(description = value, isDirty = true) }
+        fun onNameChange(value: String) = mutate { it.copy(name = value) }
+
+        fun onCategoryChange(value: String) =
+            mutate { it.copy(category = value, categoryPathIds = emptyList()) }
+
+        fun onCategorySelect(level: Int, categoryId: String?) {
+            mutate { state ->
+                val base = state.categoryPathIds.take(level.coerceAtLeast(0))
+                val next = if (categoryId == null) base else base + categoryId
+                val leafName = next.lastOrNull()?.let { id -> state.categories.firstOrNull { it.id == id }?.name }.orEmpty()
+                state.copy(category = leafName, categoryPathIds = next)
+            }
         }
 
-        fun onEnglishNameChange(value: String) {
-            _uiState.update { it.copy(englishName = value, isDirty = true) }
-        }
+        fun onDescriptionChange(value: String) = mutate { it.copy(description = value) }
 
-        fun onExampleProductsChange(value: String) {
-            _uiState.update { it.copy(exampleProducts = value, isDirty = true) }
-        }
+        fun onEnglishNameChange(value: String) = mutate { it.copy(englishName = value) }
 
-        fun onStorageNotesChange(value: String) {
-            _uiState.update { it.copy(storageNotes = value, isDirty = true) }
-        }
+        fun onExampleProductsChange(value: String) = mutate { it.copy(exampleProducts = value) }
 
-        fun onAllergenNotesChange(value: String) {
-            _uiState.update { it.copy(allergenNotes = value, isDirty = true) }
-        }
+        fun onStorageNotesChange(value: String) = mutate { it.copy(storageNotes = value) }
 
-        fun onFlavorProfileChange(value: String) { _uiState.update { it.copy(flavorProfile = value, isDirty = true) } }
-        fun onCulinaryUseChange(value: String) { _uiState.update { it.copy(culinaryUse = value, isDirty = true) } }
-        fun onEdiblePartsChange(value: String) { _uiState.update { it.copy(edibleParts = value, isDirty = true) } }
-        fun onActiveChange(value: Boolean) { _uiState.update { it.copy(isActive = value, isDirty = true) } }
+        fun onAllergenNotesChange(value: String) = mutate { it.copy(allergenNotes = value) }
 
-        fun onUnitChange(unit: UnitModel) {
-            _uiState.update { it.copy(defaultUnit = unit, isDirty = true) }
-        }
+        fun onFlavorProfileChange(value: String) = mutate { it.copy(flavorProfile = value) }
 
-        fun onImagePicked(image: PendingIngredientImage) {
-            _uiState.update { it.copy(pendingImage = image, imageRemoved = false, isDirty = true, error = null) }
-        }
+        fun onCulinaryUseChange(value: String) = mutate { it.copy(culinaryUse = value) }
 
-        fun onImageRemoved() {
-            _uiState.update {
+        fun onEdiblePartsChange(value: String) = mutate { it.copy(edibleParts = value) }
+
+        fun onActiveChange(value: Boolean) = mutate { it.copy(isActive = value) }
+
+        fun onUnitChange(unit: UnitModel) = mutate { it.copy(defaultUnit = unit) }
+
+        fun onImagePicked(image: PendingIngredientImage) =
+            mutate { it.copy(pendingImage = image, imageRemoved = false) }
+
+        fun onImageRemoved() =
+            mutate {
                 it.copy(
                     pendingImage = null,
                     imageBytes = null,
                     imageRemoved = it.imageId != null,
-                    isDirty = true,
-                    error = null,
                 )
             }
-        }
 
         fun clearError() {
             _uiState.update { it.copy(error = null) }
@@ -290,3 +285,16 @@ private fun buildIngredientCategoryPath(
     }
     return path.asReversed()
 }
+
+
+private fun IngredientEditorUiState.editableContentSnapshot(): IngredientEditorUiState =
+    copy(
+        imageBytes = null,
+        categories = emptyList(),
+        units = emptyList(),
+        isLoading = false,
+        isSaving = false,
+        isDirty = false,
+        saved = false,
+        error = null,
+    )

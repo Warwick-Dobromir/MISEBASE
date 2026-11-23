@@ -95,8 +95,8 @@ class RecipeEditorViewModel
 
         private var lineKey = 0
         private var stepKey = 0
-        private var originalArchiveCategoryId: String? = null
-        private var hasNonCategoryChanges = false
+        private var originalEditorState: RecipeEditorUiState? = null
+        private var originalRelations: List<RecipeRelationEditor>? = null
 
         init {
             load()
@@ -115,6 +115,7 @@ class RecipeEditorViewModel
                                     )
                                 }
                         _uiState.update { it.copy(relations = relations) }
+                        if (originalRelations == null) originalRelations = relations
                     }
                 }
             }
@@ -145,6 +146,7 @@ class RecipeEditorViewModel
                         is Outcome.Success -> {
                             applyDetail(result.value)
                             loadImages(result.value)
+                            originalEditorState = _uiState.value.editableContentSnapshot()
                         }
                         is Outcome.Failure ->
                             _uiState.update {
@@ -156,6 +158,8 @@ class RecipeEditorViewModel
                     }
                 } else {
                     _uiState.update { it.copy(isLoading = false, editingVersionNo = 1) }
+                    originalRelations = emptyList()
+                    originalEditorState = _uiState.value.editableContentSnapshot()
                 }
             }
         }
@@ -166,8 +170,6 @@ class RecipeEditorViewModel
             val assignedCategory =
                 runCatching { getArchiveCategoryForRecord(KitchenRecordKind.RECIPE, detail.recipe.id.value) }
                     .getOrNull()
-            originalArchiveCategoryId = assignedCategory?.id
-            hasNonCategoryChanges = false
             var decodedKeys = 0
             val steps =
                 runCatching {
@@ -290,17 +292,34 @@ class RecipeEditorViewModel
             }
         }
 
+        private fun hasUnsavedChanges(state: RecipeEditorUiState): Boolean {
+            val contentChanged = originalEditorState?.let { state.editableContentSnapshot() != it } ?: true
+            val relationsChanged = originalRelations?.let { state.relations != it } ?: false
+            return contentChanged || relationsChanged
+        }
+
+        private fun hasVersionChanges(state: RecipeEditorUiState): Boolean =
+            originalEditorState?.let { state.versionContentSnapshot() != it.versionContentSnapshot() } ?: true
+
         private fun mutateArchive(transform: (RecipeEditorUiState) -> RecipeEditorUiState) {
-            hasNonCategoryChanges = true
             _uiState.update { state ->
-                transform(state).copy(isDirty = true, error = null)
+                val next = transform(state)
+                next.copy(
+                    isDirty = hasUnsavedChanges(next),
+                    versionDirty = hasVersionChanges(next),
+                    error = null,
+                )
             }
         }
 
         private fun mutateVersion(transform: (RecipeEditorUiState) -> RecipeEditorUiState) {
-            hasNonCategoryChanges = true
             _uiState.update { state ->
-                transform(state).copy(isDirty = true, versionDirty = true, error = null)
+                val next = transform(state)
+                next.copy(
+                    isDirty = hasUnsavedChanges(next),
+                    versionDirty = hasVersionChanges(next),
+                    error = null,
+                )
             }
         }
 
@@ -350,11 +369,8 @@ class RecipeEditorViewModel
 
         fun onArchiveCategorySelect(categoryId: String?) {
             _uiState.update { state ->
-                state.copy(
-                    archiveCategoryId = categoryId,
-                    isDirty = hasNonCategoryChanges || categoryId != originalArchiveCategoryId,
-                    error = null,
-                )
+                val next = state.copy(archiveCategoryId = categoryId, error = null)
+                next.copy(isDirty = hasUnsavedChanges(next))
             }
         }
 
@@ -742,9 +758,7 @@ class RecipeEditorViewModel
                     is Outcome.Failure -> return fail(imageResult.error)
                     is Outcome.Success -> Unit
                 }
-                originalArchiveCategoryId = state.archiveCategoryId
-                hasNonCategoryChanges = false
-                _uiState.update {
+                    _uiState.update {
                     it.copy(
                         isSaving = false,
                         recipeId = recipeId.value,
@@ -839,8 +853,6 @@ class RecipeEditorViewModel
                     is Outcome.Failure -> return fail(result.error)
                 }
             }
-            originalArchiveCategoryId = state.archiveCategoryId
-            hasNonCategoryChanges = false
             _uiState.update {
                 it.copy(
                     isSaving = false,
@@ -1168,3 +1180,29 @@ class RecipeEditorViewModel
             const val INVALID_MINUTES = Int.MIN_VALUE
         }
     }
+
+
+private fun RecipeEditorUiState.editableContentSnapshot(): RecipeEditorUiState =
+    copy(
+        units = emptyList(),
+        ingredients = emptyList(),
+        recipeOptions = emptyList(),
+        sauceOptions = emptyList(),
+        categories = emptyList(),
+        relations = emptyList(),
+        imageBytes = emptyMap(),
+        isLoading = false,
+        isSaving = false,
+        error = null,
+        savedRecipeId = null,
+        archived = false,
+        editingVersionNo = null,
+        editingDraftId = null,
+        hasPublishedVersion = false,
+        updatedAtEpochMillis = null,
+        isDirty = false,
+        versionDirty = false,
+    )
+
+private fun RecipeEditorUiState.versionContentSnapshot(): List<Any?> =
+    listOf(yieldAmount, yieldUnit, minRangeAmount, minRangeUnit, servings, lines, steps)
