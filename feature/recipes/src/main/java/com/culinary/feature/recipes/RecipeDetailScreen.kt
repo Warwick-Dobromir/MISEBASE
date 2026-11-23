@@ -299,18 +299,41 @@ internal fun RecipeDetailContent(
             }
             Spacer(modifier = Modifier.height(CulinarySpacing.xl))
 
-            ArchiveModuleHeader(number = "05", english = "NOTES", chinese = "研发备注")
-            val noteText = recipe.notes?.takeIf { it.isNotBlank() } ?: recipe.seedNote?.takeIf { it.isNotBlank() }
-            if (noteText == null && state.noteImages.isEmpty()) {
+            ArchiveModuleHeader(number = "05", english = "R&D RECORDS", chinese = "研发记录")
+            val research = RecipeResearchNotesCodec.decode(recipe.notes)
+            val noteFields = listOf(
+                "成品标准" to research.productStandard,
+                "质地" to research.texture,
+                "主要原料" to research.mainIngredients,
+                "预制说明" to research.preparationSummary,
+                "关键参数" to research.keyParameters,
+                "储存说明" to research.storageNotes,
+                "调整记录" to research.adjustmentRecords,
+                "测试记录" to research.testRecords,
+            ).filter { it.second.isNotBlank() }
+            if (noteFields.isEmpty() && state.noteImages.isEmpty() && recipe.seedNote.isNullOrBlank()) {
                 Text(
-                    text = "暂未添加研发备注",
+                    text = "暂未添加研发记录",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             } else {
-                noteText?.let { note ->
-                    ArchiveProse(note)
+                noteFields.forEach { (label, value) ->
+                    Text(
+                        text = label,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    ArchiveProse(value)
                     Spacer(modifier = Modifier.height(CulinarySpacing.sm))
+                }
+                recipe.seedNote?.takeIf { it.isNotBlank() }?.let { seed ->
+                    Text(
+                        text = "原有测试记录",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    ArchiveProse(seed)
                 }
                 if (state.noteImages.isNotEmpty()) {
                     ArchiveNoteImages(images = state.noteImages)

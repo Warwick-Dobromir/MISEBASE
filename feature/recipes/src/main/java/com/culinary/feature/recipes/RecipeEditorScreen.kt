@@ -99,6 +99,13 @@ fun RecipeEditorRoute(
         onEnglishNameChange = viewModel::onEnglishNameChange,
         onDescriptionChange = viewModel::onDescriptionChange,
         onNotesChange = viewModel::onNotesChange,
+        onProductStandardChange = viewModel::onProductStandardChange,
+        onTextureChange = viewModel::onTextureChange,
+        onMainIngredientsChange = viewModel::onMainIngredientsChange,
+        onPreparationSummaryChange = viewModel::onPreparationSummaryChange,
+        onKeyParametersChange = viewModel::onKeyParametersChange,
+        onStorageNotesChange = viewModel::onStorageNotesChange,
+        onTestRecordsChange = viewModel::onTestRecordsChange,
         onAddTextNote = viewModel::addTextNote,
         onHeroPicked = viewModel::setHeroImage,
         onHeroClear = viewModel::clearHeroImage,
@@ -298,6 +305,13 @@ private fun RecipeEditorScreen(
     onEnglishNameChange: (String) -> Unit,
     onDescriptionChange: (String) -> Unit,
     onNotesChange: (String) -> Unit,
+    onProductStandardChange: (String) -> Unit,
+    onTextureChange: (String) -> Unit,
+    onMainIngredientsChange: (String) -> Unit,
+    onPreparationSummaryChange: (String) -> Unit,
+    onKeyParametersChange: (String) -> Unit,
+    onStorageNotesChange: (String) -> Unit,
+    onTestRecordsChange: (String) -> Unit,
     onAddTextNote: () -> Unit,
     onCuisineChange: (String) -> Unit,
     onPrepMinutesChange: (String) -> Unit,
@@ -376,6 +390,13 @@ private fun RecipeEditorScreen(
                 onEnglishNameChange = onEnglishNameChange,
                 onDescriptionChange = onDescriptionChange,
                 onNotesChange = onNotesChange,
+                onProductStandardChange = onProductStandardChange,
+                onTextureChange = onTextureChange,
+                onMainIngredientsChange = onMainIngredientsChange,
+                onPreparationSummaryChange = onPreparationSummaryChange,
+                onKeyParametersChange = onKeyParametersChange,
+                onStorageNotesChange = onStorageNotesChange,
+                onTestRecordsChange = onTestRecordsChange,
                 onAddTextNote = onAddTextNote,
                 onHeroPicked = onHeroPicked,
                 onHeroClear = onHeroClear,
@@ -453,6 +474,13 @@ internal fun RecipeEditorForm(
     onEnglishNameChange: (String) -> Unit = {},
     onDescriptionChange: (String) -> Unit = {},
     onNotesChange: (String) -> Unit = {},
+    onProductStandardChange: (String) -> Unit = {},
+    onTextureChange: (String) -> Unit = {},
+    onMainIngredientsChange: (String) -> Unit = {},
+    onPreparationSummaryChange: (String) -> Unit = {},
+    onKeyParametersChange: (String) -> Unit = {},
+    onStorageNotesChange: (String) -> Unit = {},
+    onTestRecordsChange: (String) -> Unit = {},
     onAddTextNote: () -> Unit = {},
     onHeroPicked: (PendingRecipeImage) -> Unit = {},
     onHeroClear: () -> Unit = {},
@@ -558,6 +586,13 @@ internal fun RecipeEditorForm(
         RecipeNotesSection(
             state = state,
             onNotesChange = onNotesChange,
+            onProductStandardChange = onProductStandardChange,
+            onTextureChange = onTextureChange,
+            onMainIngredientsChange = onMainIngredientsChange,
+            onPreparationSummaryChange = onPreparationSummaryChange,
+            onKeyParametersChange = onKeyParametersChange,
+            onStorageNotesChange = onStorageNotesChange,
+            onTestRecordsChange = onTestRecordsChange,
             onAddTextNote = onAddTextNote,
             onNoteImage = onNoteImage,
             onRemoveNoteImage = onRemoveNoteImage,
@@ -1071,26 +1106,36 @@ private fun RecipeRelationsSection(
 private fun RecipeNotesSection(
     state: RecipeEditorUiState,
     onNotesChange: (String) -> Unit,
+    onProductStandardChange: (String) -> Unit,
+    onTextureChange: (String) -> Unit,
+    onMainIngredientsChange: (String) -> Unit,
+    onPreparationSummaryChange: (String) -> Unit,
+    onKeyParametersChange: (String) -> Unit,
+    onStorageNotesChange: (String) -> Unit,
+    onTestRecordsChange: (String) -> Unit,
     onAddTextNote: () -> Unit,
     onNoteImage: (PendingRecipeImage) -> Unit,
     onRemoveNoteImage: (Int) -> Unit,
 ) {
     ArchiveEditorSectionHeader(
         index = "05",
-        english = "NOTES",
+        english = "R&D RECORDS",
         title = stringResource(R.string.recipes_notes),
     )
     Text(
-        text = "记录研发说明、实验结论与调整记录……",
+        text = "按字段记录成品标准、质地、原料、预制、参数、储存、调整与测试结果。",
         style = MaterialTheme.typography.bodySmall,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
     Spacer(modifier = Modifier.height(CulinarySpacing.sm))
-    ArchiveEditorNotesBox(
-        value = state.notes,
-        onValueChange = onNotesChange,
-        placeholder = "记录研发说明、实验结论与调整记录……",
-    )
+    RecipeResearchField("成品标准", state.productStandard, onProductStandardChange)
+    RecipeResearchField("质地", state.texture, onTextureChange)
+    RecipeResearchField("主要原料", state.mainIngredients, onMainIngredientsChange)
+    RecipeResearchField("预制说明", state.preparationSummary, onPreparationSummaryChange)
+    RecipeResearchField("关键参数", state.keyParameters, onKeyParametersChange)
+    RecipeResearchField("储存说明", state.storageNotes, onStorageNotesChange)
+    RecipeResearchField("调整记录", state.notes, onNotesChange)
+    RecipeResearchField("测试记录", state.testRecords, onTestRecordsChange)
     Spacer(modifier = Modifier.height(CulinarySpacing.xs))
     val pickNoteImage = rememberRecipeImagePicker(onNoteImage)
     Row(horizontalArrangement = Arrangement.spacedBy(CulinarySpacing.md)) {
@@ -1101,19 +1146,13 @@ private fun RecipeNotesSection(
         state.noteImages.mapNotNull { it to state.imageBytes[it.id] }
     if (noteImages.isNotEmpty()) {
         Row(
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .horizontalScroll(rememberScrollState())
-                    .padding(top = CulinarySpacing.xs),
+            modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState())
+                .padding(top = CulinarySpacing.xs),
             horizontalArrangement = Arrangement.spacedBy(CulinarySpacing.sm),
         ) {
             noteImages.forEachIndexed { index, (_, bytes) ->
                 if (bytes != null) {
-                    RecipeNoteThumbnail(
-                        bytes = bytes,
-                        onRemove = { onRemoveNoteImage(index) },
-                    )
+                    RecipeNoteThumbnail(bytes = bytes, onRemove = { onRemoveNoteImage(index) })
                 }
             }
         }
@@ -1126,6 +1165,31 @@ private fun RecipeNotesSection(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         ArchiveProse(seed)
+    }
+}
+
+@Composable
+private fun RecipeResearchField(
+    label: String,
+    value: String,
+    onValueChange: (String) -> Unit,
+) {
+    Column(modifier = Modifier.fillMaxWidth().padding(bottom = CulinarySpacing.sm)) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        ArchiveEditorInlineField(
+            value = value,
+            onValueChange = onValueChange,
+            placeholder = "填写$label",
+            textStyle = MaterialTheme.typography.bodyMedium,
+            singleLine = false,
+            minLines = 2,
+            modifier = Modifier.fillMaxWidth(),
+        )
+        CulinaryRule()
     }
 }
 
