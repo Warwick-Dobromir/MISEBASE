@@ -717,7 +717,6 @@ class SauceEditorViewModel
                     }
                     originalCategoryPathIds = state.categoryPathIds
                     originalFamily = state.family
-                    hasNonCategoryChanges = false
                     _uiState.update {
                         it.copy(isSaving = false, isDirty = false, savedSauceId = sauceId.value)
                     }
@@ -786,7 +785,6 @@ class SauceEditorViewModel
                 }
                 originalCategoryPathIds = state.categoryPathIds
                 originalFamily = state.family
-                hasNonCategoryChanges = false
                 _uiState.update {
                     it.copy(
                         isSaving = false,
