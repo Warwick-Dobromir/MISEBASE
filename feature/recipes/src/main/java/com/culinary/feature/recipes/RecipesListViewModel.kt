@@ -37,7 +37,6 @@ class RecipesListViewModel
                                         RecipeRow(
                                             id = recipe.id.value,
                                             name = recipe.name,
-                                            category = recipe.category,
                                             isActive =
                                                 recipe.status ==
                                                     com.culinary.core.domain.model.EntityStatus.ACTIVE,
