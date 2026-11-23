@@ -147,10 +147,9 @@ internal fun IngredientEditorForm(
                 .padding(horizontal = CulinarySpacing.pageHorizontal)
                 .padding(bottom = CulinarySpacing.xl),
         ) {
-            Column(modifier = Modifier.fillMaxWidth().padding(top = CulinarySpacing.xl)) {
-                ArchiveEditorSectionHeader(index = "", english = "BASIC INFORMATION", title = "基本信息")
+            Column(modifier = Modifier.fillMaxWidth().padding(top = CulinarySpacing.lg)) {
                 Text(
-                    text = state.category.ifBlank { "INGREDIENT · 食材档案" },
+                    text = state.categories.filter { category -> category.id in state.categoryPathIds }.joinToString(" / ") { it.name }.ifBlank { "INGREDIENT · 食材档案" },
                     style = CulinaryTextStyles.eyebrow,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -170,7 +169,7 @@ internal fun IngredientEditorForm(
                     textStyle = MaterialTheme.typography.headlineSmall,
                     modifier = Modifier.fillMaxWidth(),
                 )
-                Spacer(modifier = Modifier.height(CulinarySpacing.sm))
+                Spacer(modifier = Modifier.height(CulinarySpacing.xs))
                 ArchiveEditorInlineField(
                     value = state.description,
                     onValueChange = onDescriptionChange,
