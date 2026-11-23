@@ -63,7 +63,6 @@ import com.culinary.core.designsystem.theme.CulinaryTextStyles
 import com.culinary.core.domain.model.Ingredient
 import com.culinary.core.domain.model.ArchiveCategory
 import com.culinary.core.domain.model.PendingRecipeImage
-import com.culinary.core.domain.model.RecipeCategory
 import com.culinary.core.domain.model.KitchenRecordKind
 import com.culinary.core.domain.model.RecipeComponentKind
 import com.culinary.core.domain.usecase.recipe.RecipeOption
@@ -108,7 +107,6 @@ fun RecipeEditorRoute(
         onPrepMinutesChange = viewModel::onPrepMinutesChange,
         onCookMinutesChange = viewModel::onCookMinutesChange,
         onAllergenNotesChange = viewModel::onAllergenNotesChange,
-        onOpenCategoryPicker = { picker = EditorPicker.CATEGORY },
         onOpenArchiveCategoryPicker = { picker = EditorPicker.ARCHIVE_CATEGORY },
         onArchiveCategorySelect = { viewModel.onArchiveCategorySelect(it) },
         onYieldAmountChange = viewModel::onYieldAmountChange,
@@ -163,10 +161,6 @@ fun RecipeEditorRoute(
             viewModel.onMinRangeUnitChange(it)
             picker = EditorPicker.NONE
         },
-        onSelectCategory = {
-            viewModel.onCategoryChange(it)
-            picker = EditorPicker.NONE
-        },
         onSelectArchiveCategory = {
             viewModel.onArchiveCategorySelect(it)
             picker = EditorPicker.NONE
@@ -200,7 +194,6 @@ private enum class EditorPicker {
     YIELD_UNIT,
     MIN_RANGE_UNIT,
     LINE_UNIT,
-    CATEGORY,
     ARCHIVE_CATEGORY,
     INGREDIENT,
     RECIPE,
@@ -217,7 +210,6 @@ private fun RecipeEditorDialogs(
     onSelectLineUnit: (UnitModel) -> Unit,
     onSelectYieldUnit: (UnitModel) -> Unit,
     onSelectMinRangeUnit: (UnitModel) -> Unit,
-    onSelectCategory: (RecipeCategory) -> Unit,
     onSelectArchiveCategory: (String) -> Unit,
     onSelectIngredient: (Ingredient) -> Unit,
     onSelectOption: (RecipeOption) -> Unit,
@@ -249,13 +241,6 @@ private fun RecipeEditorDialogs(
                 units = state.units,
                 selectedId = state.lines.firstOrNull { it.key == lineUnitKey }?.unit?.id?.value,
                 onSelect = onSelectLineUnit,
-                onDismiss = onDismiss,
-            )
-
-        EditorPicker.CATEGORY ->
-            CategoryPickerDialog(
-                selected = state.category,
-                onSelect = onSelectCategory,
                 onDismiss = onDismiss,
             )
 
@@ -321,7 +306,6 @@ private fun RecipeEditorScreen(
     onHeroClear: () -> Unit,
     onNoteImage: (PendingRecipeImage) -> Unit,
     onRemoveNoteImage: (Int) -> Unit,
-    onOpenCategoryPicker: () -> Unit,
     onOpenArchiveCategoryPicker: () -> Unit,
     onArchiveCategorySelect: (String?) -> Unit,
     onYieldAmountChange: (String) -> Unit,
@@ -402,7 +386,6 @@ private fun RecipeEditorScreen(
                 onPrepMinutesChange = onPrepMinutesChange,
                 onCookMinutesChange = onCookMinutesChange,
                 onAllergenNotesChange = onAllergenNotesChange,
-                onOpenCategoryPicker = onOpenCategoryPicker,
                 onYieldAmountChange = onYieldAmountChange,
                 onOpenYieldUnit = onOpenYieldUnit,
                 onMinRangeAmountChange = onMinRangeAmountChange,
@@ -519,7 +502,6 @@ internal fun RecipeEditorForm(
             onNameChange = onNameChange,
             onEnglishNameChange = onEnglishNameChange,
             onDescriptionChange = onDescriptionChange,
-            onOpenCategoryPicker = onOpenCategoryPicker,
             onOpenArchiveCategoryPicker = onOpenArchiveCategoryPicker,
             onArchiveCategorySelect = onArchiveCategorySelect,
             onYieldAmountChange = onYieldAmountChange,
@@ -635,7 +617,6 @@ private fun RecipeBasics(
         Spacer(modifier = Modifier.height(CulinarySpacing.lg))
         RecipeClassificationSelector(
             state = state,
-            onOpenRecipeType = onOpenCategoryPicker,
             onSelectCategory = onArchiveCategorySelect,
         )
         Spacer(modifier = Modifier.height(CulinarySpacing.lg))
@@ -655,7 +636,6 @@ private fun RecipeBasics(
 @Composable
 private fun RecipeClassificationSelector(
     state: RecipeEditorUiState,
-    onOpenRecipeType: () -> Unit,
     onSelectCategory: (String?) -> Unit,
 ) {
     val path = buildList {
@@ -672,22 +652,6 @@ private fun RecipeClassificationSelector(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Spacer(modifier = Modifier.height(CulinarySpacing.xs))
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(vertical = CulinarySpacing.xs),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                text = "菜谱类型",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.weight(1f),
-            )
-            CulinaryTextButton(
-                text = recipeCategoryLabel(state.category),
-                onClick = onOpenRecipeType,
-            )
-        }
-        CulinaryRule()
         if (state.categories.isEmpty()) {
             Text(
                 text = "分类数据尚未加载。",
@@ -1370,24 +1334,6 @@ private fun ArchiveCategoryPickerDialog(
     )
 }
 
-@Composable
-private fun CategoryPickerDialog(
-    selected: RecipeCategory,
-    onSelect: (RecipeCategory) -> Unit,
-    onDismiss: () -> Unit,
-) {
-    val categories = RecipeCategory.entries
-    PickerDialog(
-        title = stringResource(R.string.recipes_category_picker_title),
-        items =
-            categories.map { category ->
-                PickerItem(label = recipeCategoryLabel(category), selected = category == selected)
-            },
-        onSelect = { index -> onSelect(categories[index]) },
-        onDismiss = onDismiss,
-        cancelLabel = stringResource(R.string.recipes_cancel),
-    )
-}
 
 private data class PickerItem(
     val label: String,
