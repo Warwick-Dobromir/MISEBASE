@@ -424,7 +424,7 @@ fun ArchiveEditorReorderableRow(
                     try {
                         while (true) {
                             val event = awaitPointerEvent(PointerEventPass.Initial)
-                            val change = event.changes.firstOrNull { it.id == longPress.id } ?: break
+                            val change = event.changes.firstOrNull { it.id == down.id } ?: break
                             if (!change.pressed) break
                             val deltaY = change.position.y - previousY
                             previousY = change.position.y
