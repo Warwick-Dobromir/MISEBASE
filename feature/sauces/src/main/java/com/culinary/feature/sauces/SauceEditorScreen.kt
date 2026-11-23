@@ -411,7 +411,7 @@ internal data class SauceEditorActions(
     val onToggleOptional: (String) -> Unit,
     val onRemoveLine: (String) -> Unit,
     val onMoveLine: (Int, Int) -> Unit,
-    val onAddIngredient: (com.culinary.core.domain.model.Ingredient) -> Unit,
+    val onAddIngredient: () -> Unit,
     val onStepTitleChange: (String, String) -> Unit,
     val onStepBodyChange: (String, String) -> Unit,
     val onStepTimeChange: (String, Int) -> Unit,
