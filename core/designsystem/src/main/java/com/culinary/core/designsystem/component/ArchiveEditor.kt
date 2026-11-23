@@ -6,8 +6,8 @@ import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
-import androidx.compose.foundation.gestures.awaitLongPressOrCancellation
 import androidx.compose.ui.input.pointer.PointerEventPass
+import kotlinx.coroutines.withTimeoutOrNull
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -417,15 +417,31 @@ fun ArchiveEditorReorderableRow(
                         requireUnconsumed = false,
                         pass = PointerEventPass.Initial,
                     )
-                    val longPress = awaitLongPressOrCancellation(
-                        pointerId = down.id,
-                        pass = PointerEventPass.Initial,
-                    )
-                    if (longPress != null) {
+                    var cancelledBeforeLongPress = false
+                    var longPressPosition = down.position
+                    withTimeoutOrNull(viewConfiguration.longPressTimeoutMillis) {
+                        while (true) {
+                            val event = awaitPointerEvent(PointerEventPass.Initial)
+                            val change = event.changes.firstOrNull { it.id == down.id }
+                            if (change == null || !change.pressed) {
+                                cancelledBeforeLongPress = true
+                                break
+                            }
+                            val dx = change.position.x - down.position.x
+                            val dy = change.position.y - down.position.y
+                            val touchSlop = viewConfiguration.touchSlop
+                            if (dx * dx + dy * dy > touchSlop * touchSlop) {
+                                cancelledBeforeLongPress = true
+                                break
+                            }
+                            longPressPosition = change.position
+                        }
+                    }
+                    if (!cancelledBeforeLongPress && down.pressed) {
                         dragging = true
                         dragOffsetY = 0f
                         edgeOverdragY = 0f
-                        var previousPosition = longPress.position
+                        var previousPosition = longPressPosition
                         try {
                             while (true) {
                                 val event = awaitPointerEvent(PointerEventPass.Initial)
