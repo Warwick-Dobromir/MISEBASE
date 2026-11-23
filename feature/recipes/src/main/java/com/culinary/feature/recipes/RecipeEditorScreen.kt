@@ -356,6 +356,7 @@ private fun RecipeEditorScreen(
             canSave = !state.isLoading && (state.isDirty || state.isNew),
             onBack = { if (state.isDirty) showDiscard = true else onCancel() },
             onSave = onSave,
+            centerTitle = true,
         )
         state.error?.let { message ->
             ErrorBanner(
