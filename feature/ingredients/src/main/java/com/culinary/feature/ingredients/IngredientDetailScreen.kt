@@ -25,6 +25,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.culinary.core.designsystem.component.ArchiveDetailBar
 import com.culinary.core.designsystem.component.ArchiveDetailFooter
 import com.culinary.core.designsystem.component.ArchiveDetailHeading
+import com.culinary.core.designsystem.component.ArchiveModuleHeader
 import com.culinary.core.designsystem.component.ArchiveRelatedRow
 import com.culinary.core.designsystem.component.ArchiveWideImage
 import com.culinary.core.designsystem.component.CulinaryRule
@@ -114,7 +115,7 @@ internal fun IngredientDetailContent(
                 ArchiveWideImage(bytes = bytes, caption = null)
             }
 
-            IngredientSectionHeading("BASIC INFORMATION", "基本信息")
+            ArchiveModuleHeader(number = "01", english = "BASIC INFORMATION", chinese = "基本信息")
             IngredientBasicInformation(
                 category = detailState.categoryPath.joinToString(" / ").ifBlank { ingredient.category ?: "未分类" },
                 englishName = ingredient.englishName,
@@ -128,12 +129,14 @@ internal fun IngredientDetailContent(
                 Text(if (ingredient.isActive) "在用 · 点击归档" else "已归档 · 点击恢复在用", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.secondary)
             }
             CulinaryRule()
-            IngredientSectionHeading("FLAVOR PROFILE", "风味与特性")
+            Spacer(modifier = Modifier.height(CulinarySpacing.xl))
+            ArchiveModuleHeader(number = "02", english = "FLAVOR PROFILE", chinese = "风味与特性")
             Text(ingredient.flavorProfile?.takeIf { it.isNotBlank() } ?: "尚未填写", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.padding(vertical = CulinarySpacing.sm))
-            CulinaryRule()
-            IngredientSectionHeading("CULINARY USE", "烹饪用途")
+            Spacer(modifier = Modifier.height(CulinarySpacing.xl))
+            ArchiveModuleHeader(number = "03", english = "CULINARY USE", chinese = "烹饪用途")
             Text(ingredient.culinaryUse?.takeIf { it.isNotBlank() } ?: "尚未填写", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.padding(vertical = CulinarySpacing.sm))
-            CulinaryRule()
+            Spacer(modifier = Modifier.height(CulinarySpacing.xl))
+            ArchiveModuleHeader(number = "04", english = "DETAILS", chinese = "补充信息")
             IngredientFieldSection(fields = listOf("时令" to ingredient.seasonality, "产地" to ingredient.origin, "挑选" to ingredient.selectionNotes, "储存" to ingredient.storageNotes, "预处理" to ingredient.prepNotes, "过敏原提示" to ingredient.allergenNotes))
 
             if (detail.conversions.isNotEmpty()) {
@@ -141,7 +144,7 @@ internal fun IngredientDetailContent(
             }
 
             if (sauceRelations.isNotEmpty() || recipeRelations.isNotEmpty()) {
-                IngredientSectionHeading("RELATED ARCHIVES", "关联档案")
+                ArchiveModuleHeader(number = "05", english = "RELATED ARCHIVES", chinese = "关联档案")
                 if (sauceRelations.isNotEmpty()) {
                     Text(
                         "关联酱汁",
@@ -267,23 +270,6 @@ private fun IngredientFieldSection(fields: List<Pair<String, String?>>) {
 }
 
 @Composable
-private fun IngredientSectionHeading(english: String, chinese: String) {
-    Column(modifier = Modifier.fillMaxWidth().padding(top = CulinarySpacing.lg, bottom = CulinarySpacing.sm)) {
-        CulinaryRule()
-        Text(
-            english,
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.secondary,
-            modifier = Modifier.padding(top = CulinarySpacing.md),
-        )
-        Text(
-            chinese,
-            style = MaterialTheme.typography.titleSmall,
-            color = MaterialTheme.colorScheme.onSurface,
-        )
-    }
-}
-
 @Composable
 private fun IngredientConversions(conversions: List<IngredientConversionView>) {
     IngredientSectionHeading("CONVERSIONS", "换算依据")
