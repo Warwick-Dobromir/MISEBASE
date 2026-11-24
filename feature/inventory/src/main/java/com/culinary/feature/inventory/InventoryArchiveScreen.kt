@@ -68,11 +68,11 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import javax.inject.Inject
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import javax.inject.Inject
 
-/** 档案详情：身份、库存、存储、采购换算、批次与流水。 */
+/** 库存档案详情状态与采购商品关联操作。 */
 data class ArchiveDetailUiState(
     val detail: InventoryArchiveDetail? = null,
     val locationNames: Map<String, String> = emptyMap(),
@@ -407,7 +407,11 @@ private fun ArchiveDetailScreen(
                                 unit = detail.archive.stockUnit.symbol,
                                 amountStyle = CulinaryTextStyles.numeralL,
                             )
-                            Text("当前库存", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(
+                                "当前库存",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
                         }
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
@@ -415,18 +419,29 @@ private fun ArchiveDetailScreen(
                                 style = CulinaryTextStyles.numeralL,
                                 color = MaterialTheme.colorScheme.onSurface,
                             )
-                            Text("有效批次", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(
+                                "有效批次",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
                         }
                     }
                     Spacer(modifier = Modifier.height(CulinarySpacing.md))
                     Row(horizontalArrangement = Arrangement.spacedBy(CulinarySpacing.md)) {
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = detail.archive.minimumStock?.let { "${formatAmount(it)} ${detail.archive.stockUnit.symbol}" } ?: "未设置",
+                                text =
+                                    detail.archive.minimumStock?.let {
+                                        "${formatAmount(it)} ${detail.archive.stockUnit.symbol}"
+                                    } ?: "未设置",
                                 style = MaterialTheme.typography.titleLarge,
                                 color = MaterialTheme.colorScheme.onSurface,
                             )
-                            Text("库存预警线", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(
+                                "库存预警线",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
                         }
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
@@ -434,7 +449,11 @@ private fun ArchiveDetailScreen(
                                 style = MaterialTheme.typography.titleLarge,
                                 color = MaterialTheme.colorScheme.onSurface,
                             )
-                            Text("主要存放位置", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(
+                                "主要存放位置",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
                         }
                     }
                     Spacer(modifier = Modifier.height(CulinarySpacing.lg))
