@@ -113,6 +113,7 @@ class ScanViewModel
                             scanning = state.hasCamera && state.cameraAccess == CameraAccessState.GRANTED && !state.manualEntry,
                             torchOn = false,
                             knownProduct = known,
+                            knownProductCapture = normalizedCapture,
                             pendingCapture = null,
                         )
                     }
@@ -146,9 +147,23 @@ class ScanViewModel
                     scanning = state.hasCamera && state.cameraAccess == CameraAccessState.GRANTED && !state.manualEntry,
                     pendingCapture = null,
                     knownProduct = null,
+                    knownProductCapture = null,
                     status = null,
                     error = null,
                     manualError = null,
+                )
+            }
+        }
+
+        /** 用户主动点按已识别商品提示时，进入既有确认/入库流程。 */
+        fun onKnownProductSelected() {
+            val capture = _uiState.value.knownProductCapture ?: return
+            _uiState.update { state ->
+                state.copy(
+                    scanning = false,
+                    knownProduct = null,
+                    knownProductCapture = null,
+                    pendingCapture = capture,
                 )
             }
         }
