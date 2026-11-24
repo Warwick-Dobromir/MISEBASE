@@ -391,12 +391,6 @@ private fun ArchiveDetailScreen(
                             text = InventoryText.stockStatus(detail.row.status),
                             tone = InventoryText.stockTone(detail.row.status),
                         )
-                        Spacer(modifier = Modifier.weight(1f))
-                        Text(
-                            text = "库存编号 · ${detail.archive.id}",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
                     }
                     CulinaryRule()
                     Spacer(modifier = Modifier.height(CulinarySpacing.lg))
