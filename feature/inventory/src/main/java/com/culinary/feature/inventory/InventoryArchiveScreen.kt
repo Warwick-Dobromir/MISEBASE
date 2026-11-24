@@ -560,6 +560,132 @@ private fun ArchiveDetailScreen(
     }
 }
 
+private const val LEDGER_LIMIT = 10
+
+@Composable
+private fun LinkProductDialog(
+    state: ArchiveDetailUiState,
+    unitSymbol: String,
+    onDismiss: () -> Unit,
+    onSelectProduct: (String) -> Unit,
+    onRatioChange: (String) -> Unit,
+    onDefaultChange: (Boolean) -> Unit,
+    onConfirm: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        shape = MaterialTheme.shapes.extraSmall,
+        containerColor = MaterialTheme.colorScheme.surface,
+        title = {
+            Text(
+                text = "关联采购商品",
+                style = MaterialTheme.typography.headlineSmall,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+        },
+        text = {
+            Column(
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .heightIn(max = 420.dp)
+                        .verticalScroll(rememberScrollState()),
+            ) {
+                if (state.products.isEmpty()) {
+                    Text(
+                        text = "没有可关联的采购商品，请先在商品库建立商品。",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(vertical = CulinarySpacing.sm),
+                    )
+                } else {
+                    state.products.forEach { product ->
+                        Row(
+                            modifier =
+                                Modifier
+                                    .fillMaxWidth()
+                                    .clickable(role = Role.Button) { onSelectProduct(product.id.value) }
+                                    .defaultMinSize(minHeight = 48.dp)
+                                    .padding(vertical = CulinarySpacing.xs),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = product.name,
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    color =
+                                        if (product.id.value == state.linkProductId) {
+                                            MaterialTheme.colorScheme.secondary
+                                        } else {
+                                            MaterialTheme.colorScheme.onSurface
+                                        },
+                                )
+                                Text(
+                                    text = "库存单位 ${product.stockUnit.symbol}",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                            if (product.id.value == state.linkProductId) {
+                                Text(
+                                    text = "已选",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.secondary,
+                                )
+                            }
+                        }
+                        CulinaryRule()
+                    }
+                }
+                CulinaryTextField(
+                    value = state.linkRatio,
+                    onValueChange = onRatioChange,
+                    label = "换算比（1 个商品 = ? $unitSymbol）",
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    modifier = Modifier.padding(top = CulinarySpacing.sm),
+                )
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(top = CulinarySpacing.xs),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(text = "设为默认商品", style = MaterialTheme.typography.bodyLarge)
+                        Text(
+                            text = "同一档案可关联多个商品，默认商品用于入库时预选。",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    Switch(checked = state.linkIsDefault, onCheckedChange = onDefaultChange)
+                }
+                state.linkError?.let { message ->
+                    Text(
+                        text = message,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = CulinaryColorScheme.current.danger,
+                        modifier = Modifier.padding(top = CulinarySpacing.xs),
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            CulinaryTextButton(
+                text = if (state.isLinking) "关联中" else "关联",
+                onClick = onConfirm,
+                enabled = !state.isLinking,
+            )
+        },
+        dismissButton = {
+            CulinaryTextButton(
+                text = "取消",
+                onClick = onDismiss,
+                enabled = !state.isLinking,
+            )
+        },
+    )
+}
+
 @Composable
 private fun ArchiveLinkRow(
     link: ArchiveProductLink,
