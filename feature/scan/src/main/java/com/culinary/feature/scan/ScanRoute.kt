@@ -79,6 +79,7 @@ fun ScanRoute(
         onManualCodeChange = viewModel::onManualCodeChange,
         onSubmitManualCode = viewModel::onSubmitManualCode,
         onToggleTorch = viewModel::onToggleTorch,
+        onKnownProductClick = viewModel::onKnownProductSelected,
         onResumeScanning = viewModel::onResumeScanning,
         onBack = onBack,
         onDismissTorchNotice = viewModel::onTorchNoticeShown,
