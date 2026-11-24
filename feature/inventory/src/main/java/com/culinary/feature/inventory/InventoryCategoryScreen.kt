@@ -2,6 +2,15 @@ package com.culinary.feature.inventory
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
+import androidx.compose.foundation.gestures.scrollBy
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.input.pointer.consume
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
+import kotlinx.coroutines.launch
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -276,6 +285,17 @@ private fun InventoryCategoryScreen(
     val snackbar = remember { SnackbarHostState() }
     val currentCategoryId = state.categoryId
     val sortDirty = sorting && workingOrder != savedOrder
+    val scope = rememberCoroutineScope()
+    val latestOrder = rememberUpdatedState(workingOrder)
+    val moveCategory = rememberUpdatedState(newValue = { id: String, delta: Int ->
+        val from = latestOrder.value.indexOf(id)
+        val to = from + delta
+        if (from >= 0 && to in latestOrder.value.indices) {
+            workingOrder = latestOrder.value.toMutableList().apply {
+                add(to, removeAt(from))
+            }
+        }
+    })
 
     LaunchedEffect(state.children.map { it.category.id }) {
         val ids = state.children.map { it.category.id }
@@ -432,8 +452,43 @@ private fun InventoryCategoryScreen(
                                 workingOrder.mapNotNull { id -> state.children.firstOrNull { it.category.id == id } }
                             } else state.children
                             items(orderedChildren, key = { "category-${it.category.id}" }) { node ->
+                                var rowHeightPx by remember(node.category.id) { mutableIntStateOf(0) }
+                                var dragRemainder by remember(node.category.id) { mutableFloatStateOf(0f) }
                                 Row(
-                                    modifier = Modifier.fillMaxWidth(),
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .onSizeChanged { rowHeightPx = it.height }
+                                        .pointerInput(sorting, node.category.id) {
+                                            if (sorting) {
+                                                detectDragGesturesAfterLongPress(
+                                                    onDragStart = { dragRemainder = 0f },
+                                                    onDragEnd = { dragRemainder = 0f },
+                                                    onDragCancel = { dragRemainder = 0f },
+                                                    onDrag = { change, amount ->
+                                                        change.consume()
+                                                        dragRemainder += amount.y
+                                                        val threshold = rowHeightPx.coerceAtLeast(1).toFloat()
+                                                        while (dragRemainder >= threshold) {
+                                                            moveCategory.value(node.category.id, 1)
+                                                            dragRemainder -= threshold
+                                                        }
+                                                        while (dragRemainder <= -threshold) {
+                                                            moveCategory.value(node.category.id, -1)
+                                                            dragRemainder += threshold
+                                                        }
+                                                        val edge = threshold * 0.22f
+                                                        when {
+                                                            change.position.y < edge -> scope.launch {
+                                                                listState.scrollBy(-24f)
+                                                            }
+                                                            change.position.y > threshold - edge -> scope.launch {
+                                                                listState.scrollBy(24f)
+                                                            }
+                                                        }
+                                                    },
+                                                )
+                                            }
+                                        },
                                     verticalAlignment = Alignment.CenterVertically,
                                 ) {
                                     Box(Modifier.weight(1f)) {
@@ -448,18 +503,6 @@ private fun InventoryCategoryScreen(
                                         )
                                     }
                                     if (sorting) {
-                                        TextButton(onClick = {
-                                            val from = workingOrder.indexOf(node.category.id)
-                                            if (from > 0) workingOrder = workingOrder.toMutableList().apply {
-                                                add(from - 1, removeAt(from))
-                                            }
-                                        }) { Text("↑") }
-                                        TextButton(onClick = {
-                                            val from = workingOrder.indexOf(node.category.id)
-                                            if (from in 0 until workingOrder.lastIndex) workingOrder = workingOrder.toMutableList().apply {
-                                                add(from + 1, removeAt(from))
-                                            }
-                                        }) { Text("↓") }
                                         TextButton(onClick = {
                                             renameId = node.category.id
                                             renameName = node.category.name
