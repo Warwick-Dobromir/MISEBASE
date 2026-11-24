@@ -50,6 +50,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.layout.positionInWindow
@@ -349,6 +350,8 @@ fun ArchiveEditorReorderableRow(
     var edgeOverdragY by remember { mutableFloatStateOf(0f) }
     var rowHeightPx by remember { mutableIntStateOf(0) }
     var rowTopInWindowPx by remember { mutableFloatStateOf(0f) }
+    var rowCoordinates by remember { mutableStateOf<LayoutCoordinates?>(null) }
+    val currentRowCoordinates by rememberUpdatedState(rowCoordinates)
     val density = androidx.compose.ui.platform.LocalDensity.current
     val screenHeightDp = androidx.compose.ui.platform.LocalConfiguration.current.screenHeightDp
     val screenHeightPx = with(density) { screenHeightDp.dp.toPx() }
@@ -404,15 +407,21 @@ fun ArchiveEditorReorderableRow(
     Box(
         modifier = modifier
             .onSizeChanged { rowHeightPx = it.height }
-            .onGloballyPositioned { rowTopInWindowPx = it.positionInWindow().y }
+            .onGloballyPositioned {
+                rowCoordinates = it
+                rowTopInWindowPx = it.positionInWindow().y
+            }
             .pointerInput(scrollState) {
                 awaitEachGesture {
                     val down = awaitFirstDown(
                         requireUnconsumed = false,
                         pass = PointerEventPass.Initial,
                     )
+                    val downCoordinates = currentRowCoordinates?.takeIf { it.isAttached }
+                    if (downCoordinates == null) return@awaitEachGesture
                     var cancelledBeforeLongPress = false
-                    var longPressPosition = down.position
+                    val downScreenPosition = downCoordinates.localToScreen(down.position)
+                    var longPressScreenPosition = downScreenPosition
                     withTimeoutOrNull(viewConfiguration.longPressTimeoutMillis) {
                         while (true) {
                             val event = awaitPointerEvent(PointerEventPass.Initial)
@@ -421,26 +430,34 @@ fun ArchiveEditorReorderableRow(
                                 cancelledBeforeLongPress = true
                                 break
                             }
-                            val dx = change.position.x - down.position.x
-                            val dy = change.position.y - down.position.y
+                            val coordinates = currentRowCoordinates?.takeIf { it.isAttached }
+                            if (coordinates == null) {
+                                cancelledBeforeLongPress = true
+                                break
+                            }
+                            val screenPosition = coordinates.localToScreen(change.position)
+                            val dx = screenPosition.x - downScreenPosition.x
+                            val dy = screenPosition.y - downScreenPosition.y
                             val touchSlop = viewConfiguration.touchSlop
                             if (dx * dx + dy * dy > touchSlop * touchSlop) {
                                 cancelledBeforeLongPress = true
                                 break
                             }
-                            longPressPosition = change.position
+                            longPressScreenPosition = screenPosition
                         }
                     }
                     if (!cancelledBeforeLongPress && down.pressed) {
                         dragging = true
                         dragOffsetY = 0f
                         edgeOverdragY = 0f
-                        var previousPosition = longPressPosition
+                        var previousScreenY = longPressScreenPosition.y
                         try {
                             while (true) {
                                 val event = awaitPointerEvent(PointerEventPass.Initial)
                                 val change = event.changes.firstOrNull { it.id == down.id } ?: break
-                                val deltaY = change.position.y - previousPosition.y
+                                val coordinates = currentRowCoordinates?.takeIf { it.isAttached } ?: break
+                                val currentScreenY = coordinates.localToScreen(change.position).y
+                                val deltaY = currentScreenY - previousScreenY
                                 if (deltaY != 0f) {
                                     change.consume()
                                     val next = archiveEditorDragOffsetAfterDelta(
@@ -455,7 +472,7 @@ fun ArchiveEditorReorderableRow(
                                     dragOffsetY = next.offsetPx
                                     edgeOverdragY = next.edgeOverdragPx
                                 }
-                                previousPosition = change.position
+                                previousScreenY = currentScreenY
                                 if (!change.pressed) break
                             }
                         } finally {
