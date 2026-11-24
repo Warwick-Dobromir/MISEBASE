@@ -197,7 +197,7 @@ fun InventoryCategoryRoute(
         onRenameCategory = viewModel::renameCategory,
         onDeleteCategory = viewModel::deleteCategory,
         onSaveOrder = viewModel::saveOrder,
-        onRetry = viewModel::load,
+        onRetry = { viewModel.load() },
     )
 }
 
@@ -245,6 +245,9 @@ private fun InventoryCategoryScreen(
             workingOrder = workingOrder.filter { it in valid }
             savedOrder = savedOrder.filter { it in valid }
         }
+    }
+    LaunchedEffect(state.message) {
+        if (state.message == "分类顺序已保存") savedOrder = workingOrder
     }
     LaunchedEffect(query, searchOpen) { visibleLimit = 20; onQuery(if (searchOpen) query else "") }
     BackHandler(enabled = searchOpen) { searchOpen = false; query = "" }
@@ -457,16 +460,26 @@ private fun InventoryCategoryRow(
     onMove: (Int) -> Unit,
 ) {
     var rowSize by remember { mutableStateOf(IntSize.Zero) }
+    var dragDistance by remember(node.category.id) { mutableFloatStateOf(0f) }
     Row(
         Modifier.fillMaxWidth().onSizeChanged { rowSize = it }
             .clickable(enabled = !sorting, onClick = onOpen)
             .pointerInput(sorting, node.category.id, rowSize) {
                 if (sorting) detectDragGesturesAfterLongPress(
+                    onDragStart = { dragDistance = 0f },
+                    onDragEnd = { dragDistance = 0f },
+                    onDragCancel = { dragDistance = 0f },
                     onDrag = { change, amount ->
                         change.consume()
-                        if (rowSize.height > 0) {
-                            if (amount.y > rowSize.height * .45f) onMove(1)
-                            if (amount.y < -rowSize.height * .45f) onMove(-1)
+                        dragDistance += amount.y
+                        val threshold = (rowSize.height * .55f).coerceAtLeast(1f)
+                        while (dragDistance >= threshold) {
+                            onMove(1)
+                            dragDistance -= threshold
+                        }
+                        while (dragDistance <= -threshold) {
+                            onMove(-1)
+                            dragDistance += threshold
                         }
                     },
                 )
