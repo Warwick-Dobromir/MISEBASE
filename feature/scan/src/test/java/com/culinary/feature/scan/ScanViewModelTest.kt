@@ -119,16 +119,16 @@ class ScanViewModelTest {
     }
 
     @Test
-    fun `resume inside the debounce window still rejects the same code`() {
+    fun `resume after returning from confirm immediately accepts the same code`() {
         val viewModel = grantedViewModel()
         viewModel.onCameraFrame(cameraValue("code-a"))
         viewModel.onCaptureConsumed()
 
         viewModel.onResumeScanning()
-        nowMillis += 1_000
+        nowMillis += 100
         viewModel.onCameraFrame(cameraValue("code-a"))
 
-        assertThat(viewModel.uiState.value.pendingCapture).isNull()
+        assertThat(viewModel.uiState.value.pendingCapture?.normalizedValue).isEqualTo("code-a")
     }
 
     @Test
