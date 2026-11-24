@@ -40,6 +40,7 @@ data class ScanUiState(
     val status: String? = null,
     val pendingCapture: ScanCapture? = null,
     val knownProduct: ScanKnownProduct? = null,
+    val knownProductCapture: ScanCapture? = null,
 ) {
     /** 是否应展示相机预览：必须有相机、已授权、未切到手工输入。 */
     val showCamera: Boolean
