@@ -25,13 +25,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.em
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.culinary.R
+import com.culinary.core.designsystem.component.BrandPageHeader
 import com.culinary.core.designsystem.component.CulinaryRule
 import com.culinary.core.designsystem.icon.CulinaryIcons
 import com.culinary.core.designsystem.theme.CulinarySpacing
@@ -109,46 +108,10 @@ internal fun KitchenScreen(
 /** 顶部：小号 MISEBASE、厨房标题与 CULINARY 副标题。 */
 @Composable
 private fun KitchenHeader() {
-    Row(
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .padding(
-                    start = CulinarySpacing.pageHorizontal,
-                    end = CulinarySpacing.xs,
-                    top = CulinarySpacing.sm,
-                    bottom = CulinarySpacing.sm,
-                ).defaultMinSize(minHeight = 92.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = stringResource(R.string.home_brand),
-                style =
-                    MaterialTheme.typography.labelSmall.copy(
-                        fontWeight = FontWeight.SemiBold,
-                        letterSpacing = 0.18.em,
-                    ),
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            Spacer(modifier = Modifier.height(CulinarySpacing.xs))
-            Text(
-                text = stringResource(R.string.kitchen_title),
-                style = CulinaryTextStyles.pageTitle,
-                color = MaterialTheme.colorScheme.onSurface,
-            )
-            Spacer(modifier = Modifier.height(2.dp))
-            Text(
-                text = stringResource(R.string.kitchen_subtitle),
-                style =
-                    MaterialTheme.typography.labelSmall.copy(
-                        fontWeight = FontWeight.Normal,
-                        letterSpacing = 0.16.em,
-                    ),
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-    }
+    BrandPageHeader(
+        title = stringResource(R.string.kitchen_title),
+        supporting = stringResource(R.string.kitchen_subtitle),
+    )
 }
 
 @Composable

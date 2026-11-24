@@ -38,12 +38,12 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.culinary.R
 import com.culinary.core.common.ErrorCode
+import com.culinary.core.designsystem.component.BrandPageHeader
 import com.culinary.core.designsystem.component.ConfirmDialog
 import com.culinary.core.designsystem.component.CulinaryButton
 import com.culinary.core.designsystem.component.CulinaryButtonVariant
 import com.culinary.core.designsystem.component.CulinaryInfoRow
 import com.culinary.core.designsystem.component.CulinaryRule
-import com.culinary.core.designsystem.component.PageHeader
 import com.culinary.core.designsystem.component.ResultPanel
 import com.culinary.core.designsystem.component.SectionHeader
 import com.culinary.core.designsystem.component.StatusTone
@@ -137,11 +137,11 @@ internal fun SettingsScreen(
                 .verticalScroll(rememberScrollState())
                 .padding(bottom = CulinarySpacing.xl),
     ) {
-        PageHeader(
-            eyebrow = "PREFERENCES",
-            title = stringResource(R.string.destination_settings),
-            supporting = stringResource(R.string.settings_intro),
+        BrandPageHeader(
+            title = "我的",
+            supporting = "PREFERENCES",
         )
+        CulinaryRule()
         Column(modifier = Modifier.padding(horizontal = CulinarySpacing.pageHorizontal)) {
             BackupSection(state = state, onBackupClick = onBackupClick)
             RestoreSection(

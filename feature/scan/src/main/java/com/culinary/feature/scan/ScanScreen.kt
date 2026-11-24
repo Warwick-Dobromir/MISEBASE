@@ -26,10 +26,12 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.res.stringResource
+import com.culinary.core.designsystem.component.BrandPageHeader
 import com.culinary.core.designsystem.component.CulinaryButton
 import com.culinary.core.designsystem.component.CulinaryButtonVariant
 import com.culinary.core.designsystem.component.CulinaryTextButton
 import com.culinary.core.designsystem.component.CulinaryTextField
+import com.culinary.core.designsystem.component.CulinaryRule
 import com.culinary.core.designsystem.component.ErrorBanner
 import com.culinary.core.designsystem.icon.CulinaryIcons
 import com.culinary.core.designsystem.theme.CulinarySpacing
@@ -59,8 +61,14 @@ internal fun ScanScreen(
     cameraContent: @Composable () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Box(modifier = modifier.fillMaxSize()) {
-        when {
+    Column(modifier = modifier.fillMaxSize()) {
+        BrandPageHeader(
+            title = "扫码",
+            supporting = "SCAN",
+        )
+        CulinaryRule()
+        Box(modifier = Modifier.fillMaxWidth().weight(1f)) {
+            when {
             state.showCamera -> {
                 cameraContent()
                 ScanFrameOverlay(modifier = Modifier.fillMaxSize())
@@ -116,6 +124,7 @@ internal fun ScanScreen(
                     color = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier.padding(CulinarySpacing.md),
                 )
+            }
             }
         }
     }

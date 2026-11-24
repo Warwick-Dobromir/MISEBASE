@@ -2,6 +2,7 @@ package com.culinary.core.designsystem.component
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
@@ -16,11 +17,70 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.em
 import com.culinary.core.designsystem.theme.CulinarySizes
 import com.culinary.core.designsystem.theme.CulinarySpacing
 import com.culinary.core.designsystem.theme.CulinaryTextStyles
+
+/**
+ * 一级页面统一品牌头：与厨房首页同一网格、字号、字重和 92dp 头部高度。
+ * 右侧动作仅供库存等确有页面级操作的一级页面使用。
+ */
+@Composable
+fun BrandPageHeader(
+    title: String,
+    supporting: String,
+    modifier: Modifier = Modifier,
+    actions: (@Composable RowScope.() -> Unit)? = null,
+) {
+    Row(
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .defaultMinSize(minHeight = 92.dp)
+                .padding(
+                    start = CulinarySpacing.pageHorizontal,
+                    end = CulinarySpacing.xs,
+                    top = CulinarySpacing.sm,
+                    bottom = CulinarySpacing.sm,
+                ),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = "MISEBASE",
+                style =
+                    MaterialTheme.typography.labelSmall.copy(
+                        fontWeight = FontWeight.SemiBold,
+                        letterSpacing = 0.18.em,
+                    ),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Spacer(modifier = Modifier.height(CulinarySpacing.xs))
+            Text(
+                text = title,
+                style = CulinaryTextStyles.pageTitle,
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Spacer(modifier = Modifier.height(2.dp))
+            Text(
+                text = supporting,
+                style =
+                    MaterialTheme.typography.labelSmall.copy(
+                        fontWeight = FontWeight.Normal,
+                        letterSpacing = 0.16.em,
+                    ),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        if (actions != null) actions()
+    }
+}
 
 /**
  * 页面头部（MB-UI-001 §3.4 / §3.5）。

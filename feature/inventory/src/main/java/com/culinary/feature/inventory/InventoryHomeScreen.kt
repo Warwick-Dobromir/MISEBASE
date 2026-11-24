@@ -32,11 +32,11 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
 import com.culinary.core.common.Outcome
 import com.culinary.core.designsystem.component.ArchiveListItem
+import com.culinary.core.designsystem.component.BrandPageHeader
 import com.culinary.core.designsystem.component.CulinaryRule
 import com.culinary.core.designsystem.component.CulinaryTextButton
 import com.culinary.core.designsystem.component.ErrorBanner
 import com.culinary.core.designsystem.component.LoadingRows
-import com.culinary.core.designsystem.component.PageHeader
 import com.culinary.core.designsystem.component.SectionHeader
 import com.culinary.core.designsystem.icon.CulinaryIcons
 import com.culinary.core.designsystem.theme.CulinaryColorScheme
@@ -193,14 +193,14 @@ private fun InventoryHomeScreen(
                     ),
             )
         }
-        PageHeader(
-            eyebrow = "MISEBASE",
+        BrandPageHeader(
             title = "库存",
             supporting = "INVENTORY",
             actions = {
                 CulinaryTextButton(text = "···", onClick = onOpenManagement)
             },
         )
+        CulinaryRule()
         if (state.isLoading) {
             LoadingRows()
         } else {
