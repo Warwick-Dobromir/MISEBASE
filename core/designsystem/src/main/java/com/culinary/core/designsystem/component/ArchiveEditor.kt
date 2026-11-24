@@ -204,13 +204,15 @@ fun ArchiveEditorSectionHeader(
     subtitle: String? = null,
     action: (@Composable () -> Unit)? = null,
     showRule: Boolean = true,
+    topPadding: androidx.compose.ui.unit.Dp = CulinarySpacing.xl,
+    titleTopPadding: androidx.compose.ui.unit.Dp = CulinarySpacing.md,
 ) {
-    Column(modifier = modifier.fillMaxWidth().padding(top = CulinarySpacing.xl, bottom = CulinarySpacing.sm)) {
+    Column(modifier = modifier.fillMaxWidth().padding(top = topPadding, bottom = CulinarySpacing.sm)) {
         if (showRule) {
             CulinaryRule()
         }
         Row(
-            modifier = Modifier.fillMaxWidth().padding(top = CulinarySpacing.md),
+            modifier = Modifier.fillMaxWidth().padding(top = titleTopPadding),
             verticalAlignment = Alignment.Bottom,
         ) {
             Column(modifier = Modifier.weight(1f)) {
