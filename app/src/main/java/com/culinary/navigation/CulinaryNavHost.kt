@@ -141,7 +141,8 @@ fun CulinaryNavHost(
         currentRoute == SaucesRoutes.DETAIL ||
             currentRoute == IngredientsRoutes.DETAIL ||
             currentRoute == IngredientsRoutes.EDIT ||
-            currentRoute == RecipesRoutes.DETAIL
+            currentRoute == RecipesRoutes.DETAIL ||
+            currentRoute == InventoryRoutes.ARCHIVE
     val showBottomBar = topLevel != null
     val archiveSorting = remember { mutableStateOf(false) }
     val archiveBackLabel = remember { mutableStateOf("厨房") }
@@ -620,6 +621,7 @@ private fun NavGraphBuilder.inventoryGraph(navController: NavHostController) {
             onOpenBatch = { batchId -> navController.navigate(InventoryRoutes.batch(batchId)) },
             onOpenBatches = { archiveId -> navController.navigate(InventoryRoutes.batches(archiveId)) },
             onEdit = { archiveId -> navController.navigate(InventoryRoutes.archiveEdit(archiveId)) },
+            onBack = { navController.popBackStack() },
             onReceipt = { archiveId -> navController.navigate(InventoryRoutes.receipt(archiveId)) },
             onIssue = { archiveId -> navController.navigate(InventoryRoutes.issue(archiveId)) },
             onStocktake = { archiveId -> navController.navigate(InventoryRoutes.stocktake(scope = "ARCHIVE", scopeRef = archiveId)) },
