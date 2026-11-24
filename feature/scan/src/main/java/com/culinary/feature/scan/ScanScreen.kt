@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.CircleShape
+import coil3.compose.AsyncImage
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -20,6 +21,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.layout.size
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
@@ -95,6 +98,28 @@ internal fun ScanScreen(
         }
 
         Column(modifier = Modifier.align(Alignment.TopCenter).fillMaxWidth()) {
+            state.knownProduct?.let { product ->
+                Row(
+                    modifier = Modifier.fillMaxWidth()
+                        .padding(horizontal = CulinarySpacing.md, vertical = CulinarySpacing.sm)
+                        .background(Color.White.copy(alpha = 0.96f), androidx.compose.foundation.shape.RoundedCornerShape(8.dp))
+                        .padding(CulinarySpacing.sm),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(CulinarySpacing.sm),
+                ) {
+                    product.imagePath?.let { path ->
+                        AsyncImage(
+                            model = java.io.File(path),
+                            contentDescription = product.name,
+                            modifier = Modifier.size(44.dp),
+                        )
+                    }
+                    Column {
+                        Text(text = product.name, style = MaterialTheme.typography.bodyMedium, color = Color.Black)
+                        Text(text = product.specification, style = MaterialTheme.typography.labelSmall, color = Color.DarkGray)
+                    }
+                }
+            }
             state.error?.let { message ->
                 ErrorBanner(
                     message = message,
