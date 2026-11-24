@@ -19,7 +19,7 @@ import java.time.Instant
 /**
  * 扫码页 ViewModel：权限状态机、一次识别即停、生命周期恢复、手电筒回滚、手工输入兜底。
  *
- * ViewModel 是同步的（无协程），因此用固定时钟即可完整覆盖去抖窗口。
+ * 固定时钟覆盖去抖窗口；Unconfined test dispatcher 让即时查询分支可同步断言。
  */
 class ScanViewModelTest {
     @Before
@@ -109,6 +109,25 @@ class ScanViewModelTest {
         assertThat(viewModel.uiState.value.knownProduct).isEqualTo(known)
         assertThat(viewModel.uiState.value.pendingCapture).isNull()
         assertThat(viewModel.uiState.value.scanning).isTrue()
+    }
+
+    @Test
+    fun `tapping known product notice opens existing intake confirmation`() {
+        val known = ScanKnownProduct("product-1", "牛奶", "1L", null)
+        val viewModel = ScanViewModel(
+            gate = ScanFrameGate(2_000L),
+            clock = clock,
+            knownProductLookup = ScanKnownProductLookup { known },
+        ).apply {
+            onCameraAvailability(true)
+            onPermissionChecked(granted = true)
+            onResumeScanning()
+        }
+        viewModel.onCameraFrame(cameraValue("6901234567892"))
+        viewModel.onKnownProductSelected()
+        assertThat(viewModel.uiState.value.scanning).isFalse()
+        assertThat(viewModel.uiState.value.knownProduct).isNull()
+        assertThat(viewModel.uiState.value.pendingCapture?.normalizedValue).isEqualTo("6901234567892")
     }
 
     @Test
