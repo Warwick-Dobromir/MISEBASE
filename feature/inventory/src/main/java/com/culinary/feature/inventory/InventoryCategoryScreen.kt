@@ -1,4 +1,11 @@
 package com.culinary.feature.inventory
+import androidx.compose.animation.animateContentSize
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.material3.Surface
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.clickable
@@ -267,267 +274,275 @@ private fun InventoryCategoryScreen(
     onSearch: (String) -> Unit,
     onRetry: () -> Unit,
 ) {
-    var searchOpen by rememberSaveable { mutableStateOf(false) }
-    var query by rememberSaveable { mutableStateOf("") }
+    var searchOpen by rememberSaveable(state.categoryId) { mutableStateOf(false) }
+    var query by rememberSaveable(state.categoryId) { mutableStateOf("") }
     var visibleLimit by rememberSaveable(state.categoryId, query) { mutableIntStateOf(20) }
     var sorting by rememberSaveable(state.categoryId) { mutableStateOf(false) }
     var workingOrder by rememberSaveable(state.categoryId) { mutableStateOf(emptyList<String>()) }
     var savedOrder by rememberSaveable(state.categoryId) { mutableStateOf(emptyList<String>()) }
-    var showExitSort by rememberSaveable { mutableStateOf(false) }
-    var pendingSortSave by rememberSaveable { mutableStateOf(false) }
-    var lastSortSaveVersion by rememberSaveable { mutableIntStateOf(state.sortSaveVersion) }
-    var newName by rememberSaveable { mutableStateOf("") }
-    var showCreate by rememberSaveable { mutableStateOf(false) }
-    var renameId by rememberSaveable { mutableStateOf<String?>(null) }
-    var renameName by rememberSaveable { mutableStateOf("") }
-    var deleteId by rememberSaveable { mutableStateOf<String?>(null) }
+    var showSortExitDialog by rememberSaveable(state.categoryId) { mutableStateOf(false) }
+    var pendingSave by rememberSaveable(state.categoryId) { mutableStateOf(false) }
+    var submittedOrder by rememberSaveable(state.categoryId) { mutableStateOf(emptyList<String>()) }
+    var lastSortSaveVersion by rememberSaveable(state.categoryId) { mutableIntStateOf(state.sortSaveVersion) }
+    var newName by rememberSaveable(state.categoryId) { mutableStateOf("") }
+    var showCreate by rememberSaveable(state.categoryId) { mutableStateOf(false) }
+    var renameId by rememberSaveable(state.categoryId) { mutableStateOf<String?>(null) }
+    var renameName by rememberSaveable(state.categoryId) { mutableStateOf("") }
+    var deleteId by rememberSaveable(state.categoryId) { mutableStateOf<String?>(null) }
     val listState = rememberSaveable(state.categoryId, saver = LazyListState.Saver) { LazyListState() }
     val snackbar = remember { SnackbarHostState() }
     val currentCategoryId = state.categoryId
     val sortDirty = sorting && workingOrder != savedOrder
-    val scope = rememberCoroutineScope()
+    val backLabel = if (currentCategoryId == null) "库存" else {
+        state.pathLabel?.substringBeforeLast(" / ")?.takeIf { it != state.pathLabel } ?: "库存"
+    }
     val latestOrder = rememberUpdatedState(workingOrder)
     val moveCategory = rememberUpdatedState(newValue = { id: String, delta: Int ->
         val from = latestOrder.value.indexOf(id)
         val to = from + delta
         if (from >= 0 && to in latestOrder.value.indices) {
-            workingOrder = latestOrder.value.toMutableList().apply {
-                add(to, removeAt(from))
-            }
+            workingOrder = latestOrder.value.toMutableList().apply { add(to, removeAt(from)) }
             true
-        } else {
-            false
-        }
+        } else false
     })
 
     LaunchedEffect(state.children.map { it.category.id }) {
         val ids = state.children.map { it.category.id }
-        if (!sorting) { workingOrder = ids; savedOrder = ids }
-        else {
+        if (!sorting) {
+            workingOrder = ids
+            savedOrder = ids
+        } else {
             workingOrder = workingOrder.filter { it in ids } + ids.filterNot { it in workingOrder }
             savedOrder = savedOrder.filter { it in ids } + ids.filterNot { it in savedOrder }
+            submittedOrder = submittedOrder.filter { it in ids } + ids.filterNot { it in submittedOrder }
         }
     }
     LaunchedEffect(state.sortSaveVersion) {
         if (state.sortSaveVersion > lastSortSaveVersion) {
             lastSortSaveVersion = state.sortSaveVersion
-            if (pendingSortSave) {
-                savedOrder = workingOrder
-                pendingSortSave = false
-                sorting = false
-                snackbar.showSnackbar("排序已保存")
+            if (sorting && pendingSave) {
+                savedOrder = submittedOrder
+                pendingSave = false
+                snackbar.showSnackbar("已保存")
             }
         }
     }
     LaunchedEffect(state.message) { state.message?.let { snackbar.showSnackbar(it) } }
     LaunchedEffect(state.error) {
         state.error?.let {
-            if (pendingSortSave) pendingSortSave = false
+            if (pendingSave) pendingSave = false
             snackbar.showSnackbar(it)
         }
     }
     LaunchedEffect(query) { visibleLimit = 20 }
     fun beginSort() {
-        workingOrder = state.children.map { it.category.id }
-        savedOrder = workingOrder
-        sorting = true
+        if (!sorting) {
+            val ids = state.children.map { it.category.id }
+            workingOrder = ids
+            savedOrder = ids
+            sorting = true
+        }
     }
     fun finishSort() {
         workingOrder = savedOrder
         sorting = false
-        showExitSort = false
+        pendingSave = false
+        showSortExitDialog = false
     }
     fun requestSortExit() {
-        if (sortDirty) showExitSort = true else finishSort()
+        if (sortDirty) showSortExitDialog = true else finishSort()
     }
-    BackHandler(enabled = searchOpen) { searchOpen = false }
+    BackHandler(enabled = searchOpen) {
+        searchOpen = false
+        query = ""
+        onSearch("")
+    }
     BackHandler(enabled = !searchOpen && sorting) { requestSortExit() }
-    BackHandler(enabled = !searchOpen && !sorting && currentCategoryId != null) { onBack() }
-    BackHandler(enabled = !searchOpen && !sorting && currentCategoryId == null) { onBack() }
+    BackHandler(enabled = !searchOpen && !sorting) { onBack() }
 
-    Box(Modifier.fillMaxSize()) {
+    Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         Column(Modifier.fillMaxSize()) {
-            if (state.error != null) {
+            if (state.isLoading) {
+                LoadingRows()
+            } else if (state.error != null && state.children.isEmpty() && state.archives.isEmpty()) {
                 ErrorBanner(
                     message = state.error,
                     actionLabel = "重试",
                     onAction = onRetry,
-                    modifier = Modifier.padding(horizontal = CulinarySpacing.pageHorizontal),
+                    modifier = Modifier.padding(CulinarySpacing.pageHorizontal),
                 )
-            }
-            if (state.isLoading) {
-                LoadingRows()
-            } else {
-                LazyColumn(
-                    state = listState,
-                    modifier = Modifier.weight(1f),
-                ) {
-                    item(key = "context-header") {
-                        Column(Modifier.padding(horizontal = CulinarySpacing.pageHorizontal)) {
-                            Spacer(Modifier.height(48.dp + CulinarySpacing.xs))
-                            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-                                Row(
-                                    modifier = Modifier.weight(1f).clickable { if (sorting) requestSortExit() else onBack() },
-                                    verticalAlignment = Alignment.CenterVertically,
-                                ) {
-                                    Icon(CulinaryIcons.Back, contentDescription = "返回", modifier = Modifier.size(18.dp))
-                                    Text(
-                                        text = if (currentCategoryId == null) "库存" else "上级分类",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        modifier = Modifier.padding(start = CulinarySpacing.xxs),
-                                    )
-                                }
-                                TextButton(onClick = { searchOpen = !searchOpen; if (searchOpen) query = "" }) {
-                                    Text(if (searchOpen) "关闭搜索" else "搜索")
-                                }
-                            }
-                            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-                                Text(
-                                    state.title,
-                                    style = MaterialTheme.typography.headlineMedium,
-                                    color = MaterialTheme.colorScheme.onSurface,
-                                    maxLines = 2,
-                                    overflow = TextOverflow.Ellipsis,
-                                    modifier = Modifier.weight(1f),
-                                )
-                                CulinaryTextButton(text = "＋ 新建档案", onClick = onNewArchive)
-                            }
-                            state.pathLabel?.takeIf { it.isNotBlank() }?.let {
-                                Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            }
-                            Spacer(Modifier.height(CulinarySpacing.xs))
-                            Text(
-                                "${state.children.size} 个子分类 · ${state.archives.size} 个档案",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                            if (searchOpen) {
-                                Spacer(Modifier.height(CulinarySpacing.sm))
-                                TextField(
-                                    value = query,
-                                    onValueChange = { query = it; onSearch(it) },
-                                    modifier = Modifier.fillMaxWidth(),
-                                    placeholder = { Text("搜索当前分类及下级档案") },
-                                    singleLine = true,
-                                )
-                            }
-                            Row(
-                                modifier = Modifier.fillMaxWidth().padding(top = CulinarySpacing.xs),
-                                horizontalArrangement = Arrangement.spacedBy(CulinarySpacing.xs),
-                                verticalAlignment = Alignment.CenterVertically,
-                            ) {
-                                CulinaryTextButton(text = "＋ 新建子库", onClick = { newName = ""; showCreate = true })
-                                Spacer(Modifier.weight(1f))
-                                if (state.children.isNotEmpty() && !sorting) {
-                                    TextButton(onClick = ::beginSort) { Text("分类排序") }
-                                }
-                            }
-                        }
-                    }
-                    if (searchOpen && query.isNotBlank()) {
-                        item(key = "search-heading") { InventoryDirectorySectionLabel("搜索结果") }
-                        items(state.searchResults.take(visibleLimit), key = { "search-${it.archive.id}" }) { row ->
+            } else if (searchOpen && query.isNotBlank()) {
+                if (state.searchResults.isEmpty() && !state.isSearching) {
+                    EmptyState(
+                        icon = CulinaryIcons.Search,
+                        title = "没有找到档案",
+                        description = "请调整关键词，或检查下级分类中的档案名称。",
+                    )
+                } else {
+                    LazyColumn(Modifier.fillMaxSize()) {
+                        item { InventoryDirectorySectionLabel("搜索结果 · " + state.searchResults.size) }
+                        items(state.searchResults.take(visibleLimit), key = { "search-" + it.archive.id }) { row ->
                             InventoryStockArchiveRow(row) { onOpenArchive(row.archive.id) }
                         }
-                        if (state.searchResults.size > visibleLimit) {
-                            item(key = "search-more") {
-                                TextButton(onClick = { visibleLimit += 20 }, modifier = Modifier.fillMaxWidth()) {
-                                    Text("加载更多（已显示 ${visibleLimit.coerceAtMost(state.searchResults.size)} / ${state.searchResults.size}）")
-                                }
-                            }
-                        }
-                        if (state.searchResults.isEmpty() && !state.isSearching) {
-                            item(key = "search-empty") {
-                                EmptyState(
-                                    icon = CulinaryIcons.Search,
-                                    title = "没有找到档案",
-                                    description = "请调整关键词，或检查下级分类中的档案名称。",
-                                )
-                            }
-                        }
-                    } else {
-                        if (state.children.isNotEmpty()) {
-                            item(key = "child-heading") {
-                                InventoryDirectorySectionLabel("下级分类", showSort = !sorting, onSort = ::beginSort)
-                            }
-                            val orderedChildren = if (sorting) {
-                                workingOrder.mapNotNull { id -> state.children.firstOrNull { it.category.id == id } }
-                            } else state.children
-                            items(orderedChildren, key = { it.category.id }) { node ->
-                                InventoryCategoryRow(
-                                    node = node,
-                                    sorting = sorting,
-                                    listState = listState,
-                                    onClick = { onOpenCategory(node.category.id) },
-                                    onRename = {
-                                        renameId = node.category.id
-                                        renameName = node.category.name
-                                    },
-                                    onDelete = { deleteId = node.category.id },
-                                    canMove = { delta ->
-                                        val from = latestOrder.value.indexOf(node.category.id)
-                                        from >= 0 && from + delta in latestOrder.value.indices
-                                    },
-                                    onMove = { delta -> moveCategory.value(node.category.id, delta) },
-                                )
-                            }
-                        }
-                        if (state.archives.isNotEmpty() || state.children.isEmpty()) {
-                            item(key = "archive-heading") {
-                                InventoryDirectorySectionLabel(
-                                    if (state.children.isEmpty()) "档案" else "当前分类档案",
-                                )
-                            }
-                            items(state.archives.take(visibleLimit), key = { "archive-${it.archive.id}" }) { row ->
-                                InventoryStockArchiveRow(row) { onOpenArchive(row.archive.id) }
-                            }
-                            if (state.archives.size > visibleLimit) {
-                                item(key = "archive-more") {
-                                    TextButton(onClick = { visibleLimit += 20 }, modifier = Modifier.fillMaxWidth()) {
-                                        Text("加载更多（已显示 ${visibleLimit.coerceAtMost(state.archives.size)} / ${state.archives.size}）")
-                                    }
-                                }
-                            }
-                        }
-                        if (state.children.isEmpty() && state.archives.isEmpty()) {
-                            item(key = "empty") {
-                                EmptyState(
-                                    icon = CulinaryIcons.Inventory,
-                                    title = "这个分类还是空的",
-                                    description = "可以新建子库，或直接创建库存档案。",
-                                    actionLabel = "＋ 新建档案",
-                                    onAction = onNewArchive,
+                        if (visibleLimit < state.searchResults.size) {
+                            item {
+                                InventoryLoadMore(
+                                    shown = visibleLimit.coerceAtMost(state.searchResults.size),
+                                    total = state.searchResults.size,
+                                    onLoadMore = { visibleLimit += 20 },
                                 )
                             }
                         }
                     }
-                    item(key = "bottom-space") { Spacer(Modifier.height(CulinarySpacing.xl)) }
+                }
+            } else {
+                LazyColumn(state = listState, modifier = Modifier.weight(1f)) {
+                    item(key = "archive-context-header") {
+                        InventoryArchiveContextHeader(
+                            title = state.title,
+                            pathLabel = state.pathLabel,
+                            childCount = state.children.size,
+                            archiveCount = state.archives.size,
+                            onAddArchive = onNewArchive,
+                            onCreateSubcategory = { newName = ""; showCreate = true },
+                            sorting = sorting,
+                        )
+                    }
+                    val orderedChildren = if (sorting) {
+                        workingOrder.mapNotNull { id -> state.children.firstOrNull { it.category.id == id } }
+                    } else state.children
+                    if (orderedChildren.isNotEmpty()) {
+                        if (!sorting) {
+                            item {
+                                InventoryDirectorySectionLabel(
+                                    title = "下级分类",
+                                    showSort = true,
+                                    onSort = ::beginSort,
+                                )
+                            }
+                        }
+                        items(orderedChildren, key = { it.category.id }) { node ->
+                            InventoryCategoryRow(
+                                node = node,
+                                sorting = sorting,
+                                listState = listState,
+                                onClick = { onOpenCategory(node.category.id) },
+                                onRename = {
+                                    renameId = node.category.id
+                                    renameName = node.category.name
+                                },
+                                onDelete = { deleteId = node.category.id },
+                                canMove = { delta ->
+                                    val from = latestOrder.value.indexOf(node.category.id)
+                                    from >= 0 && (from + delta) in latestOrder.value.indices
+                                },
+                                onMove = { delta -> moveCategory.value(node.category.id, delta) },
+                            )
+                        }
+                    }
+                    if (!sorting && state.archives.isNotEmpty()) {
+                        item {
+                            InventoryDirectorySectionLabel(
+                                if (state.children.isEmpty()) "档案" else "当前分类档案",
+                            )
+                        }
+                        items(state.archives.take(visibleLimit), key = { "archive-" + it.archive.id }) { row ->
+                            InventoryStockArchiveRow(row) { onOpenArchive(row.archive.id) }
+                        }
+                        if (visibleLimit < state.archives.size) {
+                            item {
+                                InventoryLoadMore(
+                                    shown = visibleLimit.coerceAtMost(state.archives.size),
+                                    total = state.archives.size,
+                                    onLoadMore = { visibleLimit += 20 },
+                                )
+                            }
+                        }
+                    }
+                    if (state.children.isEmpty() && state.archives.isEmpty()) {
+                        item {
+                            EmptyState(
+                                icon = CulinaryIcons.Library,
+                                title = "这个分类还是空的",
+                                description = "可以新建子库，或直接创建库存档案。",
+                                actionLabel = "＋ 新建档案",
+                                onAction = onNewArchive,
+                            )
+                        }
+                    }
+                    item { Spacer(Modifier.height(CulinarySpacing.xl)) }
                 }
             }
             if (sorting) {
-                Column(Modifier.fillMaxWidth().navigationBarsPadding()) {
-                    CulinaryRule()
-                    Row(Modifier.fillMaxWidth().height(56.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
-                            TextButton(
-                                enabled = sortDirty && !pendingSortSave,
-                                onClick = {
-                                    pendingSortSave = true
+                Column(
+                    Modifier.fillMaxWidth().navigationBarsPadding()
+                        .background(MaterialTheme.colorScheme.surface),
+                ) {
+                    androidx.compose.material3.HorizontalDivider(
+                        thickness = 1.dp,
+                        color = MaterialTheme.colorScheme.outlineVariant,
+                    )
+                    Row(
+                        Modifier.fillMaxWidth().height(68.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Box(
+                            Modifier.weight(1f).height(68.dp)
+                                .clickable(enabled = sortDirty && !pendingSave) {
+                                    submittedOrder = workingOrder
+                                    pendingSave = true
                                     onSaveOrder(workingOrder)
                                 },
-                            ) { Text("保存排序") }
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Text("保存", style = MaterialTheme.typography.labelLarge,
+                                color = MaterialTheme.colorScheme.secondary)
                         }
-                        Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
-                            TextButton(onClick = ::requestSortExit) { Text("取消") }
+                        Box(
+                            Modifier.weight(1f).height(68.dp).clickable { requestSortExit() },
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Text("取消", style = MaterialTheme.typography.labelLarge,
+                                color = MaterialTheme.colorScheme.secondary)
                         }
                     }
                 }
             }
         }
-        SnackbarHost(hostState = snackbar, modifier = Modifier.align(Alignment.BottomCenter))
+        InventoryArchiveBackFloatButton(
+            label = backLabel,
+            onClick = { if (sorting) requestSortExit() else onBack() },
+            modifier = Modifier.align(Alignment.TopStart)
+                .padding(top = CulinarySpacing.xs, start = CulinarySpacing.pageHorizontal),
+        )
+        InventoryArchiveSearchIsland(
+            expanded = searchOpen,
+            query = query,
+            onQueryChange = { query = it; onSearch(it) },
+            onExpand = { searchOpen = true },
+            onCollapse = { searchOpen = false; query = ""; onSearch("") },
+            modifier = Modifier.align(Alignment.TopEnd)
+                .padding(top = CulinarySpacing.xs, end = CulinarySpacing.pageHorizontal)
+                .widthIn(max = 292.dp),
+        )
+        SnackbarHost(
+            hostState = snackbar,
+            modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth()
+                .padding(horizontal = CulinarySpacing.pageHorizontal)
+                .padding(bottom = if (sorting) 76.dp else 12.dp)
+                .navigationBarsPadding(),
+        )
     }
 
+    if (showSortExitDialog) {
+        AlertDialog(
+            onDismissRequest = { showSortExitDialog = false },
+            title = { Text("本次排序尚未保存") },
+            text = { Text("当前还有未保存的调整，返回后将恢复上次保存的顺序。确定返回吗？") },
+            confirmButton = { TextButton(onClick = ::finishSort) { Text("确认") } },
+            dismissButton = { TextButton(onClick = { showSortExitDialog = false }) { Text("取消") } },
+        )
+    }
     if (showCreate) {
         AlertDialog(
             onDismissRequest = { showCreate = false },
@@ -535,11 +550,17 @@ private fun InventoryCategoryScreen(
             text = {
                 Column {
                     Text(
-                        "所属位置：${state.pathLabel ?: state.title}",
+                        "所属位置：" + (state.pathLabel ?: state.title),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
-                    TextField(value = newName, onValueChange = { newName = it }, label = { Text("子库名称") }, singleLine = true)
+                    Spacer(Modifier.height(CulinarySpacing.sm))
+                    CulinaryTextField(
+                        value = newName,
+                        onValueChange = { newName = it },
+                        label = { Text("子库名称") },
+                        singleLine = true,
+                    )
                 }
             },
             confirmButton = {
@@ -555,46 +576,170 @@ private fun InventoryCategoryScreen(
         AlertDialog(
             onDismissRequest = { renameId = null },
             title = { Text("重命名子库") },
-            text = { TextField(value = renameName, onValueChange = { renameName = it }, singleLine = true) },
+            text = {
+                CulinaryTextField(
+                    value = renameName,
+                    onValueChange = { renameName = it },
+                    label = { Text("子库名称") },
+                    singleLine = true,
+                )
+            },
             confirmButton = {
-                TextButton(enabled = renameName.isNotBlank(), onClick = {
-                    onRenameCategory(id, renameName.trim()); renameId = null
-                }) { Text("保存") }
+                TextButton(
+                    enabled = renameName.isNotBlank(),
+                    onClick = { onRenameCategory(id, renameName.trim()); renameId = null },
+                ) { Text("保存") }
             },
             dismissButton = { TextButton(onClick = { renameId = null }) { Text("取消") } },
         )
     }
     deleteId?.let { id ->
         val target = state.children.firstOrNull { it.category.id == id }
+        val canDelete = target != null && target.childCount == 0 && target.directArchiveCount == 0
         AlertDialog(
             onDismissRequest = { deleteId = null },
             title = { Text("删除子库？") },
             text = {
                 Text(
-                    if (target != null && target.childCount == 0 && target.directArchiveCount == 0) {
-                        "确定删除「${target.category.name}」？此操作不可撤销。"
-                    } else {
-                        "该子库仍包含下级分类或档案。为保护库存数据，当前不允许删除。"
-                    },
+                    if (canDelete) "确定删除「" + target!!.category.name + "」？此操作不可撤销。"
+                    else "该子库仍包含下级分类或档案。为保护库存数据，当前不允许删除。",
                 )
             },
             confirmButton = {
                 TextButton(
-                    enabled = target != null && target.childCount == 0 && target.directArchiveCount == 0,
+                    enabled = canDelete,
                     onClick = { onDeleteCategory(id); deleteId = null },
                 ) { Text("删除") }
             },
             dismissButton = { TextButton(onClick = { deleteId = null }) { Text("取消") } },
         )
     }
-    if (showExitSort) {
-        AlertDialog(
-            onDismissRequest = { showExitSort = false },
-            title = { Text("本次排序尚未保存") },
-            text = { Text("返回后将恢复最近一次保存的顺序。确定退出吗？") },
-            confirmButton = { TextButton(onClick = ::finishSort) { Text("确认") } },
-            dismissButton = { TextButton(onClick = { showExitSort = false }) { Text("继续调整") } },
-        )
+}
+
+@Composable
+private fun InventoryArchiveBackFloatButton(
+    label: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier.height(40.dp).clickable(onClick = onClick)
+            .padding(horizontal = CulinarySpacing.xxs),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(CulinaryIcons.Back, contentDescription = "返回",
+            tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp))
+        Text(label, style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(start = CulinarySpacing.xxs))
+    }
+}
+
+@Composable
+private fun InventoryArchiveSearchIsland(
+    expanded: Boolean,
+    query: String,
+    onQueryChange: (String) -> Unit,
+    onExpand: () -> Unit,
+    onCollapse: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Surface(
+        modifier = modifier.width(if (expanded) 292.dp else 48.dp).height(48.dp).animateContentSize(),
+        shape = CircleShape,
+        color = MaterialTheme.colorScheme.surface,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+        shadowElevation = 1.dp,
+    ) {
+        Row(
+            modifier = Modifier.fillMaxSize()
+                .padding(horizontal = if (expanded) CulinarySpacing.sm else 0.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(
+                CulinaryIcons.Search,
+                contentDescription = if (expanded) null else "搜索库存档案",
+                tint = MaterialTheme.colorScheme.onSurface,
+                modifier = if (expanded) Modifier.size(20.dp) else Modifier.fillMaxSize()
+                    .clickable(onClick = onExpand).padding(14.dp),
+            )
+            if (expanded) {
+                BasicTextField(
+                    value = query,
+                    onValueChange = onQueryChange,
+                    singleLine = true,
+                    textStyle = MaterialTheme.typography.bodyMedium.copy(color = MaterialTheme.colorScheme.onSurface),
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                    modifier = Modifier.weight(1f),
+                    decorationBox = { innerTextField ->
+                        Box(Modifier.padding(start = CulinarySpacing.xs)) {
+                            if (query.isEmpty()) Text(
+                                "搜索库存档案",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                            innerTextField()
+                        }
+                    },
+                )
+                Icon(
+                    CulinaryIcons.Close,
+                    contentDescription = "关闭搜索",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(36.dp).clickable(onClick = onCollapse).padding(9.dp),
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun InventoryArchiveContextHeader(
+    title: String,
+    pathLabel: String?,
+    childCount: Int,
+    archiveCount: Int,
+    onAddArchive: () -> Unit,
+    onCreateSubcategory: () -> Unit,
+    sorting: Boolean,
+) {
+    Column(Modifier.padding(horizontal = CulinarySpacing.pageHorizontal)) {
+        Spacer(Modifier.height(48.dp + CulinarySpacing.xs))
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                title,
+                style = MaterialTheme.typography.headlineMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f),
+            )
+            CulinaryTextButton(text = "＋ 新建档案", onClick = onAddArchive)
+            CulinaryTextButton(text = "＋ 新建子库", onClick = onCreateSubcategory)
+        }
+        pathLabel?.takeIf { it.isNotBlank() }?.let {
+            Text(it, style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 2, overflow = TextOverflow.Ellipsis)
+        }
+        Spacer(Modifier.height(CulinarySpacing.xs))
+        if (!sorting) {
+            Text(
+                childCount.toString() + " 个子分类 · " + archiveCount + " 个档案",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
+
+@Composable
+private fun InventoryLoadMore(shown: Int, total: Int, onLoadMore: () -> Unit) {
+    Column(Modifier.fillMaxWidth().padding(CulinarySpacing.md)) {
+        Text(shown.toString() + " / " + total,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant)
+        CulinaryTextButton(text = "加载更多", onClick = onLoadMore)
     }
 }
 
