@@ -29,9 +29,9 @@ import androidx.compose.ui.res.stringResource
 import com.culinary.core.designsystem.component.BrandPageHeader
 import com.culinary.core.designsystem.component.CulinaryButton
 import com.culinary.core.designsystem.component.CulinaryButtonVariant
+import com.culinary.core.designsystem.component.CulinaryRule
 import com.culinary.core.designsystem.component.CulinaryTextButton
 import com.culinary.core.designsystem.component.CulinaryTextField
-import com.culinary.core.designsystem.component.CulinaryRule
 import com.culinary.core.designsystem.component.ErrorBanner
 import com.culinary.core.designsystem.icon.CulinaryIcons
 import com.culinary.core.designsystem.theme.CulinarySpacing
@@ -69,62 +69,62 @@ internal fun ScanScreen(
         CulinaryRule()
         Box(modifier = Modifier.fillMaxWidth().weight(1f)) {
             when {
-            state.showCamera -> {
-                cameraContent()
-                ScanFrameOverlay(modifier = Modifier.fillMaxSize())
-                CameraActions(
-                    state = state,
-                    onToggleTorch = onToggleTorch,
-                    onOpenManualEntry = onOpenManualEntry,
-                    onResumeScanning = onResumeScanning,
-                )
-                ScanBackButton(
-                    onBack = onBack,
-                    modifier = Modifier.align(Alignment.TopStart).padding(CulinarySpacing.sm),
-                )
+                state.showCamera -> {
+                    cameraContent()
+                    ScanFrameOverlay(modifier = Modifier.fillMaxSize())
+                    CameraActions(
+                        state = state,
+                        onToggleTorch = onToggleTorch,
+                        onOpenManualEntry = onOpenManualEntry,
+                        onResumeScanning = onResumeScanning,
+                    )
+                    ScanBackButton(
+                        onBack = onBack,
+                        modifier = Modifier.align(Alignment.TopStart).padding(CulinarySpacing.sm),
+                    )
+                }
+
+                state.manualEntry ->
+                    ManualEntryPane(
+                        state = state,
+                        onManualCodeChange = onManualCodeChange,
+                        onSubmitManualCode = onSubmitManualCode,
+                        onCloseManualEntry = onCloseManualEntry,
+                        onBack = onBack,
+                    )
+
+                else ->
+                    PermissionPane(
+                        state = state,
+                        onRequestPermission = onRequestPermission,
+                        onOpenManualEntry = onOpenManualEntry,
+                        onBack = onBack,
+                    )
             }
 
-            state.manualEntry ->
-                ManualEntryPane(
-                    state = state,
-                    onManualCodeChange = onManualCodeChange,
-                    onSubmitManualCode = onSubmitManualCode,
-                    onCloseManualEntry = onCloseManualEntry,
-                    onBack = onBack,
-                )
-
-            else ->
-                PermissionPane(
-                    state = state,
-                    onRequestPermission = onRequestPermission,
-                    onOpenManualEntry = onOpenManualEntry,
-                    onBack = onBack,
-                )
-        }
-
-        Column(modifier = Modifier.align(Alignment.TopCenter).fillMaxWidth()) {
-            state.error?.let { message ->
-                ErrorBanner(
-                    message = message,
-                    actionLabel = stringResource(R.string.scan_retry),
-                    onAction = onResumeScanning,
-                )
-            }
-            state.torchNotice?.let { message ->
-                ErrorBanner(
-                    message = message,
-                    actionLabel = stringResource(R.string.scan_retry),
-                    onAction = onDismissTorchNotice,
-                )
-            }
-            state.status?.let { message ->
-                Text(
-                    text = message,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.padding(CulinarySpacing.md),
-                )
-            }
+            Column(modifier = Modifier.align(Alignment.TopCenter).fillMaxWidth()) {
+                state.error?.let { message ->
+                    ErrorBanner(
+                        message = message,
+                        actionLabel = stringResource(R.string.scan_retry),
+                        onAction = onResumeScanning,
+                    )
+                }
+                state.torchNotice?.let { message ->
+                    ErrorBanner(
+                        message = message,
+                        actionLabel = stringResource(R.string.scan_retry),
+                        onAction = onDismissTorchNotice,
+                    )
+                }
+                state.status?.let { message ->
+                    Text(
+                        text = message,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.padding(CulinarySpacing.md),
+                    )
+                }
             }
         }
     }
