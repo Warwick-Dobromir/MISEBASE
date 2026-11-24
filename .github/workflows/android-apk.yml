@@ -5,7 +5,7 @@ name: Android APK
 
 on:
   push:
-    branches: [main, feat/ingredient-detail-rebuild-20261121, fix/archive-category-interactions, fix/archive-sort-feedback, build/pen-flip-90fb110, ui/subcategory-search-sort-20261118, fix/archive-sort-autoscroll-20261118, fix/archive-sort-elastic-20261118, fix/archive-sort-save-actions-20261118, fix/detail-relations-follow-editor-state]
+    branches: [main, feat/ingredient-detail-rebuild-20261121, fix/archive-category-interactions, fix/archive-sort-feedback, build/pen-flip-90fb110, ui/subcategory-search-sort-20261118, fix/archive-sort-autoscroll-20261118, fix/archive-sort-elastic-20261118, fix/archive-sort-save-actions-20261118, fix/detail-relations-follow-editor-state, work/inventory-subcategory-kitchen-alignment-v2-20261124]
   workflow_dispatch:
 
 permissions:
