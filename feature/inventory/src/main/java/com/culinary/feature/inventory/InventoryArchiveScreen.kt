@@ -1,5 +1,6 @@
 package com.culinary.feature.inventory
 
+import android.net.Uri
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -21,8 +22,10 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.produceState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -34,16 +37,14 @@ import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
 import com.culinary.core.common.Outcome
-import com.culinary.core.designsystem.component.ArchiveModuleHeader
-import com.culinary.core.designsystem.component.ArchiveProse
-import com.culinary.core.designsystem.component.CulinaryInfoRow
+import com.culinary.core.designsystem.component.ArchiveDetailBar
+import com.culinary.core.designsystem.component.ArchiveWideImage
 import com.culinary.core.designsystem.component.CulinaryRule
 import com.culinary.core.designsystem.component.CulinaryTextButton
 import com.culinary.core.designsystem.component.CulinaryTextField
 import com.culinary.core.designsystem.component.EmptyState
 import com.culinary.core.designsystem.component.ErrorBanner
 import com.culinary.core.designsystem.component.LoadingRows
-import com.culinary.core.designsystem.component.PageHeader
 import com.culinary.core.designsystem.component.QuantityText
 import com.culinary.core.designsystem.component.SectionHeader
 import com.culinary.core.designsystem.component.StatusBadge
@@ -68,6 +69,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 /** 档案详情：身份、库存、存储、采购换算、批次与流水。 */
 data class ArchiveDetailUiState(
@@ -247,6 +250,7 @@ fun ArchiveDetailRoute(
     onOpenBatch: (String) -> Unit,
     onOpenBatches: (String) -> Unit,
     onEdit: (String) -> Unit,
+    onBack: () -> Unit,
     onReceipt: (String) -> Unit,
     onIssue: (String) -> Unit,
     onStocktake: (String) -> Unit,
@@ -259,6 +263,7 @@ fun ArchiveDetailRoute(
         onOpenBatch = onOpenBatch,
         onOpenBatches = onOpenBatches,
         onEdit = onEdit,
+        onBack = onBack,
         onReceipt = onReceipt,
         onIssue = onIssue,
         onStocktake = onStocktake,
@@ -273,13 +278,14 @@ fun ArchiveDetailRoute(
     )
 }
 
-@Suppress("LongMethod") // 详情按身份/库存/存储/采购/批次/流水六段纵向排列。
+@Suppress("LongMethod") // 档案详情按档案展示、库存概况、批次、采购关联与流水排列。
 @Composable
 private fun ArchiveDetailScreen(
     state: ArchiveDetailUiState,
     onOpenBatch: (String) -> Unit,
     onOpenBatches: (String) -> Unit,
     onEdit: (String) -> Unit,
+    onBack: () -> Unit,
     onReceipt: (String) -> Unit,
     onIssue: (String) -> Unit,
     onStocktake: (String) -> Unit,
@@ -292,169 +298,158 @@ private fun ArchiveDetailScreen(
     onConfirmLink: () -> Unit,
     onUnlink: (String) -> Unit,
 ) {
+    val detail = state.detail
     Column(modifier = Modifier.fillMaxSize()) {
         state.error?.let { message ->
             ErrorBanner(
                 message = message,
                 actionLabel = "重试",
                 onAction = onRetry,
-                modifier =
-                    Modifier.padding(
-                        start = CulinarySpacing.pageHorizontal,
-                        end = CulinarySpacing.pageHorizontal,
-                        bottom = CulinarySpacing.xs,
-                    ),
+                modifier = Modifier.padding(horizontal = CulinarySpacing.pageHorizontal),
             )
         }
-        val detail = state.detail
         when {
             state.isLoading -> LoadingRows()
-            detail == null ->
-                EmptyState(
-                    title = "档案不存在",
-                    description = "该档案可能已被删除，请返回列表重新选择。",
+            detail == null -> EmptyState(
+                title = "档案不存在",
+                description = "该档案可能已被删除，请返回列表重新选择。",
+            )
+            else -> {
+                ArchiveDetailBar(
+                    editLabel = "编辑档案 ↗",
+                    onBack = onBack,
+                    onEdit = { onEdit(detail.archive.id) },
                 )
-
-            else ->
-                Column(
-                    modifier =
-                        Modifier
-                            .fillMaxSize()
-                            .verticalScroll(rememberScrollState())
-                            .padding(bottom = CulinarySpacing.xl),
+                val context = LocalContext.current.applicationContext
+                val imageUri = detail.archive.imageUri?.takeIf { it.isNotBlank() }
+                val imageBytes by produceState<ByteArray?>(
+                    initialValue = null,
+                    key1 = imageUri,
                 ) {
-                    PageHeader(
-                        eyebrow = "INVENTORY ARCHIVE",
-                        title = detail.archive.name,
-                        supporting = detail.archive.englishName?.takeIf { it.isNotBlank() } ?: detail.categoryPath,
-                        actions = {
-                            CulinaryTextButton(
-                                text = "编辑",
-                                onClick = { onEdit(detail.archive.id) },
-                            )
-                        },
-                    )
-                    Column(modifier = Modifier.padding(horizontal = CulinarySpacing.pageHorizontal)) {
-                        state.message?.let { text ->
-                            StatusBadge(
-                                text = text,
-                                tone = StatusTone.Success,
-                                modifier = Modifier.padding(bottom = CulinarySpacing.sm),
-                            )
+                    value = withContext(Dispatchers.IO) {
+                        imageUri?.let { uri ->
+                            runCatching {
+                                context.contentResolver.openInputStream(Uri.parse(uri))?.use { it.readBytes() }
+                            }.getOrNull()
                         }
-                        ArchiveModuleHeader(number = "01", english = "IDENTITY", chinese = "基本信息")
-                        CulinaryInfoRow(label = "中文名", value = detail.archive.name)
-                        detail.archive.englishName
-                            ?.takeIf { it.isNotBlank() }
-                            ?.let { CulinaryInfoRow(label = "英文名", value = it) }
-                        detail.categoryPath
-                            ?.takeIf { it.isNotBlank() }
-                            ?.let { CulinaryInfoRow(label = "分类", value = it) }
-                        detail.sauceName
-                            ?.takeIf { it.isNotBlank() }
-                            ?.let { CulinaryInfoRow(label = "酱汁", value = it) }
-                        detail.archive.imageUri
-                            ?.takeIf { it.isNotBlank() }
-                            ?.let { CulinaryInfoRow(label = "图片", value = it) }
-                        detail.archive.description
-                            ?.takeIf { it.isNotBlank() }
-                            ?.let { text ->
-                                Spacer(modifier = Modifier.height(CulinarySpacing.xs))
-                                Text(
-                                    text = "备注",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                )
-                                Spacer(modifier = Modifier.height(CulinarySpacing.xxs))
-                                ArchiveProse(text = text)
-                            }
-                        ArchiveModuleHeader(number = "02", english = "STOCK", chinese = "库存信息")
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.Bottom,
-                        ) {
+                    }
+                }
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxWidth()
+                        .verticalScroll(rememberScrollState())
+                        .padding(horizontal = CulinarySpacing.pageHorizontal)
+                        .padding(bottom = CulinarySpacing.lg),
+                ) {
+                    Spacer(modifier = Modifier.height(CulinarySpacing.lg))
+                    detail.categoryPath?.takeIf { it.isNotBlank() }?.let { category ->
+                        Text(
+                            text = category.uppercase(),
+                            style = CulinaryTextStyles.eyebrow,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        Spacer(modifier = Modifier.height(CulinarySpacing.xs))
+                    }
+                    Text(
+                        text = detail.archive.name,
+                        style = MaterialTheme.typography.headlineLarge,
+                        color = MaterialTheme.colorScheme.onSurface,
+                    )
+                    detail.archive.englishName?.takeIf { it.isNotBlank() }?.let { englishName ->
+                        Text(
+                            text = englishName,
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(top = CulinarySpacing.xs),
+                        )
+                    }
+                    detail.archive.description?.takeIf { it.isNotBlank() }?.let { description ->
+                        Text(
+                            text = description,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(top = CulinarySpacing.sm),
+                        )
+                    }
+                    imageBytes?.let { bytes ->
+                        Spacer(modifier = Modifier.height(CulinarySpacing.md))
+                        ArchiveWideImage(bytes = bytes, caption = null)
+                    }
+                    state.message?.let { message ->
+                        StatusBadge(
+                            text = message,
+                            tone = StatusTone.Success,
+                            modifier = Modifier.padding(bottom = CulinarySpacing.sm),
+                        )
+                    }
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(vertical = CulinarySpacing.md),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        StatusBadge(
+                            text = InventoryText.stockStatus(detail.row.status),
+                            tone = InventoryText.stockTone(detail.row.status),
+                        )
+                        Spacer(modifier = Modifier.weight(1f))
+                        Text(
+                            text = "库存编号 · ${detail.archive.id}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    CulinaryRule()
+                    Spacer(modifier = Modifier.height(CulinarySpacing.lg))
+                    Text(
+                        text = "库存概况",
+                        style = MaterialTheme.typography.titleLarge,
+                        color = MaterialTheme.colorScheme.onSurface,
+                    )
+                    Spacer(modifier = Modifier.height(CulinarySpacing.md))
+                    Row(horizontalArrangement = Arrangement.spacedBy(CulinarySpacing.md)) {
+                        Column(modifier = Modifier.weight(1f)) {
                             QuantityText(
                                 amount = formatAmount(detail.row.onHand),
                                 unit = detail.archive.stockUnit.symbol,
                                 amountStyle = CulinaryTextStyles.numeralL,
                             )
-                            Spacer(modifier = Modifier.weight(1f))
-                            StatusBadge(
-                                text = InventoryText.stockStatus(detail.row.status),
-                                tone = InventoryText.stockTone(detail.row.status),
-                            )
+                            Text("当前库存", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
-                        Spacer(modifier = Modifier.height(CulinarySpacing.sm))
-                        CulinaryInfoRow(
-                            label = "可用量",
-                            value = "${formatAmount(detail.row.available)} ${detail.archive.stockUnit.symbol}",
-                        )
-                        CulinaryInfoRow(
-                            label = "最低库存",
-                            value =
-                                detail.archive.minimumStock
-                                    ?.let { "${formatAmount(it)} ${detail.archive.stockUnit.symbol}" }
-                                    ?: "未设置",
-                        )
-                        CulinaryInfoRow(
-                            label = "目标库存",
-                            value =
-                                detail.archive.targetStock
-                                    ?.let { "${formatAmount(it)} ${detail.archive.stockUnit.symbol}" }
-                                    ?: "未设置",
-                        )
-                        CulinaryInfoRow(label = "批次数", value = "${detail.row.batchCount}")
-                        ArchiveModuleHeader(number = "03", english = "STORAGE", chinese = "存储信息")
-                        CulinaryInfoRow(
-                            label = "默认库位",
-                            value =
-                                detail.archive.defaultLocationId
-                                    ?.let { state.locationNames[it.value] }
-                                    ?: "未指定",
-                        )
-                        CulinaryInfoRow(
-                            label = "存储方式",
-                            value = detail.archive.storageMethod?.takeIf { it.isNotBlank() } ?: "未设置",
-                        )
-                        CulinaryInfoRow(
-                            label = "存储温度",
-                            value = detail.archive.storageTemperature?.takeIf { it.isNotBlank() } ?: "未设置",
-                        )
-                        ArchiveModuleHeader(number = "04", english = "PURCHASE", chinese = "关联采购商品")
-                        if (detail.links.isEmpty()) {
+                        Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = "尚未关联采购商品",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.padding(vertical = CulinarySpacing.xs),
+                                text = detail.row.batchCount.toString().padStart(2, '0'),
+                                style = CulinaryTextStyles.numeralL,
+                                color = MaterialTheme.colorScheme.onSurface,
                             )
-                        } else {
-                            detail.links.forEach { link ->
-                                ArchiveLinkRow(
-                                    link = link,
-                                    unitSymbol = detail.archive.stockUnit.symbol,
-                                    enabled = !state.isLinking,
-                                    onUnlink = { onUnlink(link.product.id.value) },
-                                )
-                            }
+                            Text("有效批次", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
-                        CulinaryTextButton(
-                            text = "＋ 关联采购商品",
-                            onClick = onOpenLinkDialog,
-                            enabled = !state.isLinking,
-                            modifier = Modifier.padding(top = CulinarySpacing.xxs),
-                        )
                     }
+                    Spacer(modifier = Modifier.height(CulinarySpacing.md))
+                    Row(horizontalArrangement = Arrangement.spacedBy(CulinarySpacing.md)) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = detail.archive.minimumStock?.let { "${formatAmount(it)} ${detail.archive.stockUnit.symbol}" } ?: "未设置",
+                                style = MaterialTheme.typography.titleLarge,
+                                color = MaterialTheme.colorScheme.onSurface,
+                            )
+                            Text("库存预警线", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = detail.archive.defaultLocationId?.let { state.locationNames[it.value] } ?: "未指定",
+                                style = MaterialTheme.typography.titleLarge,
+                                color = MaterialTheme.colorScheme.onSurface,
+                            )
+                            Text("主要存放位置", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(CulinarySpacing.lg))
                     SectionHeader(
-                        title = "${detail.batches.size} 个批次",
+                        title = "库存批次",
                         subtitle = "按先进先出排列，点击查看批次详情",
-                        modifier =
-                            Modifier
-                                .padding(horizontal = CulinarySpacing.pageHorizontal)
-                                .padding(top = CulinarySpacing.sm),
                         action = {
                             CulinaryTextButton(
-                                text = "查看全部",
+                                text = "查看全部 →",
                                 onClick = { onOpenBatches(detail.archive.id) },
                             )
                         },
@@ -464,66 +459,79 @@ private fun ArchiveDetailScreen(
                             text = "还没有批次。入库后会自动建立批次并累计余额。",
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.padding(horizontal = CulinarySpacing.pageHorizontal),
                         )
                     } else {
                         detail.batches.forEach { batch ->
-                            ArchiveBatchRow(
-                                batch = batch,
-                                onClick = { onOpenBatch(batch.id) },
+                            ArchiveBatchRow(batch = batch, onClick = { onOpenBatch(batch.id) })
+                        }
+                    }
+                    CulinaryRule()
+                    Spacer(modifier = Modifier.height(CulinarySpacing.md))
+                    SectionHeader(title = "关联采购商品")
+                    if (detail.links.isEmpty()) {
+                        Text(
+                            text = "尚未关联采购商品",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(vertical = CulinarySpacing.xs),
+                        )
+                    } else {
+                        detail.links.forEach { link ->
+                            ArchiveLinkRow(
+                                link = link,
+                                unitSymbol = detail.archive.stockUnit.symbol,
+                                enabled = !state.isLinking,
+                                onUnlink = { onUnlink(link.product.id.value) },
                             )
                         }
                     }
+                    CulinaryTextButton(
+                        text = "＋ 关联采购商品",
+                        onClick = onOpenLinkDialog,
+                        enabled = !state.isLinking,
+                        modifier = Modifier.padding(top = CulinarySpacing.xxs),
+                    )
+                    CulinaryRule(modifier = Modifier.padding(top = CulinarySpacing.lg))
                     SectionHeader(
                         title = "库存流水",
                         subtitle = "最近 ${minOf(detail.ledger.size, LEDGER_LIMIT)} 条",
-                        modifier =
-                            Modifier
-                                .padding(horizontal = CulinarySpacing.pageHorizontal)
-                                .padding(top = CulinarySpacing.block),
                     )
                     if (detail.ledger.isEmpty()) {
                         Text(
                             text = "暂无流水。入库、出库、盘点与冻结都会留下记录。",
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.padding(horizontal = CulinarySpacing.pageHorizontal),
                         )
                     } else {
-                        Column(modifier = Modifier.padding(horizontal = CulinarySpacing.pageHorizontal)) {
-                            detail.ledger.take(LEDGER_LIMIT).forEach { entry ->
-                                ArchiveLedgerRow(entry = entry)
-                            }
+                        detail.ledger.take(LEDGER_LIMIT).forEach { entry ->
+                            ArchiveLedgerRow(entry = entry)
                         }
                     }
-                    CulinaryRule(modifier = Modifier.padding(top = CulinarySpacing.lg))
-                    Row(
-                        modifier =
-                            Modifier
-                                .fillMaxWidth()
-                                .padding(
-                                    horizontal = CulinarySpacing.pageHorizontal,
-                                    vertical = CulinarySpacing.sm,
-                                ),
-                        horizontalArrangement = Arrangement.spacedBy(CulinarySpacing.xs),
-                    ) {
-                        CulinaryTextButton(
-                            text = "入库",
-                            onClick = { onReceipt(detail.archive.id) },
-                            modifier = Modifier.defaultMinSize(minHeight = 48.dp),
-                        )
-                        CulinaryTextButton(
-                            text = "出库",
-                            onClick = { onIssue(detail.archive.id) },
-                            modifier = Modifier.defaultMinSize(minHeight = 48.dp),
-                        )
-                        CulinaryTextButton(
-                            text = "盘点",
-                            onClick = { onStocktake(detail.archive.id) },
-                            modifier = Modifier.defaultMinSize(minHeight = 48.dp),
-                        )
-                    }
                 }
+                CulinaryRule()
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = CulinarySpacing.pageHorizontal, vertical = CulinarySpacing.sm),
+                    horizontalArrangement = Arrangement.spacedBy(CulinarySpacing.xs),
+                ) {
+                    CulinaryTextButton(
+                        text = "入库",
+                        onClick = { onReceipt(detail.archive.id) },
+                        modifier = Modifier.weight(1f).defaultMinSize(minHeight = 48.dp),
+                    )
+                    CulinaryTextButton(
+                        text = "出库",
+                        onClick = { onIssue(detail.archive.id) },
+                        modifier = Modifier.weight(1f).defaultMinSize(minHeight = 48.dp),
+                    )
+                    CulinaryTextButton(
+                        text = "盘点",
+                        onClick = { onStocktake(detail.archive.id) },
+                        modifier = Modifier.weight(1f).defaultMinSize(minHeight = 48.dp),
+                    )
+                }
+            }
         }
         if (state.linkDialogOpen) {
             LinkProductDialog(
@@ -537,132 +545,6 @@ private fun ArchiveDetailScreen(
             )
         }
     }
-}
-
-private const val LEDGER_LIMIT = 10
-
-@Composable
-private fun LinkProductDialog(
-    state: ArchiveDetailUiState,
-    unitSymbol: String,
-    onDismiss: () -> Unit,
-    onSelectProduct: (String) -> Unit,
-    onRatioChange: (String) -> Unit,
-    onDefaultChange: (Boolean) -> Unit,
-    onConfirm: () -> Unit,
-) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        shape = MaterialTheme.shapes.extraSmall,
-        containerColor = MaterialTheme.colorScheme.surface,
-        title = {
-            Text(
-                text = "关联采购商品",
-                style = MaterialTheme.typography.headlineSmall,
-                color = MaterialTheme.colorScheme.onSurface,
-            )
-        },
-        text = {
-            Column(
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .heightIn(max = 420.dp)
-                        .verticalScroll(rememberScrollState()),
-            ) {
-                if (state.products.isEmpty()) {
-                    Text(
-                        text = "没有可关联的采购商品，请先在商品库建立商品。",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(vertical = CulinarySpacing.sm),
-                    )
-                } else {
-                    state.products.forEach { product ->
-                        Row(
-                            modifier =
-                                Modifier
-                                    .fillMaxWidth()
-                                    .clickable(role = Role.Button) { onSelectProduct(product.id.value) }
-                                    .defaultMinSize(minHeight = 48.dp)
-                                    .padding(vertical = CulinarySpacing.xs),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = product.name,
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    color =
-                                        if (product.id.value == state.linkProductId) {
-                                            MaterialTheme.colorScheme.secondary
-                                        } else {
-                                            MaterialTheme.colorScheme.onSurface
-                                        },
-                                )
-                                Text(
-                                    text = "库存单位 ${product.stockUnit.symbol}",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                )
-                            }
-                            if (product.id.value == state.linkProductId) {
-                                Text(
-                                    text = "已选",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.secondary,
-                                )
-                            }
-                        }
-                        CulinaryRule()
-                    }
-                }
-                CulinaryTextField(
-                    value = state.linkRatio,
-                    onValueChange = onRatioChange,
-                    label = "换算比（1 个商品 = ? $unitSymbol）",
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                    modifier = Modifier.padding(top = CulinarySpacing.sm),
-                )
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(top = CulinarySpacing.xs),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(text = "设为默认商品", style = MaterialTheme.typography.bodyLarge)
-                        Text(
-                            text = "同一档案可关联多个商品，默认商品用于入库时预选。",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                    Switch(checked = state.linkIsDefault, onCheckedChange = onDefaultChange)
-                }
-                state.linkError?.let { message ->
-                    Text(
-                        text = message,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = CulinaryColorScheme.current.danger,
-                        modifier = Modifier.padding(top = CulinarySpacing.xs),
-                    )
-                }
-            }
-        },
-        confirmButton = {
-            CulinaryTextButton(
-                text = if (state.isLinking) "关联中" else "关联",
-                onClick = onConfirm,
-                enabled = !state.isLinking,
-            )
-        },
-        dismissButton = {
-            CulinaryTextButton(
-                text = "取消",
-                onClick = onDismiss,
-                enabled = !state.isLinking,
-            )
-        },
-    )
 }
 
 @Composable
