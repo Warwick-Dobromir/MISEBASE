@@ -596,7 +596,9 @@ private fun NavGraphBuilder.inventoryGraph(navController: NavHostController) {
         InventoryCategoryRoute(
             onOpenCategory = { categoryId -> navController.navigate(InventoryRoutes.category(categoryId)) },
             onOpenArchive = { archiveId -> navController.navigate(InventoryRoutes.archive(archiveId)) },
+            onNewArchive = { navController.navigate(InventoryRoutes.archiveNew()) },
             onManage = { navController.navigate(InventoryRoutes.categories()) },
+            onBack = { navController.popBackStack() },
         )
     }
     composable(InventoryRoutes.CATEGORY_MANAGE) {
