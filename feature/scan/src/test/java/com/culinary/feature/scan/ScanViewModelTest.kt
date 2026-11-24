@@ -4,8 +4,16 @@ import com.culinary.core.common.Clock
 import com.culinary.core.domain.barcode.ScanCapture
 import com.culinary.core.domain.barcode.ScanFrameGate
 import com.culinary.core.domain.barcode.ScanSource
+import com.culinary.core.domain.scan.ScanKnownProduct
+import com.culinary.core.domain.scan.ScanKnownProductLookup
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
+import org.junit.Before
+import org.junit.After
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.setMain
+import kotlinx.coroutines.test.resetMain
 import java.time.Instant
 
 /**
@@ -14,6 +22,15 @@ import java.time.Instant
  * ViewModel 是同步的（无协程），因此用固定时钟即可完整覆盖去抖窗口。
  */
 class ScanViewModelTest {
+    @Before
+    fun setMainDispatcher() {
+        Dispatchers.setMain(UnconfinedTestDispatcher())
+    }
+
+    @After
+    fun resetMainDispatcher() {
+        Dispatchers.resetMain()
+    }
     private var nowMillis: Long = 1_000L
     private val clock = Clock { Instant.ofEpochMilli(nowMillis) }
 
@@ -73,6 +90,43 @@ class ScanViewModelTest {
         assertThat(state.scanning).isFalse()
         assertThat(state.pendingCapture?.normalizedValue).isEqualTo("6901234567892")
         assertThat(state.pendingCapture?.source).isEqualTo(ScanSource.CAMERA)
+    }
+
+    @Test
+    fun `known product shows notice and keeps camera scanning`() {
+        val known = ScanKnownProduct("product-1", "牛奶", "1L", null)
+        val viewModel = ScanViewModel(
+            gate = ScanFrameGate(2_000L),
+            clock = clock,
+            knownProductLookup = ScanKnownProductLookup { known },
+        ).apply {
+            onCameraAvailability(true)
+            onPermissionChecked(granted = true)
+            onResumeScanning()
+        }
+        viewModel.onCameraFrame(cameraValue("6901234567892"))
+        assertThat(viewModel.uiState.value.knownProduct).isEqualTo(known)
+        assertThat(viewModel.uiState.value.pendingCapture).isNull()
+        assertThat(viewModel.uiState.value.scanning).isTrue()
+    }
+
+    @Test
+    fun `repeated known product scan does not create intake`() {
+        val known = ScanKnownProduct("product-1", "牛奶", "1L", null)
+        val viewModel = ScanViewModel(
+            gate = ScanFrameGate(2_000L),
+            clock = clock,
+            knownProductLookup = ScanKnownProductLookup { known },
+        ).apply {
+            onCameraAvailability(true)
+            onPermissionChecked(granted = true)
+            onResumeScanning()
+        }
+        viewModel.onCameraFrame(cameraValue("6901234567892"))
+        repeat(5) { viewModel.onCameraFrame(cameraValue("6901234567892")) }
+        assertThat(viewModel.uiState.value.scanning).isTrue()
+        assertThat(viewModel.uiState.value.pendingCapture).isNull()
+        assertThat(viewModel.uiState.value.knownProduct).isEqualTo(known)
     }
 
     @Test
