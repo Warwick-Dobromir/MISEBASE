@@ -132,6 +132,7 @@ fun CulinaryNavHost(
     val isHome = currentRoute == HOME_ROUTE
     val isKitchen = currentRoute == LIBRARY_ROUTE
     val isKitchenArchive = currentRoute == LIBRARY_TAB_ROUTE
+    val isInventoryCategory = currentRoute == InventoryRoutes.CATEGORY
     val isSauceEditor = currentRoute == SaucesRoutes.EDIT
     val isRecipeEditor = currentRoute == RecipesRoutes.EDIT
     val isCooking = currentRoute == CookingRoute.ROUTE
@@ -177,7 +178,7 @@ fun CulinaryNavHost(
         modifier = modifier.fillMaxSize(),
         topBar = {
             // 首页、厨房首页、六库目录与酱汁编辑器都自带品牌/操作顶栏。
-            if ((!showBottomBar || isKitchenArchive) && !isHome && !isKitchen && !isKitchenArchive && !isSauceEditor && !isRecipeEditor && !isCooking && !ownsTopBar) {
+            if ((!showBottomBar || isKitchenArchive) && !isHome && !isKitchen && !isKitchenArchive && !isInventoryCategory && !isSauceEditor && !isRecipeEditor && !isCooking && !ownsTopBar) {
                 Column {
                     AppTopBar(
                         topLevel = topLevel,
