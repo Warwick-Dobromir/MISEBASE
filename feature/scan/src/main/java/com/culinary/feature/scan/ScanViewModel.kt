@@ -108,9 +108,9 @@ class ScanViewModel
             }
         }
 
-        /** 从确认页返回或点击"重新扫描"：解除一次性消费，重新开始分析。 */
+        /** 从确认页返回或点击"重新扫描"：清除上次扫码记录，允许立即重扫同一物品。 */
         fun onResumeScanning() {
-            gate.resume()
+            gate.reset()
             _uiState.update { state ->
                 state.copy(
                     scanning = state.hasCamera && state.cameraAccess == CameraAccessState.GRANTED,
