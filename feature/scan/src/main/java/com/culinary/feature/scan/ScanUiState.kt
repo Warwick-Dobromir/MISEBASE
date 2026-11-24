@@ -1,6 +1,7 @@
 package com.culinary.feature.scan
 
 import com.culinary.core.domain.barcode.ScanCapture
+import com.culinary.core.domain.scan.ScanKnownProduct
 
 /** 相机可用性/授权状态；决定扫码页展示相机、权限说明还是手工输入兜底。 */
 enum class CameraAccessState {
@@ -38,6 +39,7 @@ data class ScanUiState(
     val error: String? = null,
     val status: String? = null,
     val pendingCapture: ScanCapture? = null,
+    val knownProduct: ScanKnownProduct? = null,
 ) {
     /** 是否应展示相机预览：必须有相机、已授权、未切到手工输入。 */
     val showCamera: Boolean
