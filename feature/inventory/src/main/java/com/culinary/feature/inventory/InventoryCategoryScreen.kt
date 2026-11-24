@@ -294,6 +294,9 @@ private fun InventoryCategoryScreen(
             workingOrder = latestOrder.value.toMutableList().apply {
                 add(to, removeAt(from))
             }
+            true
+        } else {
+            false
         }
     })
 
