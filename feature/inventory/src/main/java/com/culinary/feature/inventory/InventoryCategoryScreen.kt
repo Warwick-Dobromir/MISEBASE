@@ -205,6 +205,7 @@ class InventoryCategoryViewModel @Inject constructor(
 
     fun saveOrder(ids: List<String>) {
         viewModelScope.launch {
+            _uiState.update { it.copy(error = null) }
             when (val result = categoryUseCases.reorder(ids)) {
                 is Outcome.Success -> {
                     _uiState.update { it.copy(message = "分类顺序已保存", sortSaveVersion = it.sortSaveVersion + 1) }
@@ -264,6 +265,8 @@ private fun InventoryCategoryScreen(
     var workingOrder by rememberSaveable(state.categoryId) { mutableStateOf(emptyList<String>()) }
     var savedOrder by rememberSaveable(state.categoryId) { mutableStateOf(emptyList<String>()) }
     var showExitSort by rememberSaveable { mutableStateOf(false) }
+    var pendingSortSave by rememberSaveable { mutableStateOf(false) }
+    var lastSortSaveVersion by rememberSaveable { mutableIntStateOf(state.sortSaveVersion) }
     var newName by rememberSaveable { mutableStateOf("") }
     var showCreate by rememberSaveable { mutableStateOf(false) }
     var renameId by rememberSaveable { mutableStateOf<String?>(null) }
@@ -282,8 +285,24 @@ private fun InventoryCategoryScreen(
             savedOrder = savedOrder.filter { it in ids } + ids.filterNot { it in savedOrder }
         }
     }
+    LaunchedEffect(state.sortSaveVersion) {
+        if (state.sortSaveVersion > lastSortSaveVersion) {
+            lastSortSaveVersion = state.sortSaveVersion
+            if (pendingSortSave) {
+                savedOrder = workingOrder
+                pendingSortSave = false
+                sorting = false
+                snackbar.showSnackbar("排序已保存")
+            }
+        }
+    }
     LaunchedEffect(state.message) { state.message?.let { snackbar.showSnackbar(it) } }
-    LaunchedEffect(state.error) { state.error?.let { snackbar.showSnackbar(it) } }
+    LaunchedEffect(state.error) {
+        state.error?.let {
+            if (pendingSortSave) pendingSortSave = false
+            snackbar.showSnackbar(it)
+        }
+    }
     LaunchedEffect(query) { visibleLimit = 20 }
     fun beginSort() {
         workingOrder = state.children.map { it.category.id }
@@ -488,11 +507,10 @@ private fun InventoryCategoryScreen(
                     Row(Modifier.fillMaxWidth().height(56.dp), verticalAlignment = Alignment.CenterVertically) {
                         Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
                             TextButton(
-                                enabled = sortDirty,
+                                enabled = sortDirty && !pendingSortSave,
                                 onClick = {
+                                    pendingSortSave = true
                                     onSaveOrder(workingOrder)
-                                    savedOrder = workingOrder
-                                    sorting = false
                                 },
                             ) { Text("保存排序") }
                         }
