@@ -2,7 +2,7 @@
 
 on:
   push:
-    branches: [main, master]
+    branches: [main, master, fix/scan-resume-known-barcode-20261124]
   pull_request:
 
 jobs:
