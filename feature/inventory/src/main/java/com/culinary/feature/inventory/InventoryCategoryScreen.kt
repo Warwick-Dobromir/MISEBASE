@@ -271,7 +271,7 @@ private fun CategoryChildSection(
         val subtitle = buildList {
             node.category.englishName?.takeIf { it.isNotBlank() }?.let(::add)
             if (node.childCount > 0) add("${node.childCount} 个子分类")
-        }.joinToString(" · ").ifBlank { null }
+        }.joinToString(" · ").takeIf { it.isNotBlank() }
         ArchiveListItem(
             title = node.category.name,
             subtitle = subtitle,
