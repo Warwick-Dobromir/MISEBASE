@@ -731,7 +731,7 @@ private fun SegmentBox(
     onValueChange: (String) -> Unit,
     enabled: Boolean,
 ) {
-    val enabled = enabled && !LocalArchiveEditorInteraction.current.isReordering
+    val effectiveEnabled = enabled && !LocalArchiveEditorInteraction.current.isReordering
     var focused by remember { mutableStateOf(false) }
     Box(
         modifier =
@@ -756,7 +756,7 @@ private fun SegmentBox(
                 val digits = raw.filter { it.isDigit() }.takeLast(2)
                 onValueChange(digits)
             },
-            enabled = enabled,
+            enabled = effectiveEnabled,
             singleLine = true,
             textStyle =
                 CulinaryTextStyles.numeralS.copy(
