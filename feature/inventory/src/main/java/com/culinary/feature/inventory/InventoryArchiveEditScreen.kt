@@ -444,7 +444,14 @@ private fun ArchiveEditScreen(
                         .verticalScroll(rememberScrollState())
                         .padding(horizontal = CulinarySpacing.pageHorizontal, vertical = CulinarySpacing.sm),
             ) {
-                ArchiveEditorSectionHeader(index = "", english = "IDENTITY", title = "基本信息")
+                ArchiveEditorSectionHeader(
+                    index = "",
+                    english = "IDENTITY",
+                    title = "基本信息",
+                    showRule = false,
+                    topPadding = 0.dp,
+                    titleTopPadding = CulinarySpacing.sm,
+                )
                 Spacer(modifier = Modifier.height(CulinarySpacing.sm))
                 CulinaryTextField(
                     value = state.name,
