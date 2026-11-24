@@ -1,11 +1,15 @@
 package com.culinary.feature.scan
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.culinary.core.common.Clock
 import com.culinary.core.domain.barcode.ScanCapture
 import com.culinary.core.domain.barcode.ScanFrameGate
 import com.culinary.core.domain.barcode.ScanSource
+import com.culinary.core.domain.scan.ScanKnownProductLookup
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -23,6 +27,7 @@ class ScanViewModel
     constructor(
         private val gate: ScanFrameGate,
         private val clock: Clock,
+        private val knownProductLookup: ScanKnownProductLookup = ScanKnownProductLookup { null },
     ) : ViewModel() {
         private val _uiState = MutableStateFlow(ScanUiState())
         val uiState: StateFlow<ScanUiState> = _uiState.asStateFlow()
@@ -96,13 +101,35 @@ class ScanViewModel
             val state = _uiState.value
             if (!state.showCamera || !state.scanning) return
             if (!gate.offer(capture.normalizedValue, clock.now().toEpochMilli())) return
-            _uiState.update {
-                it.copy(
-                    scanning = false,
-                    torchOn = false,
-                    status = null,
-                    pendingCapture = capture.copy(source = ScanSource.CAMERA),
-                )
+            val normalizedCapture = capture.copy(source = ScanSource.CAMERA)
+            viewModelScope.launch {
+                val known = runCatching {
+                    knownProductLookup.findByBarcode(normalizedCapture.normalizedValue)
+                }.getOrNull()
+                if (known != null) {
+                    gate.resume()
+                    _uiState.update { state ->
+                        state.copy(
+                            scanning = state.hasCamera && state.cameraAccess == CameraAccessState.GRANTED && !state.manualEntry,
+                            torchOn = false,
+                            knownProduct = known,
+                            pendingCapture = null,
+                        )
+                    }
+                    delay(KNOWN_PRODUCT_NOTICE_MILLIS)
+                    _uiState.update { state ->
+                        if (state.knownProduct?.productId == known.productId) state.copy(knownProduct = null) else state
+                    }
+                } else {
+                    _uiState.update { state ->
+                        state.copy(
+                            scanning = false,
+                            torchOn = false,
+                            status = null,
+                            pendingCapture = normalizedCapture,
+                        )
+                    }
+                }
             }
         }
 
@@ -118,6 +145,7 @@ class ScanViewModel
                 state.copy(
                     scanning = state.hasCamera && state.cameraAccess == CameraAccessState.GRANTED && !state.manualEntry,
                     pendingCapture = null,
+                    knownProduct = null,
                     status = null,
                     error = null,
                     manualError = null,
@@ -201,5 +229,6 @@ class ScanViewModel
 
         private companion object {
             const val TORCH_UNSUPPORTED = "此设备不支持手电筒。"
+            const val KNOWN_PRODUCT_NOTICE_MILLIS = 2_600L
         }
     }
