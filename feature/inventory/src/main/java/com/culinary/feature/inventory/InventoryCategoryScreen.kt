@@ -1,8 +1,10 @@
 package com.culinary.feature.inventory
 
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
@@ -28,12 +30,11 @@ import com.culinary.core.designsystem.component.CulinaryTextButton
 import com.culinary.core.designsystem.component.EmptyState
 import com.culinary.core.designsystem.component.ErrorBanner
 import com.culinary.core.designsystem.component.LoadingRows
-import com.culinary.core.designsystem.component.PageHeader
 import com.culinary.core.designsystem.component.QuantityText
-import com.culinary.core.designsystem.component.SectionHeader
 import com.culinary.core.designsystem.component.StatusBadge
 import com.culinary.core.designsystem.icon.CulinaryIcons
 import com.culinary.core.designsystem.theme.CulinarySpacing
+import com.culinary.core.designsystem.theme.CulinaryTextStyles
 import com.culinary.core.domain.model.ArchiveCategory
 import com.culinary.core.domain.model.ArchiveListFilter
 import com.culinary.core.domain.model.InventoryArchiveRow
@@ -179,13 +180,9 @@ private fun InventoryCategoryScreen(
                     ),
             )
         }
-        PageHeader(
-            eyebrow = "INVENTORY CATEGORY",
-            title = state.title,
-            supporting = categorySupporting(state),
-            actions = {
-                CulinaryTextButton(text = "管理分类", onClick = onManage)
-            },
+        InventoryCategoryContextHeader(
+            state = state,
+            onManage = onManage,
         )
         when {
             state.isLoading -> LoadingRows()
@@ -206,24 +203,62 @@ private fun InventoryCategoryScreen(
                             .verticalScroll(rememberScrollState())
                             .padding(bottom = CulinarySpacing.xl),
                 ) {
-                    CategoryChildSection(
-                        children = state.children,
-                        onOpenCategory = onOpenCategory,
-                    )
-                    CategoryArchiveSection(
-                        archives = state.archives,
-                        onOpenArchive = onOpenArchive,
-                    )
+                    if (state.children.isNotEmpty()) {
+                        CategoryChildSection(
+                            children = state.children,
+                            onOpenCategory = onOpenCategory,
+                        )
+                    }
+                    if (state.archives.isNotEmpty()) {
+                        CategoryArchiveSection(
+                            archives = state.archives,
+                            hasChildren = state.children.isNotEmpty(),
+                            onOpenArchive = onOpenArchive,
+                        )
+                    }
                 }
             }
         }
     }
 }
 
-private fun categorySupporting(state: InventoryCategoryUiState): String {
-    val path = state.pathLabel
-    val counts = "${state.children.size} 个子分类 · ${state.archives.size} 个档案"
-    return if (path.isNullOrBlank()) counts else "$path · $counts"
+@Composable
+private fun InventoryCategoryContextHeader(
+    state: InventoryCategoryUiState,
+    onManage: () -> Unit,
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = CulinarySpacing.pageHorizontal),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = state.title,
+                style = MaterialTheme.typography.headlineMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.weight(1f),
+            )
+            CulinaryTextButton(text = "管理分类", onClick = onManage)
+        }
+        state.pathLabel?.takeIf { it.isNotBlank() }?.let { path ->
+            Text(
+                text = path,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 2,
+            )
+        }
+        Spacer(modifier = Modifier.height(CulinarySpacing.xs))
+        Text(
+            text = "${state.children.size} 个子分类 · ${state.archives.size} 个档案",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
 }
 
 @Composable
@@ -231,32 +266,15 @@ private fun CategoryChildSection(
     children: List<InventoryCategoryNode>,
     onOpenCategory: (String) -> Unit,
 ) {
-    SectionHeader(
-        title = "子分类",
-        subtitle = if (children.isEmpty()) "没有下级分类" else "数量为含后代的档案总数",
-        modifier =
-            Modifier
-                .padding(horizontal = CulinarySpacing.pageHorizontal)
-                .padding(top = CulinarySpacing.sm),
-    )
-    if (children.isEmpty()) {
-        Text(
-            text = "该分类下没有子分类。",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier =
-                Modifier.padding(
-                    start = CulinarySpacing.pageHorizontal,
-                    end = CulinarySpacing.pageHorizontal,
-                    bottom = CulinarySpacing.sm,
-                ),
-        )
-        return
-    }
+    InventoryCategorySectionLabel(title = "下级分类")
     children.forEach { node ->
+        val subtitle = buildList {
+            node.category.englishName?.takeIf { it.isNotBlank() }?.let(::add)
+            if (node.childCount > 0) add("${node.childCount} 个子分类")
+        }.joinToString(" · ").takeIf { it.isNotBlank() }
         ArchiveListItem(
             title = node.category.name,
-            subtitle = if (node.childCount > 0) "${node.childCount} 个子分类" else null,
+            subtitle = subtitle,
             meta = "${node.totalArchiveCount} 项",
             onClick = { onOpenCategory(node.category.id) },
         )
@@ -266,30 +284,12 @@ private fun CategoryChildSection(
 @Composable
 private fun CategoryArchiveSection(
     archives: List<InventoryArchiveRow>,
+    hasChildren: Boolean,
     onOpenArchive: (String) -> Unit,
 ) {
-    SectionHeader(
-        title = "直属档案",
-        subtitle = if (archives.isEmpty()) "该分类下还没有档案" else "只包含直接归属该分类的档案",
-        modifier =
-            Modifier
-                .padding(horizontal = CulinarySpacing.pageHorizontal)
-                .padding(top = CulinarySpacing.block),
+    InventoryCategorySectionLabel(
+        title = if (hasChildren) "当前分类档案" else "档案",
     )
-    if (archives.isEmpty()) {
-        Text(
-            text = "该分类下还没有库存档案。归档后可用量、单位与状态会显示在这里。",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier =
-                Modifier.padding(
-                    start = CulinarySpacing.pageHorizontal,
-                    end = CulinarySpacing.pageHorizontal,
-                    bottom = CulinarySpacing.sm,
-                ),
-        )
-        return
-    }
     archives.forEach { row ->
         ArchiveListItem(
             title = row.archive.name,
@@ -312,4 +312,24 @@ private fun CategoryArchiveSection(
     }
     CulinaryRule(modifier = Modifier.padding(horizontal = CulinarySpacing.pageHorizontal))
     Spacer(modifier = Modifier.height(CulinarySpacing.xs))
+}
+
+@Composable
+private fun InventoryCategorySectionLabel(title: String) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = CulinarySpacing.lg),
+    ) {
+        CulinaryRule()
+        Text(
+            text = title,
+            style = CulinaryTextStyles.eyebrow,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(
+                horizontal = CulinarySpacing.pageHorizontal,
+                vertical = CulinarySpacing.sm,
+            ),
+        )
+    }
 }
