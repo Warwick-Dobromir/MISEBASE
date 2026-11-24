@@ -1,4 +1,10 @@
 package com.culinary.feature.inventory
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.runtime.withFrameNanos
+import androidx.compose.ui.platform.LocalDensity
+import kotlin.math.pow
+import kotlin.math.sign
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.shape.CircleShape
@@ -778,7 +784,59 @@ private fun InventoryDirectorySectionLabel(
     }
 }
 
-/** Inventory counterpart of the kitchen archive CategoryRow; interaction and geometry stay aligned. */
+private data class InventoryDragOffsetState(
+    val offsetPx: Float,
+    val edgeOverdragPx: Float = 0f,
+)
+
+private fun inventoryEdgeResistanceOffset(overdragPx: Float, maxOffsetPx: Float): Float {
+    val limit = maxOffsetPx.coerceAtLeast(1f)
+    val maxRaw = limit * 5f
+    val raw = overdragPx.coerceIn(-maxRaw, maxRaw)
+    val progress = (kotlin.math.abs(raw) / maxRaw).coerceIn(0f, 1f)
+    return limit * progress.pow(1.15f) * raw.sign
+}
+
+private fun inventoryDragOffsetAfterDelta(
+    currentOffsetPx: Float,
+    currentEdgeOverdragPx: Float,
+    deltaPx: Float,
+    rowHeightPx: Float,
+    maxEdgeOffsetPx: Float,
+    canMove: (Int) -> Boolean,
+    move: (Int) -> Boolean,
+): InventoryDragOffsetState {
+    val threshold = rowHeightPx.coerceAtLeast(1f)
+    var offset = currentOffsetPx + deltaPx
+    if (currentEdgeOverdragPx != 0f) {
+        val updatedRaw = currentEdgeOverdragPx + deltaPx
+        if (updatedRaw != 0f && updatedRaw.sign == currentEdgeOverdragPx.sign) {
+            return InventoryDragOffsetState(
+                offsetPx = inventoryEdgeResistanceOffset(updatedRaw, maxEdgeOffsetPx),
+                edgeOverdragPx = updatedRaw,
+            )
+        }
+        offset = updatedRaw
+    }
+    while (offset >= threshold) {
+        if (!canMove(1) || !move(1)) {
+            return InventoryDragOffsetState(inventoryEdgeResistanceOffset(offset, maxEdgeOffsetPx), offset)
+        }
+        offset -= threshold
+    }
+    while (offset <= -threshold) {
+        if (!canMove(-1) || !move(-1)) {
+            return InventoryDragOffsetState(inventoryEdgeResistanceOffset(offset, maxEdgeOffsetPx), offset)
+        }
+        offset += threshold
+    }
+    if ((offset < 0f && !canMove(-1)) || (offset > 0f && !canMove(1))) {
+        return InventoryDragOffsetState(inventoryEdgeResistanceOffset(offset, maxEdgeOffsetPx), offset)
+    }
+    return InventoryDragOffsetState(offsetPx = offset)
+}
+
+/** Inventory row uses the same geometry, drag resistance and edge auto-scroll as the kitchen archive row. */
 @Composable
 private fun InventoryCategoryRow(
     node: InventoryCategoryNode,
@@ -792,35 +850,58 @@ private fun InventoryCategoryRow(
 ) {
     var dragging by remember(node.category.id) { mutableStateOf(false) }
     var dragOffsetY by remember(node.category.id) { mutableFloatStateOf(0f) }
+    var edgeOverdragY by remember(node.category.id) { mutableFloatStateOf(0f) }
     var rowHeightPx by remember(node.category.id) { mutableIntStateOf(0) }
+    val maxEdgeOffsetPx = with(LocalDensity.current) { 12.dp.toPx() }
     val currentCanMove by rememberUpdatedState(canMove)
     val currentOnMove by rememberUpdatedState(onMove)
-    val edgePx = with(androidx.compose.ui.platform.LocalDensity.current) { 144.dp.toPx() }
+    val autoScrollEdgePx = with(LocalDensity.current) { 144.dp.toPx() }
 
-    LaunchedEffect(dragging, sorting, edgePx) {
-        var previousFrame = 0L
+    LaunchedEffect(dragging, sorting, autoScrollEdgePx) {
+        var previousFrameNanos = 0L
         while (dragging && sorting) {
-            val frame = androidx.compose.runtime.withFrameNanos { it }
-            val seconds = if (previousFrame == 0L) 0f else
-                ((frame - previousFrame) / 1_000_000_000f).coerceIn(0f, 0.05f)
-            previousFrame = frame
-            if (seconds > 0f) {
+            val frameNanos = withFrameNanos { it }
+            val frameSeconds = if (previousFrameNanos == 0L) 0f else
+                ((frameNanos - previousFrameNanos) / 1_000_000_000f).coerceIn(0f, 0.05f)
+            previousFrameNanos = frameNanos
+            if (frameSeconds > 0f) {
                 val viewport = listState.layoutInfo
-                val center = viewport.visibleItemsInfo.firstOrNull { it.key == node.category.id }
+                val draggedCenter = viewport.visibleItemsInfo
+                    .firstOrNull { it.key == node.category.id }
                     ?.let { it.offset + rowHeightPx / 2f + dragOffsetY }
-                if (center != null) {
-                    val top = ((edgePx - (center - viewport.viewportStartOffset)) / edgePx).coerceIn(0f, 1f)
-                    val bottom = ((edgePx - (viewport.viewportEndOffset - center)) / edgePx).coerceIn(0f, 1f)
-                    val direction = when {
-                        top > 0f && top >= bottom -> -1f
-                        bottom > 0f -> 1f
-                        else -> 0f
+                if (draggedCenter != null) {
+                    val topProgress = (
+                        (autoScrollEdgePx - (draggedCenter - viewport.viewportStartOffset)) /
+                            autoScrollEdgePx
+                        ).coerceIn(0f, 1f)
+                    val bottomProgress = (
+                        (autoScrollEdgePx - (viewport.viewportEndOffset - draggedCenter)) /
+                            autoScrollEdgePx
+                        ).coerceIn(0f, 1f)
+                    val direction: Float
+                    val progress: Float
+                    when {
+                        topProgress > 0f && topProgress >= bottomProgress -> {
+                            direction = -1f
+                            progress = topProgress
+                        }
+                        bottomProgress > 0f -> {
+                            direction = 1f
+                            progress = bottomProgress
+                        }
+                        else -> {
+                            direction = 0f
+                            progress = 0f
+                        }
                     }
                     if (direction != 0f) {
-                        val progress = maxOf(top, bottom)
                         val speed = 320f + 2_080f * progress * progress
-                        val consumed = listState.scrollBy(direction * speed * seconds)
+                        val consumed = listState.scrollBy(direction * speed * frameSeconds)
                         dragOffsetY += consumed
+                        if (edgeOverdragY != 0f) {
+                            edgeOverdragY += consumed
+                            dragOffsetY = inventoryEdgeResistanceOffset(edgeOverdragY, maxEdgeOffsetPx)
+                        }
                     }
                 }
             }
@@ -832,50 +913,74 @@ private fun InventoryCategoryRow(
             .fillMaxWidth()
             .onSizeChanged { rowHeightPx = it.height }
             .graphicsLayer {
-                val active = sorting && dragging
-                scaleX = if (active) 1.045f else 1f
-                scaleY = if (active) 1.045f else 1f
+                val selectedScale = sorting && dragging
+                val scale = if (selectedScale) 1.045f else 1f
+                scaleX = scale
+                scaleY = scale
                 translationX = 0f
-                translationY = if (active) dragOffsetY else 0f
+                translationY = if (selectedScale) dragOffsetY else 0f
             }
+            .shadow(
+                elevation = if (sorting && dragging) 7.dp else 0.dp,
+                shape = RectangleShape,
+            )
             .then(
-                if (sorting) Modifier.pointerInput(node.category.id, sorting) {
-                    detectDragGesturesAfterLongPress(
-                        onDragStart = { dragging = true; dragOffsetY = 0f },
-                        onDragEnd = { dragging = false; dragOffsetY = 0f },
-                        onDragCancel = { dragging = false; dragOffsetY = 0f },
-                        onDrag = { change, amount ->
-                            change.consume()
-                            dragOffsetY += amount.y
-                            val threshold = rowHeightPx.coerceAtLeast(1).toFloat()
-                            while (dragOffsetY >= threshold && currentCanMove(1)) {
-                                if (currentOnMove(1)) dragOffsetY -= threshold else break
-                            }
-                            while (dragOffsetY <= -threshold && currentCanMove(-1)) {
-                                if (currentOnMove(-1)) dragOffsetY += threshold else break
-                            }
-                        },
-                    )
-                } else Modifier.pointerInput(node.category.id, sorting) {
-                    detectDragGesturesAfterLongPress(onDrag = { change, _ -> change.consume() })
-                }
+                if (sorting) {
+                    Modifier.pointerInput(node.category.id, sorting) {
+                        detectDragGesturesAfterLongPress(
+                            onDragStart = {
+                                dragging = true
+                                dragOffsetY = 0f
+                                edgeOverdragY = 0f
+                            },
+                            onDragEnd = {
+                                dragging = false
+                                dragOffsetY = 0f
+                                edgeOverdragY = 0f
+                            },
+                            onDragCancel = {
+                                dragging = false
+                                dragOffsetY = 0f
+                                edgeOverdragY = 0f
+                            },
+                            onDrag = { change, amount ->
+                                change.consume()
+                                val nextDrag = inventoryDragOffsetAfterDelta(
+                                    currentOffsetPx = dragOffsetY,
+                                    currentEdgeOverdragPx = edgeOverdragY,
+                                    deltaPx = amount.y,
+                                    rowHeightPx = rowHeightPx.toFloat(),
+                                    maxEdgeOffsetPx = maxEdgeOffsetPx,
+                                    canMove = currentCanMove,
+                                    move = currentOnMove,
+                                )
+                                dragOffsetY = nextDrag.offsetPx
+                                edgeOverdragY = nextDrag.edgeOverdragPx
+                            },
+                        )
+                    }
+                } else {
+                    Modifier.pointerInput(node.category.id, sorting) {
+                        detectTapGestures(onTap = { onClick() })
+                    }
+                },
             )
             .padding(horizontal = CulinarySpacing.pageHorizontal, vertical = CulinarySpacing.md),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Column(modifier = Modifier.weight(1f)) {
+        Column(Modifier.weight(1f)) {
             Row(
                 modifier = if (sorting) Modifier.clickable(onClick = onRename) else Modifier,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    text = node.category.name,
+                    node.category.name,
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.onSurface,
                 )
                 if (sorting) {
                     Text(
-                        text = "✎",
+                        "✎",
                         style = MaterialTheme.typography.titleMedium,
                         color = MaterialTheme.colorScheme.secondary,
                         modifier = Modifier.padding(start = CulinarySpacing.xs).graphicsLayer { scaleX = -1f },
@@ -883,17 +988,20 @@ private fun InventoryCategoryRow(
                 }
             }
             node.category.englishName?.takeIf { it.isNotBlank() }?.let {
-                Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(it, style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             Text(
-                text = "${node.childCount} 个子分类 · ${node.directArchiveCount} 个档案",
+                node.childCount.toString() + " 个子分类 · " + node.directArchiveCount + " 个档案",
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
         if (sorting) {
             Box(
-                modifier = Modifier.size(48.dp).clickable(onClick = onDelete).padding(CulinarySpacing.sm),
+                Modifier.sizeIn(minWidth = 48.dp, minHeight = 48.dp)
+                    .clickable(onClick = onDelete)
+                    .padding(horizontal = CulinarySpacing.xs, vertical = CulinarySpacing.sm),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(CulinaryIcons.Trash, contentDescription = "删除子库",
