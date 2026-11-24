@@ -5,6 +5,7 @@ package com.culinary.navigation
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.imePadding
@@ -84,6 +85,7 @@ import com.culinary.feature.sauces.SaucesRoutes
 import com.culinary.feature.scan.ScanConfirmRoute
 import com.culinary.feature.scan.ScanRoute
 import com.culinary.feature.scan.ScanRoutes
+import com.culinary.feature.scan.ScanViewModel
 import com.culinary.home.HOME_PLACEHOLDER_ROUTE
 import com.culinary.home.HOME_PLACEHOLDER_SECTION_ARG
 import com.culinary.home.HOME_PURCHASE_DETAIL_ROUTE
@@ -786,8 +788,15 @@ private fun NavGraphBuilder.scanGraph(navController: NavHostController) {
                 navArgument(ScanRoutes.ARG_SOURCE) { type = NavType.StringType },
             ),
     ) {
+        // Scope the scanner ViewModel to the scan back-stack entry so system Back
+        // can explicitly resume its state before the confirmation destination is removed.
+        val scanEntry = remember(navController) { navController.getBackStackEntry(SCAN_ROUTE) }
+        val scanViewModel: ScanViewModel = hiltViewModel(scanEntry)
         ScanConfirmRoute(
-            onBackToScan = { navController.popBackStack() },
+            onBackToScan = {
+                navController.popBackStack()
+                scanViewModel.onResumeScanning()
+            },
             onHandoffToInventory = { handoff ->
                 // 识别成功不等于入库：先建/确认库存档案，再由用户在库存模块填写数量并确认入库。
                 navController.navigate(
