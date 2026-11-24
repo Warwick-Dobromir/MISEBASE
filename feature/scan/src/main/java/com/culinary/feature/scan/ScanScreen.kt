@@ -11,8 +11,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
-import coil3.compose.AsyncImage
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -22,7 +22,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.unit.dp
-import androidx.compose.foundation.layout.size
+import coil3.compose.AsyncImage
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
@@ -102,7 +102,10 @@ internal fun ScanScreen(
                 Row(
                     modifier = Modifier.fillMaxWidth()
                         .padding(horizontal = CulinarySpacing.md, vertical = CulinarySpacing.sm)
-                        .background(Color.White.copy(alpha = 0.96f), androidx.compose.foundation.shape.RoundedCornerShape(8.dp))
+                        .background(
+                            Color.White.copy(alpha = 0.96f),
+                            androidx.compose.foundation.shape.RoundedCornerShape(8.dp),
+                        )
                         .padding(CulinarySpacing.sm),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(CulinarySpacing.sm),
@@ -116,7 +119,11 @@ internal fun ScanScreen(
                     }
                     Column {
                         Text(text = product.name, style = MaterialTheme.typography.bodyMedium, color = Color.Black)
-                        Text(text = product.specification, style = MaterialTheme.typography.labelSmall, color = Color.DarkGray)
+                        Text(
+                            text = product.specification,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = Color.DarkGray,
+                        )
                     }
                 }
             }
