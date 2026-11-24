@@ -2,6 +2,7 @@ package com.culinary.feature.scan
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -56,6 +57,7 @@ internal fun ScanScreen(
     onManualCodeChange: (String) -> Unit,
     onSubmitManualCode: () -> Unit,
     onToggleTorch: () -> Unit,
+    onKnownProductClick: () -> Unit = {},
     onResumeScanning: () -> Unit,
     onBack: () -> Unit,
     onDismissTorchNotice: () -> Unit,
@@ -100,7 +102,7 @@ internal fun ScanScreen(
         Column(modifier = Modifier.align(Alignment.TopCenter).fillMaxWidth()) {
             state.knownProduct?.let { product ->
                 Row(
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth().clickable(onClick = onKnownProductClick)
                         .padding(horizontal = CulinarySpacing.md, vertical = CulinarySpacing.sm)
                         .background(
                             Color.White.copy(alpha = 0.96f),
@@ -117,7 +119,7 @@ internal fun ScanScreen(
                             modifier = Modifier.size(44.dp),
                         )
                     }
-                    Column {
+                    Column(modifier = Modifier.weight(1f)) {
                         Text(text = product.name, style = MaterialTheme.typography.bodyMedium, color = Color.Black)
                         Text(
                             text = product.specification,
@@ -125,6 +127,11 @@ internal fun ScanScreen(
                             color = Color.DarkGray,
                         )
                     }
+                    Text(
+                        text = "入库",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Color(0xFF8A6A2B),
+                    )
                 }
             }
             state.error?.let { message ->
