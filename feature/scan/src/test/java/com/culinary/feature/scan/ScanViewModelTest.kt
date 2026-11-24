@@ -7,13 +7,13 @@ import com.culinary.core.domain.barcode.ScanSource
 import com.culinary.core.domain.scan.ScanKnownProduct
 import com.culinary.core.domain.scan.ScanKnownProductLookup
 import com.google.common.truth.Truth.assertThat
-import org.junit.Test
-import org.junit.Before
-import org.junit.After
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
-import kotlinx.coroutines.test.setMain
 import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.setMain
+import org.junit.After
+import org.junit.Before
+import org.junit.Test
 import java.time.Instant
 
 /**
@@ -31,6 +31,7 @@ class ScanViewModelTest {
     fun resetMainDispatcher() {
         Dispatchers.resetMain()
     }
+
     private var nowMillis: Long = 1_000L
     private val clock = Clock { Instant.ofEpochMilli(nowMillis) }
 
