@@ -7,6 +7,7 @@ import com.culinary.core.common.Outcome
 import com.culinary.core.domain.model.EntityStatus
 import com.culinary.core.domain.model.Ingredient
 import com.culinary.core.domain.model.IngredientId
+import com.culinary.core.domain.model.IngredientVersion
 import com.culinary.core.domain.model.KitchenStep
 import com.culinary.core.domain.model.KitchenStepCodec
 import com.culinary.core.domain.model.Quantity
@@ -328,6 +329,8 @@ class CookingViewModelTest {
             Outcome.failure(CulinaryError.NotFound("ingredient", id.value))
 
         override suspend fun save(ingredient: Ingredient): Outcome<IngredientId> = Outcome.success(ingredient.id)
+
+        override suspend fun listVersions(id: IngredientId): List<IngredientVersion> = emptyList()
 
         override suspend fun archive(id: IngredientId): Outcome<Unit> = Outcome.success(Unit)
     }
