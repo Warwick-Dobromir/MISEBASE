@@ -44,6 +44,9 @@ fun ScanRoute(
     LaunchedEffect(Unit) {
         viewModel.onCameraAvailability(hasCamera)
         viewModel.onPermissionChecked(CameraPermission.isGranted(context))
+        // LifecycleEventObserver 不会补发注册前已经发生的 ON_RESUME。
+        // 首次进入必须主动恢复；之后由 ON_RESUME 处理从确认页返回。
+        viewModel.onResumeScanning()
     }
 
     DisposableEffect(lifecycleOwner, viewModel) {
