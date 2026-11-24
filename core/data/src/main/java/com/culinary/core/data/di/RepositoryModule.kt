@@ -26,8 +26,8 @@ import com.culinary.core.domain.repository.RecipeImageRepository
 import com.culinary.core.domain.repository.RecipeRepository
 import com.culinary.core.domain.repository.SauceImageRepository
 import com.culinary.core.domain.repository.SauceRepository
-import com.culinary.core.domain.scan.ScanKnownProductLookup
 import com.culinary.core.domain.repository.UnitRepository
+import com.culinary.core.domain.scan.ScanKnownProductLookup
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
