@@ -16,6 +16,7 @@ import java.util.concurrent.ExecutionException
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicLong
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 
@@ -39,6 +40,8 @@ internal class CameraBarcodeSession(
         Executors.newSingleThreadExecutor { runnable -> Thread(runnable, "culinary-scan-analysis") }
     private val decoder = MlKitBarcodeDecoder()
     private val analyzing = AtomicBoolean(false)
+    // Invalidates decode callbacks that started before a pause/resume transition.
+    private val analysisGeneration = AtomicLong(0L)
 
     private var provider: ProcessCameraProvider? = null
     private var camera: Camera? = null
@@ -46,14 +49,23 @@ internal class CameraBarcodeSession(
 
     private val analyzer =
         ImageAnalysis.Analyzer { image ->
+            val frameGeneration = analysisGeneration.get()
             if (!analyzing.get()) {
                 image.close()
                 return@Analyzer
             }
             decoder.decode(
                 imageProxy = image,
-                onResult = { captures -> captures.firstOrNull()?.let(onCapture) },
-                onFailure = { onError(ERROR_DECODE) },
+                onResult = {
+                    if (analyzing.get() && analysisGeneration.get() == frameGeneration) {
+                        it.firstOrNull()?.let(onCapture)
+                    }
+                },
+                onFailure = {
+                    if (analyzing.get() && analysisGeneration.get() == frameGeneration) {
+                        onError(ERROR_DECODE)
+                    }
+                },
             )
         }
 
@@ -99,15 +111,16 @@ internal class CameraBarcodeSession(
         }
     }
 
-    /** 暂停/恢复分析：识别到结果后暂停，用户点"继续扫描"后恢复。 */
+    /**
+     * 暂停/恢复识别，但始终保留 CameraX analyzer 绑定。
+     *
+     * 清除后再 setAnalyzer 会把恢复依赖在 CameraX 分析器重新挂载上；
+     * 页面从确认页返回时只切换开关，避免相机仍有预览却不再产出识别帧。
+     * generation 同时使暂停前尚未完成的 ML Kit 回调失效，防止旧结果在恢复后误触发。
+     */
     fun setActive(active: Boolean) {
+        analysisGeneration.incrementAndGet()
         analyzing.set(active)
-        val imageAnalysis = analysis ?: return
-        if (active) {
-            imageAnalysis.setAnalyzer(executor, analyzer)
-        } else {
-            imageAnalysis.clearAnalyzer()
-        }
     }
 
     /**
@@ -125,6 +138,7 @@ internal class CameraBarcodeSession(
     /** 释放相机与分析资源；释放阶段的失败不影响页面退出，因此不向上抛出。 */
     @Suppress("SwallowedException")
     fun release() {
+        analysisGeneration.incrementAndGet()
         analyzing.set(false)
         runCatching { analysis?.clearAnalyzer() }
         runCatching { provider?.unbindAll() }
