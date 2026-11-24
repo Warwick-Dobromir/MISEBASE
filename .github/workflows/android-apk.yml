@@ -73,6 +73,18 @@ jobs:
           test "$ACTUAL" = "$EXPECTED"
           echo "Verified package, version, and original signing certificate: $ACTUAL"
 
+      - name: Record APK content and size audit
+        run: |
+          set -euo pipefail
+          APK="app/build/outputs/apk/debug/app-debug.apk"
+          test -s "$APK"
+          {
+            echo "APK bytes: $(stat -c %s "$APK")"
+            echo "APK SHA-256: $(sha256sum "$APK" | cut -d ' ' -f1)"
+            echo "APK file inventory:"
+            unzip -l "$APK"
+          } > app/build/outputs/apk/debug/apk-audit.txt
+
       - name: Upload rebuilt APK for download
         if: github.ref != 'refs/heads/main'
         uses: actions/upload-artifact@v4
