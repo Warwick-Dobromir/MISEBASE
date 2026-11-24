@@ -450,65 +450,23 @@ private fun InventoryCategoryScreen(
                             val orderedChildren = if (sorting) {
                                 workingOrder.mapNotNull { id -> state.children.firstOrNull { it.category.id == id } }
                             } else state.children
-                            items(orderedChildren, key = { "category-${it.category.id}" }) { node ->
-                                var rowHeightPx by remember(node.category.id) { mutableIntStateOf(0) }
-                                var dragRemainder by remember(node.category.id) { mutableFloatStateOf(0f) }
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .onSizeChanged { rowHeightPx = it.height }
-                                        .pointerInput(sorting, node.category.id) {
-                                            if (sorting) {
-                                                detectDragGesturesAfterLongPress(
-                                                    onDragStart = { dragRemainder = 0f },
-                                                    onDragEnd = { dragRemainder = 0f },
-                                                    onDragCancel = { dragRemainder = 0f },
-                                                    onDrag = { change, amount ->
-                                                        change.consume()
-                                                        dragRemainder += amount.y
-                                                        val threshold = rowHeightPx.coerceAtLeast(1).toFloat()
-                                                        while (dragRemainder >= threshold) {
-                                                            moveCategory.value(node.category.id, 1)
-                                                            dragRemainder -= threshold
-                                                        }
-                                                        while (dragRemainder <= -threshold) {
-                                                            moveCategory.value(node.category.id, -1)
-                                                            dragRemainder += threshold
-                                                        }
-                                                        val edge = threshold * 0.22f
-                                                        when {
-                                                            change.position.y < edge -> scope.launch {
-                                                                listState.scrollBy(-24f)
-                                                            }
-                                                            change.position.y > threshold - edge -> scope.launch {
-                                                                listState.scrollBy(24f)
-                                                            }
-                                                        }
-                                                    },
-                                                )
-                                            }
-                                        },
-                                    verticalAlignment = Alignment.CenterVertically,
-                                ) {
-                                    Box(Modifier.weight(1f)) {
-                                        ArchiveListItem(
-                                            title = node.category.name,
-                                            subtitle = buildList {
-                                                node.category.englishName?.takeIf { it.isNotBlank() }?.let(::add)
-                                                if (node.childCount > 0) add("${node.childCount} 个子分类")
-                                            }.joinToString(" · ").ifBlank { null },
-                                            meta = "${node.totalArchiveCount} 项",
-                                            onClick = { if (!sorting) onOpenCategory(node.category.id) },
-                                        )
-                                    }
-                                    if (sorting) {
-                                        TextButton(onClick = {
-                                            renameId = node.category.id
-                                            renameName = node.category.name
-                                        }) { Text("改名") }
-                                        TextButton(onClick = { deleteId = node.category.id }) { Text("删除") }
-                                    }
-                                }
+                            items(orderedChildren, key = { it.category.id }) { node ->
+                                InventoryCategoryRow(
+                                    node = node,
+                                    sorting = sorting,
+                                    listState = listState,
+                                    onClick = { onOpenCategory(node.category.id) },
+                                    onRename = {
+                                        renameId = node.category.id
+                                        renameName = node.category.name
+                                    },
+                                    onDelete = { deleteId = node.category.id },
+                                    canMove = { delta ->
+                                        val from = latestOrder.value.indexOf(node.category.id)
+                                        from >= 0 && from + delta in latestOrder.value.indices
+                                    },
+                                    onMove = { delta -> moveCategory.value(node.category.id, delta) },
+                                )
                             }
                         }
                         if (state.archives.isNotEmpty() || state.children.isEmpty()) {
@@ -642,40 +600,192 @@ private fun InventoryDirectorySectionLabel(
     showSort: Boolean = false,
     onSort: () -> Unit = {},
 ) {
-    Column(Modifier.fillMaxWidth().padding(top = CulinarySpacing.lg)) {
+    Column(modifier = Modifier.fillMaxWidth().padding(top = CulinarySpacing.lg)) {
         CulinaryRule()
         Row(
-            Modifier.fillMaxWidth().padding(horizontal = CulinarySpacing.pageHorizontal),
+            modifier = Modifier.fillMaxWidth().padding(horizontal = CulinarySpacing.pageHorizontal),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
-                title,
+                text = title,
                 style = CulinaryTextStyles.eyebrow,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.weight(1f).padding(vertical = CulinarySpacing.sm),
             )
             if (showSort) {
-                Box(Modifier.size(32.dp).clickable(onClick = onSort), contentAlignment = Alignment.Center) {
-                    Icon(CulinaryIcons.Sort, contentDescription = "分类排序", modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                Box(
+                    modifier = Modifier.size(32.dp).clickable(onClick = onSort),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        CulinaryIcons.Sort,
+                        contentDescription = "分类排序",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(16.dp),
+                    )
                 }
             }
         }
     }
 }
 
+/** Inventory counterpart of the kitchen archive CategoryRow; interaction and geometry stay aligned. */
+@Composable
+private fun InventoryCategoryRow(
+    node: InventoryCategoryNode,
+    sorting: Boolean,
+    listState: LazyListState,
+    onClick: () -> Unit,
+    onRename: () -> Unit,
+    onDelete: () -> Unit,
+    canMove: (Int) -> Boolean,
+    onMove: (Int) -> Boolean,
+) {
+    var dragging by remember(node.category.id) { mutableStateOf(false) }
+    var dragOffsetY by remember(node.category.id) { mutableFloatStateOf(0f) }
+    var rowHeightPx by remember(node.category.id) { mutableIntStateOf(0) }
+    val currentCanMove by rememberUpdatedState(canMove)
+    val currentOnMove by rememberUpdatedState(onMove)
+    val edgePx = with(androidx.compose.ui.platform.LocalDensity.current) { 144.dp.toPx() }
+
+    LaunchedEffect(dragging, sorting, edgePx) {
+        var previousFrame = 0L
+        while (dragging && sorting) {
+            val frame = androidx.compose.runtime.withFrameNanos { it }
+            val seconds = if (previousFrame == 0L) 0f else
+                ((frame - previousFrame) / 1_000_000_000f).coerceIn(0f, 0.05f)
+            previousFrame = frame
+            if (seconds > 0f) {
+                val viewport = listState.layoutInfo
+                val center = viewport.visibleItemsInfo.firstOrNull { it.key == node.category.id }
+                    ?.let { it.offset + rowHeightPx / 2f + dragOffsetY }
+                if (center != null) {
+                    val top = ((edgePx - (center - viewport.viewportStartOffset)) / edgePx).coerceIn(0f, 1f)
+                    val bottom = ((edgePx - (viewport.viewportEndOffset - center)) / edgePx).coerceIn(0f, 1f)
+                    val direction = when {
+                        top > 0f && top >= bottom -> -1f
+                        bottom > 0f -> 1f
+                        else -> 0f
+                    }
+                    if (direction != 0f) {
+                        val progress = maxOf(top, bottom)
+                        val speed = 320f + 2_080f * progress * progress
+                        val consumed = listState.scrollBy(direction * speed * seconds)
+                        dragOffsetY += consumed
+                    }
+                }
+            }
+        }
+    }
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .onSizeChanged { rowHeightPx = it.height }
+            .graphicsLayer {
+                val active = sorting && dragging
+                scaleX = if (active) 1.045f else 1f
+                scaleY = if (active) 1.045f else 1f
+                translationX = 0f
+                translationY = if (active) dragOffsetY else 0f
+            }
+            .then(
+                if (sorting) Modifier.pointerInput(node.category.id, sorting) {
+                    detectDragGesturesAfterLongPress(
+                        onDragStart = { dragging = true; dragOffsetY = 0f },
+                        onDragEnd = { dragging = false; dragOffsetY = 0f },
+                        onDragCancel = { dragging = false; dragOffsetY = 0f },
+                        onDrag = { change, amount ->
+                            change.consume()
+                            dragOffsetY += amount.y
+                            val threshold = rowHeightPx.coerceAtLeast(1).toFloat()
+                            while (dragOffsetY >= threshold && currentCanMove(1)) {
+                                if (currentOnMove(1)) dragOffsetY -= threshold else break
+                            }
+                            while (dragOffsetY <= -threshold && currentCanMove(-1)) {
+                                if (currentOnMove(-1)) dragOffsetY += threshold else break
+                            }
+                        },
+                    )
+                } else Modifier.pointerInput(node.category.id, sorting) {
+                    detectDragGesturesAfterLongPress(onDrag = { change, _ -> change.consume() })
+                }
+            )
+            .padding(horizontal = CulinarySpacing.pageHorizontal, vertical = CulinarySpacing.md),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Row(
+                modifier = if (sorting) Modifier.clickable(onClick = onRename) else Modifier,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = node.category.name,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+                if (sorting) {
+                    Text(
+                        text = "✎",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.secondary,
+                        modifier = Modifier.padding(start = CulinarySpacing.xs).graphicsLayer { scaleX = -1f },
+                    )
+                }
+            }
+            node.category.englishName?.takeIf { it.isNotBlank() }?.let {
+                Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            Text(
+                text = "${node.childCount} 个子分类 · ${node.directArchiveCount} 个档案",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        if (sorting) {
+            Box(
+                modifier = Modifier.size(48.dp).clickable(onClick = onDelete).padding(CulinarySpacing.sm),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(CulinaryIcons.Trash, contentDescription = "删除子库",
+                    tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(20.dp))
+            }
+        } else {
+            Text(node.totalArchiveCount.toString(), style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Icon(CulinaryIcons.ChevronRight, contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(16.dp).padding(start = 4.dp))
+        }
+    }
+    CulinaryRule(modifier = Modifier.padding(horizontal = CulinarySpacing.pageHorizontal))
+}
+
 @Composable
 private fun InventoryStockArchiveRow(row: InventoryArchiveRow, onClick: () -> Unit) {
-    ArchiveListItem(
-        title = row.archive.name,
-        subtitle = row.archive.englishName?.takeIf { it.isNotBlank() },
-        onClick = onClick,
-        trailing = {
-            Column(horizontalAlignment = Alignment.End) {
-                QuantityText(amount = formatAmount(row.available), unit = row.archive.stockUnit.symbol)
-                Spacer(Modifier.height(2.dp))
-                StatusBadge(text = InventoryText.stockStatus(row.status), tone = InventoryText.stockTone(row.status))
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(horizontal = CulinarySpacing.pageHorizontal, vertical = CulinarySpacing.md),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(row.archive.name, style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurface)
+            row.archive.englishName?.takeIf { it.isNotBlank() }?.let {
+                Text(it, style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
-        },
-    )
-    CulinaryRule(Modifier.padding(horizontal = CulinarySpacing.pageHorizontal))
+        }
+        Column(horizontalAlignment = Alignment.End) {
+            QuantityText(amount = formatAmount(row.available), unit = row.archive.stockUnit.symbol)
+            Spacer(Modifier.height(2.dp))
+            StatusBadge(text = InventoryText.stockStatus(row.status), tone = InventoryText.stockTone(row.status))
+        }
+        Icon(CulinaryIcons.ChevronRight, contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(start = CulinarySpacing.xs).size(16.dp))
+    }
+    CulinaryRule(modifier = Modifier.padding(horizontal = CulinarySpacing.pageHorizontal))
 }
