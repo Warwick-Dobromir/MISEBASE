@@ -2,6 +2,7 @@ package com.culinary.feature.scan
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -11,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -26,6 +28,8 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
+import coil3.compose.AsyncImage
 import com.culinary.core.designsystem.component.CulinaryButton
 import com.culinary.core.designsystem.component.CulinaryButtonVariant
 import com.culinary.core.designsystem.component.CulinaryTextButton
@@ -53,6 +57,7 @@ internal fun ScanScreen(
     onManualCodeChange: (String) -> Unit,
     onSubmitManualCode: () -> Unit,
     onToggleTorch: () -> Unit,
+    onKnownProductClick: () -> Unit = {},
     onResumeScanning: () -> Unit,
     onBack: () -> Unit,
     onDismissTorchNotice: () -> Unit,
@@ -95,6 +100,40 @@ internal fun ScanScreen(
         }
 
         Column(modifier = Modifier.align(Alignment.TopCenter).fillMaxWidth()) {
+            state.knownProduct?.let { product ->
+                Row(
+                    modifier = Modifier.fillMaxWidth().clickable(onClick = onKnownProductClick)
+                        .padding(horizontal = CulinarySpacing.md, vertical = CulinarySpacing.sm)
+                        .background(
+                            Color.White.copy(alpha = 0.96f),
+                            androidx.compose.foundation.shape.RoundedCornerShape(8.dp),
+                        )
+                        .padding(CulinarySpacing.sm),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(CulinarySpacing.sm),
+                ) {
+                    product.imagePath?.let { path ->
+                        AsyncImage(
+                            model = java.io.File(path),
+                            contentDescription = product.name,
+                            modifier = Modifier.size(44.dp),
+                        )
+                    }
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(text = product.name, style = MaterialTheme.typography.bodyMedium, color = Color.Black)
+                        Text(
+                            text = product.specification,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = Color.DarkGray,
+                        )
+                    }
+                    Text(
+                        text = "入库",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Color(0xFF8A6A2B),
+                    )
+                }
+            }
             state.error?.let { message ->
                 ErrorBanner(
                     message = message,

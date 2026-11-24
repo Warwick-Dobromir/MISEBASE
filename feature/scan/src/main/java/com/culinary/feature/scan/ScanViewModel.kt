@@ -1,23 +1,25 @@
 package com.culinary.feature.scan
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.culinary.core.common.Clock
 import com.culinary.core.domain.barcode.ScanCapture
 import com.culinary.core.domain.barcode.ScanFrameGate
 import com.culinary.core.domain.barcode.ScanSource
+import com.culinary.core.domain.scan.ScanKnownProductLookup
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 /**
- * 扫码页 ViewModel：权限状态机、手电筒、手工输入兜底与"识别一次即停"。
+ * 扫码页 ViewModel：权限状态机、手电筒、手工输入兜底与一次性识别。
  *
- * 去抖与一次性消费交给 [ScanFrameGate]（纯逻辑，见 core:domain）：相机帧先过闸门，
- * 只有被接受的码才产生 [ScanUiState.pendingCapture] 并暂停分析。
- * 本类不访问数据库，也不创建食材/库存——识别结果交给确认页与业务模块。
+ * 去抖与一次性消费交给 [ScanFrameGate]；本类不访问数据库，也不创建食材/库存。
  */
 @HiltViewModel
 class ScanViewModel
@@ -25,6 +27,7 @@ class ScanViewModel
     constructor(
         private val gate: ScanFrameGate,
         private val clock: Clock,
+        private val knownProductLookup: ScanKnownProductLookup = ScanKnownProductLookup { null },
     ) : ViewModel() {
         private val _uiState = MutableStateFlow(ScanUiState())
         val uiState: StateFlow<ScanUiState> = _uiState.asStateFlow()
@@ -98,23 +101,53 @@ class ScanViewModel
             val state = _uiState.value
             if (!state.showCamera || !state.scanning) return
             if (!gate.offer(capture.normalizedValue, clock.now().toEpochMilli())) return
-            _uiState.update {
-                it.copy(
-                    scanning = false,
-                    torchOn = false,
-                    status = null,
-                    pendingCapture = capture.copy(source = ScanSource.CAMERA),
-                )
+            val normalizedCapture = capture.copy(source = ScanSource.CAMERA)
+            viewModelScope.launch {
+                val known = runCatching {
+                    knownProductLookup.findByBarcode(normalizedCapture.normalizedValue)
+                }.getOrNull()
+                if (known != null) {
+                    gate.resume()
+                    _uiState.update { state ->
+                        state.copy(
+                            scanning = state.hasCamera && state.cameraAccess == CameraAccessState.GRANTED && !state.manualEntry,
+                            torchOn = false,
+                            knownProduct = known,
+                            knownProductCapture = normalizedCapture,
+                            pendingCapture = null,
+                        )
+                    }
+                    delay(KNOWN_PRODUCT_NOTICE_MILLIS)
+                    _uiState.update { state ->
+                        if (state.knownProduct?.productId == known.productId) state.copy(knownProduct = null) else state
+                    }
+                } else {
+                    _uiState.update { state ->
+                        state.copy(
+                            scanning = false,
+                            torchOn = false,
+                            status = null,
+                            pendingCapture = normalizedCapture,
+                        )
+                    }
+                }
             }
         }
 
-        /** 从确认页返回或点击"重新扫描"：解除一次性消费，重新开始分析。 */
+        /** 页面进入后台时暂停相机分析；不清除待处理导航信号。 */
+        fun onPauseScanning() {
+            _uiState.update { state -> state.copy(scanning = false, torchOn = false) }
+        }
+
+        /** 从确认页返回或页面重新进入前台：恢复分析并保留原有去抖窗口。 */
         fun onResumeScanning() {
             gate.resume()
             _uiState.update { state ->
                 state.copy(
-                    scanning = state.hasCamera && state.cameraAccess == CameraAccessState.GRANTED,
+                    scanning = state.hasCamera && state.cameraAccess == CameraAccessState.GRANTED && !state.manualEntry,
                     pendingCapture = null,
+                    knownProduct = null,
+                    knownProductCapture = null,
                     status = null,
                     error = null,
                     manualError = null,
@@ -122,7 +155,20 @@ class ScanViewModel
             }
         }
 
-        /** 导航已消费本次识别，清空信号，避免返回时重复跳转。 */
+        /** 用户主动点按已识别商品提示时，进入既有确认/入库流程。 */
+        fun onKnownProductSelected() {
+            val capture = _uiState.value.knownProductCapture ?: return
+            _uiState.update { state ->
+                state.copy(
+                    scanning = false,
+                    knownProduct = null,
+                    knownProductCapture = null,
+                    pendingCapture = capture,
+                )
+            }
+        }
+
+        /** 导航已消费本次识别，清空信号，避免返回时重复导航。 */
         fun onCaptureConsumed() {
             _uiState.update { it.copy(pendingCapture = null) }
         }
@@ -198,5 +244,6 @@ class ScanViewModel
 
         private companion object {
             const val TORCH_UNSUPPORTED = "此设备不支持手电筒。"
+            const val KNOWN_PRODUCT_NOTICE_MILLIS = 2_600L
         }
     }

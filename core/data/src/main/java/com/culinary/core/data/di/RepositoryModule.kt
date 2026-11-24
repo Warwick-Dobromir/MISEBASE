@@ -12,6 +12,7 @@ import com.culinary.core.data.repository.RecipeImageRepositoryImpl
 import com.culinary.core.data.repository.RecipeRepositoryImpl
 import com.culinary.core.data.repository.SauceImageRepositoryImpl
 import com.culinary.core.data.repository.SauceRepositoryImpl
+import com.culinary.core.data.repository.ScanKnownProductLookupImpl
 import com.culinary.core.data.repository.UnitRepositoryImpl
 import com.culinary.core.domain.repository.ArchiveCategoryRepository
 import com.culinary.core.domain.repository.ArchiveImageRepository
@@ -26,6 +27,7 @@ import com.culinary.core.domain.repository.RecipeRepository
 import com.culinary.core.domain.repository.SauceImageRepository
 import com.culinary.core.domain.repository.SauceRepository
 import com.culinary.core.domain.repository.UnitRepository
+import com.culinary.core.domain.scan.ScanKnownProductLookup
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
@@ -83,6 +85,10 @@ abstract class RepositoryModule {
     @Binds
     @Singleton
     abstract fun bindArchiveCategoryRepository(impl: ArchiveCategoryRepositoryImpl): ArchiveCategoryRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindScanKnownProductLookup(impl: ScanKnownProductLookupImpl): ScanKnownProductLookup
 
     @Binds
     @Singleton

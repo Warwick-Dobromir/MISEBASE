@@ -5,7 +5,7 @@ name: Android APK
 
 on:
   push:
-    branches: [main, feat/ingredient-detail-rebuild-20261121, fix/archive-category-interactions, fix/archive-sort-feedback, build/pen-flip-90fb110, ui/subcategory-search-sort-20261118, fix/archive-sort-autoscroll-20261118, fix/archive-sort-elastic-20261118, fix/archive-sort-save-actions-20261118, fix/detail-relations-follow-editor-state, fix/archive-drag-back-dirty-20261124]
+    branches: [main, fix/archive-category-interactions, fix/archive-sort-feedback, build/pen-flip-90fb110, ui/subcategory-search-sort-20261118, fix/archive-sort-autoscroll-20261118, fix/archive-sort-elastic-20261118, fix/archive-sort-save-actions-20261118, fix/detail-relations-follow-editor-state, fix/scan-resume-known-barcode-20261124, fix/scan-v11-compat-20261124]
   workflow_dispatch:
 
 permissions:
@@ -45,6 +45,9 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
 
+      - name: Run unit tests
+        run: ./gradlew :app:testDebugUnitTest --tests "com.culinary.feature.scan.ScanViewModelTest" --tests "com.culinary.kitchen.archive.ArchiveAutoScrollVelocityTest" --no-daemon
+
       - name: Build APK with original MISEBASE release key
         env:
           MISEBASE_RELEASE_STORE_FILE: ${{ runner.temp }}/release.keystore
@@ -70,12 +73,26 @@ jobs:
           test "$ACTUAL" = "$EXPECTED"
           echo "Verified package, version, and original signing certificate: $ACTUAL"
 
+      - name: Record APK content and size audit
+        run: |
+          set -euo pipefail
+          APK="app/build/outputs/apk/debug/app-debug.apk"
+          test -s "$APK"
+          {
+            echo "APK bytes: $(stat -c %s "$APK")"
+            echo "APK SHA-256: $(sha256sum "$APK" | cut -d ' ' -f1)"
+            echo "APK file inventory:"
+            unzip -l "$APK"
+          } > app/build/outputs/apk/debug/apk-audit.txt
+
       - name: Upload rebuilt APK for download
         if: github.ref != 'refs/heads/main'
         uses: actions/upload-artifact@v4
         with:
-          name: MISEBASE-pen-flip-90fb110
-          path: app/build/outputs/apk/debug/app-debug.apk
+          name: MISEBASE-scan-fix-${{ github.sha }}
+          path: |
+            app/build/outputs/apk/debug/app-debug.apk
+            app/build/outputs/apk/debug/apk-audit.txt
           if-no-files-found: error
           retention-days: 7
 
