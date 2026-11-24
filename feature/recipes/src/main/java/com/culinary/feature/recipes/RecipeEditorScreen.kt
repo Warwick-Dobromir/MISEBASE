@@ -46,6 +46,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.culinary.core.designsystem.component.ArchiveEditorDragHandle
 import com.culinary.core.designsystem.component.ArchiveEditorImageBox
+import com.culinary.core.designsystem.component.ArchiveEditorInteractionProvider
 import com.culinary.core.designsystem.component.ArchiveEditorInlineField
 import com.culinary.core.designsystem.component.ArchiveEditorReorderableRow
 import com.culinary.core.designsystem.component.ArchiveEditorSectionHeader
@@ -365,7 +366,8 @@ private fun RecipeEditorScreen(
     val imeVisible = WindowInsets.isImeVisible
     BackHandler(enabled = onHasUnsavedChanges() && !imeVisible) { showDiscard = true }
     BackHandler(enabled = !onHasUnsavedChanges() && !imeVisible) { onCancel() }
-    Column(modifier = modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
+    ArchiveEditorInteractionProvider {
+        Column(modifier = modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         ArchiveEditorTopBar(
             title =
                 if (state.isNew) {
@@ -442,6 +444,7 @@ private fun RecipeEditorScreen(
                 onRemoveStep = onRemoveStep,
                 onMoveStep = onMoveStep,
             )
+        }
         }
     }
     if (showDiscard) {

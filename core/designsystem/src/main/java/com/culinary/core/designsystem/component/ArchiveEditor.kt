@@ -31,6 +31,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableFloatStateOf
@@ -237,6 +239,19 @@ fun ArchiveEditorSectionHeader(
     }
 }
 
+private class ArchiveEditorInteractionState {
+    var isReordering by mutableStateOf(false)
+}
+
+private val LocalArchiveEditorInteraction = staticCompositionLocalOf { ArchiveEditorInteractionState() }
+
+/** One temporary edit lock shared by every field and sortable row in an archive editor. */
+@Composable
+fun ArchiveEditorInteractionProvider(content: @Composable () -> Unit) {
+    val interaction = remember { ArchiveEditorInteractionState() }
+    CompositionLocalProvider(LocalArchiveEditorInteraction provides interaction, content = content)
+}
+
 /** 行内无边框输入；编辑式档案不使用 Material 外框。 */
 @Composable
 fun ArchiveEditorInlineField(
@@ -251,11 +266,12 @@ fun ArchiveEditorInlineField(
     textAlign: TextAlign = TextAlign.Start,
     enabled: Boolean = true,
 ) {
+    val effectiveEnabled = enabled && !LocalArchiveEditorInteraction.current.isReordering
     BasicTextField(
         value = value,
         onValueChange = onValueChange,
         modifier = modifier,
-        enabled = enabled,
+        enabled = effectiveEnabled,
         singleLine = singleLine,
         textStyle = textStyle.copy(color = MaterialTheme.colorScheme.onSurface, textAlign = textAlign),
         cursorBrush = SolidColor(MaterialTheme.colorScheme.secondary),
@@ -359,6 +375,9 @@ fun ArchiveEditorReorderableRow(
     val autoScrollEdgePx = with(density) { 144.dp.toPx() }
     val currentCanMove by rememberUpdatedState(canMove)
     val currentOnMove by rememberUpdatedState(onMove)
+    val interaction = LocalArchiveEditorInteraction.current
+    val focusManager = androidx.compose.ui.platform.LocalFocusManager.current
+    val keyboardController = androidx.compose.ui.platform.LocalSoftwareKeyboardController.current
 
     LaunchedEffect(dragging, scrollState, screenHeightPx) {
         var previousFrameNanos = 0L
@@ -447,6 +466,9 @@ fun ArchiveEditorReorderableRow(
                         }
                     }
                     if (!cancelledBeforeLongPress && down.pressed) {
+                        interaction.isReordering = true
+                        focusManager.clearFocus(force = true)
+                        keyboardController?.hide()
                         dragging = true
                         dragOffsetY = 0f
                         edgeOverdragY = 0f
@@ -476,6 +498,7 @@ fun ArchiveEditorReorderableRow(
                                 if (!change.pressed) break
                             }
                         } finally {
+                            interaction.isReordering = false
                             dragging = false
                             dragOffsetY = 0f
                             edgeOverdragY = 0f
@@ -708,6 +731,7 @@ private fun SegmentBox(
     onValueChange: (String) -> Unit,
     enabled: Boolean,
 ) {
+    val enabled = enabled && !LocalArchiveEditorInteraction.current.isReordering
     var focused by remember { mutableStateOf(false) }
     Box(
         modifier =
@@ -766,9 +790,11 @@ fun ArchiveEditorNotesBox(
     placeholder: String,
     modifier: Modifier = Modifier,
 ) {
+    val enabled = !LocalArchiveEditorInteraction.current.isReordering
     BasicTextField(
         value = value,
         onValueChange = onValueChange,
+        enabled = enabled,
         modifier =
             modifier
                 .fillMaxWidth()

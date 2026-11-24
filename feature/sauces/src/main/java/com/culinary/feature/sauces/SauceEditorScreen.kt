@@ -32,6 +32,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.culinary.core.designsystem.component.ArchiveEditorInteractionProvider
 import com.culinary.core.designsystem.component.ArchiveEditorTopBar
 import com.culinary.core.designsystem.component.ConfirmDialog
 import com.culinary.core.designsystem.component.CulinaryIconButton
@@ -238,7 +239,8 @@ internal fun SauceEditorScreen(
     BackHandler(enabled = !onHasUnsavedChanges() && !imeVisible) { onCancelled() }
 
     val editorScrollState = rememberScrollState()
-    Column(modifier = modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
+    ArchiveEditorInteractionProvider {
+        Column(modifier = modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         ArchiveEditorTopBar(
             title =
                 if (state.isNew) {
@@ -282,6 +284,7 @@ internal fun SauceEditorScreen(
                 )
                 Spacer(modifier = Modifier.height(CulinarySpacing.spacious))
             }
+        }
         }
     }
 
