@@ -7,8 +7,8 @@ import com.culinary.core.database.dao.InventoryBatchDao
 import com.culinary.core.database.dao.InventoryIssueDao
 import com.culinary.core.database.dao.InventoryLedgerDao
 import com.culinary.core.database.dao.InventoryLifecycleDao
-import com.culinary.core.database.dao.InventoryStocktakeDao
 import com.culinary.core.database.dao.BarcodeDao
+import com.culinary.core.database.dao.InventoryStocktakeDao
 import com.culinary.core.database.dao.ProductDao
 import com.culinary.core.database.dao.StorageLocationDao
 import dagger.Module
