@@ -99,8 +99,8 @@ class ScanViewModel
         /** 相机帧被接受后先暂停分析，查询档案；相机预览本身保持显示。 */
         fun onCameraFrame(capture: ScanCapture) {
             val state = _uiState.value
-            val accepted = gate.offer(capture.normalizedValue, clock.now().toEpochMilli())
-            if (!state.showCamera || !state.scanning || !accepted) return
+            if (!state.showCamera || !state.scanning) return
+            if (!gate.offer(capture.normalizedValue, clock.now().toEpochMilli())) return
             _uiState.update {
                 it.copy(
                     scanning = false,
