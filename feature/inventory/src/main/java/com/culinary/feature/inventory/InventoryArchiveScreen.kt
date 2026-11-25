@@ -749,11 +749,6 @@ private fun ArchiveBatchRow(
                 style = MaterialTheme.typography.titleSmall,
                 color = MaterialTheme.colorScheme.onSurface,
             )
-            Text(
-                text = formatInstant(batch.receivedAt),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
         }
         Spacer(modifier = Modifier.width(CulinarySpacing.sm))
         StatusBadge(
