@@ -436,6 +436,7 @@ class ArchiveEditViewModel
                             _uiState.update {
                                 it.copy(
                                     isSaving = false,
+                                    archiveId = if (queued) it.archiveId else result.value,
                                     savedId = result.value.takeIf { queued },
                                     error = if (queued) null else "库存档案已保存，但加入待入库清单失败，请重试。",
                                 )
@@ -455,6 +456,7 @@ class ArchiveEditViewModel
                                     _uiState.update {
                                         it.copy(
                                             isSaving = false,
+                                            archiveId = if (queued) it.archiveId else result.value,
                                             savedId = result.value.takeIf { queued },
                                             error = if (queued) null else "库存档案已保存，但加入待入库清单失败，请重试。",
                                         )
