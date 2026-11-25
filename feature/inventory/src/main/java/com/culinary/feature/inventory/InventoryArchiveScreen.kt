@@ -461,7 +461,6 @@ private fun InventoryArchiveValueRow(
             color = if (status) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.onSurface,
         )
     }
-    CulinaryRule()
 }
 
 @Composable
@@ -489,7 +488,6 @@ private fun ArchiveLinkRow(
             StatusBadge(text = "默认", tone = StatusTone.Accent)
         }
     }
-    CulinaryRule()
 }
 
 @Composable
@@ -527,7 +525,6 @@ private fun ArchiveBatchRow(
             tone = InventoryText.batchTone(batch.status),
         )
     }
-    CulinaryRule(modifier = Modifier.padding(start = CulinarySpacing.pageHorizontal))
 }
 
 @Composable
@@ -566,7 +563,6 @@ private fun ArchiveLedgerRow(entry: InventoryLedgerEntry) {
             )
         }
     }
-    CulinaryRule()
 }
 
 private fun archiveDeltaText(entry: InventoryLedgerEntry): String =
