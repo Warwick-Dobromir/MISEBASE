@@ -254,7 +254,15 @@ class ScanViewModel
 
                         if (feedback != null) {
                             viewModelScope.launch {
-                                delay(SUCCESS_FEEDBACK_MILLIS)
+                                delay(SUCCESS_FEEDBACK_MILLIS - SUCCESS_FEEDBACK_EXIT_MILLIS)
+                                _uiState.update { state ->
+                                    state.copy(
+                                        successFeedbacks = state.successFeedbacks.map {
+                                            if (it.id == feedback.id) it.copy(visible = false) else it
+                                        },
+                                    )
+                                }
+                                delay(SUCCESS_FEEDBACK_EXIT_MILLIS)
                                 _uiState.update { state ->
                                     state.copy(successFeedbacks = state.successFeedbacks.filterNot { it.id == feedback.id })
                                 }
