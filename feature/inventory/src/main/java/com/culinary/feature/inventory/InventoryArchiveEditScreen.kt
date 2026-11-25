@@ -596,7 +596,7 @@ private fun ArchiveEditScreen(
                 if (archiveDetail?.ledger.isNullOrEmpty()) {
                     ArchiveEditReadOnlyRow("流水", "暂无流水")
                 } else {
-                    archiveDetail!!.ledger.take(3).forEach { entry ->
+                    archiveDetail!!.ledger.take(10).forEach { entry ->
                         val delta = when {
                             entry.onHandDelta > 0.0 -> "+${formatAmount(entry.onHandDelta)}"
                             entry.onHandDelta < 0.0 -> formatAmount(entry.onHandDelta)
@@ -607,13 +607,12 @@ private fun ArchiveEditScreen(
                             "${formatInstant(entry.occurredAt)} · $delta ${entry.stockUnit.symbol}",
                         )
                     }
-                    if (archiveDetail.ledger.size > 3) {
+                    if (archiveDetail.ledger.size > 10) {
                         ArchiveEditReadOnlyRow("更多流水", "共 ${archiveDetail.ledger.size} 条，返回展示页查看")
                     }
                 }
                 ArchiveEditorSectionHeader(index = "", english = "ARCHIVE RECORD", title = "档案记录")
                 ArchiveEditReadOnlyRow("档案编号", archiveDetail?.archive?.id ?: "保存后生成")
-                ArchiveEditReadOnlyRow("档案类型", if (state.kind == ArchiveKind.SAUCE) "酱汁现货档案" else "食材库存档案")
                 ArchiveEditReadOnlyRow("档案状态", archiveDetail?.archive?.status?.name ?: "保存后生成")
                 ArchiveEditorSectionHeader(index = "", english = "ARCHIVE NOTES", title = "备注")
                 ArchiveEditorInlineField(
