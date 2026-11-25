@@ -3,11 +3,12 @@ package com.culinary.core.domain.usecase.inventory
 import com.culinary.core.common.CulinaryError
 import com.culinary.core.common.Outcome
 import com.culinary.core.common.flatMap
-import com.culinary.core.domain.repository.PendingStockRepository
-import com.culinary.core.domain.repository.InventoryArchiveRepository
 import com.culinary.core.domain.model.DefaultShelfLifeUnit
-import java.time.LocalDate
+import com.culinary.core.domain.model.InventoryArchive
+import com.culinary.core.domain.repository.InventoryArchiveRepository
+import com.culinary.core.domain.repository.PendingStockRepository
 import com.culinary.core.domain.transaction.TransactionRunner
+import java.time.LocalDate
 
 /** 将待入库清单一次性写入正式批次与库存流水；整单事务失败时保留原清单。 */
 class ConfirmPendingStockUseCase(
@@ -64,7 +65,7 @@ class ConfirmPendingStockUseCase(
     }
 
     private fun expiryDate(
-        archive: com.culinary.core.domain.model.InventoryArchive,
+        archive: InventoryArchive,
         productionDate: LocalDate,
     ): LocalDate? {
         if (!archive.shelfLifeEnabled) return null
