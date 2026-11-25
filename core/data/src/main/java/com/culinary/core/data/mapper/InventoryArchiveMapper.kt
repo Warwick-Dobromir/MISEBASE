@@ -73,6 +73,9 @@ object InventoryArchiveMapper {
             defaultLocationId = entity.defaultLocationId?.let(::LocationId),
             description = entity.description,
             status = toDomain(entity.status),
+            createdAt = Instant.ofEpochMilli(entity.createdAt),
+            updatedAt = Instant.ofEpochMilli(entity.updatedAt),
+            revision = entity.revision,
         )
 
     fun toEntity(
