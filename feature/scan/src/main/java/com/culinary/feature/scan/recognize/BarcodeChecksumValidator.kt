@@ -12,9 +12,21 @@ internal object BarcodeChecksumValidator {
     fun isValid(capture: ScanCapture): Boolean {
         val value = capture.normalizedValue
         return when (capture.format) {
-            "EAN13" -> hasValidCheckDigit(value, dataLength = 12)
-            "EAN8" -> hasValidCheckDigit(value, dataLength = 7)
-            "UPC_A" -> hasValidCheckDigit(value, dataLength = 11)
+            "EAN13" ->
+                hasValidCheckDigit(
+                    value,
+                    dataLength = 12,
+                )
+            "EAN8" ->
+                hasValidCheckDigit(
+                    value,
+                    dataLength = 7,
+                )
+            "UPC_A" ->
+                hasValidCheckDigit(
+                    value,
+                    dataLength = 11,
+                )
             "UPC_E" -> isValidUpcE(value)
             else -> true
         }
