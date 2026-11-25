@@ -34,6 +34,7 @@ internal object CulinaryMigrations {
     val MIGRATION_9_10: Migration = MIGRATION_9_10_IMPL
     val MIGRATION_10_11: Migration = MIGRATION_10_11_IMPL
     val MIGRATION_11_12: Migration = MIGRATION_11_12_IMPL
+    val MIGRATION_12_13: Migration = MIGRATION_12_13_IMPL
 
     val ALL: Array<Migration> =
         arrayOf(
@@ -48,6 +49,7 @@ internal object CulinaryMigrations {
             MIGRATION_9_10,
             MIGRATION_10_11,
             MIGRATION_11_12,
+            MIGRATION_12_13,
         )
 }
 
@@ -475,6 +477,17 @@ private val MIGRATION_11_12_IMPL =
             db.execSQL("UPDATE `inventory_archive` SET `shelf_life_days` = (SELECT p.`shelf_life_days` FROM `inventory_archive_product` ap JOIN `product` p ON p.`id` = ap.`product_id` WHERE ap.`archive_id` = `inventory_archive`.`id` ORDER BY ap.`is_default` DESC, ap.`created_at` ASC LIMIT 1)")
             db.execSQL("UPDATE `inventory_archive` SET `purchase_price_minor` = (SELECT p.`last_unit_price_minor` FROM `inventory_archive_product` ap JOIN `product` p ON p.`id` = ap.`product_id` WHERE ap.`archive_id` = `inventory_archive`.`id` ORDER BY ap.`is_default` DESC, ap.`created_at` ASC LIMIT 1)")
             db.execSQL("UPDATE `inventory_archive` SET `shelf_life_enabled` = CASE WHEN `shelf_life_days` IS NOT NULL THEN 1 ELSE 0 END")
+        }
+    }
+
+
+/** v12 → v13：为库存档案增加独立的默认保质期数值与单位，不触碰既有期限/批次数据。 */
+private val MIGRATION_12_13_IMPL =
+    object : Migration(12, 13) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            CulinarySchemaExtras.dropPartialIndexes(db)
+            db.execSQL("ALTER TABLE `inventory_archive` ADD COLUMN `default_shelf_life_value` INTEGER")
+            db.execSQL("ALTER TABLE `inventory_archive` ADD COLUMN `default_shelf_life_unit` TEXT")
         }
     }
 

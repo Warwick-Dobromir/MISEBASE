@@ -101,7 +101,7 @@ import com.culinary.core.database.entity.SupplierEntity
 import com.culinary.core.database.entity.UnitEntity
 
 /** Single source of truth for Room and startup compatibility checks. */
-const val CULINARY_DATABASE_SCHEMA_VERSION: Int = 12
+const val CULINARY_DATABASE_SCHEMA_VERSION: Int = 13
 
 /**
  * CULINARY 数据库（schema v11）。
@@ -117,6 +117,7 @@ const val CULINARY_DATABASE_SCHEMA_VERSION: Int = 12
  * 出库单与明细、打印任务、盘点单与明细，并为批次/流水补充档案归属；历史数据按商品回填；
  * v10 新增独立食材历史快照表，旧食材按当前档案回填为 v01。
  * v12 为库存档案补齐独立商品身份、计量、批次、保质期及采购字段。
+ * v13 新增库存档案默认保质期的数值与单位，供后续批次保质期计算使用。
  */
 @Suppress("TooManyFunctions")
 @Database(

@@ -18,7 +18,7 @@ class ScanViewModelTest {
     private val clock = Clock { Instant.ofEpochMilli(nowMillis) }
 
     private fun viewModel(windowMillis: Long = 2_000L): ScanViewModel =
-        ScanViewModel(gate = ScanFrameGate(windowMillis), clock = clock)
+        ScanViewModel(gate = ScanFrameGate(windowMillis), clock = clock, archiveRepository = null)
 
     private fun grantedViewModel(windowMillis: Long = 2_000L): ScanViewModel =
         viewModel(windowMillis).apply {

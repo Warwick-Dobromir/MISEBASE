@@ -286,6 +286,14 @@ private fun ArchiveDetailScreen(
                     detail.sauceName?.let { InventoryArchiveValueRow("关联酱汁", it) }
                     InventoryArchiveSectionHeader(english = "SHELF LIFE & STORAGE", title = "保质期与储存")
                     InventoryArchiveValueRow(
+                        "默认保质期",
+                        detail.archive.defaultShelfLifeUnit?.let { unit ->
+                            detail.archive.defaultShelfLifeValue?.let { value ->
+                                "$value ${unit.label}"
+                            }
+                        } ?: "未设置",
+                    )
+                    InventoryArchiveValueRow(
                         "保质期规则",
                         if (detail.archive.shelfLifeEnabled) {
                             "${detail.archive.shelfLifeCalculationMethod ?: "未指定起算方式"} · ${detail.archive.shelfLifeDays?.let { "$it 天" } ?: "未设置时长"}"
@@ -461,7 +469,6 @@ private fun InventoryArchiveValueRow(
             color = if (status) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.onSurface,
         )
     }
-    CulinaryRule()
 }
 
 @Composable
@@ -489,7 +496,6 @@ private fun ArchiveLinkRow(
             StatusBadge(text = "默认", tone = StatusTone.Accent)
         }
     }
-    CulinaryRule()
 }
 
 @Composable
@@ -527,7 +533,6 @@ private fun ArchiveBatchRow(
             tone = InventoryText.batchTone(batch.status),
         )
     }
-    CulinaryRule(modifier = Modifier.padding(start = CulinarySpacing.pageHorizontal))
 }
 
 @Composable
@@ -566,7 +571,6 @@ private fun ArchiveLedgerRow(entry: InventoryLedgerEntry) {
             )
         }
     }
-    CulinaryRule()
 }
 
 private fun archiveDeltaText(entry: InventoryLedgerEntry): String =

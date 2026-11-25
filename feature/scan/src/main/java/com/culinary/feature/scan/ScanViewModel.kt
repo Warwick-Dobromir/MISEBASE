@@ -1,23 +1,29 @@
 package com.culinary.feature.scan
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.culinary.core.common.Clock
+import com.culinary.core.common.Outcome
 import com.culinary.core.domain.barcode.ScanCapture
 import com.culinary.core.domain.barcode.ScanFrameGate
 import com.culinary.core.domain.barcode.ScanSource
+import com.culinary.core.domain.repository.InventoryArchiveRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 /**
- * 扫码页 ViewModel：权限状态机、手电筒、手工输入兜底与"识别一次即停"。
+ * 扫码页状态机。
  *
- * 去抖与一次性消费交给 [ScanFrameGate]（纯逻辑，见 core:domain）：相机帧先过闸门，
- * 只有被接受的码才产生 [ScanUiState.pendingCapture] 并暂停分析。
- * 本类不访问数据库，也不创建食材/库存——识别结果交给确认页与业务模块。
+ * 条码命中已有库存档案时，仅显示短暂的档案提示并继续扫描；
+ * 未命中时发出一次性 pendingCapture，由 app 直接进入新建库存档案。
+ * 本 ViewModel 不创建档案、不写库存数量。
  */
 @HiltViewModel
 class ScanViewModel
@@ -25,11 +31,14 @@ class ScanViewModel
     constructor(
         private val gate: ScanFrameGate,
         private val clock: Clock,
+        private val archiveRepository: InventoryArchiveRepository?,
     ) : ViewModel() {
         private val _uiState = MutableStateFlow(ScanUiState())
         val uiState: StateFlow<ScanUiState> = _uiState.asStateFlow()
 
-        /** 设备是否有相机；无相机时直接进入手工输入。 */
+        private var matchedBarcode: String? = null
+        private var dismissMatchJob: Job? = null
+
         fun onCameraAvailability(available: Boolean) {
             _uiState.update { state ->
                 state.copy(
@@ -46,7 +55,6 @@ class ScanViewModel
             }
         }
 
-        /** 进入页面时检查既有授权：已授权直接开相机，未授权展示权限说明页。 */
         fun onPermissionChecked(granted: Boolean) {
             _uiState.update { state ->
                 if (granted) {
@@ -59,18 +67,13 @@ class ScanViewModel
                 } else {
                     state.copy(
                         cameraAccess =
-                            if (state.hasCamera) {
-                                CameraAccessState.NOT_REQUESTED
-                            } else {
-                                CameraAccessState.UNAVAILABLE
-                            },
+                            if (state.hasCamera) CameraAccessState.NOT_REQUESTED else CameraAccessState.UNAVAILABLE,
                         scanning = false,
                     )
                 }
             }
         }
 
-        /** 权限对话框结果；拒绝后保留说明页与手工输入兜底，不再反复弹窗。 */
         fun onPermissionResult(granted: Boolean) {
             if (granted) {
                 gate.reset()
@@ -93,7 +96,7 @@ class ScanViewModel
             }
         }
 
-        /** 相机帧回调：先过闸门，被接受才算一次识别。 */
+        /** 相机帧被接受后先暂停分析，查询档案；相机预览本身保持显示。 */
         fun onCameraFrame(capture: ScanCapture) {
             val state = _uiState.value
             if (!state.showCamera || !state.scanning) return
@@ -101,20 +104,86 @@ class ScanViewModel
             _uiState.update {
                 it.copy(
                     scanning = false,
+                    lookupInProgress = true,
                     torchOn = false,
                     status = null,
-                    pendingCapture = capture.copy(source = ScanSource.CAMERA),
+                    error = null,
+                    pendingCapture = null,
                 )
+            }
+            resolveCapture(capture.copy(source = ScanSource.CAMERA))
+        }
+
+        private fun resolveCapture(capture: ScanCapture) {
+            val repository = archiveRepository
+            // Null is used only by isolated ViewModel tests; production Hilt injects the repository.
+            if (repository == null) {
+                _uiState.update { it.copy(lookupInProgress = false, pendingCapture = capture) }
+                return
+            }
+            viewModelScope.launch {
+                when (val result = repository.listArchives()) {
+                    is Outcome.Failure -> {
+                        gate.resume()
+                        _uiState.update { state ->
+                            state.copy(
+                                lookupInProgress = false,
+                                scanning = state.hasCamera && state.cameraAccess == CameraAccessState.GRANTED,
+                                error = "查询库存档案失败，请重试。",
+                            )
+                        }
+                    }
+
+                    is Outcome.Success -> {
+                        val archive =
+                            result.value.firstOrNull {
+                                it.barcode?.trim()?.equals(capture.rawValue.trim(), ignoreCase = false) == true
+                            }
+                        if (archive == null) {
+                            _uiState.update { it.copy(lookupInProgress = false, pendingCapture = capture) }
+                        } else {
+                            gate.resume()
+                            val shouldShow = matchedBarcode != capture.normalizedValue
+                            matchedBarcode = capture.normalizedValue
+                            _uiState.update { state ->
+                                state.copy(
+                                    lookupInProgress = false,
+                                    scanning = state.hasCamera && state.cameraAccess == CameraAccessState.GRANTED,
+                                    manualEntry =
+                                        if (state.hasCamera && state.cameraAccess == CameraAccessState.GRANTED) {
+                                            false
+                                        } else {
+                                            state.manualEntry
+                                        },
+                                    matchedArchive = if (shouldShow) archive else state.matchedArchive,
+                                    error = null,
+                                )
+                            }
+                            if (shouldShow) {
+                                dismissMatchJob?.cancel()
+                                dismissMatchJob =
+                                    viewModelScope.launch {
+                                        delay(MATCH_NOTICE_MILLIS)
+                                        _uiState.update { it.copy(matchedArchive = null) }
+                                    }
+                            }
+                        }
+                    }
+                }
             }
         }
 
-        /** 从确认页返回或点击"重新扫描"：清除上次扫码记录，允许立即重扫同一物品。 */
+        /** 返回扫码页时清除本次会话的去抖记录，允许重新识别同一条码。 */
         fun onResumeScanning() {
             gate.reset()
+            matchedBarcode = null
+            dismissMatchJob?.cancel()
             _uiState.update { state ->
                 state.copy(
                     scanning = state.hasCamera && state.cameraAccess == CameraAccessState.GRANTED,
+                    lookupInProgress = false,
                     pendingCapture = null,
+                    matchedArchive = null,
                     status = null,
                     error = null,
                     manualError = null,
@@ -122,7 +191,6 @@ class ScanViewModel
             }
         }
 
-        /** 导航已消费本次识别，清空信号，避免返回时重复跳转。 */
         fun onCaptureConsumed() {
             _uiState.update { it.copy(pendingCapture = null) }
         }
@@ -133,7 +201,6 @@ class ScanViewModel
             _uiState.update { it.copy(torchOn = !it.torchOn, torchNotice = null) }
         }
 
-        /** 相机返回手电筒不可用（无闪光灯或相机未就绪）时，回滚状态并提示。 */
         fun onTorchResult(success: Boolean) {
             if (success) return
             _uiState.update { it.copy(torchOn = false, torchNotice = TORCH_UNSUPPORTED) }
@@ -169,7 +236,7 @@ class ScanViewModel
             _uiState.update { it.copy(manualCode = value, manualError = null) }
         }
 
-        /** 手工输入兜底：显式用户动作，不经去抖闸门，但仍走同一确认页与幂等键。 */
+        /** 手工输入与相机识别走同一条档案匹配/新建分支。 */
         fun onSubmitManualCode() {
             val value = _uiState.value.manualCode
             val validation = ScanCapture.validate(value)
@@ -181,11 +248,13 @@ class ScanViewModel
             _uiState.update {
                 it.copy(
                     scanning = false,
+                    lookupInProgress = true,
                     manualError = null,
-                    status = null,
-                    pendingCapture = capture,
+                    error = null,
+                    pendingCapture = null,
                 )
             }
+            resolveCapture(capture)
         }
 
         fun onError(message: String) {
@@ -198,5 +267,6 @@ class ScanViewModel
 
         private companion object {
             const val TORCH_UNSUPPORTED = "此设备不支持手电筒。"
+            const val MATCH_NOTICE_MILLIS = 2_600L
         }
     }

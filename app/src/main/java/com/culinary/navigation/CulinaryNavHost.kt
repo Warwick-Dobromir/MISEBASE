@@ -82,10 +82,7 @@ import com.culinary.feature.sauces.SauceDetailRoute
 import com.culinary.feature.sauces.SauceEditorRoute
 import com.culinary.feature.sauces.SaucesRoute
 import com.culinary.feature.sauces.SaucesRoutes
-import com.culinary.feature.scan.ScanConfirmRoute
 import com.culinary.feature.scan.ScanRoute
-import com.culinary.feature.scan.ScanRoutes
-import com.culinary.feature.scan.ScanViewModel
 import com.culinary.home.HOME_PLACEHOLDER_ROUTE
 import com.culinary.home.HOME_PLACEHOLDER_SECTION_ARG
 import com.culinary.home.HOME_PURCHASE_DETAIL_ROUTE
@@ -773,45 +770,15 @@ private fun nullableString(name: String): NamedNavArgument =
     }
 
 /**
- * 扫码入口（N3 中央凸起按钮）。
- *
- * 识别结果通过路由参数交给确认页；确认页再调用 `feature:scan` 的 ViewModel，
- * 由 ViewModel 调用 `feature:products` / `feature:inventory` 的接口，app 不参与业务规则。
+ * 扫码入口：已有库存档案由扫码页顶部短暂提示；未建档物品直接进入新建库存档案。
  */
 private fun NavGraphBuilder.scanGraph(navController: NavHostController) {
     composable(SCAN_ROUTE) {
         ScanRoute(
-            onCapture = { capture -> navController.navigate(ScanRoutes.confirm(capture)) },
+            onCapture = { capture ->
+                navController.navigate(InventoryRoutes.archiveNew(barcode = capture.rawValue))
+            },
             onBack = { navController.backOrStart(APP_START_ROUTE) },
-        )
-    }
-    composable(
-        route = ScanRoutes.CONFIRM,
-        arguments =
-            listOf(
-                navArgument(ScanRoutes.ARG_CODE) { type = NavType.StringType },
-                navArgument(ScanRoutes.ARG_FORMAT) { type = NavType.StringType },
-                navArgument(ScanRoutes.ARG_SOURCE) { type = NavType.StringType },
-            ),
-    ) {
-        // Scope the scanner ViewModel to the scan back-stack entry so system Back
-        // can explicitly resume its state before the confirmation destination is removed.
-        val scanEntry = remember(navController) { navController.getBackStackEntry(SCAN_ROUTE) }
-        val scanViewModel: ScanViewModel = hiltViewModel(scanEntry)
-        ScanConfirmRoute(
-            onBackToScan = {
-                navController.popBackStack()
-                scanViewModel.onResumeScanning()
-            },
-            onHandoffToInventory = { handoff ->
-                // 识别成功不等于入库：先建/确认库存档案，再由用户在库存模块填写数量并确认入库。
-                navController.navigate(
-                    InventoryRoutes.archiveNew(
-                        name = handoff.suggestedName,
-                        barcode = handoff.barcode,
-                    ),
-                )
-            },
         )
     }
 }

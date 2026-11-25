@@ -24,6 +24,7 @@ import com.culinary.core.domain.model.ArchiveKind
 import com.culinary.core.domain.model.ArchiveProductLink
 import com.culinary.core.domain.model.BatchLifecycleStatus
 import com.culinary.core.domain.model.EntityStatus
+import com.culinary.core.domain.model.DefaultShelfLifeUnit
 import com.culinary.core.domain.model.FreezeAction
 import com.culinary.core.domain.model.FreezeRecord
 import com.culinary.core.domain.model.InventoryArchive
@@ -81,6 +82,8 @@ object InventoryArchiveMapper {
             unitConversion = entity.unitConversion,
             measurementPrecision = entity.measurementPrecision,
             batchManagementEnabled = entity.batchManagementEnabled,
+            defaultShelfLifeValue = entity.defaultShelfLifeValue,
+            defaultShelfLifeUnit = entity.defaultShelfLifeUnit?.let { raw -> DefaultShelfLifeUnit.entries.firstOrNull { it.name == raw } },
             shelfLifeEnabled = entity.shelfLifeEnabled,
             shelfLifeCalculationMethod = entity.shelfLifeCalculationMethod,
             shelfLifeDays = entity.shelfLifeDays,
@@ -128,6 +131,8 @@ object InventoryArchiveMapper {
             unitConversion = archive.unitConversion,
             measurementPrecision = archive.measurementPrecision,
             batchManagementEnabled = archive.batchManagementEnabled,
+            defaultShelfLifeValue = archive.defaultShelfLifeValue,
+            defaultShelfLifeUnit = archive.defaultShelfLifeUnit?.name,
             shelfLifeEnabled = archive.shelfLifeEnabled,
             shelfLifeCalculationMethod = archive.shelfLifeCalculationMethod,
             shelfLifeDays = archive.shelfLifeDays,

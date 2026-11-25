@@ -104,6 +104,10 @@ data class InventoryArchiveEntity(
     val measurementPrecision: Int? = null,
     @ColumnInfo(name = "batch_management_enabled", defaultValue = "1")
     val batchManagementEnabled: Boolean = true,
+    @ColumnInfo(name = "default_shelf_life_value")
+    val defaultShelfLifeValue: Int? = null,
+    @ColumnInfo(name = "default_shelf_life_unit")
+    val defaultShelfLifeUnit: String? = null,
     @ColumnInfo(name = "shelf_life_enabled", defaultValue = "0")
     val shelfLifeEnabled: Boolean = false,
     @ColumnInfo(name = "shelf_life_calculation_method")
