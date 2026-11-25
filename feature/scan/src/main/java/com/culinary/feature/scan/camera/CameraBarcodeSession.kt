@@ -68,7 +68,15 @@ internal class CameraBarcodeSession(
                         if (analyzing.get() && analysisGeneration.get() == frameGeneration) {
                             val frameCapture =
                                 captures.firstOrNull { BarcodeChecksumValidator.isValid(it) }
-                            frameConsensus.offer(frameCapture)?.let(onCapture)
+                            val confirmedCapture = frameConsensus.offer(frameCapture)
+                            if (confirmedCapture != null) {
+                                // A lookup may finish before Compose observes scanning=false.
+                                // Release consensus here instead of relying on an active-state
+                                // transition to reset it; ScanFrameGate still blocks duplicates
+                                // until the ViewModel explicitly resumes the scan session.
+                                frameConsensus.reset()
+                                onCapture(confirmedCapture)
+                            }
                         }
                     } finally {
                         if (analysisGeneration.get() == frameGeneration) decodingFrame.set(false)
