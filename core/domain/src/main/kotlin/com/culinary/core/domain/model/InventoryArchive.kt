@@ -1,5 +1,6 @@
 package com.culinary.core.domain.model
 
+import java.time.Instant
 import java.time.LocalDate
 
 /** 库存档案类型（v9）：普通食材档案，或绑定酱汁档案的现货档案。 */
@@ -33,6 +34,9 @@ data class InventoryArchive(
     val defaultLocationId: LocationId? = null,
     val description: String? = null,
     val status: EntityStatus = EntityStatus.ACTIVE,
+    val createdAt: Instant = Instant.EPOCH,
+    val updatedAt: Instant = Instant.EPOCH,
+    val revision: Int = 1,
 ) {
     fun statusFor(available: Double): StockStatus =
         when {
