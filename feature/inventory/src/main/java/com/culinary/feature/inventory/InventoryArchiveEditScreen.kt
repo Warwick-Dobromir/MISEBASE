@@ -1,6 +1,10 @@
 package com.culinary.feature.inventory
 
 import android.net.Uri
+import android.content.Intent
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -473,7 +477,15 @@ private fun ArchiveEditScreen(
                     Spacer(modifier = Modifier.height(CulinarySpacing.md))
                     ArchiveWideImage(bytes = bytes, caption = null)
                 }
-                InventoryArchiveEditField("图片 URI", state.imageUri, onImageUriChange, "添加图片 URI（可留空）")
+                val launchImagePicker = rememberInventoryArchiveImagePicker(onImageUriChange)
+                if (imageUri == null) {
+                    CulinaryTextButton(text = "＋ 添加图片", onClick = launchImagePicker)
+                } else {
+                    Row(horizontalArrangement = Arrangement.spacedBy(CulinarySpacing.sm)) {
+                        CulinaryTextButton(text = "更换图片", onClick = launchImagePicker)
+                        CulinaryTextButton(text = "删除图片", onClick = { onImageUriChange("") }, danger = true)
+                    }
+                }
                 ArchiveEditorSectionHeader(
                     index = "",
                     english = "BASIC INFORMATION",
@@ -657,6 +669,26 @@ private fun ArchiveEditScreen(
                     picker = null
                 },
             )
+    }
+}
+
+@Composable
+private fun rememberInventoryArchiveImagePicker(onPicked: (String) -> Unit): () -> Unit {
+    val context = LocalContext.current
+    val launcher =
+        rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri: Uri? ->
+            if (uri != null) {
+                runCatching {
+                    context.contentResolver.takePersistableUriPermission(
+                        uri,
+                        Intent.FLAG_GRANT_READ_URI_PERMISSION,
+                    )
+                }
+                onPicked(uri.toString())
+            }
+        }
+    return {
+        launcher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
     }
 }
 
