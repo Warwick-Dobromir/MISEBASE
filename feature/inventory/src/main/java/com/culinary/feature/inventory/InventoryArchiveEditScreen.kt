@@ -65,6 +65,7 @@ import com.culinary.core.domain.model.ArchiveKind
 import com.culinary.core.domain.model.InventoryArchive
 import com.culinary.core.domain.model.InventoryArchiveDetail
 import com.culinary.core.domain.model.LocationId
+import com.culinary.core.domain.repository.InventoryRepository
 import com.culinary.core.domain.model.Unit as StockUnit
 import com.culinary.core.domain.usecase.inventory.ArchiveFormOptions
 import com.culinary.core.domain.usecase.inventory.GetInventoryArchiveDetailUseCase
@@ -101,6 +102,12 @@ data class ArchiveEditUiState(
     val description: String = "",
     val imageUri: String = "",
     val sauceId: String? = null,
+    val brand: String = "",
+    val packageLabel: String = "",
+    val supplierId: String = "",
+    val shelfLifeDays: String = "",
+    val storageNote: String = "",
+    val purchasePrice: String = "",
     val fieldErrors: Map<String, String> = emptyMap(),
     val isLoading: Boolean = true,
     val isSaving: Boolean = false,
@@ -153,6 +160,7 @@ class ArchiveEditViewModel
         private val archiveDetail: GetInventoryArchiveDetailUseCase,
         private val linkArchiveProduct: LinkArchiveProductUseCase,
         private val unlinkArchiveProduct: UnlinkArchiveProductUseCase,
+        private val inventoryRepository: InventoryRepository,
     ) : ViewModel() {
         private val archiveId: String? =
             savedStateHandle.get<String>(InventoryRoutes.ARG_ARCHIVE_ID)?.takeIf { it.isNotBlank() }
@@ -220,6 +228,12 @@ class ArchiveEditViewModel
                     description = archive?.description.orEmpty(),
                     imageUri = archive?.imageUri.orEmpty(),
                     sauceId = archive?.sauceId ?: sauceIdParam,
+                    brand = existing?.links?.firstOrNull()?.product?.brand.orEmpty(),
+                    packageLabel = existing?.links?.firstOrNull()?.product?.packageLabel.orEmpty(),
+                    supplierId = existing?.links?.firstOrNull()?.product?.supplierId.orEmpty(),
+                    shelfLifeDays = existing?.links?.firstOrNull()?.product?.shelfLifeDays?.toString().orEmpty(),
+                    storageNote = existing?.links?.firstOrNull()?.product?.storageNote.orEmpty(),
+                    purchasePrice = existing?.links?.firstOrNull()?.product?.lastUnitPriceMinor?.let { "%.2f".format(it / 100.0) }.orEmpty(),
                     isLoading = false,
                 ),
             )
@@ -250,6 +264,18 @@ class ArchiveEditViewModel
         fun onImageUriChange(value: String) = update("imageUri") { it.copy(imageUri = value) }
 
         fun onSauceChange(sauceId: String?) = update("sauce") { it.copy(sauceId = sauceId) }
+
+        fun onBrandChange(value: String) = update("brand") { it.copy(brand = value) }
+
+        fun onPackageLabelChange(value: String) = update("packageLabel") { it.copy(packageLabel = value) }
+
+        fun onSupplierChange(value: String) = update("supplier") { it.copy(supplierId = value) }
+
+        fun onShelfLifeChange(value: String) = update("shelfLife") { it.copy(shelfLifeDays = value) }
+
+        fun onStorageNoteChange(value: String) = update("storageNote") { it.copy(storageNote = value) }
+
+        fun onPurchasePriceChange(value: String) = update("price") { it.copy(purchasePrice = value) }
 
         fun onLinkProductSelected(productId: String?) {
             _uiState.update { it.copy(linkProductId = productId, linkError = null, linkMessage = null) }
@@ -352,8 +378,27 @@ class ArchiveEditViewModel
             viewModelScope.launch {
                 _uiState.update { it.copy(isSaving = true, fieldErrors = emptyMap(), error = null) }
                 when (val result = saveArchive(state.toArchive(unit))) {
-                    is Outcome.Success ->
-                        _uiState.update { it.copy(isSaving = false, savedId = result.value) }
+                    is Outcome.Success -> {
+                        val product = state.detail?.links?.firstOrNull()?.product
+                        if (product == null) {
+                            _uiState.update { it.copy(isSaving = false, savedId = result.value) }
+                        } else {
+                            val updatedProduct = product.copy(
+                                brand = state.brand.trim().takeIf { it.isNotEmpty() },
+                                packageLabel = state.packageLabel.trim().takeIf { it.isNotEmpty() },
+                                supplierId = state.supplierId.trim().takeIf { it.isNotEmpty() },
+                                shelfLifeDays = state.shelfLifeDays.trim().toIntOrNull(),
+                                storageNote = state.storageNote.trim().takeIf { it.isNotEmpty() },
+                                lastUnitPriceMinor = state.purchasePrice.trim().takeIf { it.isNotEmpty() }?.toDoubleOrNull()?.let { (it * 100.0).toLong() },
+                            )
+                            when (val productResult = inventoryRepository.saveProduct(updatedProduct)) {
+                                is Outcome.Success -> _uiState.update { it.copy(isSaving = false, savedId = result.value) }
+                                is Outcome.Failure -> _uiState.update {
+                                    it.copy(isSaving = false, error = InventoryErrorMessages.describe(productResult.error))
+                                }
+                            }
+                        }
+                    }
 
                     is Outcome.Failure -> {
                         val fieldError = fieldErrorOf(result.error)
@@ -382,6 +427,14 @@ class ArchiveEditViewModel
                 name.length > 40 -> errors["name"] = "中文名称最多 40 个字。"
             }
             if (state.unitId.isBlank()) errors["unit"] = "请选择库存单位。"
+            val shelfLife = state.shelfLifeDays.trim()
+            if (shelfLife.isNotEmpty() && (shelfLife.toIntOrNull() == null || shelfLife.toInt() < 0)) {
+                errors["shelfLife"] = "保质期必须是大于等于 0 的整数。"
+            }
+            val price = state.purchasePrice.trim()
+            if (price.isNotEmpty() && (price.toDoubleOrNull() == null || !price.toDouble().isFinite() || price.toDouble() < 0.0)) {
+                errors["price"] = "采购价格必须是大于等于 0 的数字。"
+            }
             val minimum = amountError(state.minimumStock, "最低库存", errors, "minimum")
             val target = amountError(state.targetStock, "目标库存", errors, "target")
             if (minimum != null && target != null && target < minimum) {
@@ -486,6 +539,12 @@ fun ArchiveEditRoute(
         onDescriptionChange = viewModel::onDescriptionChange,
         onImageUriChange = viewModel::onImageUriChange,
         onSauceChange = viewModel::onSauceChange,
+        onBrandChange = viewModel::onBrandChange,
+        onPackageLabelChange = viewModel::onPackageLabelChange,
+        onSupplierChange = viewModel::onSupplierChange,
+        onShelfLifeChange = viewModel::onShelfLifeChange,
+        onStorageNoteChange = viewModel::onStorageNoteChange,
+        onPurchasePriceChange = viewModel::onPurchasePriceChange,
         onLinkProductSelected = viewModel::onLinkProductSelected,
         onLinkRatioChange = viewModel::onLinkRatioChange,
         onLinkDefaultChange = viewModel::onLinkDefaultChange,
@@ -529,6 +588,12 @@ private fun ArchiveEditScreen(
     onDescriptionChange: (String) -> Unit,
     onImageUriChange: (String) -> Unit,
     onSauceChange: (String?) -> Unit,
+    onBrandChange: (String) -> Unit,
+    onPackageLabelChange: (String) -> Unit,
+    onSupplierChange: (String) -> Unit,
+    onShelfLifeChange: (String) -> Unit,
+    onStorageNoteChange: (String) -> Unit,
+    onPurchasePriceChange: (String) -> Unit,
     onLinkProductSelected: (String?) -> Unit,
     onLinkRatioChange: (String) -> Unit,
     onLinkDefaultChange: (Boolean) -> Unit,
@@ -629,8 +694,8 @@ private fun ArchiveEditScreen(
                 )
                 ArchiveEditReadOnlyRow("档案类型", if (state.kind == ArchiveKind.SAUCE) "酱汁现货档案" else "食材库存档案")
                 state.detail?.links?.firstOrNull()?.let { link ->
-                    ArchiveEditReadOnlyRow("品牌", link.product.brand ?: "未设置")
-                    ArchiveEditReadOnlyRow("商品规格", link.product.packageLabel ?: "${formatAmount(link.product.contentQty)} ${link.product.contentUnit.symbol}")
+                    InventoryArchiveEditField("品牌", state.brand, onBrandChange, "输入品牌")
+                    InventoryArchiveEditField("商品规格", state.packageLabel, onPackageLabelChange, "输入商品规格")
                     ArchiveEditReadOnlyRow("商品编码", link.product.sku ?: "未生成")
                     ArchiveEditReadOnlyRow("条码", "商品条码需在扫码关联后显示")
                 }
@@ -686,20 +751,15 @@ private fun ArchiveEditScreen(
                 ArchiveEditorSectionHeader(index = "", english = "SHELF LIFE & STORAGE", title = "保质期与储存")
                 InventoryArchiveEditField("储存方式", state.storageMethod, onStorageMethodChange, "例如：密封、避光、冷藏")
                 InventoryArchiveEditField("储存温度", state.storageTemperature, onStorageTemperatureChange, "例如：2–8 ℃、常温")
-                state.detail?.links?.firstOrNull()?.product?.shelfLifeDays?.let {
-                    ArchiveEditReadOnlyRow("保质期规则", "生产日期起算")
-                    ArchiveEditReadOnlyRow("保质期时长", "$it 天")
-                }
-                state.detail?.links?.firstOrNull()?.product?.storageNote?.let {
-                    ArchiveEditReadOnlyRow("开封后储存", it)
-                }
+                InventoryArchiveEditField("保质期时长", state.shelfLifeDays, onShelfLifeChange, "输入天数", state.fieldErrors["shelfLife"])
+                InventoryArchiveEditField("开封后保质期说明", state.storageNote, onStorageNoteChange, "输入开封后储存要求")
                 ArchiveEditReadOnlyRow("最近到期", state.detail?.row?.nearestExpiry?.let(::formatDate) ?: "未登记")
                 ArchiveEditorSectionHeader(index = "", english = "PURCHASING INFORMATION", title = "采购信息")
                 val archiveDetail = state.detail
                 if (!archiveDetail?.links.isNullOrEmpty()) {
                     archiveDetail!!.links.forEach { link ->
-                        ArchiveEditReadOnlyRow("默认供应商", link.product.supplierId ?: "未设置")
-                        ArchiveEditReadOnlyRow("采购价格", link.product.lastUnitPriceMinor?.let { "¥${"%.2f".format(it / 100.0)}" } ?: "未记录")
+                        InventoryArchiveEditField("默认供应商", state.supplierId, onSupplierChange, "输入供应商")
+                        InventoryArchiveEditField("采购价格", state.purchasePrice, onPurchasePriceChange, "输入单价", state.fieldErrors["price"])
                         ArchiveEditReadOnlyRow("价格单位", "元 / ${link.product.contentUnit.symbol}")
                     }
                 }
