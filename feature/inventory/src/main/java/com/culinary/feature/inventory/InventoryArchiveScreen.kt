@@ -320,6 +320,7 @@ private fun ArchiveDetailScreen(
                     InventoryArchiveSectionHeader(
                         english = "BATCH RECORDS",
                         title = "库存批次",
+                        subtitle = "${detail.batches.size} BATCHES",
                         action = {
                             CulinaryTextButton(
                                 text = "查看全部 →",
@@ -520,6 +521,11 @@ private fun ArchiveBatchRow(
                 text = batch.batchCode?.takeIf { it.isNotBlank() } ?: batch.id.take(8),
                 style = MaterialTheme.typography.titleSmall,
                 color = MaterialTheme.colorScheme.onSurface,
+            )
+            Text(
+                text = "入库日期 ${formatInstant(batch.receivedAt)}",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
         Spacer(modifier = Modifier.width(CulinarySpacing.sm))
