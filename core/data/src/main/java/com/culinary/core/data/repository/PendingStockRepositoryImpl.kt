@@ -60,7 +60,7 @@ class PendingStockRepositoryImpl @Inject constructor(
                 stockUnitId = draft.stockUnitId,
                 sourceProductId = draft.sourceProductId,
                 quantity = draft.quantity,
-                sortOrder = dao.nextSortOrder(),
+                sortOrder = 0,
                 createdAt = now,
                 updatedAt = now,
             ),

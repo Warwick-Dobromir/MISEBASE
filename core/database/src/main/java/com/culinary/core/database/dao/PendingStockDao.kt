@@ -61,7 +61,7 @@ interface PendingStockDao {
             )
             return existing.id
         }
-        insertItem(item)
+        insertItem(item.copy(sortOrder = nextSortOrder()))
         return item.id
     }
 
