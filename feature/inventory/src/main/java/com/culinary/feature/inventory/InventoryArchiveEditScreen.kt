@@ -662,8 +662,6 @@ private fun ArchiveEditScreen(
                             contentScale = ContentScale.Crop,
                             modifier = Modifier.size(76.dp).clip(RoundedCornerShape(8.dp)),
                         )
-                    } else {
-                        Text("物品图片", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(76.dp))
                     }
                     Column(verticalArrangement = Arrangement.spacedBy(CulinarySpacing.xxs)) {
                         Text("物品图片", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
