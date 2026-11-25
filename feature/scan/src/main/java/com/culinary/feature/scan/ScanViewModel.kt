@@ -227,7 +227,17 @@ class ScanViewModel
                                 }.isSuccess
 
                         gate.resume()
-                        val feedback = if (added) ScanSuccessFeedback(++feedbackSequence) else null
+                        val feedback =
+                            if (added) {
+                                ScanSuccessFeedback(
+                                    id = ++feedbackSequence,
+                                    name = archive.name,
+                                    brand = archive.brand,
+                                    specification = archive.productSpecification,
+                                )
+                            } else {
+                                null
+                            }
                         _uiState.update { state ->
                             state.copy(
                                 lookupInProgress = false,
