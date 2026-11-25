@@ -10,6 +10,8 @@ import androidx.camera.view.PreviewView
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.LifecycleOwner
 import com.culinary.core.domain.barcode.ScanCapture
+import com.culinary.feature.scan.recognize.BarcodeChecksumValidator
+import com.culinary.feature.scan.recognize.BarcodeFrameConsensus
 import com.culinary.feature.scan.recognize.MlKitBarcodeDecoder
 import kotlinx.coroutines.suspendCancellableCoroutine
 import java.util.concurrent.ExecutionException
@@ -39,7 +41,10 @@ internal class CameraBarcodeSession(
     private val executor: ExecutorService =
         Executors.newSingleThreadExecutor { runnable -> Thread(runnable, "culinary-scan-analysis") }
     private val decoder = MlKitBarcodeDecoder()
+    private val frameConsensus = BarcodeFrameConsensus()
     private val analyzing = AtomicBoolean(false)
+    // ML Kit callbacks may outlive analyze() itself; keep only one decode in flight to preserve frame order.
+    private val decodingFrame = AtomicBoolean(false)
     // Invalidates decode callbacks that started before a pause/resume transition.
     private val analysisGeneration = AtomicLong(0L)
 
@@ -50,20 +55,31 @@ internal class CameraBarcodeSession(
     private val analyzer =
         ImageAnalysis.Analyzer { image ->
             val frameGeneration = analysisGeneration.get()
-            if (!analyzing.get()) {
+            if (!analyzing.get() || !decodingFrame.compareAndSet(false, true)) {
                 image.close()
                 return@Analyzer
             }
             decoder.decode(
                 imageProxy = image,
-                onResult = {
-                    if (analyzing.get() && analysisGeneration.get() == frameGeneration) {
-                        it.firstOrNull()?.let(onCapture)
+                onResult = { captures ->
+                    try {
+                        if (analyzing.get() && analysisGeneration.get() == frameGeneration) {
+                            val frameCapture =
+                                captures.firstOrNull { BarcodeChecksumValidator.isValid(it) }
+                            frameConsensus.offer(frameCapture)?.let(onCapture)
+                        }
+                    } finally {
+                        decodingFrame.set(false)
                     }
                 },
                 onFailure = {
-                    if (analyzing.get() && analysisGeneration.get() == frameGeneration) {
-                        onError(ERROR_DECODE)
+                    try {
+                        if (analyzing.get() && analysisGeneration.get() == frameGeneration) {
+                            frameConsensus.reset()
+                            onError(ERROR_DECODE)
+                        }
+                    } finally {
+                        decodingFrame.set(false)
                     }
                 },
             )
@@ -120,6 +136,7 @@ internal class CameraBarcodeSession(
      */
     fun setActive(active: Boolean) {
         analysisGeneration.incrementAndGet()
+        frameConsensus.reset()
         analyzing.set(active)
     }
 
