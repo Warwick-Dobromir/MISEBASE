@@ -13,6 +13,7 @@ import com.culinary.core.domain.model.LedgerEntryType
 import com.culinary.core.domain.model.NewInventoryBatch
 import com.culinary.core.domain.model.Product
 import com.culinary.core.domain.model.ProductId
+import com.culinary.core.domain.model.ProductSkuGenerator
 import com.culinary.core.domain.model.StorageLocation
 import com.culinary.core.domain.repository.IngredientRepository
 import com.culinary.core.domain.repository.InventoryRepository
@@ -175,9 +176,10 @@ class RecordStockReceiptUseCase(
                 is Outcome.Success -> result.value
             }
         val unit = defaultUnit(ingredient) ?: return unitMissing()
+        val productId = ProductId(idGenerator.newId())
         val product =
             Product(
-                id = ProductId(idGenerator.newId()),
+                id = productId,
                 ingredientId = ingredient.id,
                 name = ingredient.name,
                 stockUnit = unit,
@@ -185,6 +187,7 @@ class RecordStockReceiptUseCase(
                 contentUnit = unit,
                 stockToContentFactor = 1.0,
                 status = EntityStatus.ACTIVE,
+                sku = ProductSkuGenerator.generate(ingredient.category, productId.value),
             )
         return when (val saved = inventoryRepository.saveProduct(product)) {
             is Outcome.Failure -> saved
