@@ -360,6 +360,27 @@ private fun ArchiveDetailScreen(
                             modifier = Modifier.padding(bottom = CulinarySpacing.sm),
                         )
                     }
+                    InventoryArchiveSectionHeader(english = "BASIC INFORMATION", title = "基本信息")
+                    InventoryArchiveValueRow("所属分类", detail.categoryPath)
+                    InventoryArchiveValueRow("库存单位", detail.archive.stockUnit.symbol)
+                    InventoryArchiveSectionHeader(english = "UNIT & MEASUREMENT", title = "规格与计量")
+                    InventoryArchiveValueRow("库存基本单位", detail.archive.stockUnit.name)
+                    InventoryArchiveSectionHeader(english = "INVENTORY MANAGEMENT", title = "库存管理")
+                    InventoryArchiveValueRow(
+                        "最低库存",
+                        detail.archive.minimumStock?.let { "${formatAmount(it)} ${detail.archive.stockUnit.symbol}" } ?: "未设置",
+                    )
+                    InventoryArchiveValueRow(
+                        "目标库存",
+                        detail.archive.targetStock?.let { "${formatAmount(it)} ${detail.archive.stockUnit.symbol}" } ?: "未设置",
+                    )
+                    InventoryArchiveValueRow(
+                        "默认库位",
+                        detail.archive.defaultLocationId?.let { state.locationNames[it.value] } ?: "未指定",
+                    )
+                    InventoryArchiveSectionHeader(english = "SHELF LIFE & STORAGE", title = "保质期与储存")
+                    InventoryArchiveValueRow("储存方式", detail.archive.storageMethod ?: "未设置")
+                    InventoryArchiveValueRow("储存温度", detail.archive.storageTemperature ?: "未设置")
                     InventoryArchiveSectionHeader(english = "STOCK OVERVIEW", title = "库存情况")
                     Row(
                         modifier = Modifier.fillMaxWidth().padding(vertical = CulinarySpacing.xs),
