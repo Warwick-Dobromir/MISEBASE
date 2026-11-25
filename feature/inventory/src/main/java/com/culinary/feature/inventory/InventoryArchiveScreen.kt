@@ -398,6 +398,11 @@ private fun ArchiveDetailScreen(
                         )
                     } else {
                         detail.links.forEach { link ->
+                            link.product.sku?.let { InventoryArchiveValueRow("商品编码", it) }
+                            link.product.brand?.let { InventoryArchiveValueRow("品牌", it) }
+                            link.product.packageLabel?.let { InventoryArchiveValueRow("包装规格", it) }
+                            link.product.shelfLifeDays?.let { InventoryArchiveValueRow("商品保质期", "$it 天") }
+                            link.product.storageNote?.let { InventoryArchiveValueRow("商品储存备注", it) }
                             ArchiveLinkRow(
                                 link = link,
                                 unitSymbol = detail.archive.stockUnit.symbol,
@@ -476,6 +481,9 @@ private fun ArchiveDetailScreen(
                     InventoryArchiveSectionHeader(english = "ARCHIVE RECORD", title = "档案记录")
                     InventoryArchiveValueRow("档案编号", detail.archive.id)
                     InventoryArchiveValueRow("档案状态", detail.archive.status.name)
+                    InventoryArchiveValueRow("创建时间", formatInstant(detail.archive.createdAt))
+                    InventoryArchiveValueRow("最后修改", formatInstant(detail.archive.updatedAt))
+                    InventoryArchiveValueRow("修订版本", "REV ${detail.archive.revision}")
                 }
                 CulinaryRule()
                 Row(
