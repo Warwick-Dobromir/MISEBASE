@@ -66,6 +66,8 @@ import com.culinary.core.domain.model.InventoryArchive
 import com.culinary.core.domain.model.InventoryArchiveDetail
 import com.culinary.core.domain.model.LocationId
 import com.culinary.core.domain.repository.InventoryRepository
+import com.culinary.core.domain.repository.PendingStockDraft
+import com.culinary.core.domain.repository.PendingStockRepository
 import com.culinary.core.domain.model.Unit as StockUnit
 import com.culinary.core.domain.usecase.inventory.ArchiveFormOptions
 import com.culinary.core.domain.usecase.inventory.GetInventoryArchiveDetailUseCase
@@ -179,12 +181,15 @@ class ArchiveEditViewModel
         private val linkArchiveProduct: LinkArchiveProductUseCase,
         private val unlinkArchiveProduct: UnlinkArchiveProductUseCase,
         private val inventoryRepository: InventoryRepository,
+        private val pendingStockRepository: PendingStockRepository? = null,
     ) : ViewModel() {
         private val archiveId: String? =
             savedStateHandle.get<String>(InventoryRoutes.ARG_ARCHIVE_ID)?.takeIf { it.isNotBlank() }
         private val kindParam: String = savedStateHandle.get<String>(InventoryRoutes.ARG_KIND).orEmpty()
         private val sauceIdParam: String? =
             savedStateHandle.get<String>(InventoryRoutes.ARG_SAUCE_ID)?.takeIf { it.isNotBlank() }
+        private val barcodeParam: String? =
+            savedStateHandle.get<String>(InventoryRoutes.ARG_BARCODE)?.takeIf { it.isNotBlank() }
 
         private val _uiState = MutableStateFlow(ArchiveEditUiState())
         val uiState: StateFlow<ArchiveEditUiState> = _uiState.asStateFlow()
@@ -252,7 +257,7 @@ class ArchiveEditViewModel
                     brand = archive?.brand.orEmpty(),
                     packageLabel = archive?.productSpecification.orEmpty(),
                     productCode = archive?.productCode.orEmpty(),
-                    barcode = archive?.barcode.orEmpty(),
+                    barcode = archive?.barcode ?: barcodeParam.orEmpty(),
                     purchaseUnitId = archive?.purchaseUnitId.orEmpty(),
                     purchaseSpecification = archive?.purchaseSpecification.orEmpty(),
                     unitConversion = archive?.unitConversion.orEmpty(),
@@ -427,7 +432,14 @@ class ArchiveEditViewModel
                     is Outcome.Success -> {
                         val product = state.detail?.links?.firstOrNull()?.product
                         if (product == null) {
-                            _uiState.update { it.copy(isSaving = false, savedId = result.value) }
+                            val queued = enqueueScannedArchive(state, result.value, unit)
+                            _uiState.update {
+                                it.copy(
+                                    isSaving = false,
+                                    savedId = result.value.takeIf { queued },
+                                    error = if (queued) null else "库存档案已保存，但加入待入库清单失败，请重试。",
+                                )
+                            }
                         } else {
                             val updatedProduct = product.copy(
                                 brand = state.brand.trim().takeIf { it.isNotEmpty() },
@@ -438,7 +450,16 @@ class ArchiveEditViewModel
                                 lastUnitPriceMinor = state.purchasePrice.trim().takeIf { it.isNotEmpty() }?.toDoubleOrNull()?.let { (it * 100.0).toLong() },
                             )
                             when (val productResult = inventoryRepository.saveProduct(updatedProduct)) {
-                                is Outcome.Success -> _uiState.update { it.copy(isSaving = false, savedId = result.value) }
+                                is Outcome.Success -> {
+                                    val queued = enqueueScannedArchive(state, result.value, unit)
+                                    _uiState.update {
+                                        it.copy(
+                                            isSaving = false,
+                                            savedId = result.value.takeIf { queued },
+                                            error = if (queued) null else "库存档案已保存，但加入待入库清单失败，请重试。",
+                                        )
+                                    }
+                                }
                                 is Outcome.Failure -> _uiState.update {
                                     it.copy(isSaving = false, error = InventoryErrorMessages.describe(productResult.error))
                                 }
@@ -463,6 +484,28 @@ class ArchiveEditViewModel
                     }
                 }
             }
+        }
+
+        private suspend fun enqueueScannedArchive(
+            state: ArchiveEditUiState,
+            archiveId: String,
+            unit: StockUnit,
+        ): Boolean {
+            if (barcodeParam.isNullOrBlank()) return true
+            val repository = pendingStockRepository ?: return false
+            return runCatching {
+                repository.addOrIncrement(
+                    PendingStockDraft(
+                        archiveId = archiveId,
+                        name = state.name.trim(),
+                        brand = state.brand.trim().takeIf { it.isNotEmpty() },
+                        categoryName = state.categoryLabel,
+                        specification = state.packageLabel.trim().takeIf { it.isNotEmpty() },
+                        imageUri = state.imageUri.trim().takeIf { it.isNotEmpty() },
+                        stockUnitId = unit.id.value,
+                    ),
+                )
+            }.isSuccess
         }
 
         private fun validate(state: ArchiveEditUiState): Map<String, String> {
