@@ -71,7 +71,7 @@ internal class CameraBarcodeSession(
                             frameConsensus.offer(frameCapture)?.let(onCapture)
                         }
                     } finally {
-                        decodingFrame.set(false)
+                        if (analysisGeneration.get() == frameGeneration) decodingFrame.set(false)
                     }
                 },
                 onFailure = {
@@ -81,7 +81,7 @@ internal class CameraBarcodeSession(
                             onError(ERROR_DECODE)
                         }
                     } finally {
-                        decodingFrame.set(false)
+                        if (analysisGeneration.get() == frameGeneration) decodingFrame.set(false)
                     }
                 },
             )
@@ -139,6 +139,9 @@ internal class CameraBarcodeSession(
     fun setActive(active: Boolean) {
         analysisGeneration.incrementAndGet()
         frameConsensus.reset()
+        // Release a decode slot left by an in-flight ML Kit task. Its stale callback is
+        // generation-guarded and cannot release a newer frame's slot after resume.
+        decodingFrame.set(false)
         analyzing.set(active)
     }
 
