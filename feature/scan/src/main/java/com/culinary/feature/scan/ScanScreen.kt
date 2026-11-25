@@ -297,7 +297,7 @@ private fun ScanSuccessStack(
         val frameHeight = minOf(maxWidth * FRAME_WIDTH_RATIO, maxHeight * FRAME_HEIGHT_RATIO)
         val frameTop = (maxHeight - frameHeight) / 2
         val stackHeight = 112.dp
-        val stackTop = (frameTop - stackHeight - 8.dp).coerceAtLeast(8.dp)
+        val stackTop = (frameTop - stackHeight - 24.dp).coerceAtLeast(8.dp)
         val visibleFeedbacks = feedbacks.takeLast(3)
         val olderFeedbacks = visibleFeedbacks.dropLast(1)
         val latestFeedback = visibleFeedbacks.lastOrNull()
