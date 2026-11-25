@@ -1,8 +1,11 @@
 package com.culinary.feature.scan
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -14,8 +17,8 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -27,7 +30,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.key
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.zIndex
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
@@ -40,7 +42,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.animation.core.tween
+import androidx.compose.ui.zIndex
 import coil3.compose.AsyncImage
 import com.culinary.core.designsystem.component.BrandPageHeader
 import com.culinary.core.designsystem.component.CulinaryButton
@@ -350,9 +352,11 @@ private fun ScanSuccessStack(feedbacks: List<ScanSuccessFeedback>) {
         feedbacks.takeLast(3).forEachIndexed { index, feedback ->
             key(feedback.id) {
                 AnimatedVisibility(
-                    visible = true,
+                    visible = feedback.visible,
                     enter = scaleIn(initialScale = 0.72f, animationSpec = tween(180)) +
                         fadeIn(animationSpec = tween(140)),
+                    exit = scaleOut(targetScale = 0.82f, animationSpec = tween(180)) +
+                        fadeOut(animationSpec = tween(180)),
                     modifier =
                         Modifier
                             .align(Alignment.TopCenter)
