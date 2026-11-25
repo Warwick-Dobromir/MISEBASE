@@ -1,10 +1,12 @@
 package com.culinary.feature.inventory
 
 import android.net.Uri
+import android.graphics.BitmapFactory
 import android.content.Intent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -18,6 +20,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
@@ -35,6 +38,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -579,17 +585,31 @@ private fun ArchiveEditScreen(
                     chineseTitle = state.name,
                     description = state.description,
                 )
-                imageBytes?.let { bytes ->
-                    Spacer(modifier = Modifier.height(CulinarySpacing.md))
-                    ArchiveWideImage(bytes = bytes, caption = null)
-                }
                 val launchImagePicker = rememberInventoryArchiveImagePicker(onImageUriChange)
-                if (imageUri == null) {
-                    CulinaryTextButton(text = "＋ 添加图片", onClick = launchImagePicker)
-                } else {
-                    Row(horizontalArrangement = Arrangement.spacedBy(CulinarySpacing.sm)) {
-                        CulinaryTextButton(text = "更换图片", onClick = launchImagePicker)
-                        CulinaryTextButton(text = "删除图片", onClick = { onImageUriChange("") }, danger = true)
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(vertical = CulinarySpacing.sm),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(CulinarySpacing.md),
+                ) {
+                    val bitmap = remember(imageBytes) {
+                        imageBytes?.let { BitmapFactory.decodeByteArray(it, 0, it.size)?.asImageBitmap() }
+                    }
+                    if (bitmap != null) {
+                        Image(
+                            bitmap = bitmap,
+                            contentDescription = "物品图片",
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier.size(76.dp).clip(RoundedCornerShape(8.dp)),
+                        )
+                    } else {
+                        Text("物品图片", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(76.dp))
+                    }
+                    Column(verticalArrangement = Arrangement.spacedBy(CulinarySpacing.xxs)) {
+                        Text("物品图片", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Row(horizontalArrangement = Arrangement.spacedBy(CulinarySpacing.sm)) {
+                            CulinaryTextButton(text = if (imageUri == null) "添加图片" else "更换图片", onClick = launchImagePicker)
+                            if (imageUri != null) CulinaryTextButton(text = "移除图片", onClick = { onImageUriChange("") }, danger = true)
+                        }
                     }
                 }
                 ArchiveEditorSectionHeader(
