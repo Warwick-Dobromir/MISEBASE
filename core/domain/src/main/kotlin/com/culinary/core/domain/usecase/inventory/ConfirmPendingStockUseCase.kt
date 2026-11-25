@@ -62,7 +62,6 @@ class ConfirmPendingStockUseCase(
             pending.clear()
             Outcome.success(results)
         }.flatMap { it }
-    }
 
     private fun expiryDate(
         archive: InventoryArchive,
