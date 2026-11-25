@@ -43,6 +43,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.layout.ContentScale
+import coil3.compose.AsyncImage
 import com.culinary.core.designsystem.component.BrandPageHeader
 import com.culinary.core.designsystem.component.CulinaryButton
 import com.culinary.core.designsystem.component.CulinaryButtonVariant
@@ -135,6 +137,52 @@ internal fun ScanScreen(
                         actionLabel = stringResource(R.string.scan_retry),
                         onAction = onDismissTorchNotice,
                     )
+                }
+            }
+            state.matchedArchive?.let { archive ->
+                Row(
+                    modifier = Modifier
+                        .align(Alignment.TopStart)
+                        .padding(start = CulinarySpacing.sm, top = CulinarySpacing.sm)
+                        .fillMaxWidth(0.56f)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(Color(0xF0141414))
+                        .border(1.dp, Color.White.copy(alpha = 0.12f), RoundedCornerShape(12.dp))
+                        .padding(horizontal = 9.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(9.dp),
+                ) {
+                    archive.imageUri?.takeIf { it.isNotBlank() }?.let { imageUri ->
+                        AsyncImage(
+                            model = imageUri,
+                            contentDescription = null,
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier.size(48.dp).clip(RoundedCornerShape(8.dp)),
+                        )
+                    }
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        verticalArrangement = Arrangement.spacedBy(2.dp),
+                    ) {
+                        Text(
+                            text = archive.brand?.takeIf { it.isNotBlank() }
+                                ?.let { "${archive.name} · $it" } ?: archive.name,
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.SemiBold,
+                            color = Color.White,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                        archive.productSpecification?.takeIf { it.isNotBlank() }?.let { specification ->
+                            Text(
+                                text = specification,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = Color.White.copy(alpha = 0.78f),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                        }
+                    }
                 }
             }
             if (state.successFeedbacks.isNotEmpty()) {
@@ -305,11 +353,12 @@ private fun ScanSuccessStack(
         Column(
             modifier =
                 Modifier
-                    .align(Alignment.TopCenter)
+                    .align(Alignment.TopEnd)
+                    .padding(end = CulinarySpacing.sm)
                     .offset(y = stackTop)
-                    .fillMaxWidth(0.78f)
+                    .fillMaxWidth(0.38f)
                     .height(stackHeight),
-            verticalArrangement = Arrangement.Bottom,
+            verticalArrangement = Arrangement.spacedBy(3.dp, Alignment.Bottom),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             olderFeedbacks.forEachIndexed { index, feedback ->
