@@ -27,6 +27,7 @@ import com.culinary.feature.scan.permission.CameraPermission
 @Composable
 fun ScanRoute(
     onCapture: (ScanCapture) -> Unit,
+    onOpenArchive: (String) -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: ScanViewModel = hiltViewModel(),
@@ -57,6 +58,12 @@ fun ScanRoute(
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
+    LaunchedEffect(state.openArchiveId) {
+        val archiveId = state.openArchiveId ?: return@LaunchedEffect
+        viewModel.onArchiveNavigationConsumed()
+        onOpenArchive(archiveId)
+    }
+
     LaunchedEffect(state.pendingCapture) {
         val capture = state.pendingCapture ?: return@LaunchedEffect
         viewModel.onCaptureConsumed()
@@ -73,6 +80,7 @@ fun ScanRoute(
         onToggleTorch = viewModel::onToggleTorch,
         onResumeScanning = viewModel::onResumeScanning,
         onBack = onBack,
+        onToggleMode = viewModel::onToggleMode,
         onDismissTorchNotice = viewModel::onTorchNoticeShown,
         cameraContent = {
             // 查询已有档案时只暂停分析，不释放相机预览；匹配结果提示显示在预览上方。
