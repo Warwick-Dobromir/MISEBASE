@@ -232,27 +232,41 @@ private fun ArchiveDetailScreen(
                             modifier = Modifier.padding(bottom = CulinarySpacing.sm),
                         )
                     }
-                    InventoryArchiveSectionHeader(english = "STOCK OVERVIEW", title = "库存情况")
-                    Row(
-                        modifier = Modifier.fillMaxWidth().padding(vertical = CulinarySpacing.xs),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Text("当前库存", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.weight(1f))
-                        QuantityText(
-                            amount = formatAmount(detail.row.onHand),
-                            unit = detail.archive.stockUnit.symbol,
-                            amountStyle = MaterialTheme.typography.titleLarge,
-                        )
+                    InventoryArchiveSectionHeader(english = "STOCK OVERVIEW", title = "库存总量")
+                    Row(modifier = Modifier.fillMaxWidth().padding(vertical = CulinarySpacing.xs), verticalAlignment = Alignment.Bottom) {
+                        Text(formatAmount(detail.row.onHand), style = CulinaryTextStyles.numeralL, color = MaterialTheme.colorScheme.onSurface)
+                        Spacer(modifier = Modifier.width(CulinarySpacing.xs))
+                        Text(detail.archive.stockUnit.symbol, style = CulinaryTextStyles.unit, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Spacer(modifier = Modifier.weight(1f))
+                        StatusBadge(text = InventoryText.stockStatus(detail.row.status), tone = StatusTone.Accent)
                     }
-                    InventoryArchiveValueRow("可用库存", "${formatAmount(detail.row.available)} ${detail.archive.stockUnit.symbol}")
-                    InventoryArchiveValueRow("预留库存", "${formatAmount(detail.row.reserved)} ${detail.archive.stockUnit.symbol}")
-                    InventoryArchiveValueRow("库存状态", InventoryText.stockStatus(detail.row.status), status = true)
+                    Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                        Text("最低库存 ${detail.archive.minimumStock?.let(::formatAmount) ?: "未设置"} ${detail.archive.stockUnit.symbol}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.weight(1f))
+                        Text("目标库存 ${detail.archive.targetStock?.let(::formatAmount) ?: "未设置"} ${detail.archive.stockUnit.symbol}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                    Spacer(modifier = Modifier.height(CulinarySpacing.md))
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(CulinarySpacing.md)) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("可用库存", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            QuantityText(amount = formatAmount(detail.row.available), unit = detail.archive.stockUnit.symbol, amountStyle = MaterialTheme.typography.titleLarge)
+                        }
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("冻结 / 预留", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            QuantityText(amount = formatAmount(detail.row.reserved), unit = detail.archive.stockUnit.symbol, amountStyle = MaterialTheme.typography.titleLarge)
+                        }
+                    }
                     InventoryArchiveValueRow("有效批次", detail.row.batchCount.toString())
                     InventoryArchiveValueRow("涉及库位", detail.row.locationNames.joinToString("、").ifBlank { "未指定" })
-                    Spacer(modifier = Modifier.height(CulinarySpacing.md))
+                    Spacer(modifier = Modifier.height(CulinarySpacing.sm))
                     InventoryArchiveSectionHeader(english = "BASIC INFORMATION", title = "基本信息")
                     InventoryArchiveValueRow("所属分类", detail.categoryPath ?: "未指定分类")
                     InventoryArchiveValueRow("档案类型", if (detail.archive.kind == ArchiveKind.SAUCE) "酱汁现货档案" else "食材库存档案")
+                    detail.links.firstOrNull()?.let { link ->
+                        InventoryArchiveValueRow("品牌", link.product.brand ?: "未设置")
+                        InventoryArchiveValueRow("商品规格", link.product.packageLabel ?: "${formatAmount(link.product.contentQty)} ${link.product.contentUnit.symbol}")
+                        InventoryArchiveValueRow("商品编码", link.product.sku ?: "未生成")
+                        InventoryArchiveValueRow("条码", "已关联商品条码")
+                    }
                     detail.sauceName?.let { InventoryArchiveValueRow("关联酱汁", it) }
                     InventoryArchiveSectionHeader(english = "UNIT & MEASUREMENT", title = "规格与计量")
                     InventoryArchiveValueRow("库存基本单位", "${detail.archive.stockUnit.name}（${detail.archive.stockUnit.symbol}）")
@@ -276,6 +290,8 @@ private fun ArchiveDetailScreen(
                     InventoryArchiveSectionHeader(english = "SHELF LIFE & STORAGE", title = "保质期与储存")
                     InventoryArchiveValueRow("储存方式", detail.archive.storageMethod ?: "未设置")
                     InventoryArchiveValueRow("储存温度", detail.archive.storageTemperature ?: "未设置")
+                    detail.links.firstOrNull()?.product?.shelfLifeDays?.let { InventoryArchiveValueRow("保质期规则", "生产日期起算 $it 天") }
+                    detail.links.firstOrNull()?.product?.storageNote?.let { InventoryArchiveValueRow("商品储存备注", it) }
                     InventoryArchiveValueRow("最近到期", detail.row.nearestExpiry?.let(::formatDate) ?: "未登记")
                     InventoryArchiveSectionHeader(english = "PURCHASING INFORMATION", title = "采购信息")
                     if (detail.links.isEmpty()) {
