@@ -8,6 +8,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
+import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -367,7 +368,11 @@ private fun ScanSuccessStack(feedbacks: List<ScanSuccessFeedback>) {
                 )
                 AnimatedVisibility(
                     visible = feedback.visible,
-                    enter = scaleIn(initialScale = 0.76f, animationSpec = tween(170)) +
+                    enter = slideInVertically(
+                        initialOffsetY = { fullHeight -> fullHeight / 2 },
+                        animationSpec = tween(180),
+                    ) +
+                        scaleIn(initialScale = 0.76f, animationSpec = tween(170)) +
                         fadeIn(animationSpec = tween(130)),
                     exit = scaleOut(targetScale = 0.84f, animationSpec = tween(180)) +
                         fadeOut(animationSpec = tween(180)),
