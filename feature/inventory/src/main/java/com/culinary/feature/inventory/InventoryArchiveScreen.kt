@@ -395,14 +395,6 @@ private fun ArchiveDetailScreen(
                     }
                     InventoryArchiveValueRow("库存状态", InventoryText.stockStatus(detail.row.status), status = true)
                     InventoryArchiveValueRow("有效批次", detail.row.batchCount.toString())
-                    InventoryArchiveValueRow(
-                        "最低库存",
-                        detail.archive.minimumStock?.let { "${formatAmount(it)} ${detail.archive.stockUnit.symbol}" } ?: "未设置",
-                    )
-                    InventoryArchiveValueRow(
-                        "主要存放位置",
-                        detail.archive.defaultLocationId?.let { state.locationNames[it.value] } ?: "未指定",
-                    )
                     Spacer(modifier = Modifier.height(CulinarySpacing.md))
                     InventoryArchiveSectionHeader(
                         english = "BATCH RECORDS",
