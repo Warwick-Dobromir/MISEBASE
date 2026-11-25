@@ -61,6 +61,7 @@ import com.culinary.core.designsystem.component.InlineError
 import com.culinary.core.designsystem.component.LoadingRows
 import com.culinary.core.designsystem.icon.CulinaryIcons
 import com.culinary.core.designsystem.theme.CulinarySpacing
+import com.culinary.core.designsystem.theme.CulinaryTextStyles
 import com.culinary.core.domain.model.ArchiveKind
 import com.culinary.core.domain.model.InventoryArchive
 import com.culinary.core.domain.model.InventoryArchiveDetail
@@ -926,7 +927,7 @@ private fun ArchiveEditScreen(
 private fun InventoryArchiveHeading(
     categoryLabel: String,
     chineseTitle: String,
-    englishTitle: String,
+    englishTitle: String?,
     description: String?,
 ) {
     Column(modifier = Modifier.fillMaxWidth()) {
@@ -935,7 +936,7 @@ private fun InventoryArchiveHeading(
             Spacer(modifier = Modifier.height(CulinarySpacing.xs))
         }
         Text(chineseTitle, style = MaterialTheme.typography.headlineSmall, color = MaterialTheme.colorScheme.onSurface)
-        if (englishTitle.isNotBlank()) {
+        if (!englishTitle.isNullOrBlank()) {
             Spacer(modifier = Modifier.height(CulinarySpacing.xxs))
             Text(englishTitle.uppercase(), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
