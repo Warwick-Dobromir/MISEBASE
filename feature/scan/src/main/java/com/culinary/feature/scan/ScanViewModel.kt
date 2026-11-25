@@ -154,7 +154,7 @@ class ScanViewModel
                                             false
                                         } else {
                                             state.manualEntry
-                                        }
+                                        },
                                     matchedArchive = if (shouldShow) archive else state.matchedArchive,
                                     error = null,
                                 )
