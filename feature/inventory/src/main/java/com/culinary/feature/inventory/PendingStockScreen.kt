@@ -373,7 +373,12 @@ private fun PendingStockScreen(
                 )
             },
             confirmButton = {
-                TextButton(onClick = { editingItem = firstItem; onDismissIncomplete() }) { Text("去填写") }
+                TextButton(
+                    onClick = {
+                        editingItem = firstItem
+                        onDismissIncomplete()
+                    },
+                ) { Text("去填写") }
             },
             dismissButton = { TextButton(onClick = onDismissIncomplete) { Text("取消") } },
         )
