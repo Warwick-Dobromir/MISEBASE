@@ -38,7 +38,7 @@ data class InventoryArchive(
     val productSpecification: String? = null,
     val productCode: String? = null,
     val barcode: String? = null,
-    val purchaseUnitName: String? = null,
+    val purchaseUnitId: String? = null,
     val purchaseSpecification: String? = null,
     val unitConversion: String? = null,
     val measurementPrecision: Int? = null,
