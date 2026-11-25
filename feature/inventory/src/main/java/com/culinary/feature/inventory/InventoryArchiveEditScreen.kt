@@ -242,11 +242,8 @@ class ArchiveEditViewModel
                     description = archive?.description.orEmpty(),
                     imageUri = archive?.imageUri.orEmpty(),
                     sauceId = archive?.sauceId ?: sauceIdParam,
-                    brand = existing?.links?.firstOrNull()?.product?.brand.orEmpty(),
-                    packageLabel = existing?.links?.firstOrNull()?.product?.packageLabel.orEmpty(),
                     supplierId = existing?.links?.firstOrNull()?.product?.supplierId.orEmpty(),
-                    shelfLifeDays = existing?.links?.firstOrNull()?.product?.shelfLifeDays?.toString().orEmpty(),
-                    storageNote = existing?.links?.firstOrNull()?.product?.storageNote.orEmpty(),
+                    shelfLifeDays = archive?.shelfLifeDays?.toString().orEmpty(),
                     purchasePrice = archive?.purchasePriceMinor?.let { "%.2f".format(it / 100.0) }.orEmpty(),
                     brand = archive?.brand.orEmpty(),
                     packageLabel = archive?.productSpecification.orEmpty(),
@@ -602,6 +599,19 @@ fun ArchiveEditRoute(
         onShelfLifeChange = viewModel::onShelfLifeChange,
         onStorageNoteChange = viewModel::onStorageNoteChange,
         onPurchasePriceChange = viewModel::onPurchasePriceChange,
+        onProductCodeChange = viewModel::onProductCodeChange,
+        onBarcodeChange = viewModel::onBarcodeChange,
+        onPurchaseUnitIdChange = viewModel::onPurchaseUnitIdChange,
+        onPurchaseSpecificationChange = viewModel::onPurchaseSpecificationChange,
+        onUnitConversionChange = viewModel::onUnitConversionChange,
+        onMeasurementPrecisionChange = viewModel::onMeasurementPrecisionChange,
+        onBatchManagementChange = viewModel::onBatchManagementChange,
+        onShelfLifeEnabledChange = viewModel::onShelfLifeEnabledChange,
+        onShelfLifeCalculationMethodChange = viewModel::onShelfLifeCalculationMethodChange,
+        onOpenedShelfLifeChange = viewModel::onOpenedShelfLifeChange,
+        onTrackOpenedDateChange = viewModel::onTrackOpenedDateChange,
+        onSupplierNameChange = viewModel::onSupplierNameChange,
+        onPurchasePriceUnitChange = viewModel::onPurchasePriceUnitChange,
         onLinkProductSelected = viewModel::onLinkProductSelected,
         onLinkRatioChange = viewModel::onLinkRatioChange,
         onLinkDefaultChange = viewModel::onLinkDefaultChange,
@@ -650,6 +660,19 @@ private fun ArchiveEditScreen(
     onShelfLifeChange: (String) -> Unit,
     onStorageNoteChange: (String) -> Unit,
     onPurchasePriceChange: (String) -> Unit,
+    onProductCodeChange: (String) -> Unit,
+    onBarcodeChange: (String) -> Unit,
+    onPurchaseUnitIdChange: (String) -> Unit,
+    onPurchaseSpecificationChange: (String) -> Unit,
+    onUnitConversionChange: (String) -> Unit,
+    onMeasurementPrecisionChange: (String) -> Unit,
+    onBatchManagementChange: (Boolean) -> Unit,
+    onShelfLifeEnabledChange: (Boolean) -> Unit,
+    onShelfLifeCalculationMethodChange: (String) -> Unit,
+    onOpenedShelfLifeChange: (String) -> Unit,
+    onTrackOpenedDateChange: (Boolean) -> Unit,
+    onSupplierNameChange: (String) -> Unit,
+    onPurchasePriceUnitChange: (String) -> Unit,
     onLinkProductSelected: (String?) -> Unit,
     onLinkRatioChange: (String) -> Unit,
     onLinkDefaultChange: (Boolean) -> Unit,
@@ -739,9 +762,7 @@ private fun ArchiveEditScreen(
                 )
                 InventoryArchiveEditField("中文名称", state.name, onNameChange, "输入中文名称", state.fieldErrors["name"])
                 InventoryArchiveEditField("英文名称", state.englishName, onEnglishNameChange, "输入英文名称")
-                state.detail?.links?.firstOrNull()?.let { link ->
-                    InventoryArchiveEditField("品牌", state.brand, onBrandChange, "输入品牌")
-                }
+                InventoryArchiveEditField("品牌", state.brand, onBrandChange, "输入品牌")
                 EditPickerField(
                     label = "所属分类",
                     value = state.categoryLabel,
@@ -749,11 +770,9 @@ private fun ArchiveEditScreen(
                     error = state.fieldErrors["category"],
                     onClick = { picker = EditPicker.Category },
                 )
-                state.detail?.links?.firstOrNull()?.let { link ->
-                    InventoryArchiveEditField("商品规格", state.packageLabel, onPackageLabelChange, "输入商品规格")
-                    ArchiveEditReadOnlyRow("商品编码", link.product.sku ?: "未生成")
-                    ArchiveEditReadOnlyRow("条码", "商品条码需在扫码关联后显示")
-                }
+                InventoryArchiveEditField("商品规格", state.packageLabel, onPackageLabelChange, "例如：1 kg / 块")
+                ArchiveEditReadOnlyRow("商品编码", state.productCode.ifBlank { "保存档案后自动生成" })
+                InventoryArchiveEditField("条码", state.barcode, onBarcodeChange, "扫描或填写商品条码")
                 if (state.kind == ArchiveKind.SAUCE) {
                     EditPickerField(
                         label = "关联酱汁",
@@ -775,12 +794,10 @@ private fun ArchiveEditScreen(
                     ArchiveEditReadOnlyRow("计量维度", unit.dimension.name)
                     if (unit.isApproximate) ArchiveEditReadOnlyRow("换算属性", "近似换算")
                 }
-                state.detail?.links?.firstOrNull()?.let { link ->
-                    ArchiveEditReadOnlyRow("采购单位", link.product.contentUnit.name)
-                    ArchiveEditReadOnlyRow("采购规格", "${formatAmount(link.product.contentQty)} ${link.product.contentUnit.symbol}")
-                    ArchiveEditReadOnlyRow("单位换算", "1 件 = ${formatAmount(link.conversionRatio)} ${link.product.stockUnit.symbol}")
-                    ArchiveEditReadOnlyRow("计量精度", "${link.product.stockUnit.displayPrecision} 位小数")
-                }
+                InventoryArchiveEditField("采购单位", state.purchaseUnitId, onPurchaseUnitIdChange, "例如：块")
+                InventoryArchiveEditField("采购规格", state.purchaseSpecification, onPurchaseSpecificationChange, "例如：1 kg / 块")
+                InventoryArchiveEditField("单位换算", state.unitConversion, onUnitConversionChange, "例如：1 块 = 1 kg")
+                InventoryArchiveEditField("计量精度", state.measurementPrecision, onMeasurementPrecisionChange, "小数位数")
                 ArchiveEditorSectionHeader(index = "", english = "INVENTORY MANAGEMENT", title = "库存管理")
                 Row(horizontalArrangement = Arrangement.spacedBy(CulinarySpacing.md)) {
                     Column(modifier = Modifier.weight(1f)) {
@@ -796,7 +813,10 @@ private fun ArchiveEditScreen(
                         CulinaryRule()
                     }
                 }
-                ArchiveEditReadOnlyRow("批次管理", "已启用")
+                Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Text("批次管理", modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
+                    Switch(checked = state.batchManagementEnabled, onCheckedChange = onBatchManagementChange)
+                }
                 EditPickerField(
                     label = "默认库位",
                     value = state.locationLabel,
@@ -805,21 +825,25 @@ private fun ArchiveEditScreen(
                     onClick = { picker = EditPicker.Location },
                 )
                 ArchiveEditorSectionHeader(index = "", english = "SHELF LIFE & STORAGE", title = "保质期与储存")
-                InventoryArchiveEditField("储存方式", state.storageMethod, onStorageMethodChange, "例如：密封、避光、冷藏")
-                InventoryArchiveEditField("储存温度", state.storageTemperature, onStorageTemperatureChange, "例如：2–8 ℃、常温")
-                ArchiveEditReadOnlyRow("保质期管理", if (state.shelfLifeDays.isNotBlank()) "已启用" else "未启用")
-                InventoryArchiveEditField("保质期时长", state.shelfLifeDays, onShelfLifeChange, "输入天数", state.fieldErrors["shelfLife"])
-                InventoryArchiveEditField("开封后保质期说明", state.storageNote, onStorageNoteChange, "输入开封后储存要求")
-                ArchiveEditReadOnlyRow("最近到期", state.detail?.row?.nearestExpiry?.let(::formatDate) ?: "未登记")
-                ArchiveEditorSectionHeader(index = "", english = "PURCHASING INFORMATION", title = "采购信息")
-                val archiveDetail = state.detail
-                if (!archiveDetail?.links.isNullOrEmpty()) {
-                    archiveDetail!!.links.forEach { link ->
-                        ArchiveEditReadOnlyRow("默认供应商", state.supplierId.takeIf { it.isNotBlank() }?.let { "已绑定" } ?: "未设置")
-                        InventoryArchiveEditField("采购价格", state.purchasePrice, onPurchasePriceChange, "输入单价", state.fieldErrors["price"])
-                        ArchiveEditReadOnlyRow("价格单位", "元 / ${link.product.contentUnit.symbol}")
-                    }
+                Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Text("保质期管理", modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
+                    Switch(checked = state.shelfLifeEnabled, onCheckedChange = onShelfLifeEnabledChange)
                 }
+                InventoryArchiveEditField("计算方式", state.shelfLifeCalculationMethod, onShelfLifeCalculationMethodChange, "例如：生产日期起算")
+                InventoryArchiveEditField("保质期时长", state.shelfLifeDays, onShelfLifeChange, "输入天数", state.fieldErrors["shelfLife"])
+                InventoryArchiveEditField("开封后保质期", state.openedShelfLifeDays, onOpenedShelfLifeChange, "输入天数")
+                Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Text("记录开封日期", modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
+                    Switch(checked = state.trackOpenedDate, onCheckedChange = onTrackOpenedDateChange)
+                }
+                InventoryArchiveEditField("储存方式", state.storageMethod, onStorageMethodChange, "例如：冷藏")
+                InventoryArchiveEditField("储存温度", state.storageTemperature, onStorageTemperatureChange, "例如：0–4°C")
+                ArchiveEditorSectionHeader(index = "", english = "PURCHASING INFORMATION", title = "采购信息")
+                InventoryArchiveEditField("默认供应商", state.supplierName, onSupplierNameChange, "输入供应商名称")
+                InventoryArchiveEditField("采购价格", state.purchasePrice, onPurchasePriceChange, "输入单价", state.fieldErrors["price"])
+                InventoryArchiveEditField("价格单位", state.purchasePriceUnit, onPurchasePriceUnitChange, "例如：元 / 块")
+                val archiveDetail = state.detail
+                ArchiveEditorSectionHeader(index = "", english = "LINKED PRODUCTS", title = "关联采购商品")
                 if (archiveDetail?.links.isNullOrEmpty()) {
                     ArchiveEditReadOnlyRow("关联采购商品", "尚未关联")
                 } else {
