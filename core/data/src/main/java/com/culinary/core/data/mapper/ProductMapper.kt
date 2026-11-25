@@ -25,6 +25,14 @@ object ProductMapper {
             contentUnit = contentUnit,
             stockToContentFactor = entity.stockToContentFactor,
             defaultLocationId = entity.defaultLocationId?.let(::LocationId),
+            brand = entity.brand,
+            sku = entity.sku,
+            packageLabel = entity.packageLabel,
+            supplierId = entity.supplierId,
+            shelfLifeDays = entity.shelfLifeDays,
+            storageNote = entity.storageNote,
+            lastUnitPriceMinor = entity.lastUnitPriceMinor,
+            currencyCode = entity.currencyCode,
             status =
                 when (entity.status) {
                     EntityStatusDb.ACTIVE -> EntityStatus.ACTIVE
@@ -49,6 +57,14 @@ object ProductMapper {
             stockUnitId = product.stockUnit.id.value,
             stockToContentFactor = product.stockToContentFactor,
             defaultLocationId = product.defaultLocationId?.value,
+            brand = product.brand,
+            sku = product.sku,
+            packageLabel = product.packageLabel,
+            supplierId = product.supplierId,
+            shelfLifeDays = product.shelfLifeDays,
+            storageNote = product.storageNote,
+            lastUnitPriceMinor = product.lastUnitPriceMinor,
+            currencyCode = product.currencyCode,
             status =
                 when (product.status) {
                     EntityStatus.ACTIVE -> EntityStatusDb.ACTIVE
