@@ -5,7 +5,6 @@ import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
-import androidx.room.ForeignKey
 
 /** 扫码待入库商品快照；不参与正式库存数量统计。 */
 @Entity(
