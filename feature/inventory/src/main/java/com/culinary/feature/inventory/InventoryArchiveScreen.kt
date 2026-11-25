@@ -286,6 +286,10 @@ private fun ArchiveDetailScreen(
                     detail.sauceName?.let { InventoryArchiveValueRow("关联酱汁", it) }
                     InventoryArchiveSectionHeader(english = "SHELF LIFE & STORAGE", title = "保质期与储存")
                     InventoryArchiveValueRow(
+                        "默认保质期",
+                        if (detail.archive.defaultShelfLifeValue != null && detail.archive.defaultShelfLifeUnit != null) "${detail.archive.defaultShelfLifeValue} ${detail.archive.defaultShelfLifeUnit.label}" else "未设置",
+                    )
+                    InventoryArchiveValueRow(
                         "保质期规则",
                         if (detail.archive.shelfLifeEnabled) {
                             "${detail.archive.shelfLifeCalculationMethod ?: "未指定起算方式"} · ${detail.archive.shelfLifeDays?.let { "$it 天" } ?: "未设置时长"}"

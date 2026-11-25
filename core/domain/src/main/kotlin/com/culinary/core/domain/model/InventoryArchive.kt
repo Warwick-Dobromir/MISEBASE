@@ -9,6 +9,13 @@ enum class ArchiveKind {
     SAUCE,
 }
 
+/** 库存档案中记录的默认保质期单位；保留原始单位，不提前换算成天数。 */
+enum class DefaultShelfLifeUnit(val label: String) {
+    DAY("天"),
+    MONTH("个月"),
+    YEAR("年"),
+}
+
 /** 库存状态：正常 / 低库存 / 不足。阈值来自档案的最低库存。 */
 enum class StockStatus {
     NORMAL,
@@ -43,6 +50,8 @@ data class InventoryArchive(
     val unitConversion: String? = null,
     val measurementPrecision: Int? = null,
     val batchManagementEnabled: Boolean = true,
+    val defaultShelfLifeValue: Int? = null,
+    val defaultShelfLifeUnit: DefaultShelfLifeUnit? = null,
     val shelfLifeEnabled: Boolean = false,
     val shelfLifeCalculationMethod: String? = null,
     val shelfLifeDays: Int? = null,
