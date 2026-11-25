@@ -573,6 +573,12 @@ private fun ArchiveEditScreen(
                         .verticalScroll(rememberScrollState())
                         .padding(horizontal = CulinarySpacing.pageHorizontal, vertical = CulinarySpacing.sm),
             ) {
+                ArchiveDetailHeading(
+                    categoryLabel = state.categoryLabel.orEmpty(),
+                    englishTitle = state.englishName,
+                    chineseTitle = state.name,
+                    description = state.description,
+                )
                 imageBytes?.let { bytes ->
                     Spacer(modifier = Modifier.height(CulinarySpacing.md))
                     ArchiveWideImage(bytes = bytes, caption = null)
@@ -586,12 +592,6 @@ private fun ArchiveEditScreen(
                         CulinaryTextButton(text = "删除图片", onClick = { onImageUriChange("") }, danger = true)
                     }
                 }
-                ArchiveDetailHeading(
-                    categoryLabel = state.categoryLabel.orEmpty(),
-                    englishTitle = state.englishName,
-                    chineseTitle = state.name,
-                    description = state.description,
-                )
                 ArchiveEditorSectionHeader(
                     index = "",
                     english = "BASIC INFORMATION",
