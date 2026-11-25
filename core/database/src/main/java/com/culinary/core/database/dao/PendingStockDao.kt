@@ -30,7 +30,7 @@ interface PendingStockDao {
     @Query("UPDATE pending_stock_item SET quantity = quantity + :amount, updated_at = :updatedAt WHERE id = :id")
     suspend fun incrementQuantity(id: String, amount: Double, updatedAt: Long): Int
 
-    @Query("UPDATE pending_stock_item SET name = :name, brand = :brand, category_name = :categoryName, specification = :specification, image_uri = :imageUri, stock_unit_id = :stockUnitId, source_product_id = :sourceProductId, updated_at = :updatedAt WHERE id = :id")
+    @Query("UPDATE pending_stock_item SET name = :name, brand = :brand, category_name = :categoryName, specification = :specification, image_uri = :imageUri, stock_unit_id = :stockUnitId, source_product_id = COALESCE(:sourceProductId, source_product_id), updated_at = :updatedAt WHERE id = :id")
     suspend fun updateSnapshot(
         id: String,
         name: String,
