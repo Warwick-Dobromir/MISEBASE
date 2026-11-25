@@ -287,7 +287,7 @@ private fun ArchiveDetailScreen(
                     InventoryArchiveSectionHeader(english = "SHELF LIFE & STORAGE", title = "保质期与储存")
                     InventoryArchiveValueRow(
                         "默认保质期",
-                        if (detail.archive.defaultShelfLifeValue != null && detail.archive.defaultShelfLifeUnit != null) "${detail.archive.defaultShelfLifeValue} ${detail.archive.defaultShelfLifeUnit.label}" else "未设置",
+                        detail.archive.defaultShelfLifeUnit?.let { unit -> detail.archive.defaultShelfLifeValue?.let { value -> "$value ${unit.label}" } } ?: "未设置",
                     )
                     InventoryArchiveValueRow(
                         "保质期规则",
