@@ -958,13 +958,19 @@ private val MIGRATION_13_14_IMPL =
                     `category_name` TEXT,
                     `specification` TEXT,
                     `image_uri` TEXT,
+                    `stock_unit_id` TEXT NOT NULL,
+                    `source_product_id` TEXT,
                     `quantity` REAL NOT NULL,
                     `sort_order` INTEGER NOT NULL,
                     `created_at` INTEGER NOT NULL,
                     `updated_at` INTEGER NOT NULL,
                     PRIMARY KEY(`id`),
                     FOREIGN KEY(`archive_id`) REFERENCES `inventory_archive`(`id`)
-                        ON UPDATE NO ACTION ON DELETE CASCADE
+                        ON UPDATE NO ACTION ON DELETE CASCADE,
+                    FOREIGN KEY(`stock_unit_id`) REFERENCES `unit`(`id`)
+                        ON UPDATE NO ACTION ON DELETE RESTRICT,
+                    FOREIGN KEY(`source_product_id`) REFERENCES `product`(`id`)
+                        ON UPDATE NO ACTION ON DELETE SET NULL
                 )
                 """.trimIndent(),
             )
@@ -984,6 +990,8 @@ private val MIGRATION_13_14_IMPL =
             )
             db.execSQL("CREATE INDEX IF NOT EXISTS `index_pending_stock_item_archive_id` ON `pending_stock_item` (`archive_id`)")
             db.execSQL("CREATE INDEX IF NOT EXISTS `index_pending_stock_item_sort_order` ON `pending_stock_item` (`sort_order`)")
+            db.execSQL("CREATE INDEX IF NOT EXISTS `index_pending_stock_item_stock_unit_id` ON `pending_stock_item` (`stock_unit_id`)")
+            db.execSQL("CREATE INDEX IF NOT EXISTS `index_pending_stock_item_source_product_id` ON `pending_stock_item` (`source_product_id`)")
             db.execSQL("CREATE INDEX IF NOT EXISTS `index_pending_stock_date_allocation_item_id` ON `pending_stock_date_allocation` (`item_id`)")
         }
     }

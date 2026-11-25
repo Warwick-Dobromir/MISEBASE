@@ -5,11 +5,24 @@ import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
+import androidx.room.ForeignKey
 
 /** 扫码待入库商品快照；不参与正式库存数量统计。 */
 @Entity(
     tableName = "pending_stock_item",
     foreignKeys = [
+        ForeignKey(
+            entity = UnitEntity::class,
+            parentColumns = ["id"],
+            childColumns = ["stock_unit_id"],
+            onDelete = ForeignKey.RESTRICT,
+        ),
+        ForeignKey(
+            entity = ProductEntity::class,
+            parentColumns = ["id"],
+            childColumns = ["source_product_id"],
+            onDelete = ForeignKey.SET_NULL,
+        ),
         ForeignKey(
             entity = InventoryArchiveEntity::class,
             parentColumns = ["id"],
@@ -17,7 +30,7 @@ import androidx.room.PrimaryKey
             onDelete = ForeignKey.CASCADE,
         ),
     ],
-    indices = [Index("archive_id"), Index("sort_order")],
+    indices = [Index("archive_id"), Index("sort_order"), Index("stock_unit_id"), Index("source_product_id")],
 )
 data class PendingStockItemEntity(
     @PrimaryKey @ColumnInfo(name = "id") val id: String,
@@ -27,6 +40,8 @@ data class PendingStockItemEntity(
     @ColumnInfo(name = "category_name") val categoryName: String? = null,
     @ColumnInfo(name = "specification") val specification: String? = null,
     @ColumnInfo(name = "image_uri") val imageUri: String? = null,
+    @ColumnInfo(name = "stock_unit_id") val stockUnitId: String,
+    @ColumnInfo(name = "source_product_id") val sourceProductId: String? = null,
     @ColumnInfo(name = "quantity") val quantity: Double,
     @ColumnInfo(name = "sort_order") val sortOrder: Int,
     @ColumnInfo(name = "created_at") val createdAt: Long,
