@@ -30,8 +30,62 @@ interface PendingStockDao {
     @Query("UPDATE pending_stock_item SET quantity = quantity + :amount, updated_at = :updatedAt WHERE id = :id")
     suspend fun incrementQuantity(id: String, amount: Double, updatedAt: Long): Int
 
-    @Query("UPDATE pending_stock_item SET name = :name, brand = :brand, category_name = :categoryName, specification = :specification, image_uri = :imageUri, updated_at = :updatedAt WHERE id = :id")
-    suspend fun updateSnapshot(id: String, name: String, brand: String?, categoryName: String?, specification: String?, imageUri: String?, updatedAt: Long): Int
+    @Query("UPDATE pending_stock_item SET name = :name, brand = :brand, category_name = :categoryName, specification = :specification, image_uri = :imageUri, stock_unit_id = :stockUnitId, source_product_id = :sourceProductId, updated_at = :updatedAt WHERE id = :id")
+    suspend fun updateSnapshot(
+        id: String,
+        name: String,
+        brand: String?,
+        categoryName: String?,
+        specification: String?,
+        imageUri: String?,
+        stockUnitId: String,
+        sourceProductId: String?,
+        updatedAt: Long,
+    ): Int
+
+    @Transaction
+    suspend fun addOrIncrement(item: PendingStockItemEntity): String {
+        val existing = findByArchive(item.archiveId)
+        if (existing != null) {
+            incrementQuantity(existing.id, item.quantity, item.updatedAt)
+            updateSnapshot(
+                existing.id,
+                item.name,
+                item.brand,
+                item.categoryName,
+                item.specification,
+                item.imageUri,
+                item.stockUnitId,
+                item.sourceProductId,
+                item.updatedAt,
+            )
+            return existing.id
+        }
+        insertItem(item)
+        return item.id
+    }
+
+    @Transaction
+    suspend fun setQuantityAndTrim(itemId: String, quantity: Double, updatedAt: Long) {
+        updateQuantity(itemId, quantity, updatedAt)
+        var remaining = quantity
+        val kept = listAllocations(itemId).mapNotNull { allocation ->
+            if (remaining <= 0.0) return@mapNotNull null
+            val amount = minOf(allocation.quantity, remaining)
+            remaining -= amount
+            allocation.copy(quantity = amount)
+        }
+        clearAllocations(itemId)
+        if (kept.isNotEmpty()) insertAllocations(kept)
+    }
+
+    @Transaction
+    suspend fun replaceAllocationsForItem(itemId: String, rows: List<PendingStockDateAllocationEntity>) {
+        val item = findItem(itemId) ?: error("Pending stock item not found: $itemId")
+        require(rows.sumOf { it.quantity } <= item.quantity + 1e-9)
+        clearAllocations(itemId)
+        if (rows.isNotEmpty()) insertAllocations(rows)
+    }
 
     @Query("DELETE FROM pending_stock_item WHERE id = :id")
     suspend fun deleteItem(id: String): Int

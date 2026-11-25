@@ -47,17 +47,8 @@ class PendingStockRepositoryImpl @Inject constructor(
     override suspend fun addOrIncrement(draft: PendingStockDraft): String {
         require(draft.quantity.isFinite() && draft.quantity > 0.0)
         val now = clock.now().toEpochMilli()
-        val existing = dao.findByArchive(draft.archiveId)
-        if (existing != null) {
-            dao.incrementQuantity(existing.id, draft.quantity, now)
-            dao.updateSnapshot(
-                existing.id, draft.name, draft.brand, draft.categoryName,
-                draft.specification, draft.imageUri, now,
-            )
-            return existing.id
-        }
         val id = idGenerator.newId()
-        dao.insertItem(
+        return dao.addOrIncrement(
             PendingStockItemEntity(
                 id = id,
                 archiveId = draft.archiveId,
@@ -74,28 +65,16 @@ class PendingStockRepositoryImpl @Inject constructor(
                 updatedAt = now,
             ),
         )
-        return id
     }
 
     override suspend fun setQuantity(itemId: String, quantity: Double) {
         require(quantity.isFinite() && quantity > 0.0)
-        dao.updateQuantity(itemId, quantity, clock.now().toEpochMilli())
-        val current = dao.listAllocations(itemId)
-        var remaining = quantity
-        val kept = current.mapNotNull { allocation ->
-            if (remaining <= 0.0) return@mapNotNull null
-            val amount = minOf(allocation.quantity, remaining)
-            remaining -= amount
-            allocation.copy(quantity = amount)
-        }
-        dao.replaceAllocations(itemId, kept)
+        dao.setQuantityAndTrim(itemId, quantity, clock.now().toEpochMilli())
     }
 
     override suspend fun replaceAllocations(itemId: String, allocations: List<PendingStockDateAllocation>) {
         require(allocations.all { it.quantity.isFinite() && it.quantity > 0.0 })
-        val item = dao.findItem(itemId) ?: error("Pending stock item not found: $itemId")
-        require(allocations.sumOf { it.quantity } <= item.quantity + 1e-9)
-        dao.replaceAllocations(
+        dao.replaceAllocationsForItem(
             itemId,
             allocations.mapIndexed { index, allocation ->
                 PendingStockDateAllocationEntity(
