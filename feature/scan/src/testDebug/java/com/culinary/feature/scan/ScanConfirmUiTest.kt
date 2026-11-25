@@ -155,7 +155,7 @@ class ScanConfirmUiTest {
         }
 
         compose.onNodeWithText("新食材名称").performScrollTo().assertIsDisplayed()
-        compose.onNodeWithText("确认导入").assertIsEnabled()
+        compose.onNodeWithText("下一步：建立库存档案").assertIsEnabled()
     }
 
     @Test
