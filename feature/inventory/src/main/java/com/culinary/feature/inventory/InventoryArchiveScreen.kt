@@ -295,7 +295,7 @@ private fun ArchiveDetailScreen(
                     InventoryArchiveValueRow("最近到期", detail.row.nearestExpiry?.let(::formatDate) ?: "未登记")
                     InventoryArchiveSectionHeader(english = "PURCHASING INFORMATION", title = "采购信息")
                     InventoryArchiveValueRow("供应商", detail.archive.supplierName ?: "未设置")
-                    InventoryArchiveValueRow("采购单位", detail.archive.purchaseUnitId ?: detail.links.firstOrNull()?.product?.contentUnit?.name ?: "未设置")
+                    InventoryArchiveValueRow("采购单位", detail.links.firstOrNull()?.product?.contentUnit?.name ?: if (detail.archive.purchaseUnitId != null) "已设置" else "未设置")
                     InventoryArchiveValueRow("单位换算", detail.archive.unitConversion ?: "未设置")
                     if (detail.links.isNotEmpty()) {
                         InventoryArchiveSectionHeader(english = "LINKED PRODUCTS", title = "关联采购商品")
