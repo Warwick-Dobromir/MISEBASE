@@ -361,7 +361,7 @@ private fun ArchiveDetailScreen(
                         )
                     }
                     InventoryArchiveSectionHeader(english = "BASIC INFORMATION", title = "基本信息")
-                    InventoryArchiveValueRow("所属分类", detail.categoryPath)
+                    InventoryArchiveValueRow("所属分类", detail.categoryPath ?: "未指定分类")
                     InventoryArchiveValueRow("库存单位", detail.archive.stockUnit.symbol)
                     InventoryArchiveSectionHeader(english = "UNIT & MEASUREMENT", title = "规格与计量")
                     InventoryArchiveValueRow("库存基本单位", detail.archive.stockUnit.name)
