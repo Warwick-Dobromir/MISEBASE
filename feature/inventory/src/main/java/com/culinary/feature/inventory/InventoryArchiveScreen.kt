@@ -362,9 +362,14 @@ private fun ArchiveDetailScreen(
                     }
                     InventoryArchiveSectionHeader(english = "BASIC INFORMATION", title = "基本信息")
                     InventoryArchiveValueRow("所属分类", detail.categoryPath ?: "未指定分类")
-                    InventoryArchiveValueRow("库存单位", detail.archive.stockUnit.symbol)
+                    InventoryArchiveValueRow("档案类型", if (detail.archive.kind == ArchiveKind.SAUCE) "酱汁现货档案" else "食材库存档案")
+                    detail.sauceName?.let { InventoryArchiveValueRow("关联酱汁", it) }
                     InventoryArchiveSectionHeader(english = "UNIT & MEASUREMENT", title = "规格与计量")
-                    InventoryArchiveValueRow("库存基本单位", detail.archive.stockUnit.name)
+                    InventoryArchiveValueRow("库存基本单位", "${detail.archive.stockUnit.name}（${detail.archive.stockUnit.symbol}）")
+                    InventoryArchiveValueRow("计量维度", detail.archive.stockUnit.dimension.name)
+                    if (detail.archive.stockUnit.isApproximate) {
+                        InventoryArchiveValueRow("换算属性", "近似换算")
+                    }
                     InventoryArchiveSectionHeader(english = "INVENTORY MANAGEMENT", title = "库存管理")
                     InventoryArchiveValueRow(
                         "最低库存",
@@ -381,6 +386,7 @@ private fun ArchiveDetailScreen(
                     InventoryArchiveSectionHeader(english = "SHELF LIFE & STORAGE", title = "保质期与储存")
                     InventoryArchiveValueRow("储存方式", detail.archive.storageMethod ?: "未设置")
                     InventoryArchiveValueRow("储存温度", detail.archive.storageTemperature ?: "未设置")
+                    InventoryArchiveValueRow("最近到期", detail.row.nearestExpiry?.let(::formatDate) ?: "未登记")
                     InventoryArchiveSectionHeader(english = "STOCK OVERVIEW", title = "库存情况")
                     Row(
                         modifier = Modifier.fillMaxWidth().padding(vertical = CulinarySpacing.xs),
@@ -393,8 +399,11 @@ private fun ArchiveDetailScreen(
                             amountStyle = MaterialTheme.typography.titleLarge,
                         )
                     }
+                    InventoryArchiveValueRow("可用库存", "${formatAmount(detail.row.available)} ${detail.archive.stockUnit.symbol}")
+                    InventoryArchiveValueRow("预留库存", "${formatAmount(detail.row.reserved)} ${detail.archive.stockUnit.symbol}")
                     InventoryArchiveValueRow("库存状态", InventoryText.stockStatus(detail.row.status), status = true)
                     InventoryArchiveValueRow("有效批次", detail.row.batchCount.toString())
+                    InventoryArchiveValueRow("涉及库位", detail.row.locationNames.joinToString("、").ifBlank { "未指定" })
                     Spacer(modifier = Modifier.height(CulinarySpacing.md))
                     InventoryArchiveSectionHeader(
                         english = "BATCH RECORDS",
@@ -417,7 +426,7 @@ private fun ArchiveDetailScreen(
                             ArchiveBatchRow(batch = batch, onClick = { onOpenBatch(batch.id) })
                         }
                     }
-                    InventoryArchiveSectionHeader(english = "PURCHASING LINKS", title = "关联采购商品")
+                    InventoryArchiveSectionHeader(english = "PURCHASING INFORMATION", title = "采购信息")
                     if (detail.links.isEmpty()) {
                         Text(
                             text = "尚未关联采购商品",
@@ -441,6 +450,12 @@ private fun ArchiveDetailScreen(
                         enabled = !state.isLinking,
                         modifier = Modifier.padding(top = CulinarySpacing.xxs),
                     )
+                    if (detail.relatedRecipeNames.isNotEmpty()) {
+                        InventoryArchiveSectionHeader(english = "RELATED RECIPES", title = "关联菜谱")
+                        detail.relatedRecipeNames.forEach { recipeName ->
+                            InventoryArchiveValueRow("菜谱", recipeName)
+                        }
+                    }
                     InventoryArchiveSectionHeader(
                         english = "STOCK TRANSACTIONS",
                         title = "库存流水",
@@ -457,6 +472,9 @@ private fun ArchiveDetailScreen(
                             ArchiveLedgerRow(entry = entry)
                         }
                     }
+                    InventoryArchiveSectionHeader(english = "ARCHIVE RECORD", title = "档案记录")
+                    InventoryArchiveValueRow("档案编号", detail.archive.id)
+                    InventoryArchiveValueRow("档案状态", detail.archive.status.name)
                 }
                 CulinaryRule()
                 Row(
@@ -731,20 +749,7 @@ private fun ArchiveBatchRow(
                 color = MaterialTheme.colorScheme.onSurface,
             )
             Text(
-                text =
-                    listOfNotNull(
-                        batch.productionDate?.let { "生产 ${formatDate(it)}" },
-                        batch.expiresOn?.let { "到期 ${formatDate(it)}" },
-                    ).joinToString(" · ").ifBlank { "未登记生产与到期日期" },
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            Text(
-                text =
-                    listOfNotNull(
-                        batch.locationName?.let { "库位 $it" },
-                        "剩余 ${formatAmount(batch.onHand)} ${batch.unit.symbol}",
-                    ).joinToString(" · "),
+                text = formatInstant(batch.receivedAt),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
