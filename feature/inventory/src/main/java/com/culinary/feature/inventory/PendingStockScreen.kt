@@ -1,5 +1,6 @@
 package com.culinary.feature.inventory
 
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -12,6 +13,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -189,6 +191,8 @@ private fun PendingStockScreen(
     onDismissIncomplete: () -> Unit,
 ) {
     var editingItem by remember { mutableStateOf<PendingStockEntry?>(null) }
+    var selectedItemIds by remember { mutableStateOf<Set<String>>(emptySet()) }
+    var showBulkDateDialog by remember { mutableStateOf(false) }
     Column(modifier = Modifier.fillMaxSize()) {
         PageHeader(
             eyebrow = "INVENTORY / PENDING STOCK",
@@ -209,6 +213,19 @@ private fun PendingStockScreen(
                     modifier = Modifier.padding(horizontal = CulinarySpacing.pageHorizontal),
                 )
                 CulinaryRule()
+                if (selectedItemIds.isNotEmpty()) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = CulinarySpacing.pageHorizontal, vertical = CulinarySpacing.xs),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                    ) {
+                        Text("已选 ${selectedItemIds.size} 项", style = MaterialTheme.typography.labelMedium)
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            CulinaryTextButton(text = "批量填写日期", onClick = { showBulkDateDialog = true })
+                            CulinaryTextButton(text = "取消选择", onClick = { selectedItemIds = emptySet() })
+                        }
+                    }
+                }
                 if (state.items.isEmpty()) {
                     Text(
                         text = "待入库清单为空。扫码识别的商品会先进入这里，确认后才写入正式库存。",
@@ -220,7 +237,17 @@ private fun PendingStockScreen(
                 state.items.forEach { item ->
                     PendingStockRow(
                         item = item,
-                        onClick = { editingItem = item },
+                        selected = item.id in selectedItemIds,
+                        showSelection = selectedItemIds.isNotEmpty(),
+                        onClick = {
+                            if (selectedItemIds.isNotEmpty()) {
+                                selectedItemIds =
+                                    if (item.id in selectedItemIds) selectedItemIds - item.id else selectedItemIds + item.id
+                            } else {
+                                editingItem = item
+                            }
+                        },
+                        onLongClick = { selectedItemIds = selectedItemIds + item.id },
                         onDecrease = { onChangeQuantity(item.id, -1.0) },
                         onIncrease = { onChangeQuantity(item.id, 1.0) },
                     )
@@ -267,6 +294,52 @@ private fun PendingStockScreen(
         )
     }
 
+    if (showBulkDateDialog) {
+        var productionDate by remember { mutableStateOf("") }
+        val selectedItems = state.items.filter { it.id in selectedItemIds && it.unallocatedQuantity > 1e-9 }
+        AlertDialog(
+            onDismissRequest = { showBulkDateDialog = false },
+            title = { Text("批量填写生产日期") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(CulinarySpacing.xs)) {
+                    Text("将同一生产日期应用于所选商品尚未分配日期的数量；已填写的日期分组不会被覆盖。")
+                    OutlinedTextField(
+                        value = productionDate,
+                        onValueChange = { productionDate = it },
+                        label = { Text("生产日期") },
+                        placeholder = { Text("YYYY-MM-DD") },
+                        singleLine = true,
+                    )
+                    Text("将填写 ${selectedItems.size} 项商品", style = MaterialTheme.typography.labelSmall)
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        val date = runCatching { LocalDate.parse(productionDate.trim()) }.getOrNull()
+                        if (date != null) {
+                            selectedItems.forEach { item ->
+                                onSaveDates(
+                                    item.id,
+                                    item.allocations + PendingStockDateAllocation(
+                                        id = "",
+                                        productionDate = date,
+                                        quantity = item.unallocatedQuantity,
+                                        sortOrder = item.allocations.size,
+                                    ),
+                                )
+                            }
+                            selectedItemIds = emptySet()
+                            showBulkDateDialog = false
+                        }
+                    },
+                    enabled = runCatching { LocalDate.parse(productionDate.trim()) }.isSuccess && selectedItems.isNotEmpty(),
+                ) { Text("应用") }
+            },
+            dismissButton = { TextButton(onClick = { showBulkDateDialog = false }) { Text("取消") } },
+        )
+    }
+
     state.deleteItemId?.let { id ->
         val item = state.items.firstOrNull { it.id == id }
         AlertDialog(
@@ -295,16 +368,23 @@ private fun PendingStockScreen(
 @Composable
 private fun PendingStockRow(
     item: PendingStockEntry,
+    selected: Boolean,
+    showSelection: Boolean,
     onClick: () -> Unit,
+    onLongClick: () -> Unit,
     onDecrease: () -> Unit,
     onIncrease: () -> Unit,
 ) {
     Row(
-        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick).padding(horizontal = CulinarySpacing.pageHorizontal, vertical = CulinarySpacing.sm),
+        modifier = Modifier.fillMaxWidth()
+            .combinedClickable(onClick = onClick, onLongClick = onLongClick)
+            .padding(horizontal = CulinarySpacing.pageHorizontal, vertical = CulinarySpacing.sm),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(CulinarySpacing.sm),
     ) {
-        if (!item.imageUri.isNullOrBlank()) {
+        if (showSelection) {
+            Checkbox(checked = selected, onCheckedChange = { onClick() })
+        } else if (!item.imageUri.isNullOrBlank()) {
             AsyncImage(
                 model = item.imageUri,
                 contentDescription = null,
