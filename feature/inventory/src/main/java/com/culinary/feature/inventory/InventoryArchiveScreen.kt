@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -221,6 +222,14 @@ private fun ArchiveDetailScreen(
                         englishTitle = detail.archive.englishName,
                         description = detail.archive.description,
                     )
+                    Row(modifier = Modifier.fillMaxWidth().padding(bottom = CulinarySpacing.sm), verticalAlignment = Alignment.CenterVertically) {
+                        StatusBadge(text = InventoryText.stockStatus(detail.row.status), tone = StatusTone.Accent)
+                        Spacer(modifier = Modifier.width(CulinarySpacing.xs))
+                        Text(detail.archive.stockUnit.symbol, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        detail.links.firstOrNull()?.let { link ->
+                            Text(" · ${link.product.packageLabel ?: "${formatAmount(link.product.contentQty)} ${link.product.contentUnit.symbol}"}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                    }
                     imageBytes?.let { bytes ->
                         Spacer(modifier = Modifier.height(CulinarySpacing.md))
                         ArchiveWideImage(bytes = bytes, caption = null)
@@ -240,6 +249,13 @@ private fun ArchiveDetailScreen(
                         Spacer(modifier = Modifier.weight(1f))
                         StatusBadge(text = InventoryText.stockStatus(detail.row.status), tone = StatusTone.Accent)
                     }
+                    val stockProgress = detail.archive.targetStock?.takeIf { it > 0.0 }?.let { (detail.row.onHand / it).coerceIn(0.0, 1.0).toFloat() } ?: 0f
+                    LinearProgressIndicator(
+                        progress = { stockProgress },
+                        modifier = Modifier.fillMaxWidth().height(3.dp),
+                        color = MaterialTheme.colorScheme.secondary,
+                        trackColor = MaterialTheme.colorScheme.surfaceVariant,
+                    )
                     Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                         Text("最低库存 ${detail.archive.minimumStock?.let(::formatAmount) ?: "未设置"} ${detail.archive.stockUnit.symbol}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.weight(1f))
                         Text("目标库存 ${detail.archive.targetStock?.let(::formatAmount) ?: "未设置"} ${detail.archive.stockUnit.symbol}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -257,6 +273,7 @@ private fun ArchiveDetailScreen(
                     }
                     InventoryArchiveValueRow("有效批次", detail.row.batchCount.toString())
                     InventoryArchiveValueRow("涉及库位", detail.row.locationNames.joinToString("、").ifBlank { "未指定" })
+                    InventoryArchiveValueRow("默认存放位置", detail.archive.defaultLocationId?.let { state.locationNames[it.value] } ?: "未指定")
                     Spacer(modifier = Modifier.height(CulinarySpacing.sm))
                     InventoryArchiveSectionHeader(english = "BASIC INFORMATION", title = "基本信息")
                     InventoryArchiveValueRow("所属分类", detail.categoryPath ?: "未指定分类")
@@ -268,25 +285,6 @@ private fun ArchiveDetailScreen(
                         InventoryArchiveValueRow("条码", "扫码关联后显示")
                     }
                     detail.sauceName?.let { InventoryArchiveValueRow("关联酱汁", it) }
-                    InventoryArchiveSectionHeader(english = "UNIT & MEASUREMENT", title = "规格与计量")
-                    InventoryArchiveValueRow("库存基本单位", "${detail.archive.stockUnit.name}（${detail.archive.stockUnit.symbol}）")
-                    InventoryArchiveValueRow("计量维度", detail.archive.stockUnit.dimension.name)
-                    if (detail.archive.stockUnit.isApproximate) {
-                        InventoryArchiveValueRow("换算属性", "近似换算")
-                    }
-                    InventoryArchiveSectionHeader(english = "INVENTORY MANAGEMENT", title = "库存管理")
-                    InventoryArchiveValueRow(
-                        "最低库存",
-                        detail.archive.minimumStock?.let { "${formatAmount(it)} ${detail.archive.stockUnit.symbol}" } ?: "未设置",
-                    )
-                    InventoryArchiveValueRow(
-                        "目标库存",
-                        detail.archive.targetStock?.let { "${formatAmount(it)} ${detail.archive.stockUnit.symbol}" } ?: "未设置",
-                    )
-                    InventoryArchiveValueRow(
-                        "默认库位",
-                        detail.archive.defaultLocationId?.let { state.locationNames[it.value] } ?: "未指定",
-                    )
                     InventoryArchiveSectionHeader(english = "SHELF LIFE & STORAGE", title = "保质期与储存")
                     InventoryArchiveValueRow("储存方式", detail.archive.storageMethod ?: "未设置")
                     InventoryArchiveValueRow("储存温度", detail.archive.storageTemperature ?: "未设置")
@@ -305,12 +303,14 @@ private fun ArchiveDetailScreen(
                         detail.links.forEach { link ->
                             link.product.sku?.let { InventoryArchiveValueRow("商品编码", it) }
                             link.product.brand?.let { InventoryArchiveValueRow("品牌", it) }
-                            link.product.packageLabel?.let { InventoryArchiveValueRow("包装规格", it) }
+                            link.product.packageLabel?.let { InventoryArchiveValueRow("商品规格", it) }
+                            InventoryArchiveValueRow("采购单位", link.product.contentUnit.name)
+                            InventoryArchiveValueRow("单位换算", "1 件 = ${formatAmount(link.conversionRatio)} ${detail.archive.stockUnit.symbol}")
                             InventoryArchiveValueRow("供应商", link.product.supplierId ?: "未设置")
                             InventoryArchiveValueRow("采购单位", link.product.contentUnit.name)
                             InventoryArchiveValueRow("单位换算", "1 件 = ${formatAmount(link.conversionRatio)} ${detail.archive.stockUnit.symbol}")
                             link.product.lastUnitPriceMinor?.let { InventoryArchiveValueRow("采购价格", "¥${"%.2f".format(it / 100.0)} / ${link.product.contentUnit.symbol}") }
-                            link.product.shelfLifeDays?.let { InventoryArchiveValueRow("商品保质期", "$it 天") }
+                            link.product.shelfLifeDays?.let { InventoryArchiveValueRow("保质期规则", "生产日期起算 $it 天") }
                             link.product.storageNote?.let { InventoryArchiveValueRow("商品储存备注", it) }
                             ArchiveLinkRow(
                                 link = link,
