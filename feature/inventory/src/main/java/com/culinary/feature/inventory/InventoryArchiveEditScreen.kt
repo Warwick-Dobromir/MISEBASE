@@ -42,6 +42,7 @@ import com.culinary.core.common.CulinaryError
 import com.culinary.core.common.Outcome
 import com.culinary.core.designsystem.component.ArchiveEditorInlineField
 import com.culinary.core.designsystem.component.ArchiveEditorSectionHeader
+import com.culinary.core.designsystem.component.ArchiveDetailHeading
 import com.culinary.core.designsystem.component.ArchiveEditorTopBar
 import com.culinary.core.designsystem.component.ArchiveWideImage
 import com.culinary.core.designsystem.component.CulinaryRule
@@ -459,9 +460,20 @@ private fun ArchiveEditScreen(
                         .verticalScroll(rememberScrollState())
                         .padding(horizontal = CulinarySpacing.pageHorizontal, vertical = CulinarySpacing.sm),
             ) {
+                ArchiveDetailHeading(
+                    categoryLabel = state.categoryLabel.orEmpty(),
+                    englishTitle = state.englishName,
+                    chineseTitle = state.name,
+                    description = state.description,
+                )
+                imageBytes?.let { bytes ->
+                    Spacer(modifier = Modifier.height(CulinarySpacing.md))
+                    ArchiveWideImage(bytes = bytes, caption = null)
+                }
+                InventoryArchiveEditField("图片 URI", state.imageUri, onImageUriChange, "添加图片 URI（可留空）")
                 ArchiveEditorSectionHeader(
                     index = "",
-                    english = "IDENTITY",
+                    english = "BASIC INFORMATION",
                     title = "基本信息",
                     showRule = false,
                     topPadding = 0.dp,
@@ -485,11 +497,6 @@ private fun ArchiveEditScreen(
                         onClick = { picker = EditPicker.Sauce },
                     )
                 }
-                imageBytes?.let { bytes ->
-                    Spacer(modifier = Modifier.height(CulinarySpacing.md))
-                    ArchiveWideImage(bytes = bytes, caption = null)
-                }
-                InventoryArchiveEditField("图片 URI", state.imageUri, onImageUriChange, "添加图片 URI（可留空）")
                 ArchiveEditorSectionHeader(index = "", english = "UNIT & MEASUREMENT", title = "规格与计量")
                 EditPickerField(
                     label = "库存基本单位",
