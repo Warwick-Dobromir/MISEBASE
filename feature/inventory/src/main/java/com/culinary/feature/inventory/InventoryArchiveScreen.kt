@@ -447,7 +447,7 @@ private fun ArchiveDetailScreen(
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     } else {
-                        detail.batches.forEach { batch ->
+                        detail.batches.take(3).forEach { batch ->
                             ArchiveBatchRow(batch = batch, onClick = { onOpenBatch(batch.id) })
                         }
                     }
