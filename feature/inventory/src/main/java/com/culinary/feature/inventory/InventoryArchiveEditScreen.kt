@@ -640,7 +640,7 @@ private fun ArchiveEditScreen(
                 state.detail?.links?.firstOrNull()?.let { link ->
                     ArchiveEditReadOnlyRow("采购单位", link.product.contentUnit.name)
                     ArchiveEditReadOnlyRow("采购规格", "${formatAmount(link.product.contentQty)} ${link.product.contentUnit.symbol}")
-                    ArchiveEditReadOnlyRow("单位换算", "1 件 = ${formatAmount(link.conversionRatio)} ${state.detail.archive.stockUnit.symbol}")
+                    ArchiveEditReadOnlyRow("单位换算", "1 件 = ${formatAmount(link.conversionRatio)} ${link.product.stockUnit.symbol}")
                     ArchiveEditReadOnlyRow("计量精度", "${link.product.stockUnit.displayPrecision} 位小数")
                 }
                 ArchiveEditorSectionHeader(index = "", english = "INVENTORY MANAGEMENT", title = "库存管理")

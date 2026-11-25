@@ -265,7 +265,7 @@ private fun ArchiveDetailScreen(
                         InventoryArchiveValueRow("品牌", link.product.brand ?: "未设置")
                         InventoryArchiveValueRow("商品规格", link.product.packageLabel ?: "${formatAmount(link.product.contentQty)} ${link.product.contentUnit.symbol}")
                         InventoryArchiveValueRow("商品编码", link.product.sku ?: "未生成")
-                        InventoryArchiveValueRow("条码", "已关联商品条码")
+                        InventoryArchiveValueRow("条码", "扫码关联后显示")
                     }
                     detail.sauceName?.let { InventoryArchiveValueRow("关联酱汁", it) }
                     InventoryArchiveSectionHeader(english = "UNIT & MEASUREMENT", title = "规格与计量")
@@ -306,6 +306,10 @@ private fun ArchiveDetailScreen(
                             link.product.sku?.let { InventoryArchiveValueRow("商品编码", it) }
                             link.product.brand?.let { InventoryArchiveValueRow("品牌", it) }
                             link.product.packageLabel?.let { InventoryArchiveValueRow("包装规格", it) }
+                            InventoryArchiveValueRow("供应商", link.product.supplierId ?: "未设置")
+                            InventoryArchiveValueRow("采购单位", link.product.contentUnit.name)
+                            InventoryArchiveValueRow("单位换算", "1 件 = ${formatAmount(link.conversionRatio)} ${detail.archive.stockUnit.symbol}")
+                            link.product.lastUnitPriceMinor?.let { InventoryArchiveValueRow("采购价格", "¥${"%.2f".format(it / 100.0)} / ${link.product.contentUnit.symbol}") }
                             link.product.shelfLifeDays?.let { InventoryArchiveValueRow("商品保质期", "$it 天") }
                             link.product.storageNote?.let { InventoryArchiveValueRow("商品储存备注", it) }
                             ArchiveLinkRow(
