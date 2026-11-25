@@ -1,5 +1,5 @@
 name: Android APK
-# Rebuild latest archive navigation changes.
+# Build the pending-stock inventory workflow.
 # Re-run signed build after repository signing secrets were configured.
 # Rebuild after coroutine-safe archive auto-scroll correction.
 
@@ -74,7 +74,7 @@ jobs:
         if: github.ref != 'refs/heads/main'
         uses: actions/upload-artifact@v4
         with:
-          name: MISEBASE-pen-flip-90fb110
+          name: MISEBASE-pending-stock-20261126
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
           retention-days: 90
