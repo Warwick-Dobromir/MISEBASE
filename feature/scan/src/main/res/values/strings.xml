@@ -3,6 +3,13 @@
     <string name="scan_title">扫码</string>
     <string name="scan_subtitle">对准条码或二维码，识别结果交给确认页再入库</string>
     <string name="scan_frame_hint">将条码放入框内，保持稳定</string>
+    <string name="scan_mode_stock_in">扫码入库</string>
+    <string name="scan_mode_stock_in_support">将识别到的物品加入待入库</string>
+    <string name="scan_mode_view_details">扫描查看</string>
+    <string name="scan_mode_view_details_support">识别物品并查看档案详情</string>
+    <string name="scan_mode_toggle_to_view">当前模式：扫码入库，点击切换为扫描查看</string>
+    <string name="scan_mode_toggle_to_stock_in">当前模式：扫描查看，点击切换为扫码入库</string>
+    <string name="scan_success_feedback">扫码成功</string>
     <string name="scan_torch_on">关闭手电筒</string>
     <string name="scan_torch_off">打开手电筒</string>
     <string name="scan_torch_unsupported">此设备不支持手电筒。</string>
