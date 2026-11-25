@@ -32,6 +32,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
+import com.culinary.core.common.Outcome
 import coil3.compose.AsyncImage
 import com.culinary.core.designsystem.component.CulinaryRule
 import com.culinary.core.designsystem.component.CulinaryTextButton
@@ -96,7 +97,7 @@ class PendingStockViewModel @Inject constructor(
         viewModelScope.launch {
             runCatching { repository.setQuantity(itemId, next) }
                 .onSuccess { load() }
-                .onFailure { _uiState.update { state -> state.copy(error = it.message ?: "数量更新失败。") } }
+                .onFailure { error -> _uiState.update { state -> state.copy(error = error.message ?: "数量更新失败。") } }
         }
     }
 
@@ -108,7 +109,7 @@ class PendingStockViewModel @Inject constructor(
         viewModelScope.launch {
             runCatching { repository.delete(id) }
                 .onSuccess { _uiState.update { it.copy(deleteItemId = null) }; load() }
-                .onFailure { _uiState.update { it.copy(deleteItemId = null, error = it.message ?: "删除失败。") } }
+                .onFailure { error -> _uiState.update { state -> state.copy(deleteItemId = null, error = error.message ?: "删除失败。") } }
         }
     }
 
@@ -116,7 +117,7 @@ class PendingStockViewModel @Inject constructor(
         viewModelScope.launch {
             runCatching { repository.clear() }
                 .onSuccess { load() }
-                .onFailure { _uiState.update { it.copy(error = it.message ?: "清空失败。") } }
+                .onFailure { error -> _uiState.update { state -> state.copy(error = error.message ?: "清空失败。") } }
         }
     }
 
@@ -125,7 +126,7 @@ class PendingStockViewModel @Inject constructor(
             _uiState.update { it.copy(isSaving = true, error = null) }
             runCatching { repository.replaceAllocations(itemId, rows) }
                 .onSuccess { _uiState.update { it.copy(isSaving = false, incompleteItemId = null) }; load() }
-                .onFailure { _uiState.update { it.copy(isSaving = false, error = it.message ?: "生产日期保存失败。") } }
+                .onFailure { error -> _uiState.update { state -> state.copy(isSaving = false, error = error.message ?: "生产日期保存失败。") } }
         }
     }
 
