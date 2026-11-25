@@ -109,6 +109,19 @@ data class ArchiveEditUiState(
     val shelfLifeDays: String = "",
     val storageNote: String = "",
     val purchasePrice: String = "",
+    val productCode: String = "",
+    val barcode: String = "",
+    val purchaseUnitId: String = "",
+    val purchaseSpecification: String = "",
+    val unitConversion: String = "",
+    val measurementPrecision: String = "",
+    val batchManagementEnabled: Boolean = true,
+    val shelfLifeEnabled: Boolean = false,
+    val shelfLifeCalculationMethod: String = "",
+    val openedShelfLifeDays: String = "",
+    val trackOpenedDate: Boolean = false,
+    val supplierName: String = "",
+    val purchasePriceUnit: String = "",
     val fieldErrors: Map<String, String> = emptyMap(),
     val isLoading: Boolean = true,
     val isSaving: Boolean = false,
@@ -234,7 +247,22 @@ class ArchiveEditViewModel
                     supplierId = existing?.links?.firstOrNull()?.product?.supplierId.orEmpty(),
                     shelfLifeDays = existing?.links?.firstOrNull()?.product?.shelfLifeDays?.toString().orEmpty(),
                     storageNote = existing?.links?.firstOrNull()?.product?.storageNote.orEmpty(),
-                    purchasePrice = existing?.links?.firstOrNull()?.product?.lastUnitPriceMinor?.let { "%.2f".format(it / 100.0) }.orEmpty(),
+                    purchasePrice = archive?.purchasePriceMinor?.let { "%.2f".format(it / 100.0) }.orEmpty(),
+                    brand = archive?.brand.orEmpty(),
+                    packageLabel = archive?.productSpecification.orEmpty(),
+                    productCode = archive?.productCode.orEmpty(),
+                    barcode = archive?.barcode.orEmpty(),
+                    purchaseUnitId = archive?.purchaseUnitId.orEmpty(),
+                    purchaseSpecification = archive?.purchaseSpecification.orEmpty(),
+                    unitConversion = archive?.unitConversion.orEmpty(),
+                    measurementPrecision = archive?.measurementPrecision?.toString().orEmpty(),
+                    batchManagementEnabled = archive?.batchManagementEnabled ?: true,
+                    shelfLifeEnabled = archive?.shelfLifeEnabled ?: false,
+                    shelfLifeCalculationMethod = archive?.shelfLifeCalculationMethod.orEmpty(),
+                    openedShelfLifeDays = archive?.openedShelfLifeDays?.toString().orEmpty(),
+                    trackOpenedDate = archive?.trackOpenedDate ?: false,
+                    supplierName = archive?.supplierName.orEmpty(),
+                    purchasePriceUnit = archive?.purchasePriceUnit.orEmpty(),
                     isLoading = false,
                 ),
             )
@@ -276,6 +304,19 @@ class ArchiveEditViewModel
         fun onStorageNoteChange(value: String) = update("storageNote") { it.copy(storageNote = value) }
 
         fun onPurchasePriceChange(value: String) = update("price") { it.copy(purchasePrice = value) }
+        fun onProductCodeChange(value: String) = update("productCode") { it.copy(productCode = value) }
+        fun onBarcodeChange(value: String) = update("barcode") { it.copy(barcode = value) }
+        fun onPurchaseUnitIdChange(value: String) = update("purchaseUnit") { it.copy(purchaseUnitId = value) }
+        fun onPurchaseSpecificationChange(value: String) = update("purchaseSpecification") { it.copy(purchaseSpecification = value) }
+        fun onUnitConversionChange(value: String) = update("unitConversion") { it.copy(unitConversion = value) }
+        fun onMeasurementPrecisionChange(value: String) = update("measurementPrecision") { it.copy(measurementPrecision = value) }
+        fun onBatchManagementChange(value: Boolean) { _uiState.update { it.copy(batchManagementEnabled = value) } }
+        fun onShelfLifeEnabledChange(value: Boolean) { _uiState.update { it.copy(shelfLifeEnabled = value) } }
+        fun onShelfLifeCalculationMethodChange(value: String) = update("shelfLifeMethod") { it.copy(shelfLifeCalculationMethod = value) }
+        fun onOpenedShelfLifeChange(value: String) = update("openedShelfLife") { it.copy(openedShelfLifeDays = value) }
+        fun onTrackOpenedDateChange(value: Boolean) { _uiState.update { it.copy(trackOpenedDate = value) } }
+        fun onSupplierNameChange(value: String) = update("supplierName") { it.copy(supplierName = value) }
+        fun onPurchasePriceUnitChange(value: String) = update("purchasePriceUnit") { it.copy(purchasePriceUnit = value) }
 
         fun onLinkProductSelected(productId: String?) {
             _uiState.update { it.copy(linkProductId = productId, linkError = null, linkMessage = null) }
@@ -511,6 +552,23 @@ private fun ArchiveEditUiState.toArchive(unit: StockUnit): InventoryArchive =
         storageTemperature = storageTemperature.trim().takeIf { it.isNotEmpty() },
         defaultLocationId = defaultLocationId?.let { LocationId(it) },
         description = description.trim().takeIf { it.isNotEmpty() },
+        brand = brand.trim().takeIf { it.isNotEmpty() },
+        productSpecification = packageLabel.trim().takeIf { it.isNotEmpty() },
+        productCode = productCode.trim().takeIf { it.isNotEmpty() },
+        barcode = barcode.trim().takeIf { it.isNotEmpty() },
+        purchaseUnitId = purchaseUnitId.trim().takeIf { it.isNotEmpty() },
+        purchaseSpecification = purchaseSpecification.trim().takeIf { it.isNotEmpty() },
+        unitConversion = unitConversion.trim().takeIf { it.isNotEmpty() },
+        measurementPrecision = measurementPrecision.trim().toIntOrNull(),
+        batchManagementEnabled = batchManagementEnabled,
+        shelfLifeEnabled = shelfLifeEnabled,
+        shelfLifeCalculationMethod = shelfLifeCalculationMethod.trim().takeIf { it.isNotEmpty() },
+        shelfLifeDays = shelfLifeDays.trim().toIntOrNull(),
+        openedShelfLifeDays = openedShelfLifeDays.trim().toIntOrNull(),
+        trackOpenedDate = trackOpenedDate,
+        supplierName = supplierName.trim().takeIf { it.isNotEmpty() },
+        purchasePriceMinor = purchasePrice.trim().takeIf { it.isNotEmpty() }?.toDoubleOrNull()?.let { (it * 100.0).toLong() },
+        purchasePriceUnit = purchasePriceUnit.trim().takeIf { it.isNotEmpty() },
     )
 
 @Composable
