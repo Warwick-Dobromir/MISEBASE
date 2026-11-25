@@ -41,7 +41,6 @@ import com.culinary.core.designsystem.component.CulinaryTextButton
 import com.culinary.core.designsystem.component.EmptyState
 import com.culinary.core.designsystem.component.ErrorBanner
 import com.culinary.core.designsystem.component.LoadingRows
-import com.culinary.core.designsystem.component.QuantityText
 import com.culinary.core.designsystem.component.StatusBadge
 import com.culinary.core.designsystem.component.StatusTone
 import com.culinary.core.designsystem.theme.CulinaryColorScheme
@@ -221,6 +220,11 @@ private fun ArchiveDetailScreen(
                         chineseTitle = detail.archive.name,
                         description = detail.archive.description,
                     )
+                    StatusBadge(
+                        text = InventoryText.stockStatus(detail.row.status),
+                        tone = InventoryText.stockTone(detail.row.status),
+                        modifier = Modifier.padding(top = CulinarySpacing.xs),
+                    )
                     imageBytes?.let { bytes ->
                         Spacer(modifier = Modifier.height(CulinarySpacing.md))
                         ArchiveWideImage(bytes = bytes, caption = null)
@@ -232,17 +236,11 @@ private fun ArchiveDetailScreen(
                             modifier = Modifier.padding(bottom = CulinarySpacing.sm),
                         )
                     }
-                    InventoryArchiveSectionHeader(english = "BASIC INFORMATION", title = "基本信息")
-                    InventoryArchiveValueRow("所属分类", detail.categoryPath ?: "未指定分类")
-                    InventoryArchiveValueRow("档案类型", if (detail.archive.kind == ArchiveKind.SAUCE) "酱汁现货档案" else "食材库存档案")
-                    detail.sauceName?.let { InventoryArchiveValueRow("关联酱汁", it) }
-                    InventoryArchiveSectionHeader(english = "UNIT & MEASUREMENT", title = "规格与计量")
-                    InventoryArchiveValueRow("库存基本单位", "${detail.archive.stockUnit.name}（${detail.archive.stockUnit.symbol}）")
-                    InventoryArchiveValueRow("计量维度", detail.archive.stockUnit.dimension.name)
-                    if (detail.archive.stockUnit.isApproximate) {
-                        InventoryArchiveValueRow("换算属性", "近似换算")
-                    }
-                    InventoryArchiveSectionHeader(english = "INVENTORY MANAGEMENT", title = "库存管理")
+                    InventoryArchiveSectionHeader(english = "STOCK OVERVIEW", title = "库存情况")
+                    InventoryArchiveValueRow(
+                        "库存总量",
+                        "${formatAmount(detail.row.onHand)} ${detail.archive.stockUnit.symbol}",
+                    )
                     InventoryArchiveValueRow(
                         "最低库存",
                         detail.archive.minimumStock?.let { "${formatAmount(it)} ${detail.archive.stockUnit.symbol}" } ?: "未设置",
@@ -252,13 +250,32 @@ private fun ArchiveDetailScreen(
                         detail.archive.targetStock?.let { "${formatAmount(it)} ${detail.archive.stockUnit.symbol}" } ?: "未设置",
                     )
                     InventoryArchiveValueRow(
-                        "默认库位",
-                        detail.archive.defaultLocationId?.let { state.locationNames[it.value] } ?: "未指定",
+                        "可用库存",
+                        "${formatAmount(detail.row.available)} ${detail.archive.stockUnit.symbol}",
                     )
+                    InventoryArchiveValueRow(
+                        "预留库存",
+                        "${formatAmount(detail.row.reserved)} ${detail.archive.stockUnit.symbol}",
+                    )
+                    InventoryArchiveValueRow("库存状态", InventoryText.stockStatus(detail.row.status), status = true)
+                    InventoryArchiveValueRow("有效批次", detail.row.batchCount.toString())
+                    InventoryArchiveValueRow("涉及库位", detail.row.locationNames.joinToString("、").ifBlank { "未指定" })
+
+                    InventoryArchiveSectionHeader(english = "BASIC INFORMATION", title = "基本信息")
+                    InventoryArchiveValueRow("所属分类", detail.categoryPath ?: "未指定分类")
+                    InventoryArchiveValueRow("档案类型", if (detail.archive.kind == ArchiveKind.SAUCE) "酱汁现货档案" else "食材库存档案")
+                    InventoryArchiveValueRow("库存基本单位", "${detail.archive.stockUnit.name}（${detail.archive.stockUnit.symbol}）")
+                    InventoryArchiveValueRow("计量维度", detail.archive.stockUnit.dimension.name)
+                    if (detail.archive.stockUnit.isApproximate) {
+                        InventoryArchiveValueRow("换算属性", "近似换算")
+                    }
+                    detail.sauceName?.let { InventoryArchiveValueRow("关联酱汁", it) }
+
                     InventoryArchiveSectionHeader(english = "SHELF LIFE & STORAGE", title = "保质期与储存")
                     InventoryArchiveValueRow("储存方式", detail.archive.storageMethod ?: "未设置")
                     InventoryArchiveValueRow("储存温度", detail.archive.storageTemperature ?: "未设置")
                     InventoryArchiveValueRow("最近到期", detail.row.nearestExpiry?.let(::formatDate) ?: "未登记")
+
                     InventoryArchiveSectionHeader(english = "PURCHASING INFORMATION", title = "采购信息")
                     if (detail.links.isEmpty()) {
                         Text(
@@ -272,7 +289,7 @@ private fun ArchiveDetailScreen(
                             link.product.sku?.let { InventoryArchiveValueRow("商品编码", it) }
                             link.product.brand?.let { InventoryArchiveValueRow("品牌", it) }
                             link.product.packageLabel?.let { InventoryArchiveValueRow("包装规格", it) }
-                            link.product.shelfLifeDays?.let { InventoryArchiveValueRow("商品保质期", "$it 天") }
+                            link.product.shelfLifeDays?.let { InventoryArchiveValueRow("商品保质期", "${it} 天") }
                             link.product.storageNote?.let { InventoryArchiveValueRow("商品储存备注", it) }
                             ArchiveLinkRow(
                                 link = link,
@@ -280,23 +297,6 @@ private fun ArchiveDetailScreen(
                             )
                         }
                     }
-                    InventoryArchiveSectionHeader(english = "STOCK OVERVIEW", title = "库存情况")
-                    Row(
-                        modifier = Modifier.fillMaxWidth().padding(vertical = CulinarySpacing.xs),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Text("当前库存", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.weight(1f))
-                        QuantityText(
-                            amount = formatAmount(detail.row.onHand),
-                            unit = detail.archive.stockUnit.symbol,
-                            amountStyle = MaterialTheme.typography.titleLarge,
-                        )
-                    }
-                    InventoryArchiveValueRow("可用库存", "${formatAmount(detail.row.available)} ${detail.archive.stockUnit.symbol}")
-                    InventoryArchiveValueRow("预留库存", "${formatAmount(detail.row.reserved)} ${detail.archive.stockUnit.symbol}")
-                    InventoryArchiveValueRow("库存状态", InventoryText.stockStatus(detail.row.status), status = true)
-                    InventoryArchiveValueRow("有效批次", detail.row.batchCount.toString())
-                    InventoryArchiveValueRow("涉及库位", detail.row.locationNames.joinToString("、").ifBlank { "未指定" })
                     Spacer(modifier = Modifier.height(CulinarySpacing.md))
                     InventoryArchiveSectionHeader(
                         english = "BATCH RECORDS",
@@ -478,11 +478,6 @@ private fun ArchiveBatchRow(
                 color = MaterialTheme.colorScheme.onSurface,
             )
         }
-        Spacer(modifier = Modifier.width(CulinarySpacing.sm))
-        StatusBadge(
-            text = InventoryText.batchStatus(batch.status),
-            tone = InventoryText.batchTone(batch.status),
-        )
     }
     CulinaryRule(modifier = Modifier.padding(start = CulinarySpacing.pageHorizontal))
 }
