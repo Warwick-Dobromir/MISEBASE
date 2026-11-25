@@ -1,6 +1,8 @@
 package com.culinary.feature.scan
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -17,6 +19,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -348,19 +351,29 @@ private fun ScanModeButton(
 /** 固定边长的成功徽记叠层：旧项只露出顶部边缘，最新项完整显示在最前。 */
 @Composable
 private fun ScanSuccessStack(feedbacks: List<ScanSuccessFeedback>) {
-    Box(modifier = Modifier.size(width = 44.dp, height = 48.dp)) {
+    Box(
+        modifier =
+            Modifier
+                .size(width = 44.dp, height = 52.dp)
+                .clipToBounds(),
+    ) {
         feedbacks.takeLast(3).forEachIndexed { index, feedback ->
             key(feedback.id) {
+                val foldedOffset by animateDpAsState(
+                    targetValue = (index * 5).dp,
+                    animationSpec = spring(dampingRatio = 0.78f, stiffness = 520f),
+                    label = "scan-success-fold-${feedback.id}",
+                )
                 AnimatedVisibility(
                     visible = feedback.visible,
-                    enter = scaleIn(initialScale = 0.72f, animationSpec = tween(180)) +
-                        fadeIn(animationSpec = tween(140)),
-                    exit = scaleOut(targetScale = 0.82f, animationSpec = tween(180)) +
+                    enter = scaleIn(initialScale = 0.76f, animationSpec = tween(170)) +
+                        fadeIn(animationSpec = tween(130)),
+                    exit = scaleOut(targetScale = 0.84f, animationSpec = tween(180)) +
                         fadeOut(animationSpec = tween(180)),
                     modifier =
                         Modifier
                             .align(Alignment.TopCenter)
-                            .offset(y = (index * 4).dp)
+                            .offset(y = foldedOffset)
                             .zIndex(index.toFloat()),
                 ) {
                     Box(
