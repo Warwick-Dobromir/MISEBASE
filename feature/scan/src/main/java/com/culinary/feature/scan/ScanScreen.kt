@@ -101,7 +101,7 @@ internal fun ScanScreen(
                     ScanModeButton(
                         state = state,
                         onToggleMode = onToggleMode,
-                        modifier = Modifier.align(Alignment.TopStart).padding(CulinarySpacing.sm),
+                        modifier = Modifier.align(Alignment.TopCenter).padding(top = CulinarySpacing.sm),
                     )
                 }
 
@@ -289,17 +289,13 @@ private fun ScanModeButton(
     }
 }
 
-/** 固定在取景框上方的纵向压缩反馈：旧记录只保留名称行，最新记录完整显示。 */
+/** 模式切换按钮居中；扫码反馈在其下方横向完整展开，旧记录折叠、最新记录显示完整档案信息。 */
 @Composable
 private fun ScanSuccessStack(
     feedbacks: List<ScanSuccessFeedback>,
     modifier: Modifier = Modifier,
 ) {
     BoxWithConstraints(modifier = modifier.clipToBounds()) {
-        val frameHeight = minOf(maxWidth * FRAME_WIDTH_RATIO, maxHeight * FRAME_HEIGHT_RATIO)
-        val frameTop = (maxHeight - frameHeight) / 2
-        val stackHeight = 112.dp
-        val stackTop = (frameTop - stackHeight - 24.dp).coerceAtLeast(8.dp)
         val visibleFeedbacks = feedbacks.takeLast(3)
         val olderFeedbacks = visibleFeedbacks.dropLast(1)
         val latestFeedback = visibleFeedbacks.lastOrNull()
@@ -307,12 +303,14 @@ private fun ScanSuccessStack(
         Column(
             modifier =
                 Modifier
-                    .align(Alignment.TopEnd)
-                    .padding(end = CulinarySpacing.sm)
-                    .offset(y = stackTop)
-                    .fillMaxWidth(0.38f)
-                    .height(stackHeight),
-            verticalArrangement = Arrangement.spacedBy(3.dp, Alignment.Bottom),
+                    .align(Alignment.TopCenter)
+                    .padding(
+                        start = CulinarySpacing.md,
+                        end = CulinarySpacing.md,
+                        top = 60.dp,
+                    )
+                    .fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(5.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             olderFeedbacks.forEachIndexed { index, feedback ->
@@ -331,14 +329,14 @@ private fun ScanSuccessStack(
                             modifier =
                                 Modifier
                                     .fillMaxWidth()
-                                    .height(20.dp)
+                                    .height(25.dp)
                                     .clip(RoundedCornerShape(7.dp))
                                     .background(
                                         Color(0xF0141414).copy(
                                             alpha = if (index == 0) 0.48f else 0.72f,
                                         ),
                                     )
-                                    .padding(horizontal = 11.dp),
+                                    .padding(horizontal = 13.dp),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
                             Text(
@@ -376,7 +374,7 @@ private fun ScanSuccessStack(
                                         Color.White.copy(alpha = 0.12f),
                                         RoundedCornerShape(10.dp),
                                     )
-                                    .padding(horizontal = 12.dp, vertical = 9.dp),
+                                    .padding(horizontal = 14.dp, vertical = 12.dp),
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(9.dp),
                         ) {
@@ -385,7 +383,7 @@ private fun ScanSuccessStack(
                                     model = imageUri,
                                     contentDescription = null,
                                     contentScale = ContentScale.Crop,
-                                    modifier = Modifier.size(44.dp).clip(RoundedCornerShape(8.dp)),
+                                    modifier = Modifier.size(52.dp).clip(RoundedCornerShape(8.dp)),
                                 )
                             }
                             Column(
@@ -397,7 +395,7 @@ private fun ScanSuccessStack(
                                     style = MaterialTheme.typography.titleSmall,
                                     fontWeight = FontWeight.SemiBold,
                                     color = Color.White,
-                                    maxLines = 1,
+                                    maxLines = 2,
                                     overflow = TextOverflow.Ellipsis,
                                 )
                                 val detail = listOfNotNull(
@@ -409,7 +407,7 @@ private fun ScanSuccessStack(
                                         text = detail,
                                         style = MaterialTheme.typography.bodySmall,
                                         color = Color.White.copy(alpha = 0.78f),
-                                        maxLines = 1,
+                                        maxLines = 2,
                                         overflow = TextOverflow.Ellipsis,
                                     )
                                 }
