@@ -8,6 +8,8 @@ import com.culinary.core.domain.barcode.ScanCapture
 import com.culinary.core.domain.barcode.ScanFrameGate
 import com.culinary.core.domain.barcode.ScanSource
 import com.culinary.core.domain.repository.InventoryArchiveRepository
+import com.culinary.core.domain.repository.PendingStockDraft
+import com.culinary.core.domain.repository.PendingStockRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -32,6 +34,7 @@ class ScanViewModel
         private val gate: ScanFrameGate,
         private val clock: Clock,
         private val archiveRepository: InventoryArchiveRepository?,
+        private val pendingStockRepository: PendingStockRepository? = null,
     ) : ViewModel() {
         private val _uiState = MutableStateFlow(ScanUiState())
         val uiState: StateFlow<ScanUiState> = _uiState.asStateFlow()
@@ -142,6 +145,31 @@ class ScanViewModel
                         if (archive == null) {
                             _uiState.update { it.copy(lookupInProgress = false, pendingCapture = capture) }
                         } else {
+                            val pendingRepository = pendingStockRepository
+                            val added =
+                                if (pendingRepository == null) {
+                                    false
+                                } else {
+                                    val links =
+                                        when (val linkResult = archiveRepository.archiveLinks(archive.id)) {
+                                            is Outcome.Success -> linkResult.value
+                                            is Outcome.Failure -> emptyList()
+                                        }
+                                    runCatching {
+                                        pendingRepository.addOrIncrement(
+                                            PendingStockDraft(
+                                                archiveId = archive.id,
+                                                name = archive.name,
+                                                brand = archive.brand,
+                                                specification = archive.productSpecification,
+                                                imageUri = archive.imageUri,
+                                                stockUnitId = archive.stockUnit.id.value,
+                                                sourceProductId = links.firstOrNull { it.isDefault }?.product?.id?.value
+                                                    ?: links.firstOrNull()?.product?.id?.value,
+                                            ),
+                                        )
+                                    }.isSuccess
+                                }
                             gate.resume()
                             val shouldShow = matchedBarcode != capture.normalizedValue
                             matchedBarcode = capture.normalizedValue
@@ -156,6 +184,7 @@ class ScanViewModel
                                             state.manualEntry
                                         },
                                     matchedArchive = if (shouldShow) archive else state.matchedArchive,
+                                    status = if (added) "已加入待入库清单" else if (pendingRepository != null) "加入待入库失败，请重试" else null,
                                     error = null,
                                 )
                             }
