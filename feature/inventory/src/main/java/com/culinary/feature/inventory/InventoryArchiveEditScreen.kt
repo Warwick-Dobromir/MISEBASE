@@ -573,12 +573,6 @@ private fun ArchiveEditScreen(
                         .verticalScroll(rememberScrollState())
                         .padding(horizontal = CulinarySpacing.pageHorizontal, vertical = CulinarySpacing.sm),
             ) {
-                ArchiveDetailHeading(
-                    categoryLabel = state.categoryLabel.orEmpty(),
-                    englishTitle = state.englishName,
-                    chineseTitle = state.name,
-                    description = state.description,
-                )
                 imageBytes?.let { bytes ->
                     Spacer(modifier = Modifier.height(CulinarySpacing.md))
                     ArchiveWideImage(bytes = bytes, caption = null)
@@ -592,6 +586,12 @@ private fun ArchiveEditScreen(
                         CulinaryTextButton(text = "删除图片", onClick = { onImageUriChange("") }, danger = true)
                     }
                 }
+                ArchiveDetailHeading(
+                    categoryLabel = state.categoryLabel.orEmpty(),
+                    englishTitle = state.englishName,
+                    chineseTitle = state.name,
+                    description = state.description,
+                )
                 ArchiveEditorSectionHeader(
                     index = "",
                     english = "BASIC INFORMATION",
@@ -725,61 +725,6 @@ private fun ArchiveEditScreen(
                         color = MaterialTheme.colorScheme.secondary,
                         modifier = Modifier.padding(vertical = CulinarySpacing.xs),
                     )
-                }
-                ArchiveEditorSectionHeader(index = "", english = "STOCK OVERVIEW", title = "库存情况")
-                ArchiveEditReadOnlyRow("当前库存", archiveDetail?.let { "${formatAmount(it.row.onHand)} ${it.archive.stockUnit.symbol}" } ?: "暂无库存数据")
-                ArchiveEditReadOnlyRow("可用库存", archiveDetail?.let { "${formatAmount(it.row.available)} ${it.archive.stockUnit.symbol}" } ?: "暂无库存数据")
-                ArchiveEditReadOnlyRow("预留库存", archiveDetail?.let { "${formatAmount(it.row.reserved)} ${it.archive.stockUnit.symbol}" } ?: "暂无库存数据")
-                ArchiveEditReadOnlyRow("库存状态", archiveDetail?.let { InventoryText.stockStatus(it.row.status) } ?: "暂无库存数据")
-                ArchiveEditReadOnlyRow("有效批次", archiveDetail?.row?.batchCount?.toString() ?: "暂无库存数据")
-                ArchiveEditReadOnlyRow("最近到期", archiveDetail?.row?.nearestExpiry?.let(::formatDate) ?: "未登记")
-                ArchiveEditReadOnlyRow("涉及库位", archiveDetail?.row?.locationNames?.joinToString("、")?.ifBlank { "未指定" } ?: "未指定")
-                ArchiveEditorSectionHeader(index = "", english = "BATCH RECORDS", title = "库存批次")
-                if (archiveDetail?.batches.isNullOrEmpty()) {
-                    ArchiveEditReadOnlyRow("批次", "暂无批次")
-                } else {
-                    archiveDetail!!.batches.take(3).forEach { batch ->
-                        ArchiveEditReadOnlyRow(
-                            batch.batchCode?.takeIf { it.isNotBlank() } ?: batch.id.take(8),
-                            InventoryText.batchStatus(batch.status),
-                        )
-                    }
-                    if (archiveDetail.batches.size > 3) {
-                        ArchiveEditReadOnlyRow("更多批次", "共 ${archiveDetail.batches.size} 个，返回展示页查看")
-                    }
-                }
-                if (!archiveDetail?.relatedRecipeNames.isNullOrEmpty()) {
-                    ArchiveEditorSectionHeader(index = "", english = "RELATED RECIPES", title = "关联菜谱")
-                    archiveDetail!!.relatedRecipeNames.forEach { recipeName ->
-                        ArchiveEditReadOnlyRow("菜谱", recipeName)
-                    }
-                }
-                ArchiveEditorSectionHeader(index = "", english = "STOCK TRANSACTIONS", title = "库存流水")
-                if (archiveDetail?.ledger.isNullOrEmpty()) {
-                    ArchiveEditReadOnlyRow("流水", "暂无流水")
-                } else {
-                    archiveDetail!!.ledger.take(10).forEach { entry ->
-                        val delta = when {
-                            entry.onHandDelta > 0.0 -> "+${formatAmount(entry.onHandDelta)}"
-                            entry.onHandDelta < 0.0 -> formatAmount(entry.onHandDelta)
-                            else -> "0"
-                        }
-                        ArchiveEditReadOnlyRow(
-                            InventoryText.ledgerType(entry.type),
-                            "${formatInstant(entry.occurredAt)} · $delta ${entry.stockUnit.symbol}",
-                        )
-                    }
-                    if (archiveDetail.ledger.size > 10) {
-                        ArchiveEditReadOnlyRow("更多流水", "共 ${archiveDetail.ledger.size} 条，返回展示页查看")
-                    }
-                }
-                ArchiveEditorSectionHeader(index = "", english = "ARCHIVE RECORD", title = "档案记录")
-                ArchiveEditReadOnlyRow("档案编号", archiveDetail?.archive?.id ?: "保存后生成")
-                ArchiveEditReadOnlyRow("档案状态", archiveDetail?.archive?.status?.name ?: "保存后生成")
-                archiveDetail?.archive?.let { archive ->
-                    ArchiveEditReadOnlyRow("创建时间", formatInstant(archive.createdAt))
-                    ArchiveEditReadOnlyRow("最后修改", formatInstant(archive.updatedAt))
-                    ArchiveEditReadOnlyRow("修订版本", "REV ${archive.revision}")
                 }
                 ArchiveEditorSectionHeader(index = "", english = "ARCHIVE NOTES", title = "备注")
                 ArchiveEditorInlineField(

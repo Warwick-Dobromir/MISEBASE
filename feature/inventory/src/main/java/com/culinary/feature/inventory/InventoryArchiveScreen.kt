@@ -232,6 +232,24 @@ private fun ArchiveDetailScreen(
                             modifier = Modifier.padding(bottom = CulinarySpacing.sm),
                         )
                     }
+                    InventoryArchiveSectionHeader(english = "STOCK OVERVIEW", title = "库存情况")
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(vertical = CulinarySpacing.xs),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text("当前库存", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.weight(1f))
+                        QuantityText(
+                            amount = formatAmount(detail.row.onHand),
+                            unit = detail.archive.stockUnit.symbol,
+                            amountStyle = MaterialTheme.typography.titleLarge,
+                        )
+                    }
+                    InventoryArchiveValueRow("可用库存", "${formatAmount(detail.row.available)} ${detail.archive.stockUnit.symbol}")
+                    InventoryArchiveValueRow("预留库存", "${formatAmount(detail.row.reserved)} ${detail.archive.stockUnit.symbol}")
+                    InventoryArchiveValueRow("库存状态", InventoryText.stockStatus(detail.row.status), status = true)
+                    InventoryArchiveValueRow("有效批次", detail.row.batchCount.toString())
+                    InventoryArchiveValueRow("涉及库位", detail.row.locationNames.joinToString("、").ifBlank { "未指定" })
+                    Spacer(modifier = Modifier.height(CulinarySpacing.md))
                     InventoryArchiveSectionHeader(english = "BASIC INFORMATION", title = "基本信息")
                     InventoryArchiveValueRow("所属分类", detail.categoryPath ?: "未指定分类")
                     InventoryArchiveValueRow("档案类型", if (detail.archive.kind == ArchiveKind.SAUCE) "酱汁现货档案" else "食材库存档案")
@@ -280,24 +298,6 @@ private fun ArchiveDetailScreen(
                             )
                         }
                     }
-                    InventoryArchiveSectionHeader(english = "STOCK OVERVIEW", title = "库存情况")
-                    Row(
-                        modifier = Modifier.fillMaxWidth().padding(vertical = CulinarySpacing.xs),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Text("当前库存", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.weight(1f))
-                        QuantityText(
-                            amount = formatAmount(detail.row.onHand),
-                            unit = detail.archive.stockUnit.symbol,
-                            amountStyle = MaterialTheme.typography.titleLarge,
-                        )
-                    }
-                    InventoryArchiveValueRow("可用库存", "${formatAmount(detail.row.available)} ${detail.archive.stockUnit.symbol}")
-                    InventoryArchiveValueRow("预留库存", "${formatAmount(detail.row.reserved)} ${detail.archive.stockUnit.symbol}")
-                    InventoryArchiveValueRow("库存状态", InventoryText.stockStatus(detail.row.status), status = true)
-                    InventoryArchiveValueRow("有效批次", detail.row.batchCount.toString())
-                    InventoryArchiveValueRow("涉及库位", detail.row.locationNames.joinToString("、").ifBlank { "未指定" })
-                    Spacer(modifier = Modifier.height(CulinarySpacing.md))
                     InventoryArchiveSectionHeader(
                         english = "BATCH RECORDS",
                         title = "库存批次",
