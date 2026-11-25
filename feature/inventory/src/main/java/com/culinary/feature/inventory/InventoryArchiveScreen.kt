@@ -388,6 +388,30 @@ private fun ArchiveDetailScreen(
                     InventoryArchiveValueRow("储存方式", detail.archive.storageMethod ?: "未设置")
                     InventoryArchiveValueRow("储存温度", detail.archive.storageTemperature ?: "未设置")
                     InventoryArchiveValueRow("最近到期", detail.row.nearestExpiry?.let(::formatDate) ?: "未登记")
+                    InventoryArchiveSectionHeader(english = "PURCHASING INFORMATION", title = "采购信息")
+                    if (detail.links.isEmpty()) {
+                        Text(
+                            text = "尚未关联采购商品",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(vertical = CulinarySpacing.xs),
+                        )
+                    } else {
+                        detail.links.forEach { link ->
+                            ArchiveLinkRow(
+                                link = link,
+                                unitSymbol = detail.archive.stockUnit.symbol,
+                                enabled = !state.isLinking,
+                                onUnlink = { onUnlink(link.product.id.value) },
+                            )
+                        }
+                    }
+                    CulinaryTextButton(
+                        text = "＋ 关联采购商品",
+                        onClick = onOpenLinkDialog,
+                        enabled = !state.isLinking,
+                        modifier = Modifier.padding(top = CulinarySpacing.xxs),
+                    )
                     InventoryArchiveSectionHeader(english = "STOCK OVERVIEW", title = "库存情况")
                     Row(
                         modifier = Modifier.fillMaxWidth().padding(vertical = CulinarySpacing.xs),
@@ -427,30 +451,6 @@ private fun ArchiveDetailScreen(
                             ArchiveBatchRow(batch = batch, onClick = { onOpenBatch(batch.id) })
                         }
                     }
-                    InventoryArchiveSectionHeader(english = "PURCHASING INFORMATION", title = "采购信息")
-                    if (detail.links.isEmpty()) {
-                        Text(
-                            text = "尚未关联采购商品",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.padding(vertical = CulinarySpacing.xs),
-                        )
-                    } else {
-                        detail.links.forEach { link ->
-                            ArchiveLinkRow(
-                                link = link,
-                                unitSymbol = detail.archive.stockUnit.symbol,
-                                enabled = !state.isLinking,
-                                onUnlink = { onUnlink(link.product.id.value) },
-                            )
-                        }
-                    }
-                    CulinaryTextButton(
-                        text = "＋ 关联采购商品",
-                        onClick = onOpenLinkDialog,
-                        enabled = !state.isLinking,
-                        modifier = Modifier.padding(top = CulinarySpacing.xxs),
-                    )
                     if (detail.relatedRecipeNames.isNotEmpty()) {
                         InventoryArchiveSectionHeader(english = "RELATED RECIPES", title = "关联菜谱")
                         detail.relatedRecipeNames.forEach { recipeName ->
