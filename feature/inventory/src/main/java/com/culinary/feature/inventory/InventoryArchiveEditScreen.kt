@@ -579,10 +579,10 @@ private fun ArchiveEditScreen(
                         .verticalScroll(rememberScrollState())
                         .padding(horizontal = CulinarySpacing.pageHorizontal, vertical = CulinarySpacing.sm),
             ) {
-                ArchiveDetailHeading(
+                InventoryArchiveHeading(
                     categoryLabel = state.categoryLabel.orEmpty(),
-                    englishTitle = state.englishName,
                     chineseTitle = state.name,
+                    englishTitle = state.englishName,
                     description = state.description,
                 )
                 val launchImagePicker = rememberInventoryArchiveImagePicker(onImageUriChange)
@@ -860,6 +860,31 @@ private fun ArchiveEditScreen(
                     picker = null
                 },
             )
+    }
+}
+
+@Composable
+private fun InventoryArchiveHeading(
+    categoryLabel: String,
+    chineseTitle: String,
+    englishTitle: String,
+    description: String?,
+) {
+    Column(modifier = Modifier.fillMaxWidth()) {
+        if (categoryLabel.isNotBlank()) {
+            Text(categoryLabel.uppercase(), style = CulinaryTextStyles.eyebrow, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Spacer(modifier = Modifier.height(CulinarySpacing.xs))
+        }
+        Text(chineseTitle, style = MaterialTheme.typography.headlineSmall, color = MaterialTheme.colorScheme.onSurface)
+        if (englishTitle.isNotBlank()) {
+            Spacer(modifier = Modifier.height(CulinarySpacing.xxs))
+            Text(englishTitle.uppercase(), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        description?.takeIf { it.isNotBlank() }?.let {
+            Spacer(modifier = Modifier.height(CulinarySpacing.xs))
+            Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        Spacer(modifier = Modifier.height(CulinarySpacing.md))
     }
 }
 

@@ -215,10 +215,10 @@ private fun ArchiveDetailScreen(
                         .padding(bottom = CulinarySpacing.lg),
                 ) {
                     Spacer(modifier = Modifier.height(CulinarySpacing.md))
-                    ArchiveDetailHeading(
+                    InventoryArchiveHeading(
                         categoryLabel = detail.categoryPath.orEmpty(),
-                        englishTitle = detail.archive.englishName,
                         chineseTitle = detail.archive.name,
+                        englishTitle = detail.archive.englishName,
                         description = detail.archive.description,
                     )
                     imageBytes?.let { bytes ->
@@ -398,6 +398,31 @@ private fun ArchiveDetailScreen(
 }
 
 private const val LEDGER_LIMIT = 10
+
+@Composable
+private fun InventoryArchiveHeading(
+    categoryLabel: String,
+    chineseTitle: String,
+    englishTitle: String,
+    description: String?,
+) {
+    Column(modifier = Modifier.fillMaxWidth()) {
+        if (categoryLabel.isNotBlank()) {
+            Text(categoryLabel.uppercase(), style = CulinaryTextStyles.eyebrow, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Spacer(modifier = Modifier.height(CulinarySpacing.xs))
+        }
+        Text(chineseTitle, style = MaterialTheme.typography.headlineSmall, color = MaterialTheme.colorScheme.onSurface)
+        if (englishTitle.isNotBlank()) {
+            Spacer(modifier = Modifier.height(CulinarySpacing.xxs))
+            Text(englishTitle.uppercase(), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        description?.takeIf { it.isNotBlank() }?.let {
+            Spacer(modifier = Modifier.height(CulinarySpacing.xs))
+            Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        Spacer(modifier = Modifier.height(CulinarySpacing.md))
+    }
+}
 
 @Composable
 private fun InventoryArchiveSectionHeader(
