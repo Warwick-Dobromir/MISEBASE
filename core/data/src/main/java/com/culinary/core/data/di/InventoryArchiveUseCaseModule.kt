@@ -179,7 +179,8 @@ object InventoryArchiveUseCaseModule {
         recordReceipt: RecordArchiveReceiptUseCase,
         archiveRepository: InventoryArchiveRepository,
         transactionRunner: TransactionRunner,
-    ): ConfirmPendingStockUseCase = ConfirmPendingStockUseCase(pending, recordReceipt, archiveRepository, transactionRunner)
+    ): ConfirmPendingStockUseCase =
+        ConfirmPendingStockUseCase(pending, recordReceipt, archiveRepository, transactionRunner)
 
     @Provides
     @Singleton
