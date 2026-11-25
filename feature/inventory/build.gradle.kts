@@ -15,6 +15,7 @@ dependencies {
     implementation(project(":core:domain"))
     implementation(project(":core:common"))
     implementation(project(":core:designsystem"))
+    implementation("io.coil-kt.coil3:coil-compose:3.3.0")
 
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.lifecycle.runtime.compose)

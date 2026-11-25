@@ -47,6 +47,7 @@ import com.culinary.core.domain.model.ArchiveListFilter
 import com.culinary.core.domain.model.InventoryCategoryNode
 import com.culinary.core.domain.model.InventoryHomeSummary
 import com.culinary.core.domain.model.InventoryLedgerEntry
+import com.culinary.core.domain.repository.PendingStockRepository
 import com.culinary.core.domain.usecase.inventory.InventoryLedgerUseCases
 import com.culinary.core.domain.usecase.inventory.ListInventoryArchivesUseCase
 import com.culinary.core.domain.usecase.inventory.ListInventoryCategoryTreeUseCase
@@ -64,6 +65,7 @@ data class InventoryHomeUiState(
     val categories: List<InventoryCategoryNode> = emptyList(),
     val recent: List<InventoryLedgerEntry> = emptyList(),
     val archiveNames: Map<String, String> = emptyMap(),
+    val pendingStockCount: Int = 0,
     val isLoading: Boolean = true,
     val error: String? = null,
 )
@@ -78,6 +80,7 @@ class InventoryHomeViewModel
         private val listArchives: ListInventoryArchivesUseCase,
         private val listCategoryTree: ListInventoryCategoryTreeUseCase,
         private val ledger: InventoryLedgerUseCases,
+        private val pendingStockRepository: PendingStockRepository? = null,
     ) : ViewModel() {
         private val _uiState = MutableStateFlow(InventoryHomeUiState())
         val uiState: StateFlow<InventoryHomeUiState> = _uiState.asStateFlow()
@@ -118,12 +121,14 @@ class InventoryHomeViewModel
                     is Outcome.Failure -> return result
                     is Outcome.Success -> result.value
                 }
+            val pendingCount = runCatching { pendingStockRepository?.list()?.size ?: 0 }.getOrDefault(0)
             return Outcome.success(
                 InventoryHomeUiState(
                     summary = archives.summary,
                     categories = categories,
                     recent = recent,
                     archiveNames = archives.rows.associate { it.archive.id to it.archive.name },
+                    pendingStockCount = pendingCount,
                     isLoading = false,
                 ),
             )
@@ -138,7 +143,9 @@ class InventoryHomeViewModel
 fun InventoryHomeRoute(
     onOpenArchive: (String) -> Unit,
     onOpenCategory: (String?) -> Unit,
+    onOpenPendingStock: () -> Unit,
     onAddCategory: () -> Unit,
+    onOpenPendingStock: () -> Unit,
     onOpenReceipt: () -> Unit,
     onOpenIssue: () -> Unit,
     onOpenStocktake: () -> Unit,
@@ -154,6 +161,7 @@ fun InventoryHomeRoute(
         onOpenArchive = onOpenArchive,
         onOpenCategory = onOpenCategory,
         onAddCategory = onAddCategory,
+        onOpenPendingStock = onOpenPendingStock,
         onOpenReceipt = onOpenReceipt,
         onOpenIssue = onOpenIssue,
         onOpenStocktake = onOpenStocktake,
@@ -213,6 +221,8 @@ private fun InventoryHomeScreen(
             ) {
                 HomeSummarySection(summary = state.summary)
                 HomeActionsSection(
+                    onOpenPendingStock = onOpenPendingStock,
+                    pendingStockCount = state.pendingStockCount,
                     onOpenReceipt = onOpenReceipt,
                     onOpenIssue = onOpenIssue,
                     onOpenStocktake = onOpenStocktake,
@@ -314,6 +324,8 @@ private fun HomeSummaryCell(
 
 @Composable
 private fun HomeActionsSection(
+    onOpenPendingStock: () -> Unit,
+    pendingStockCount: Int,
     onOpenReceipt: () -> Unit,
     onOpenIssue: () -> Unit,
     onOpenStocktake: () -> Unit,
@@ -329,6 +341,17 @@ private fun HomeActionsSection(
         modifier = Modifier.padding(horizontal = CulinarySpacing.pageHorizontal),
         horizontalArrangement = Arrangement.spacedBy(CulinarySpacing.xs),
     ) {
+        Row(
+            modifier = Modifier.clickable(role = Role.Button, onClick = onOpenPendingStock)
+                .defaultMinSize(minHeight = CulinarySizes.touchTarget),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = "待入库",
+                style = MaterialTheme.typography.labelLarge,
+                color = if (pendingStockCount > 0) CulinaryColorScheme.current.danger else MaterialTheme.colorScheme.secondary,
+            )
+        }
         CulinaryTextButton(
             text = "入库",
             onClick = onOpenReceipt,
