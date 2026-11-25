@@ -138,6 +138,7 @@ class PendingStockViewModel @Inject constructor(
     }
 
     fun confirm() {
+        if (_uiState.value.isSaving) return
         val state = _uiState.value
         val incomplete = state.items.firstOrNull { it.unallocatedQuantity > 1e-9 }
         if (incomplete != null) {

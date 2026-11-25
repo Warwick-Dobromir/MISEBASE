@@ -16,17 +16,19 @@ class ConfirmPendingStockUseCase(
     private val archiveRepository: InventoryArchiveRepository,
     private val transactionRunner: TransactionRunner,
 ) {
-    suspend operator fun invoke(): Outcome<List<ReceiptResult>> {
-        val items = pending.list()
-        if (items.isEmpty()) {
-            return Outcome.failure(CulinaryError.Validation("pending_stock", "待入库清单为空"))
-        }
-        val incomplete = items.filter { it.unallocatedQuantity > 1e-9 }
-        if (incomplete.isNotEmpty()) {
-            val detail = incomplete.joinToString("；") { "${it.name} 尚有 ${it.unallocatedQuantity} 件未填写生产日期" }
-            return Outcome.failure(CulinaryError.Validation("production_date", detail))
-        }
-        return transactionRunner.write {
+    suspend operator fun invoke(): Outcome<List<ReceiptResult>> =
+        transactionRunner.write {
+            val items = pending.list()
+            if (items.isEmpty()) {
+                return@write Outcome.failure(CulinaryError.Validation("pending_stock", "待入库清单为空"))
+            }
+            val incomplete = items.filter { it.unallocatedQuantity > 1e-9 }
+            if (incomplete.isNotEmpty()) {
+                val detail = incomplete.joinToString("；") {
+                    "${it.name} 尚有 ${it.unallocatedQuantity} 件未填写生产日期"
+                }
+                return@write Outcome.failure(CulinaryError.Validation("production_date", detail))
+            }
             val results = mutableListOf<ReceiptResult>()
             items.forEach { item ->
                 val archive =
