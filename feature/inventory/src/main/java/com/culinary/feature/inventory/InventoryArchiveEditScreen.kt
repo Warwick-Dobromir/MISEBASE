@@ -557,6 +557,11 @@ private fun ArchiveEditScreen(
                     ArchiveEditReadOnlyRow("关联采购商品", "尚未关联")
                 } else {
                     archiveDetail!!.links.forEach { link ->
+                        link.product.sku?.let { ArchiveEditReadOnlyRow("商品编码", it) }
+                        link.product.brand?.let { ArchiveEditReadOnlyRow("品牌", it) }
+                        link.product.packageLabel?.let { ArchiveEditReadOnlyRow("包装规格", it) }
+                        link.product.shelfLifeDays?.let { ArchiveEditReadOnlyRow("商品保质期", "$it 天") }
+                        link.product.storageNote?.let { ArchiveEditReadOnlyRow("商品储存备注", it) }
                         ArchiveEditReadOnlyRow(
                             link.product.name,
                             "${formatAmount(link.product.contentQty)} ${link.product.contentUnit.symbol} · 换算 ${formatAmount(link.conversionRatio)} ${archiveDetail.archive.stockUnit.symbol}" +
@@ -614,6 +619,11 @@ private fun ArchiveEditScreen(
                 ArchiveEditorSectionHeader(index = "", english = "ARCHIVE RECORD", title = "档案记录")
                 ArchiveEditReadOnlyRow("档案编号", archiveDetail?.archive?.id ?: "保存后生成")
                 ArchiveEditReadOnlyRow("档案状态", archiveDetail?.archive?.status?.name ?: "保存后生成")
+                archiveDetail?.archive?.let { archive ->
+                    ArchiveEditReadOnlyRow("创建时间", formatInstant(archive.createdAt))
+                    ArchiveEditReadOnlyRow("最后修改", formatInstant(archive.updatedAt))
+                    ArchiveEditReadOnlyRow("修订版本", "REV ${archive.revision}")
+                }
                 ArchiveEditorSectionHeader(index = "", english = "ARCHIVE NOTES", title = "备注")
                 ArchiveEditorInlineField(
                     value = state.description,
