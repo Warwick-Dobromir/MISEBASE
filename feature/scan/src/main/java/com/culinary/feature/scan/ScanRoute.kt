@@ -22,8 +22,7 @@ import com.culinary.feature.scan.permission.CameraPermission
 /**
  * 扫码页入口：把权限请求、相机预览与一次性导航信号接到 [ScanScreen]。
  *
- * 识别被接受后页面暂停分析并发出 [ScanUiState.pendingCapture]，由 app 导航到确认页；
- * 从确认页返回时由确认页显式恢复 ViewModel，生命周期事件作为其它返回路径的兜底。
+ * 已有档案只在当前页面短暂提示；未建档物品通过 [ScanUiState.pendingCapture] 交给 app 直达新建档案。
  */
 @Composable
 fun ScanRoute(
@@ -47,9 +46,7 @@ fun ScanRoute(
         viewModel.onResumeScanning()
     }
 
-    // Navigation may keep this destination composed while the confirm page is on top.
-    // In that case LaunchedEffect(Unit) does not run again on popBackStack; resume the
-    // one-shot frame gate whenever this destination becomes active again.
+    // 从新建档案页返回扫码页时，恢复识别闸门并清除上次提示。
     DisposableEffect(lifecycleOwner, viewModel) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
@@ -78,11 +75,10 @@ fun ScanRoute(
         onBack = onBack,
         onDismissTorchNotice = viewModel::onTorchNoticeShown,
         cameraContent = {
-            // A captured frame ends this camera session. Returning from confirmation
-            // creates a fresh CameraX session instead of reusing a paused analyzer.
-            if (state.scanning) {
+            // 查询已有档案时只暂停分析，不释放相机预览；匹配结果提示显示在预览上方。
+            if (state.showCamera) {
                 CameraBarcodePreview(
-                    active = true,
+                    active = state.scanning,
                     torchOn = state.torchOn,
                     onCapture = viewModel::onCameraFrame,
                     onTorchResult = viewModel::onTorchResult,

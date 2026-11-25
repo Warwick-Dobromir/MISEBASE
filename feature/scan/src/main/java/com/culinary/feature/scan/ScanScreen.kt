@@ -2,6 +2,15 @@ package com.culinary.feature.scan
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
+import coil3.compose.AsyncImage
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -126,6 +135,55 @@ internal fun ScanScreen(
                     )
                 }
             }
+            state.matchedArchive?.let { archive ->
+                AnimatedVisibility(
+                    visible = true,
+                    modifier =
+                        Modifier
+                            .align(Alignment.TopCenter)
+                            .padding(top = CulinarySpacing.sm)
+                            .fillMaxWidth(0.76f),
+                ) {
+                    Row(
+                        modifier =
+                            Modifier
+                                .clip(RoundedCornerShape(26.dp))
+                                .background(Color(0xF0141414))
+                                .border(1.dp, Color.White.copy(alpha = 0.12f), RoundedCornerShape(26.dp))
+                                .padding(horizontal = 10.dp, vertical = 9.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    ) {
+                        archive.imageUri?.takeIf { it.isNotBlank() }?.let { imageUri ->
+                            AsyncImage(
+                                model = imageUri,
+                                contentDescription = null,
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier.size(48.dp).clip(RoundedCornerShape(9.dp)),
+                            )
+                        }
+                        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                            Text(
+                                text = archive.brand?.takeIf { it.isNotBlank() }?.let { "${archive.name} · $it" } ?: archive.name,
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.SemiBold,
+                                color = Color.White,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                            archive.productSpecification?.takeIf { it.isNotBlank() }?.let { specification ->
+                                Text(
+                                    text = specification,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = Color.White.copy(alpha = 0.78f),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                )
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 }
@@ -202,7 +260,7 @@ private fun CameraActions(
                 variant = CulinaryButtonVariant.OverlayOutline,
             )
         }
-        if (!state.scanning) {
+        if (!state.scanning && !state.lookupInProgress && state.matchedArchive == null) {
             Spacer(modifier = Modifier.height(CulinarySpacing.sm))
             CulinaryButton(
                 text = stringResource(R.string.scan_resume),
