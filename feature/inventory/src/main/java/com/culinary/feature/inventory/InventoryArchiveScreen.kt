@@ -275,40 +275,31 @@ private fun ArchiveDetailScreen(
                     InventoryArchiveValueRow("默认存放位置", detail.archive.defaultLocationId?.let { state.locationNames[it.value] } ?: "未指定")
                     Spacer(modifier = Modifier.height(CulinarySpacing.sm))
                     InventoryArchiveSectionHeader(english = "BASIC INFORMATION", title = "基本信息")
-                    detail.links.firstOrNull()?.let { link ->
-                        InventoryArchiveValueRow("品牌", link.product.brand ?: "未设置")
-                        InventoryArchiveValueRow("商品规格", link.product.packageLabel ?: "${formatAmount(link.product.contentQty)} ${link.product.contentUnit.symbol}")
-                        InventoryArchiveValueRow("商品编码", link.product.sku ?: "未生成")
-                        InventoryArchiveValueRow("条码", "扫码关联后显示")
-                    }
+                    InventoryArchiveValueRow("品牌", detail.archive.brand ?: detail.links.firstOrNull()?.product?.brand ?: "未设置")
+                    InventoryArchiveValueRow("商品规格", detail.archive.productSpecification ?: detail.links.firstOrNull()?.product?.packageLabel ?: "未设置")
+                    InventoryArchiveValueRow("商品编码", detail.archive.productCode ?: detail.links.firstOrNull()?.product?.sku ?: "未生成")
+                    InventoryArchiveValueRow("条码", detail.archive.barcode?.takeIf { it.isNotBlank() } ?: "未关联")
                     detail.sauceName?.let { InventoryArchiveValueRow("关联酱汁", it) }
                     InventoryArchiveSectionHeader(english = "SHELF LIFE & STORAGE", title = "保质期与储存")
+                    InventoryArchiveValueRow(
+                        "保质期规则",
+                        if (detail.archive.shelfLifeEnabled) {
+                            "${detail.archive.shelfLifeCalculationMethod ?: "未指定起算方式"} · ${detail.archive.shelfLifeDays?.let { "$it 天" } ?: "未设置时长"}"
+                        } else {
+                            "未启用"
+                        },
+                    )
+                    InventoryArchiveValueRow("开封后期限", detail.archive.openedShelfLifeDays?.let { "$it 天" } ?: "未设置")
                     InventoryArchiveValueRow("储存方式", detail.archive.storageMethod ?: "未设置")
                     InventoryArchiveValueRow("储存温度", detail.archive.storageTemperature ?: "未设置")
-                    detail.links.firstOrNull()?.product?.shelfLifeDays?.let { InventoryArchiveValueRow("保质期规则", "生产日期起算 $it 天") }
-                    detail.links.firstOrNull()?.product?.storageNote?.let { InventoryArchiveValueRow("商品储存备注", it) }
                     InventoryArchiveValueRow("最近到期", detail.row.nearestExpiry?.let(::formatDate) ?: "未登记")
                     InventoryArchiveSectionHeader(english = "PURCHASING INFORMATION", title = "采购信息")
-                    if (detail.links.isEmpty()) {
-                        Text(
-                            text = "尚未关联采购商品",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.padding(vertical = CulinarySpacing.xs),
-                        )
-                    } else {
+                    InventoryArchiveValueRow("供应商", detail.archive.supplierName ?: "未设置")
+                    InventoryArchiveValueRow("采购单位", detail.archive.purchaseUnitId ?: detail.links.firstOrNull()?.product?.contentUnit?.name ?: "未设置")
+                    InventoryArchiveValueRow("单位换算", detail.archive.unitConversion ?: "未设置")
+                    if (detail.links.isNotEmpty()) {
+                        InventoryArchiveSectionHeader(english = "LINKED PRODUCTS", title = "关联采购商品")
                         detail.links.forEach { link ->
-                            link.product.sku?.let { InventoryArchiveValueRow("商品编码", it) }
-                            link.product.brand?.let { InventoryArchiveValueRow("品牌", it) }
-                            link.product.packageLabel?.let { InventoryArchiveValueRow("商品规格", it) }
-                            InventoryArchiveValueRow("采购单位", link.product.contentUnit.name)
-                            InventoryArchiveValueRow("单位换算", "1 件 = ${formatAmount(link.conversionRatio)} ${detail.archive.stockUnit.symbol}")
-                            InventoryArchiveValueRow("供应商", link.product.supplierId ?: "未设置")
-                            InventoryArchiveValueRow("采购单位", link.product.contentUnit.name)
-                            InventoryArchiveValueRow("单位换算", "1 件 = ${formatAmount(link.conversionRatio)} ${detail.archive.stockUnit.symbol}")
-                            link.product.lastUnitPriceMinor?.let { InventoryArchiveValueRow("采购价格", "¥${"%.2f".format(it / 100.0)} / ${link.product.contentUnit.symbol}") }
-                            link.product.shelfLifeDays?.let { InventoryArchiveValueRow("保质期规则", "生产日期起算 $it 天") }
-                            link.product.storageNote?.let { InventoryArchiveValueRow("商品储存备注", it) }
                             ArchiveLinkRow(
                                 link = link,
                                 unitSymbol = detail.archive.stockUnit.symbol,
