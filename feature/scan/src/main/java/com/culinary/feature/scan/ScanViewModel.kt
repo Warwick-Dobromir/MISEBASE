@@ -151,7 +151,7 @@ class ScanViewModel
                                     false
                                 } else {
                                     val links =
-                                        when (val linkResult = archiveRepository.archiveLinks(archive.id)) {
+                                        when (val linkResult = repository.archiveLinks(archive.id)) {
                                             is Outcome.Success -> linkResult.value
                                             is Outcome.Failure -> emptyList()
                                         }
