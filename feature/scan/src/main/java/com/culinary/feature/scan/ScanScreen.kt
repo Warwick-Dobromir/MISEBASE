@@ -137,15 +137,15 @@ internal fun ScanScreen(
                 }
             }
             state.matchedArchive?.let { archive ->
-                AnimatedVisibility(
-                    visible = true,
+                Column(
                     modifier =
                         Modifier
                             .align(Alignment.TopCenter)
                             .padding(top = CulinarySpacing.sm)
                             .fillMaxWidth(0.76f),
                 ) {
-                    Row(
+                    AnimatedVisibility(visible = true) {
+                        Row(
                         modifier =
                             Modifier
                                 .clip(RoundedCornerShape(26.dp))
@@ -183,6 +183,7 @@ internal fun ScanScreen(
                                     overflow = TextOverflow.Ellipsis,
                                 )
                             }
+                        }
                         }
                     }
                 }
