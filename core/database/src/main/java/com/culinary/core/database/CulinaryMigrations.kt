@@ -35,6 +35,7 @@ internal object CulinaryMigrations {
     val MIGRATION_10_11: Migration = MIGRATION_10_11_IMPL
     val MIGRATION_11_12: Migration = MIGRATION_11_12_IMPL
     val MIGRATION_12_13: Migration = MIGRATION_12_13_IMPL
+    val MIGRATION_13_14: Migration = MIGRATION_13_14_IMPL
 
     val ALL: Array<Migration> =
         arrayOf(
@@ -50,6 +51,7 @@ internal object CulinaryMigrations {
             MIGRATION_10_11,
             MIGRATION_11_12,
             MIGRATION_12_13,
+            MIGRATION_13_14,
         )
 }
 
@@ -934,5 +936,54 @@ private val MIGRATION_9_10_IMPL =
                 FROM `ingredient`
                 """.trimIndent(),
             )
+        }
+    }
+
+
+/**
+ * v13 → v14：独立扫码待入库清单与生产日期分组。
+ * 待入库数据不写正式批次/库存流水；仅在用户确认入库时转为正式库存。
+ */
+private val MIGRATION_13_14_IMPL =
+    object : Migration(13, 14) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            CulinarySchemaExtras.dropPartialIndexes(db)
+            db.execSQL(
+                """
+                CREATE TABLE IF NOT EXISTS `pending_stock_item` (
+                    `id` TEXT NOT NULL,
+                    `archive_id` TEXT NOT NULL,
+                    `name` TEXT NOT NULL,
+                    `brand` TEXT,
+                    `category_name` TEXT,
+                    `specification` TEXT,
+                    `image_uri` TEXT,
+                    `quantity` REAL NOT NULL,
+                    `sort_order` INTEGER NOT NULL,
+                    `created_at` INTEGER NOT NULL,
+                    `updated_at` INTEGER NOT NULL,
+                    PRIMARY KEY(`id`),
+                    FOREIGN KEY(`archive_id`) REFERENCES `inventory_archive`(`id`)
+                        ON UPDATE NO ACTION ON DELETE CASCADE
+                )
+                """.trimIndent(),
+            )
+            db.execSQL(
+                """
+                CREATE TABLE IF NOT EXISTS `pending_stock_date_allocation` (
+                    `id` TEXT NOT NULL,
+                    `item_id` TEXT NOT NULL,
+                    `production_date` TEXT NOT NULL,
+                    `quantity` REAL NOT NULL,
+                    `sort_order` INTEGER NOT NULL,
+                    PRIMARY KEY(`id`),
+                    FOREIGN KEY(`item_id`) REFERENCES `pending_stock_item`(`id`)
+                        ON UPDATE NO ACTION ON DELETE CASCADE
+                )
+                """.trimIndent(),
+            )
+            db.execSQL("CREATE INDEX IF NOT EXISTS `index_pending_stock_item_archive_id` ON `pending_stock_item` (`archive_id`)")
+            db.execSQL("CREATE INDEX IF NOT EXISTS `index_pending_stock_item_sort_order` ON `pending_stock_item` (`sort_order`)")
+            db.execSQL("CREATE INDEX IF NOT EXISTS `index_pending_stock_date_allocation_item_id` ON `pending_stock_date_allocation` (`item_id`)")
         }
     }
