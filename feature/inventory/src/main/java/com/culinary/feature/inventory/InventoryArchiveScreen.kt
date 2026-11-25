@@ -344,7 +344,7 @@ private fun ArchiveDetailScreen(
                 ) {
                     Spacer(modifier = Modifier.height(CulinarySpacing.md))
                     ArchiveDetailHeading(
-                        categoryLabel = detail.categoryPath,
+                        categoryLabel = detail.categoryPath.orEmpty(),
                         englishTitle = detail.archive.englishName,
                         chineseTitle = detail.archive.name,
                         description = detail.archive.description,
