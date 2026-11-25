@@ -351,13 +351,20 @@ private fun PendingStockScreen(
     }
 
     state.incompleteItemId?.let { id ->
-        val item = state.items.firstOrNull { it.id == id }
+        val firstItem = state.items.firstOrNull { it.id == id }
+        val incompleteItems = state.items.filter { it.unallocatedQuantity > 1e-9 }
         AlertDialog(
             onDismissRequest = onDismissIncomplete,
             title = { Text("生产日期尚未填写") },
-            text = { Text("${item?.name.orEmpty()} 尚有 ${formatAmount(item?.unallocatedQuantity ?: 0.0)} 件未填写生产日期，完成后才能确认入库。") },
+            text = {
+                Text(
+                    incompleteItems.joinToString(separator = "\n") {
+                        "${it.name}：尚有 ${formatAmount(it.unallocatedQuantity)} 件未填写"
+                    } + "\n完成后才能确认入库。",
+                )
+            },
             confirmButton = {
-                TextButton(onClick = { editingItem = item; onDismissIncomplete() }) { Text("去填写") }
+                TextButton(onClick = { editingItem = firstItem; onDismissIncomplete() }) { Text("去填写") }
             },
             dismissButton = { TextButton(onClick = onDismissIncomplete) { Text("取消") } },
         )
