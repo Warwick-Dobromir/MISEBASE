@@ -1,5 +1,7 @@
 package com.culinary.core.domain.model
 
+import java.util.zip.CRC32
+
 /**
  * 商品（采购 SKU，A06 §5.2）的库存视图。
  *
@@ -16,6 +18,14 @@ data class Product(
     val stockToContentFactor: Double,
     val defaultLocationId: LocationId? = null,
     val status: EntityStatus = EntityStatus.ACTIVE,
+    val brand: String? = null,
+    val sku: String? = null,
+    val packageLabel: String? = null,
+    val supplierId: String? = null,
+    val shelfLifeDays: Int? = null,
+    val storageNote: String? = null,
+    val lastUnitPriceMinor: Long? = null,
+    val currencyCode: String = "CNY",
 ) {
     init {
         require(name.isNotBlank()) { "product name must not be blank" }
@@ -28,6 +38,16 @@ data class Product(
     }
 
     val isActive: Boolean get() = status == EntityStatus.ACTIVE
+}
+
+object ProductSkuGenerator {
+    fun generate(category: String?, productId: String): String {
+        val categoryName = category?.trim()?.takeIf(String::isNotEmpty) ?: "UNCATEGORIZED"
+        val checksum = CRC32().apply { update(categoryName.toByteArray(Charsets.UTF_8)) }.value
+        val categoryCode = checksum.toString(16).uppercase().padStart(8, '0')
+        val productCode = productId.filter(Char::isLetterOrDigit).uppercase().takeLast(8).ifBlank { "UNKNOWN" }
+        return "SKU-$categoryCode-$productCode"
+    }
 }
 
 /** 储存位置（A06 §6.1）的库存视图。 */
