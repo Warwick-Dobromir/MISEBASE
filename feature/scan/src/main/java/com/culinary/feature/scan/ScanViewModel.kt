@@ -99,9 +99,8 @@ class ScanViewModel
         /** 相机帧被接受后先暂停分析，查询档案；相机预览本身保持显示。 */
         fun onCameraFrame(capture: ScanCapture) {
             val state = _uiState.value
-            if (!state.showCamera || !state.scanning || !gate.offer(capture.normalizedValue, clock.now().toEpochMilli())) {
-                return
-            }
+            val accepted = gate.offer(capture.normalizedValue, clock.now().toEpochMilli())
+            if (!state.showCamera || !state.scanning || !accepted) return
             _uiState.update {
                 it.copy(
                     scanning = false,
@@ -150,7 +149,12 @@ class ScanViewModel
                                 state.copy(
                                     lookupInProgress = false,
                                     scanning = state.hasCamera && state.cameraAccess == CameraAccessState.GRANTED,
-                                    manualEntry = if (state.hasCamera && state.cameraAccess == CameraAccessState.GRANTED) false else state.manualEntry,
+                                    manualEntry =
+                                        if (state.hasCamera && state.cameraAccess == CameraAccessState.GRANTED) {
+                                            false
+                                        } else {
+                                            state.manualEntry
+                                        }
                                     matchedArchive = if (shouldShow) archive else state.matchedArchive,
                                     error = null,
                                 )
