@@ -146,44 +146,52 @@ internal fun ScanScreen(
                 ) {
                     AnimatedVisibility(visible = true) {
                         Row(
-                        modifier =
-                            Modifier
-                                .clip(RoundedCornerShape(26.dp))
-                                .background(Color(0xF0141414))
-                                .border(1.dp, Color.White.copy(alpha = 0.12f), RoundedCornerShape(26.dp))
-                                .padding(horizontal = 10.dp, vertical = 9.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(10.dp),
-                    ) {
-                        archive.imageUri?.takeIf { it.isNotBlank() }?.let { imageUri ->
-                            AsyncImage(
-                                model = imageUri,
-                                contentDescription = null,
-                                contentScale = ContentScale.Crop,
-                                modifier = Modifier.size(48.dp).clip(RoundedCornerShape(9.dp)),
-                            )
-                        }
-                        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                            Text(
-                                text =
-                                    archive.brand?.takeIf { it.isNotBlank() }?.let { "${archive.name} · $it" }
-                                        ?: archive.name,
-                                style = MaterialTheme.typography.titleSmall,
-                                fontWeight = FontWeight.SemiBold,
-                                color = Color.White,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                            )
-                            archive.productSpecification?.takeIf { it.isNotBlank() }?.let { specification ->
+                            modifier =
+                                Modifier
+                                    .clip(RoundedCornerShape(26.dp))
+                                    .background(Color(0xF0141414))
+                                    .border(
+                                        1.dp,
+                                        Color.White.copy(alpha = 0.12f),
+                                        RoundedCornerShape(26.dp),
+                                    )
+                                    .padding(horizontal = 10.dp, vertical = 9.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        ) {
+                            archive.imageUri?.takeIf { it.isNotBlank() }?.let { imageUri ->
+                                AsyncImage(
+                                    model = imageUri,
+                                    contentDescription = null,
+                                    contentScale = ContentScale.Crop,
+                                    modifier = Modifier.size(48.dp).clip(RoundedCornerShape(9.dp)),
+                                )
+                            }
+                            Column(
+                                modifier = Modifier.weight(1f),
+                                verticalArrangement = Arrangement.spacedBy(2.dp),
+                            ) {
                                 Text(
-                                    text = specification,
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = Color.White.copy(alpha = 0.78f),
+                                    text =
+                                        archive.brand?.takeIf { it.isNotBlank() }
+                                            ?.let { "${archive.name} · $it" }
+                                            ?: archive.name,
+                                    style = MaterialTheme.typography.titleSmall,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = Color.White,
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis,
                                 )
+                                archive.productSpecification?.takeIf { it.isNotBlank() }?.let { specification ->
+                                    Text(
+                                        text = specification,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = Color.White.copy(alpha = 0.78f),
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
+                                    )
+                                }
                             }
-                        }
                         }
                     }
                 }
