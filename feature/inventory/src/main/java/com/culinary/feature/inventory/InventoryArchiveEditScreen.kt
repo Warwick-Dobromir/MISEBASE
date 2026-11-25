@@ -748,7 +748,7 @@ private fun ArchiveEditScreen(
                             bitmap = bitmap,
                             contentDescription = "物品图片",
                             contentScale = ContentScale.Crop,
-                            modifier = Modifier.size(76.dp).clip(RoundedCornerShape(8.dp)),
+                            modifier = Modifier.size(112.dp).clip(RoundedCornerShape(6.dp)),
                         )
                     }
                     Column(verticalArrangement = Arrangement.spacedBy(CulinarySpacing.xxs)) {
@@ -817,13 +817,11 @@ private fun ArchiveEditScreen(
                         Text("最低库存", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         ArchiveEditorInlineField(value = state.minimumStock, onValueChange = onMinimumStockChange, placeholder = "未设置", keyboardType = KeyboardType.Decimal)
                         state.fieldErrors["minimum"]?.let { InlineError(message = it) }
-                        CulinaryRule()
                     }
                     Column(modifier = Modifier.weight(1f)) {
                         Text("目标库存", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         ArchiveEditorInlineField(value = state.targetStock, onValueChange = onTargetStockChange, placeholder = "未设置", keyboardType = KeyboardType.Decimal)
                         state.fieldErrors["target"]?.let { InlineError(message = it) }
-                        CulinaryRule()
                     }
                 }
                 EditPickerField(
@@ -1100,17 +1098,22 @@ private fun ArchiveEditReadOnlyRow(
     label: String,
     value: String,
 ) {
-    Column(modifier = Modifier.fillMaxWidth().padding(vertical = CulinarySpacing.xs)) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(
-                label,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.weight(1f),
-            )
-            Text(value, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface)
-        }
-        CulinaryRule()
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(vertical = CulinarySpacing.xs),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            label,
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.width(104.dp),
+        )
+        Text(
+            value,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.weight(1f),
+        )
     }
 }
 
@@ -1123,11 +1126,26 @@ private fun InventoryArchiveEditField(
     error: String? = null,
 ) {
     Column(modifier = Modifier.fillMaxWidth().padding(vertical = CulinarySpacing.xs)) {
-        Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Spacer(modifier = Modifier.height(CulinarySpacing.xxs))
-        ArchiveEditorInlineField(value = value, onValueChange = onValueChange, placeholder = placeholder, modifier = Modifier.fillMaxWidth())
-        error?.let { InlineError(message = it) }
-        CulinaryRule()
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                label,
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.width(104.dp),
+            )
+            ArchiveEditorInlineField(
+                value = value,
+                onValueChange = onValueChange,
+                placeholder = placeholder,
+                modifier = Modifier.weight(1f),
+            )
+        }
+        error?.let {
+            InlineError(message = it, modifier = Modifier.padding(start = 104.dp))
+        }
     }
 }
 
@@ -1139,34 +1157,23 @@ private fun EditPickerField(
     error: String?,
     onClick: () -> Unit,
 ) {
-    Column(modifier = Modifier.fillMaxWidth()) {
+    Column(modifier = Modifier.fillMaxWidth().padding(vertical = CulinarySpacing.xs)) {
         Row(
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .clickable(role = Role.Button, onClick = onClick)
-                    .defaultMinSize(minHeight = 56.dp)
-                    .padding(vertical = CulinarySpacing.xs),
+            modifier = Modifier.fillMaxWidth().clickable(role = Role.Button, onClick = onClick).defaultMinSize(minHeight = 48.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = label,
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                Spacer(modifier = Modifier.height(2.dp))
-                Text(
-                    text = value ?: placeholder,
-                    style = MaterialTheme.typography.bodyLarge,
-                    color =
-                        if (value == null) {
-                            MaterialTheme.colorScheme.onSurfaceVariant
-                        } else {
-                            MaterialTheme.colorScheme.onSurface
-                        },
-                )
-            }
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.width(104.dp),
+            )
+            Text(
+                text = value ?: placeholder,
+                style = MaterialTheme.typography.bodyLarge,
+                color = if (value == null) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.weight(1f),
+            )
             Spacer(modifier = Modifier.width(CulinarySpacing.xs))
             Icon(
                 imageVector = CulinaryIcons.ChevronDown,
@@ -1175,8 +1182,9 @@ private fun EditPickerField(
                 modifier = Modifier.size(18.dp),
             )
         }
-        error?.let { InlineError(message = it) }
-        CulinaryRule()
+        error?.let {
+            InlineError(message = it, modifier = Modifier.padding(start = 104.dp))
+        }
     }
 }
 
