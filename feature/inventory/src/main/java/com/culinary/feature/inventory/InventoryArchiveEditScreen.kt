@@ -610,6 +610,12 @@ private fun ArchiveEditScreen(
                     onClick = { picker = EditPicker.Category },
                 )
                 ArchiveEditReadOnlyRow("档案类型", if (state.kind == ArchiveKind.SAUCE) "酱汁现货档案" else "食材库存档案")
+                state.detail?.links?.firstOrNull()?.let { link ->
+                    ArchiveEditReadOnlyRow("品牌", link.product.brand ?: "未设置")
+                    ArchiveEditReadOnlyRow("商品规格", link.product.packageLabel ?: "${formatAmount(link.product.contentQty)} ${link.product.contentUnit.symbol}")
+                    ArchiveEditReadOnlyRow("商品编码", link.product.sku ?: "未生成")
+                    ArchiveEditReadOnlyRow("条码", "商品条码需在扫码关联后显示")
+                }
                 if (state.kind == ArchiveKind.SAUCE) {
                     EditPickerField(
                         label = "关联酱汁",
@@ -630,6 +636,12 @@ private fun ArchiveEditScreen(
                 state.options.units.firstOrNull { it.id.value == state.unitId }?.let { unit ->
                     ArchiveEditReadOnlyRow("计量维度", unit.dimension.name)
                     if (unit.isApproximate) ArchiveEditReadOnlyRow("换算属性", "近似换算")
+                }
+                state.detail?.links?.firstOrNull()?.let { link ->
+                    ArchiveEditReadOnlyRow("采购单位", link.product.contentUnit.name)
+                    ArchiveEditReadOnlyRow("采购规格", "${formatAmount(link.product.contentQty)} ${link.product.contentUnit.symbol}")
+                    ArchiveEditReadOnlyRow("单位换算", "1 件 = ${formatAmount(link.conversionRatio)} ${state.detail.archive.stockUnit.symbol}")
+                    ArchiveEditReadOnlyRow("计量精度", "${link.product.stockUnit.displayPrecision} 位小数")
                 }
                 ArchiveEditorSectionHeader(index = "", english = "INVENTORY MANAGEMENT", title = "库存管理")
                 Row(horizontalArrangement = Arrangement.spacedBy(CulinarySpacing.md)) {
@@ -656,9 +668,23 @@ private fun ArchiveEditScreen(
                 ArchiveEditorSectionHeader(index = "", english = "SHELF LIFE & STORAGE", title = "保质期与储存")
                 InventoryArchiveEditField("储存方式", state.storageMethod, onStorageMethodChange, "例如：密封、避光、冷藏")
                 InventoryArchiveEditField("储存温度", state.storageTemperature, onStorageTemperatureChange, "例如：2–8 ℃、常温")
+                state.detail?.links?.firstOrNull()?.product?.shelfLifeDays?.let {
+                    ArchiveEditReadOnlyRow("保质期规则", "生产日期起算")
+                    ArchiveEditReadOnlyRow("保质期时长", "$it 天")
+                }
+                state.detail?.links?.firstOrNull()?.product?.storageNote?.let {
+                    ArchiveEditReadOnlyRow("开封后储存", it)
+                }
                 ArchiveEditReadOnlyRow("最近到期", state.detail?.row?.nearestExpiry?.let(::formatDate) ?: "未登记")
                 ArchiveEditorSectionHeader(index = "", english = "PURCHASING INFORMATION", title = "采购信息")
                 val archiveDetail = state.detail
+                if (!archiveDetail?.links.isNullOrEmpty()) {
+                    archiveDetail!!.links.forEach { link ->
+                        ArchiveEditReadOnlyRow("默认供应商", link.product.supplierId ?: "未设置")
+                        ArchiveEditReadOnlyRow("采购价格", link.product.lastUnitPriceMinor?.let { "¥${"%.2f".format(it / 100.0)}" } ?: "未记录")
+                        ArchiveEditReadOnlyRow("价格单位", "元 / ${link.product.contentUnit.symbol}")
+                    }
+                }
                 if (archiveDetail?.links.isNullOrEmpty()) {
                     ArchiveEditReadOnlyRow("关联采购商品", "尚未关联")
                 } else {
