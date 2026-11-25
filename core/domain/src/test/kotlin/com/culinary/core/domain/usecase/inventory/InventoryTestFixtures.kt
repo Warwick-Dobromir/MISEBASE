@@ -200,7 +200,10 @@ internal class FakeInventoryArchiveRepository : InventoryArchiveRepository {
 
     override suspend fun findArchive(id: String): Outcome<InventoryArchive?> = Outcome.success(archives[id])
 
-    override suspend fun saveArchive(archive: InventoryArchive): Outcome<String> = error("unused")
+    override suspend fun saveArchive(archive: InventoryArchive): Outcome<String> {
+        archives[archive.id] = archive
+        return Outcome.success(archive.id)
+    }
 
     override suspend fun softDeleteArchive(
         id: String,
