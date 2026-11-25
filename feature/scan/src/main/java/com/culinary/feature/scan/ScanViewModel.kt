@@ -262,22 +262,6 @@ class ScanViewModel
                             )
                         }
 
-                        if (feedback != null) {
-                            viewModelScope.launch {
-                                delay(SUCCESS_FEEDBACK_MILLIS - SUCCESS_FEEDBACK_EXIT_MILLIS)
-                                _uiState.update { state ->
-                                    state.copy(
-                                        successFeedbacks = state.successFeedbacks.map {
-                                            if (it.id == feedback.id) it.copy(visible = false) else it
-                                        },
-                                    )
-                                }
-                                delay(SUCCESS_FEEDBACK_EXIT_MILLIS)
-                                _uiState.update { state ->
-                                    state.copy(successFeedbacks = state.successFeedbacks.filterNot { it.id == feedback.id })
-                                }
-                            }
-                        }
                         dismissMatchJob?.cancel()
                         dismissMatchJob =
                             viewModelScope.launch {
@@ -383,8 +367,6 @@ class ScanViewModel
         private companion object {
             const val TORCH_UNSUPPORTED = "此设备不支持手电筒。"
             const val MATCH_NOTICE_MILLIS = 2_600L
-            const val SUCCESS_FEEDBACK_MILLIS = 1_800L
-            const val SUCCESS_FEEDBACK_EXIT_MILLIS = 180L
             const val MAX_SUCCESS_FEEDBACKS = 3
         }
     }
