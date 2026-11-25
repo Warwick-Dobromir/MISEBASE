@@ -644,7 +644,7 @@ private fun ArchiveEditScreen(
                     categoryLabel = state.categoryLabel.orEmpty(),
                     chineseTitle = state.name,
                     englishTitle = state.englishName,
-                    description = state.description,
+                    description = null,
                 )
                 val launchImagePicker = rememberInventoryArchiveImagePicker(onImageUriChange)
                 Row(
@@ -752,7 +752,6 @@ private fun ArchiveEditScreen(
                 InventoryArchiveEditField("储存方式", state.storageMethod, onStorageMethodChange, "例如：密封、避光、冷藏")
                 InventoryArchiveEditField("储存温度", state.storageTemperature, onStorageTemperatureChange, "例如：2–8 ℃、常温")
                 ArchiveEditReadOnlyRow("保质期管理", if (state.shelfLifeDays.isNotBlank()) "已启用" else "未启用")
-                ArchiveEditReadOnlyRow("计算方式", "生产日期起算")
                 InventoryArchiveEditField("保质期时长", state.shelfLifeDays, onShelfLifeChange, "输入天数", state.fieldErrors["shelfLife"])
                 InventoryArchiveEditField("开封后保质期说明", state.storageNote, onStorageNoteChange, "输入开封后储存要求")
                 ArchiveEditReadOnlyRow("最近到期", state.detail?.row?.nearestExpiry?.let(::formatDate) ?: "未登记")

@@ -219,7 +219,7 @@ private fun ArchiveDetailScreen(
                         categoryLabel = detail.categoryPath.orEmpty(),
                         chineseTitle = detail.archive.name,
                         englishTitle = detail.archive.englishName,
-                        description = detail.archive.description,
+                        description = null,
                     )
                     Row(modifier = Modifier.fillMaxWidth().padding(bottom = CulinarySpacing.sm), verticalAlignment = Alignment.CenterVertically) {
                         StatusBadge(text = InventoryText.stockStatus(detail.row.status), tone = StatusTone.Accent)
@@ -275,8 +275,6 @@ private fun ArchiveDetailScreen(
                     InventoryArchiveValueRow("默认存放位置", detail.archive.defaultLocationId?.let { state.locationNames[it.value] } ?: "未指定")
                     Spacer(modifier = Modifier.height(CulinarySpacing.sm))
                     InventoryArchiveSectionHeader(english = "BASIC INFORMATION", title = "基本信息")
-                    InventoryArchiveValueRow("所属分类", detail.categoryPath ?: "未指定分类")
-                    InventoryArchiveValueRow("档案类型", if (detail.archive.kind == ArchiveKind.SAUCE) "酱汁现货档案" else "食材库存档案")
                     detail.links.firstOrNull()?.let { link ->
                         InventoryArchiveValueRow("品牌", link.product.brand ?: "未设置")
                         InventoryArchiveValueRow("商品规格", link.product.packageLabel ?: "${formatAmount(link.product.contentQty)} ${link.product.contentUnit.symbol}")
