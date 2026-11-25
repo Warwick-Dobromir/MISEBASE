@@ -38,6 +38,7 @@ class ScanUiTest {
                     onToggleTorch = {},
                     onResumeScanning = {},
                     onBack = {},
+                    onToggleMode = {},
                     onDismissTorchNotice = {},
                     cameraContent = {},
                 )
@@ -64,6 +65,7 @@ class ScanUiTest {
                     onToggleTorch = {},
                     onResumeScanning = {},
                     onBack = {},
+                    onToggleMode = {},
                     onDismissTorchNotice = {},
                     cameraContent = {},
                 )
@@ -93,6 +95,7 @@ class ScanUiTest {
                     onToggleTorch = {},
                     onResumeScanning = {},
                     onBack = {},
+                    onToggleMode = {},
                     onDismissTorchNotice = {},
                     cameraContent = {},
                 )
@@ -102,7 +105,7 @@ class ScanUiTest {
         compose.onNodeWithText("将条码放入框内，保持稳定").assertIsDisplayed()
         compose.onNodeWithText("打开手电筒").assertIsDisplayed()
         compose.onNodeWithText("手工输入条码").assertIsDisplayed()
-        compose.onNodeWithContentDescription("返回").assertIsDisplayed()
+        compose.onNodeWithContentDescription("当前模式：扫码入库，点击切换为扫描查看").assertIsDisplayed()
     }
 
     @Test
@@ -119,6 +122,7 @@ class ScanUiTest {
                     onToggleTorch = {},
                     onResumeScanning = {},
                     onBack = {},
+                    onToggleMode = {},
                     onDismissTorchNotice = {},
                     cameraContent = {},
                 )
@@ -149,6 +153,7 @@ class ScanUiTest {
                     onToggleTorch = {},
                     onResumeScanning = {},
                     onBack = {},
+                    onToggleMode = {},
                     onDismissTorchNotice = {},
                     cameraContent = {},
                 )
@@ -180,6 +185,7 @@ class ScanUiTest {
                     onToggleTorch = {},
                     onResumeScanning = {},
                     onBack = {},
+                    onToggleMode = {},
                     onDismissTorchNotice = {},
                     cameraContent = {},
                 )
@@ -210,6 +216,7 @@ class ScanUiTest {
                     onToggleTorch = {},
                     onResumeScanning = {},
                     onBack = {},
+                    onToggleMode = {},
                     onDismissTorchNotice = {},
                     cameraContent = {},
                 )
@@ -238,6 +245,7 @@ class ScanUiTest {
                     onToggleTorch = {},
                     onResumeScanning = {},
                     onBack = {},
+                    onToggleMode = {},
                     onDismissTorchNotice = {},
                     cameraContent = {},
                 )
@@ -245,6 +253,6 @@ class ScanUiTest {
         }
 
         compose.onNodeWithText("重新扫描").assertIsDisplayed()
-        compose.onNodeWithText("已识别：6901234567892").assertIsDisplayed()
+        compose.onNodeWithText("扫码入库").assertIsDisplayed()
     }
 }
