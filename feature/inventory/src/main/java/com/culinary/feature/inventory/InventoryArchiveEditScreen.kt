@@ -503,6 +503,7 @@ private fun ArchiveEditScreen(
                     error = state.fieldErrors["category"],
                     onClick = { picker = EditPicker.Category },
                 )
+                ArchiveEditReadOnlyRow("档案类型", if (state.kind == ArchiveKind.SAUCE) "酱汁现货档案" else "食材库存档案")
                 if (state.kind == ArchiveKind.SAUCE) {
                     EditPickerField(
                         label = "关联酱汁",
@@ -520,6 +521,10 @@ private fun ArchiveEditScreen(
                     error = state.fieldErrors["unit"],
                     onClick = { picker = EditPicker.Unit },
                 )
+                state.options.units.firstOrNull { it.id.value == state.unitId }?.let { unit ->
+                    ArchiveEditReadOnlyRow("计量维度", unit.dimension.name)
+                    if (unit.isApproximate) ArchiveEditReadOnlyRow("换算属性", "近似换算")
+                }
                 ArchiveEditorSectionHeader(index = "", english = "INVENTORY MANAGEMENT", title = "库存管理")
                 Row(horizontalArrangement = Arrangement.spacedBy(CulinarySpacing.md)) {
                     Column(modifier = Modifier.weight(1f)) {
@@ -545,6 +550,7 @@ private fun ArchiveEditScreen(
                 ArchiveEditorSectionHeader(index = "", english = "SHELF LIFE & STORAGE", title = "保质期与储存")
                 InventoryArchiveEditField("储存方式", state.storageMethod, onStorageMethodChange, "例如：密封、避光、冷藏")
                 InventoryArchiveEditField("储存温度", state.storageTemperature, onStorageTemperatureChange, "例如：2–8 ℃、常温")
+                ArchiveEditReadOnlyRow("最近到期", state.detail?.row?.nearestExpiry?.let(::formatDate) ?: "未登记")
                 ArchiveEditorSectionHeader(index = "", english = "PURCHASING INFORMATION", title = "采购信息")
                 val archiveDetail = state.detail
                 if (archiveDetail?.links.isNullOrEmpty()) {
@@ -563,6 +569,7 @@ private fun ArchiveEditScreen(
                 ArchiveEditReadOnlyRow("可用库存", archiveDetail?.let { "${formatAmount(it.row.available)} ${it.archive.stockUnit.symbol}" } ?: "暂无库存数据")
                 ArchiveEditReadOnlyRow("预留库存", archiveDetail?.let { "${formatAmount(it.row.reserved)} ${it.archive.stockUnit.symbol}" } ?: "暂无库存数据")
                 ArchiveEditReadOnlyRow("库存状态", archiveDetail?.let { InventoryText.stockStatus(it.row.status) } ?: "暂无库存数据")
+                ArchiveEditReadOnlyRow("有效批次", archiveDetail?.row?.batchCount?.toString() ?: "暂无库存数据")
                 ArchiveEditReadOnlyRow("最近到期", archiveDetail?.row?.nearestExpiry?.let(::formatDate) ?: "未登记")
                 ArchiveEditReadOnlyRow("涉及库位", archiveDetail?.row?.locationNames?.joinToString("、")?.ifBlank { "未指定" } ?: "未指定")
                 ArchiveEditorSectionHeader(index = "", english = "BATCH RECORDS", title = "库存批次")
@@ -607,6 +614,7 @@ private fun ArchiveEditScreen(
                 ArchiveEditorSectionHeader(index = "", english = "ARCHIVE RECORD", title = "档案记录")
                 ArchiveEditReadOnlyRow("档案编号", archiveDetail?.archive?.id ?: "保存后生成")
                 ArchiveEditReadOnlyRow("档案类型", if (state.kind == ArchiveKind.SAUCE) "酱汁现货档案" else "食材库存档案")
+                ArchiveEditReadOnlyRow("档案状态", archiveDetail?.archive?.status?.name ?: "保存后生成")
                 ArchiveEditorSectionHeader(index = "", english = "ARCHIVE NOTES", title = "备注")
                 ArchiveEditorInlineField(
                     value = state.description,
