@@ -38,6 +38,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
 import com.culinary.core.common.Outcome
 import com.culinary.core.designsystem.component.ArchiveDetailBar
+import com.culinary.core.designsystem.component.ArchiveDetailHeading
+import com.culinary.core.designsystem.component.ArchiveEditorSectionHeader
 import com.culinary.core.designsystem.component.ArchiveWideImage
 import com.culinary.core.designsystem.component.CulinaryRule
 import com.culinary.core.designsystem.component.CulinaryTextButton
@@ -342,36 +344,13 @@ private fun ArchiveDetailScreen(
                         .padding(horizontal = CulinarySpacing.pageHorizontal)
                         .padding(bottom = CulinarySpacing.lg),
                 ) {
-                    Spacer(modifier = Modifier.height(CulinarySpacing.lg))
-                    detail.categoryPath?.takeIf { it.isNotBlank() }?.let { category ->
-                        Text(
-                            text = category.uppercase(),
-                            style = CulinaryTextStyles.eyebrow,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                        Spacer(modifier = Modifier.height(CulinarySpacing.xs))
-                    }
-                    Text(
-                        text = detail.archive.name,
-                        style = MaterialTheme.typography.headlineLarge,
-                        color = MaterialTheme.colorScheme.onSurface,
+                    Spacer(modifier = Modifier.height(CulinarySpacing.md))
+                    ArchiveDetailHeading(
+                        categoryLabel = detail.categoryPath,
+                        englishTitle = detail.archive.englishName,
+                        chineseTitle = detail.archive.name,
+                        description = detail.archive.description,
                     )
-                    detail.archive.englishName?.takeIf { it.isNotBlank() }?.let { englishName ->
-                        Text(
-                            text = englishName,
-                            style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.padding(top = CulinarySpacing.xs),
-                        )
-                    }
-                    detail.archive.description?.takeIf { it.isNotBlank() }?.let { description ->
-                        Text(
-                            text = description,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.padding(top = CulinarySpacing.sm),
-                        )
-                    }
                     imageBytes?.let { bytes ->
                         Spacer(modifier = Modifier.height(CulinarySpacing.md))
                         ArchiveWideImage(bytes = bytes, caption = null)
@@ -383,83 +362,32 @@ private fun ArchiveDetailScreen(
                             modifier = Modifier.padding(bottom = CulinarySpacing.sm),
                         )
                     }
+                    InventoryArchiveSectionHeader(english = "STOCK OVERVIEW", title = "库存情况")
                     Row(
-                        modifier = Modifier.fillMaxWidth().padding(vertical = CulinarySpacing.md),
+                        modifier = Modifier.fillMaxWidth().padding(vertical = CulinarySpacing.xs),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        StatusBadge(
-                            text = InventoryText.stockStatus(detail.row.status),
-                            tone = InventoryText.stockTone(detail.row.status),
+                        Text("当前库存", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.weight(1f))
+                        QuantityText(
+                            amount = formatAmount(detail.row.onHand),
+                            unit = detail.archive.stockUnit.symbol,
+                            amountStyle = MaterialTheme.typography.titleLarge,
                         )
                     }
-                    CulinaryRule()
-                    Spacer(modifier = Modifier.height(CulinarySpacing.lg))
-                    Text(
-                        text = "库存概况",
-                        style = MaterialTheme.typography.titleLarge,
-                        color = MaterialTheme.colorScheme.onSurface,
+                    InventoryArchiveValueRow("库存状态", InventoryText.stockStatus(detail.row.status), status = true)
+                    InventoryArchiveValueRow("有效批次", detail.row.batchCount.toString())
+                    InventoryArchiveValueRow(
+                        "最低库存",
+                        detail.archive.minimumStock?.let { "${formatAmount(it)} ${detail.archive.stockUnit.symbol}" } ?: "未设置",
+                    )
+                    InventoryArchiveValueRow(
+                        "主要存放位置",
+                        detail.archive.defaultLocationId?.let { state.locationNames[it.value] } ?: "未指定",
                     )
                     Spacer(modifier = Modifier.height(CulinarySpacing.md))
-                    Row(horizontalArrangement = Arrangement.spacedBy(CulinarySpacing.md)) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            QuantityText(
-                                amount = formatAmount(detail.row.onHand),
-                                unit = detail.archive.stockUnit.symbol,
-                                amountStyle = CulinaryTextStyles.numeralL,
-                            )
-                            Text(
-                                "当前库存",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                        }
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = detail.row.batchCount.toString().padStart(2, '0'),
-                                style = CulinaryTextStyles.numeralL,
-                                color = MaterialTheme.colorScheme.onSurface,
-                            )
-                            Text(
-                                "有效批次",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                        }
-                    }
-                    Spacer(modifier = Modifier.height(CulinarySpacing.md))
-                    Row(horizontalArrangement = Arrangement.spacedBy(CulinarySpacing.md)) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text =
-                                    detail.archive.minimumStock?.let {
-                                        "${formatAmount(it)} ${detail.archive.stockUnit.symbol}"
-                                    } ?: "未设置",
-                                style = MaterialTheme.typography.titleLarge,
-                                color = MaterialTheme.colorScheme.onSurface,
-                            )
-                            Text(
-                                "库存预警线",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                        }
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = detail.archive.defaultLocationId?.let { state.locationNames[it.value] } ?: "未指定",
-                                style = MaterialTheme.typography.titleLarge,
-                                color = MaterialTheme.colorScheme.onSurface,
-                            )
-                            Text(
-                                "主要存放位置",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                        }
-                    }
-                    Spacer(modifier = Modifier.height(CulinarySpacing.lg))
-                    SectionHeader(
+                    InventoryArchiveSectionHeader(
+                        english = "BATCH RECORDS",
                         title = "库存批次",
-                        subtitle = "按先进先出排列，点击查看批次详情",
                         action = {
                             CulinaryTextButton(
                                 text = "查看全部 →",
@@ -478,9 +406,7 @@ private fun ArchiveDetailScreen(
                             ArchiveBatchRow(batch = batch, onClick = { onOpenBatch(batch.id) })
                         }
                     }
-                    CulinaryRule()
-                    Spacer(modifier = Modifier.height(CulinarySpacing.md))
-                    SectionHeader(title = "关联采购商品")
+                    InventoryArchiveSectionHeader(english = "PURCHASING LINKS", title = "关联采购商品")
                     if (detail.links.isEmpty()) {
                         Text(
                             text = "尚未关联采购商品",
@@ -504,8 +430,8 @@ private fun ArchiveDetailScreen(
                         enabled = !state.isLinking,
                         modifier = Modifier.padding(top = CulinarySpacing.xxs),
                     )
-                    CulinaryRule(modifier = Modifier.padding(top = CulinarySpacing.lg))
-                    SectionHeader(
+                    InventoryArchiveSectionHeader(
+                        english = "STOCK TRANSACTIONS",
                         title = "库存流水",
                         subtitle = "最近 ${minOf(detail.ledger.size, LEDGER_LIMIT)} 条",
                     )
@@ -561,6 +487,53 @@ private fun ArchiveDetailScreen(
 }
 
 private const val LEDGER_LIMIT = 10
+
+@Composable
+private fun InventoryArchiveSectionHeader(
+    english: String,
+    title: String,
+    modifier: Modifier = Modifier,
+    subtitle: String? = null,
+    action: (@Composable () -> Unit)? = null,
+) {
+    Column(modifier = modifier.fillMaxWidth()) {
+        CulinaryRule()
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(top = CulinarySpacing.md),
+            verticalAlignment = Alignment.Bottom,
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(english, style = CulinaryTextStyles.eyebrow, color = MaterialTheme.colorScheme.secondary)
+                Text(title, style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onSurface)
+                subtitle?.let {
+                    Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
+            action?.invoke()
+        }
+        Spacer(modifier = Modifier.height(CulinarySpacing.sm))
+    }
+}
+
+@Composable
+private fun InventoryArchiveValueRow(
+    label: String,
+    value: String,
+    status: Boolean = false,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(vertical = CulinarySpacing.xs),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(label, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.weight(1f))
+        Text(
+            value,
+            style = MaterialTheme.typography.bodyLarge,
+            color = if (status) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.onSurface,
+        )
+    }
+    CulinaryRule()
+}
 
 @Composable
 private fun LinkProductDialog(
