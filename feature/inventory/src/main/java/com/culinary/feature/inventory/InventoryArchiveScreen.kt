@@ -707,7 +707,7 @@ private fun ArchiveLinkRow(
                 color = MaterialTheme.colorScheme.onSurface,
             )
             Text(
-                text = "1 个 → ${formatAmount(link.conversionRatio)} $unitSymbol",
+                text = "包装内容 ${formatAmount(link.product.contentQty)} ${link.product.contentUnit.symbol} · 1 件折算 ${formatAmount(link.conversionRatio)} $unitSymbol",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
