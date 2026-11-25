@@ -1,5 +1,6 @@
 package com.culinary.feature.inventory
 
+import android.net.Uri
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -24,10 +25,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -38,7 +41,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
 import com.culinary.core.common.CulinaryError
 import com.culinary.core.common.Outcome
+import com.culinary.core.designsystem.component.ArchiveEditorInlineField
 import com.culinary.core.designsystem.component.ArchiveEditorSectionHeader
+import com.culinary.core.designsystem.component.ArchiveWideImage
 import com.culinary.core.designsystem.component.ArchiveEditorTopBar
 import com.culinary.core.designsystem.component.CulinaryButton
 import com.culinary.core.designsystem.component.CulinaryRule
@@ -61,8 +66,10 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 /** 新建/编辑共用的表单状态；字段错误按字段名保存在 map 里，避免一处错误刷新整页。 */
@@ -414,6 +421,17 @@ private fun ArchiveEditScreen(
     onSauceChange: (String?) -> Unit,
 ) {
     var picker by remember { mutableStateOf<EditPicker?>(null) }
+    val context = LocalContext.current.applicationContext
+    val imageUri = state.imageUri.takeIf { it.isNotBlank() }
+    val imageBytes by produceState<ByteArray?>(initialValue = null, key1 = imageUri) {
+        value = withContext(Dispatchers.IO) {
+            imageUri?.let { uri ->
+                runCatching {
+                    context.contentResolver.openInputStream(Uri.parse(uri))?.use { it.readBytes() }
+                }.getOrNull()
+            }
+        }
+    }
     Column(modifier = Modifier.fillMaxSize()) {
         ArchiveEditorTopBar(
             title = if (state.isNew) "新建库存档案" else "编辑库存档案",
@@ -452,26 +470,10 @@ private fun ArchiveEditScreen(
                     topPadding = 0.dp,
                     titleTopPadding = CulinarySpacing.sm,
                 )
-                Spacer(modifier = Modifier.height(CulinarySpacing.sm))
-                CulinaryTextField(
-                    value = state.name,
-                    onValueChange = onNameChange,
-                    label = "中文名称 *",
-                    singleLine = true,
-                    isError = state.fieldErrors["name"] != null,
-                    supportingText = state.fieldErrors["name"] ?: "必填，最多 40 个字",
-                )
-                Spacer(modifier = Modifier.height(CulinarySpacing.field))
-                CulinaryTextField(
-                    value = state.englishName,
-                    onValueChange = onEnglishNameChange,
-                    label = "英文名称",
-                    singleLine = true,
-                    supportingText = "可留空，用于列表副标题",
-                )
-                Spacer(modifier = Modifier.height(CulinarySpacing.field))
+                InventoryArchiveEditField("中文名称", state.name, onNameChange, "输入中文名称", state.fieldErrors["name"])
+                InventoryArchiveEditField("英文名称", state.englishName, onEnglishNameChange, "输入英文名称")
                 EditPickerField(
-                    label = "分类",
+                    label = "所属分类",
                     value = state.categoryLabel,
                     placeholder = "未指定分类",
                     error = state.fieldErrors["category"],
@@ -479,46 +481,41 @@ private fun ArchiveEditScreen(
                 )
                 if (state.kind == ArchiveKind.SAUCE) {
                     EditPickerField(
-                        label = "酱汁 *",
+                        label = "关联酱汁",
                         value = state.sauceLabel,
                         placeholder = "请选择酱汁",
                         error = state.fieldErrors["sauce"],
                         onClick = { picker = EditPicker.Sauce },
                     )
                 }
-                ArchiveEditorSectionHeader(index = "", english = "MEASURE", title = "计量与阈值")
-                Spacer(modifier = Modifier.height(CulinarySpacing.sm))
+                imageBytes?.let { bytes ->
+                    Spacer(modifier = Modifier.height(CulinarySpacing.md))
+                    ArchiveWideImage(bytes = bytes, caption = null)
+                }
+                InventoryArchiveEditField("图片 URI", state.imageUri, onImageUriChange, "添加图片 URI（可留空）")
+                ArchiveEditorSectionHeader(index = "", english = "UNIT & MEASUREMENT", title = "规格与计量")
                 EditPickerField(
-                    label = "库存单位 *",
+                    label = "库存基本单位",
                     value = state.unitLabel,
                     placeholder = "请选择库存单位",
                     error = state.fieldErrors["unit"],
                     onClick = { picker = EditPicker.Unit },
                 )
                 Row(horizontalArrangement = Arrangement.spacedBy(CulinarySpacing.md)) {
-                    CulinaryTextField(
-                        value = state.minimumStock,
-                        onValueChange = onMinimumStockChange,
-                        label = "最低库存",
-                        singleLine = true,
-                        isError = state.fieldErrors["minimum"] != null,
-                        supportingText = state.fieldErrors["minimum"] ?: "低于该值标记为低库存",
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                        modifier = Modifier.weight(1f),
-                    )
-                    CulinaryTextField(
-                        value = state.targetStock,
-                        onValueChange = onTargetStockChange,
-                        label = "目标库存",
-                        singleLine = true,
-                        isError = state.fieldErrors["target"] != null,
-                        supportingText = state.fieldErrors["target"] ?: "补货参考值",
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                        modifier = Modifier.weight(1f),
-                    )
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("最低库存", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        ArchiveEditorInlineField(value = state.minimumStock, onValueChange = onMinimumStockChange, placeholder = "未设置", keyboardType = KeyboardType.Decimal)
+                        state.fieldErrors["minimum"]?.let { InlineError(message = it) }
+                        CulinaryRule()
+                    }
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("目标库存", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        ArchiveEditorInlineField(value = state.targetStock, onValueChange = onTargetStockChange, placeholder = "未设置", keyboardType = KeyboardType.Decimal)
+                        state.fieldErrors["target"]?.let { InlineError(message = it) }
+                        CulinaryRule()
+                    }
                 }
-                ArchiveEditorSectionHeader(index = "", english = "STORAGE", title = "存储信息")
-                Spacer(modifier = Modifier.height(CulinarySpacing.sm))
+                ArchiveEditorSectionHeader(index = "", english = "INVENTORY MANAGEMENT", title = "库存管理")
                 EditPickerField(
                     label = "默认库位",
                     value = state.locationLabel,
@@ -526,43 +523,22 @@ private fun ArchiveEditScreen(
                     error = state.fieldErrors["location"],
                     onClick = { picker = EditPicker.Location },
                 )
-                CulinaryTextField(
-                    value = state.storageMethod,
-                    onValueChange = onStorageMethodChange,
-                    label = "存储方式",
-                    singleLine = true,
-                    supportingText = "例如 密封、避光、冷藏",
+                ArchiveEditorSectionHeader(index = "", english = "SHELF LIFE & STORAGE", title = "保质期与储存")
+                InventoryArchiveEditField("储存方式", state.storageMethod, onStorageMethodChange, "例如：密封、避光、冷藏")
+                InventoryArchiveEditField("储存温度", state.storageTemperature, onStorageTemperatureChange, "例如：2–8 ℃、常温")
+                ArchiveEditorSectionHeader(index = "", english = "PURCHASING INFORMATION", title = "采购信息")
+                Text(
+                    "采购单位、采购规格与供应商信息当前未纳入库存档案数据模型，因此本次不新增虚构字段。",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
-                Spacer(modifier = Modifier.height(CulinarySpacing.field))
-                CulinaryTextField(
-                    value = state.storageTemperature,
-                    onValueChange = onStorageTemperatureChange,
-                    label = "存储温度",
-                    singleLine = true,
-                    supportingText = "例如 2-8 ℃、常温",
-                )
-                ArchiveEditorSectionHeader(index = "", english = "NOTES", title = "补充信息")
-                Spacer(modifier = Modifier.height(CulinarySpacing.sm))
-                CulinaryTextField(
-                    value = state.imageUri,
-                    onValueChange = onImageUriChange,
-                    label = "图片 URI",
-                    singleLine = true,
-                    supportingText = "可留空；填写后详情页会显示该地址",
-                )
-                Spacer(modifier = Modifier.height(CulinarySpacing.field))
-                CulinaryTextField(
+                ArchiveEditorSectionHeader(index = "", english = "ARCHIVE NOTES", title = "备注")
+                ArchiveEditorInlineField(
                     value = state.description,
                     onValueChange = onDescriptionChange,
-                    label = "备注",
-                    minLines = 4,
-                    supportingText = "可留空",
-                )
-                Spacer(modifier = Modifier.height(CulinarySpacing.xl))
-                CulinaryButton(
-                    text = if (state.isNew) "保存并创建" else "保存修改",
-                    onClick = onSave,
-                    loading = state.isSaving,
+                    placeholder = "添加档案备注",
+                    singleLine = false,
+                    minLines = 3,
                     modifier = Modifier.fillMaxWidth(),
                 )
                 Spacer(modifier = Modifier.height(CulinarySpacing.xl))
@@ -624,6 +600,23 @@ private fun ArchiveEditScreen(
                     picker = null
                 },
             )
+    }
+}
+
+@Composable
+private fun InventoryArchiveEditField(
+    label: String,
+    value: String,
+    onValueChange: (String) -> Unit,
+    placeholder: String,
+    error: String? = null,
+) {
+    Column(modifier = Modifier.fillMaxWidth().padding(vertical = CulinarySpacing.xs)) {
+        Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Spacer(modifier = Modifier.height(CulinarySpacing.xxs))
+        ArchiveEditorInlineField(value = value, onValueChange = onValueChange, placeholder = placeholder, modifier = Modifier.fillMaxWidth())
+        error?.let { InlineError(message = it) }
+        CulinaryRule()
     }
 }
 
