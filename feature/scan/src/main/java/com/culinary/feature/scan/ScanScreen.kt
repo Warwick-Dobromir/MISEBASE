@@ -101,7 +101,7 @@ internal fun ScanScreen(
                     ScanModeButton(
                         state = state,
                         onToggleMode = onToggleMode,
-                        modifier = Modifier.align(Alignment.TopCenter).padding(top = CulinarySpacing.sm),
+                        modifier = Modifier.align(Alignment.TopStart).padding(CulinarySpacing.sm),
                     )
                 }
 
@@ -289,13 +289,13 @@ private fun ScanModeButton(
     }
 }
 
-/** 模式切换按钮居中；扫码反馈在其下方横向完整展开，旧记录折叠、最新记录显示完整档案信息。 */
+/** 模式切换按钮恢复左上角原位；反馈卡紧邻其右侧，同一水平线展开。 */
 @Composable
 private fun ScanSuccessStack(
     feedbacks: List<ScanSuccessFeedback>,
     modifier: Modifier = Modifier,
 ) {
-    BoxWithConstraints(modifier = modifier.clipToBounds()) {
+    Box(modifier = modifier.clipToBounds()) {
         val visibleFeedbacks = feedbacks.takeLast(3)
         val olderFeedbacks = visibleFeedbacks.dropLast(1)
         val latestFeedback = visibleFeedbacks.lastOrNull()
@@ -303,15 +303,15 @@ private fun ScanSuccessStack(
         Column(
             modifier =
                 Modifier
-                    .align(Alignment.TopCenter)
+                    .align(Alignment.TopStart)
                     .padding(
-                        start = CulinarySpacing.md,
-                        end = CulinarySpacing.md,
-                        top = 60.dp,
+                        start = 64.dp,
+                        end = CulinarySpacing.sm,
+                        top = CulinarySpacing.sm,
                     )
                     .fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(5.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
+            horizontalAlignment = Alignment.Start,
         ) {
             olderFeedbacks.forEachIndexed { index, feedback ->
                 key(feedback.id) {
