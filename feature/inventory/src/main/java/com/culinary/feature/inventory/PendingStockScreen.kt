@@ -109,7 +109,10 @@ class PendingStockViewModel @Inject constructor(
         val id = _uiState.value.deleteItemId ?: return
         viewModelScope.launch {
             runCatching { repository.delete(id) }
-                .onSuccess { _uiState.update { it.copy(deleteItemId = null) }; load() }
+                .onSuccess {
+                    _uiState.update { it.copy(deleteItemId = null) }
+                    load()
+                }
                 .onFailure { error -> _uiState.update { state -> state.copy(deleteItemId = null, error = error.message ?: "删除失败。") } }
         }
     }
@@ -126,7 +129,10 @@ class PendingStockViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.update { it.copy(isSaving = true, error = null) }
             runCatching { repository.replaceAllocations(itemId, rows) }
-                .onSuccess { _uiState.update { it.copy(isSaving = false, incompleteItemId = null) }; load() }
+                .onSuccess {
+                    _uiState.update { it.copy(isSaving = false, incompleteItemId = null) }
+                    load()
+                }
                 .onFailure { error -> _uiState.update { state -> state.copy(isSaving = false, error = error.message ?: "生产日期保存失败。") } }
         }
     }
@@ -289,7 +295,10 @@ private fun PendingStockScreen(
         PendingStockDateDialog(
             item = item,
             onDismiss = { editingItem = null },
-            onSave = { rows -> onSaveDates(item.id, rows); editingItem = null },
+            onSave = { rows ->
+                onSaveDates(item.id, rows)
+                editingItem = null
+            },
         )
     }
 
