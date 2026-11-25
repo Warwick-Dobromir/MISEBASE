@@ -1,6 +1,7 @@
 package com.culinary.feature.scan
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
@@ -8,12 +9,14 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -143,68 +146,11 @@ internal fun ScanScreen(
                     )
                 }
             }
-            state.matchedArchive?.let { archive ->
-                Column(
-                    modifier =
-                        Modifier
-                            .align(Alignment.TopCenter)
-                            .padding(top = CulinarySpacing.sm)
-                            .fillMaxWidth(0.76f),
-                ) {
-                    AnimatedVisibility(visible = true) {
-                        Row(
-                            modifier =
-                                Modifier
-                                    .clip(RoundedCornerShape(26.dp))
-                                    .background(Color(0xF0141414))
-                                    .border(
-                                        1.dp,
-                                        Color.White.copy(alpha = 0.12f),
-                                        RoundedCornerShape(26.dp),
-                                    )
-                                    .padding(horizontal = 10.dp, vertical = 9.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(10.dp),
-                        ) {
-                            archive.imageUri?.takeIf { it.isNotBlank() }?.let { imageUri ->
-                                AsyncImage(
-                                    model = imageUri,
-                                    contentDescription = null,
-                                    contentScale = ContentScale.Crop,
-                                    modifier = Modifier.size(48.dp).clip(RoundedCornerShape(9.dp)),
-                                )
-                            }
-                            Column(
-                                modifier = Modifier.weight(1f),
-                                verticalArrangement = Arrangement.spacedBy(2.dp),
-                            ) {
-                                Text(
-                                    text =
-                                        archive.brand?.takeIf { it.isNotBlank() }
-                                            ?.let { "${archive.name} · $it" }
-                                            ?: archive.name,
-                                    style = MaterialTheme.typography.titleSmall,
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = Color.White,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                )
-                                archive.productSpecification?.takeIf { it.isNotBlank() }?.let { specification ->
-                                    Text(
-                                        text = specification,
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = Color.White.copy(alpha = 0.78f),
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis,
-                                    )
-                                }
-                            }
-                            if (state.successFeedbacks.isNotEmpty()) {
-                                ScanSuccessStack(feedbacks = state.successFeedbacks)
-                            }
-                        }
-                    }
-                }
+            if (state.successFeedbacks.isNotEmpty()) {
+                ScanSuccessStack(
+                    feedbacks = state.successFeedbacks,
+                    modifier = Modifier.fillMaxSize(),
+                )
             }
         }
     }
@@ -350,53 +296,124 @@ private fun ScanModeButton(
     }
 }
 
-/** 固定边长的成功徽记叠层：旧项只露出顶部边缘，最新项完整显示在最前。 */
+/** 固定在取景框上方的纵向压缩反馈：旧记录只保留名称行，最新记录完整显示。 */
 @Composable
-private fun ScanSuccessStack(feedbacks: List<ScanSuccessFeedback>) {
-    Box(
-        modifier =
-            Modifier
-                .size(width = 44.dp, height = 52.dp)
-                .clipToBounds(),
-    ) {
-        feedbacks.takeLast(3).forEachIndexed { index, feedback ->
-            key(feedback.id) {
-                val foldedOffset by animateDpAsState(
-                    targetValue = (index * 5).dp,
-                    animationSpec = spring(dampingRatio = 0.78f, stiffness = 520f),
-                    label = "scan-success-fold-${feedback.id}",
-                )
-                AnimatedVisibility(
-                    visible = feedback.visible,
-                    enter = slideInVertically(
-                        initialOffsetY = { fullHeight -> fullHeight / 2 },
-                        animationSpec = tween(180),
-                    ) +
-                        scaleIn(initialScale = 0.76f, animationSpec = tween(170)) +
-                        fadeIn(animationSpec = tween(130)),
-                    exit = scaleOut(targetScale = 0.84f, animationSpec = tween(180)) +
-                        fadeOut(animationSpec = tween(180)),
-                    modifier =
-                        Modifier
-                            .align(Alignment.TopCenter)
-                            .offset(y = foldedOffset)
-                            .zIndex(index.toFloat()),
-                ) {
-                    Box(
-                        modifier =
-                            Modifier
-                                .size(40.dp)
-                                .clip(RoundedCornerShape(10.dp))
-                                .background(Color(0xFFE7F1E9))
-                                .border(1.dp, Color(0xFFB9D1BF), RoundedCornerShape(10.dp)),
-                        contentAlignment = Alignment.Center,
+private fun ScanSuccessStack(
+    feedbacks: List<ScanSuccessFeedback>,
+    modifier: Modifier = Modifier,
+) {
+    BoxWithConstraints(modifier = modifier.clipToBounds()) {
+        val frameHeight = minOf(maxWidth * FRAME_WIDTH_RATIO, maxHeight * FRAME_HEIGHT_RATIO)
+        val frameTop = (maxHeight - frameHeight) / 2
+        val stackHeight = 112.dp
+        val stackTop = (frameTop - stackHeight - 8.dp).coerceAtLeast(8.dp)
+        val visibleFeedbacks = feedbacks.takeLast(3)
+        val olderFeedbacks = visibleFeedbacks.dropLast(1)
+        val latestFeedback = visibleFeedbacks.lastOrNull()
+
+        Column(
+            modifier =
+                Modifier
+                    .align(Alignment.TopCenter)
+                    .offset(y = stackTop)
+                    .fillMaxWidth(0.78f)
+                    .height(stackHeight)
+                    .animateContentSize(
+                        animationSpec = spring(dampingRatio = 0.86f, stiffness = 560f),
+                    ),
+            verticalArrangement = Arrangement.Bottom,
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            olderFeedbacks.forEachIndexed { index, feedback ->
+                key(feedback.id) {
+                    AnimatedVisibility(
+                        visible = feedback.visible,
+                        enter = fadeIn(tween(100)) + slideInVertically(
+                            initialOffsetY = { it / 3 },
+                            animationSpec = tween(150),
+                        ),
+                        exit = fadeOut(tween(120)) + shrinkVertically(tween(120)),
                     ) {
-                        Icon(
-                            imageVector = CulinaryIcons.CheckCircle,
-                            contentDescription = stringResource(R.string.scan_success_feedback),
-                            tint = Color(0xFF4E8A60),
-                            modifier = Modifier.size(23.dp),
-                        )
+                        Row(
+                            modifier =
+                                Modifier
+                                    .fillMaxWidth()
+                                    .height(20.dp)
+                                    .clip(RoundedCornerShape(7.dp))
+                                    .background(Color(0xF0141414).copy(alpha = if (index == 0) 0.48f else 0.72f))
+                                    .padding(horizontal = 11.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text(
+                                text = feedback.name,
+                                style = MaterialTheme.typography.labelSmall,
+                                color = Color.White.copy(alpha = 0.88f),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                        }
+                    }
+                }
+            }
+
+            latestFeedback?.let { feedback ->
+                key(feedback.id) {
+                    AnimatedVisibility(
+                        visible = feedback.visible,
+                        enter = fadeIn(tween(130)) + slideInVertically(
+                            initialOffsetY = { it / 3 },
+                            animationSpec = tween(170),
+                        ),
+                        exit = fadeOut(tween(140)) + shrinkVertically(tween(140)),
+                    ) {
+                        Row(
+                            modifier =
+                                Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(10.dp))
+                                    .background(Color(0xF0141414))
+                                    .border(
+                                        1.dp,
+                                        Color.White.copy(alpha = 0.12f),
+                                        RoundedCornerShape(10.dp),
+                                    )
+                                    .padding(horizontal = 12.dp, vertical = 9.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(9.dp),
+                        ) {
+                            Column(
+                                modifier = Modifier.weight(1f),
+                                verticalArrangement = Arrangement.spacedBy(2.dp),
+                            ) {
+                                Text(
+                                    text = feedback.name,
+                                    style = MaterialTheme.typography.titleSmall,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = Color.White,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                )
+                                val detail = listOfNotNull(
+                                    feedback.brand?.takeIf { it.isNotBlank() },
+                                    feedback.specification?.takeIf { it.isNotBlank() },
+                                ).joinToString(" · ")
+                                if (detail.isNotBlank()) {
+                                    Text(
+                                        text = detail,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = Color.White.copy(alpha = 0.78f),
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
+                                    )
+                                }
+                            }
+                            Icon(
+                                imageVector = CulinaryIcons.CheckCircle,
+                                contentDescription = stringResource(R.string.scan_success_feedback),
+                                tint = Color(0xFFD2BA8A),
+                                modifier = Modifier.size(19.dp),
+                            )
+                        }
                     }
                 }
             }
