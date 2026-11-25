@@ -3,6 +3,7 @@ package com.culinary.core.database.dao
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.Query
+import androidx.room.Update
 import com.culinary.core.database.entity.ProductEntity
 
 /** 商品读写。 */
@@ -10,6 +11,9 @@ import com.culinary.core.database.entity.ProductEntity
 interface ProductDao {
     @Insert
     suspend fun insert(entity: ProductEntity)
+
+    @Update
+    suspend fun update(entity: ProductEntity)
 
     @Query("SELECT * FROM product WHERE id = :id")
     suspend fun findById(id: String): ProductEntity?

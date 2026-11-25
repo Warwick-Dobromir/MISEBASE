@@ -119,15 +119,19 @@ class InventoryRepositoryImpl
         override suspend fun saveProduct(product: Product): Outcome<ProductId> =
             read {
                 val now = clock.now().toEpochMilli()
-                productDao.insert(
-                    ProductMapper.toEntity(
-                        product,
-                        normalizedName = NameText.normalize(product.name),
-                        createdAt = now,
-                        updatedAt = now,
-                        revision = 1,
-                    ),
+                val existing = productDao.findById(product.id.value)
+                val entity = ProductMapper.toEntity(
+                    product,
+                    normalizedName = NameText.normalize(product.name),
+                    createdAt = existing?.createdAt ?: now,
+                    updatedAt = now,
+                    revision = (existing?.revision ?: 0) + 1,
                 )
+                if (existing == null) {
+                    productDao.insert(entity)
+                } else {
+                    productDao.update(entity)
+                }
                 product.id
             }
 
