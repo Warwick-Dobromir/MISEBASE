@@ -759,7 +759,7 @@ private fun ArchiveEditScreen(
                 val archiveDetail = state.detail
                 if (!archiveDetail?.links.isNullOrEmpty()) {
                     archiveDetail!!.links.forEach { link ->
-                        InventoryArchiveEditField("默认供应商", state.supplierId, onSupplierChange, "输入供应商")
+                        ArchiveEditReadOnlyRow("默认供应商", state.supplierId.takeIf { it.isNotBlank() }?.let { "已绑定" } ?: "未设置")
                         InventoryArchiveEditField("采购价格", state.purchasePrice, onPurchasePriceChange, "输入单价", state.fieldErrors["price"])
                         ArchiveEditReadOnlyRow("价格单位", "元 / ${link.product.contentUnit.symbol}")
                     }
