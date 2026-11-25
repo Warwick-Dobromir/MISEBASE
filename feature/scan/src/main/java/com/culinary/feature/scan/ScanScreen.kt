@@ -1,8 +1,6 @@
 package com.culinary.feature.scan
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.animateContentSize
-import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -310,10 +308,7 @@ private fun ScanSuccessStack(
                     .align(Alignment.TopCenter)
                     .offset(y = stackTop)
                     .fillMaxWidth(0.78f)
-                    .height(stackHeight)
-                    .animateContentSize(
-                        animationSpec = spring(dampingRatio = 0.86f, stiffness = 560f),
-                    ),
+                    .height(stackHeight),
             verticalArrangement = Arrangement.Bottom,
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
@@ -321,10 +316,12 @@ private fun ScanSuccessStack(
                 key(feedback.id) {
                     AnimatedVisibility(
                         visible = feedback.visible,
-                        enter = fadeIn(tween(100)) + slideInVertically(
-                            initialOffsetY = { it / 3 },
-                            animationSpec = tween(150),
-                        ),
+                        enter =
+                            fadeIn(tween(100)) +
+                                slideInVertically(
+                                    initialOffsetY = { it / 3 },
+                                    animationSpec = tween(150),
+                                ),
                         exit = fadeOut(tween(120)) + shrinkVertically(tween(120)),
                     ) {
                         Row(
@@ -333,7 +330,11 @@ private fun ScanSuccessStack(
                                     .fillMaxWidth()
                                     .height(20.dp)
                                     .clip(RoundedCornerShape(7.dp))
-                                    .background(Color(0xF0141414).copy(alpha = if (index == 0) 0.48f else 0.72f))
+                                    .background(
+                                        Color(0xF0141414).copy(
+                                            alpha = if (index == 0) 0.48f else 0.72f,
+                                        ),
+                                    )
                                     .padding(horizontal = 11.dp),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
@@ -353,10 +354,12 @@ private fun ScanSuccessStack(
                 key(feedback.id) {
                     AnimatedVisibility(
                         visible = feedback.visible,
-                        enter = fadeIn(tween(130)) + slideInVertically(
-                            initialOffsetY = { it / 3 },
-                            animationSpec = tween(170),
-                        ),
+                        enter =
+                            fadeIn(tween(130)) +
+                                slideInVertically(
+                                    initialOffsetY = { it / 3 },
+                                    animationSpec = tween(170),
+                                ),
                         exit = fadeOut(tween(140)) + shrinkVertically(tween(140)),
                     ) {
                         Row(
