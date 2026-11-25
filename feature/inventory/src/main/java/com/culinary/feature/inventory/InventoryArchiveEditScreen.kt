@@ -146,6 +146,9 @@ data class ArchiveEditUiState(
                 .firstOrNull { it.id.value == unitId }
                 ?.let { "${it.name} (${it.symbol})" }
 
+    val purchaseUnitLabel: String?
+        get() = options.units.firstOrNull { it.id.value == purchaseUnitId }?.let { it.name + " (" + it.symbol + ")" }
+
     val locationLabel: String?
         get() =
             options.locations
@@ -630,6 +633,10 @@ private sealed interface EditPicker {
     data object Sauce : EditPicker
 
     data object Product : EditPicker
+
+    data object PurchaseUnit : EditPicker
+
+    data object ShelfLifeCalculation : EditPicker
 }
 
 private data class PickerOption(
@@ -784,7 +791,7 @@ private fun ArchiveEditScreen(
                 }
                 ArchiveEditorSectionHeader(index = "", english = "UNIT & MEASUREMENT", title = "规格与计量")
                 EditPickerField(
-                    label = "库存基本单位",
+                    label = "库存单位",
                     value = state.unitLabel,
                     placeholder = "请选择库存单位",
                     error = state.fieldErrors["unit"],
@@ -794,7 +801,12 @@ private fun ArchiveEditScreen(
                     ArchiveEditReadOnlyRow("计量维度", unit.dimension.name)
                     if (unit.isApproximate) ArchiveEditReadOnlyRow("换算属性", "近似换算")
                 }
-                InventoryArchiveEditField("采购单位", state.purchaseUnitId, onPurchaseUnitIdChange, "例如：块")
+                EditPickerField(
+                    label = "采购单位",
+                    value = state.purchaseUnitLabel,
+                    placeholder = "请选择采购单位",
+                    onClick = { picker = EditPicker.PurchaseUnit },
+                )
                 InventoryArchiveEditField("采购规格", state.purchaseSpecification, onPurchaseSpecificationChange, "例如：1 kg / 块")
                 InventoryArchiveEditField("单位换算", state.unitConversion, onUnitConversionChange, "例如：1 块 = 1 kg")
                 InventoryArchiveEditField("计量精度", state.measurementPrecision, onMeasurementPrecisionChange, "小数位数")
@@ -818,7 +830,7 @@ private fun ArchiveEditScreen(
                     Switch(checked = state.batchManagementEnabled, onCheckedChange = onBatchManagementChange)
                 }
                 EditPickerField(
-                    label = "默认库位",
+                    label = "默认存放位置",
                     value = state.locationLabel,
                     placeholder = "未指定库位",
                     error = state.fieldErrors["location"],
@@ -829,7 +841,12 @@ private fun ArchiveEditScreen(
                     Text("保质期管理", modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
                     Switch(checked = state.shelfLifeEnabled, onCheckedChange = onShelfLifeEnabledChange)
                 }
-                InventoryArchiveEditField("计算方式", state.shelfLifeCalculationMethod, onShelfLifeCalculationMethodChange, "例如：生产日期起算")
+                EditPickerField(
+                    label = "计算方式",
+                    value = state.shelfLifeCalculationMethod.takeIf { it.isNotBlank() },
+                    placeholder = "请选择计算方式",
+                    onClick = { picker = EditPicker.ShelfLifeCalculation },
+                )
                 InventoryArchiveEditField("保质期时长", state.shelfLifeDays, onShelfLifeChange, "输入天数", state.fieldErrors["shelfLife"])
                 InventoryArchiveEditField("开封后保质期", state.openedShelfLifeDays, onOpenedShelfLifeChange, "输入天数")
                 Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
@@ -967,6 +984,35 @@ private fun ArchiveEditScreen(
                 },
             )
 
+        is EditPicker.PurchaseUnit ->
+            OptionPickerDialog(
+                title = "选择采购单位",
+                options = state.options.units.map { PickerOption(it.id.value, it.name + " (" + it.symbol + ")") },
+                selectedId = state.purchaseUnitId,
+                allowNone = true,
+                onDismiss = { picker = null },
+                onSelect = { id ->
+                    onPurchaseUnitIdChange(id.orEmpty())
+                    picker = null
+                },
+            )
+
+        is EditPicker.ShelfLifeCalculation ->
+            OptionPickerDialog(
+                title = "选择保质期计算方式",
+                options = listOf(
+                    PickerOption("PRODUCTION_DATE", "生产日期起算"),
+                    PickerOption("RECEIPT_DATE", "入库日期起算"),
+                    PickerOption("OPENED_DATE", "开封日期起算"),
+                ),
+                selectedId = state.shelfLifeCalculationMethod,
+                allowNone = false,
+                onDismiss = { picker = null },
+                onSelect = { id ->
+                    id?.let(onShelfLifeCalculationMethodChange)
+                    picker = null
+                },
+            )
         is EditPicker.Product ->
             OptionPickerDialog(
                 title = "选择采购商品",
