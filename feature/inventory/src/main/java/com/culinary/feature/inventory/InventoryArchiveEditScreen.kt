@@ -23,6 +23,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -64,7 +65,9 @@ import com.culinary.core.domain.model.Unit as StockUnit
 import com.culinary.core.domain.usecase.inventory.ArchiveFormOptions
 import com.culinary.core.domain.usecase.inventory.GetInventoryArchiveDetailUseCase
 import com.culinary.core.domain.usecase.inventory.ListArchiveFormOptionsUseCase
+import com.culinary.core.domain.usecase.inventory.LinkArchiveProductUseCase
 import com.culinary.core.domain.usecase.inventory.SaveInventoryArchiveUseCase
+import com.culinary.core.domain.usecase.inventory.UnlinkArchiveProductUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.Dispatchers
@@ -99,6 +102,12 @@ data class ArchiveEditUiState(
     val isSaving: Boolean = false,
     val error: String? = null,
     val savedId: String? = null,
+    val linkProductId: String? = null,
+    val linkRatio: String = "1",
+    val linkIsDefault: Boolean = false,
+    val isLinking: Boolean = false,
+    val linkError: String? = null,
+    val linkMessage: String? = null,
 ) {
     val categoryLabel: String?
         get() =
@@ -123,6 +132,11 @@ data class ArchiveEditUiState(
             options.sauces
                 .firstOrNull { it.id == sauceId }
                 ?.name
+
+    val linkProductLabel: String?
+        get() = options.products.firstOrNull { it.id.value == linkProductId }?.let { product ->
+            product.sku?.let { "${product.name} · $it" } ?: product.name
+        }
 }
 
 @HiltViewModel
@@ -133,6 +147,8 @@ class ArchiveEditViewModel
         private val formOptions: ListArchiveFormOptionsUseCase,
         private val saveArchive: SaveInventoryArchiveUseCase,
         private val archiveDetail: GetInventoryArchiveDetailUseCase,
+        private val linkArchiveProduct: LinkArchiveProductUseCase,
+        private val unlinkArchiveProduct: UnlinkArchiveProductUseCase,
     ) : ViewModel() {
         private val archiveId: String? =
             savedStateHandle.get<String>(InventoryRoutes.ARG_ARCHIVE_ID)?.takeIf { it.isNotBlank() }
@@ -230,6 +246,84 @@ class ArchiveEditViewModel
         fun onImageUriChange(value: String) = update("imageUri") { it.copy(imageUri = value) }
 
         fun onSauceChange(sauceId: String?) = update("sauce") { it.copy(sauceId = sauceId) }
+
+        fun onLinkProductSelected(productId: String?) {
+            _uiState.update { it.copy(linkProductId = productId, linkError = null, linkMessage = null) }
+        }
+
+        fun onLinkRatioChange(value: String) {
+            _uiState.update { it.copy(linkRatio = value, linkError = null, linkMessage = null) }
+        }
+
+        fun onLinkDefaultChange(value: Boolean) {
+            _uiState.update { it.copy(linkIsDefault = value, linkError = null, linkMessage = null) }
+        }
+
+        fun linkProduct() {
+            val state = _uiState.value
+            val archiveId = state.archiveId?.takeIf { it.isNotBlank() }
+            if (state.isLinking) return
+            if (archiveId == null) {
+                _uiState.update { it.copy(linkError = "请先保存库存档案，再关联采购商品。") }
+                return
+            }
+            val productId = state.linkProductId
+            if (productId.isNullOrBlank()) {
+                _uiState.update { it.copy(linkError = "请选择采购商品。") }
+                return
+            }
+            val ratio = state.linkRatio.trim().toDoubleOrNull()
+            if (ratio == null || !ratio.isFinite() || ratio <= 0.0) {
+                _uiState.update { it.copy(linkError = "换算比必须是大于 0 的数字。") }
+                return
+            }
+            viewModelScope.launch {
+                _uiState.update { it.copy(isLinking = true, linkError = null, linkMessage = null) }
+                when (val result = linkArchiveProduct(archiveId, productId, ratio, state.linkIsDefault)) {
+                    is Outcome.Failure ->
+                        _uiState.update {
+                            it.copy(isLinking = false, linkError = InventoryErrorMessages.describe(result.error))
+                        }
+                    is Outcome.Success -> refreshLinks(archiveId, "已关联采购商品。")
+                }
+            }
+        }
+
+        fun unlinkProduct(productId: String) {
+            val state = _uiState.value
+            val archiveId = state.archiveId?.takeIf { it.isNotBlank() } ?: return
+            if (state.isLinking) return
+            viewModelScope.launch {
+                _uiState.update { it.copy(isLinking = true, linkError = null, linkMessage = null) }
+                when (val result = unlinkArchiveProduct(archiveId, productId)) {
+                    is Outcome.Failure ->
+                        _uiState.update {
+                            it.copy(isLinking = false, linkError = InventoryErrorMessages.describe(result.error))
+                        }
+                    is Outcome.Success -> refreshLinks(archiveId, "已解除关联。")
+                }
+            }
+        }
+
+        private suspend fun refreshLinks(archiveId: String, message: String) {
+            when (val result = archiveDetail(archiveId)) {
+                is Outcome.Success ->
+                    _uiState.update {
+                        it.copy(
+                            detail = result.value,
+                            isLinking = false,
+                            linkProductId = null,
+                            linkRatio = "1",
+                            linkIsDefault = false,
+                            linkMessage = message,
+                        )
+                    }
+                is Outcome.Failure ->
+                    _uiState.update {
+                        it.copy(isLinking = false, linkError = InventoryErrorMessages.describe(result.error))
+                    }
+            }
+        }
 
         private fun update(
             field: String,
@@ -388,6 +482,11 @@ fun ArchiveEditRoute(
         onDescriptionChange = viewModel::onDescriptionChange,
         onImageUriChange = viewModel::onImageUriChange,
         onSauceChange = viewModel::onSauceChange,
+        onLinkProductSelected = viewModel::onLinkProductSelected,
+        onLinkRatioChange = viewModel::onLinkRatioChange,
+        onLinkDefaultChange = viewModel::onLinkDefaultChange,
+        onLinkProduct = viewModel::linkProduct,
+        onUnlinkProduct = viewModel::unlinkProduct,
     )
 }
 
@@ -399,6 +498,8 @@ private sealed interface EditPicker {
     data object Location : EditPicker
 
     data object Sauce : EditPicker
+
+    data object Product : EditPicker
 }
 
 private data class PickerOption(
@@ -424,6 +525,11 @@ private fun ArchiveEditScreen(
     onDescriptionChange: (String) -> Unit,
     onImageUriChange: (String) -> Unit,
     onSauceChange: (String?) -> Unit,
+    onLinkProductSelected: (String?) -> Unit,
+    onLinkRatioChange: (String) -> Unit,
+    onLinkDefaultChange: (Boolean) -> Unit,
+    onLinkProduct: () -> Unit,
+    onUnlinkProduct: (String) -> Unit,
 ) {
     var picker by remember { mutableStateOf<EditPicker?>(null) }
     val context = LocalContext.current.applicationContext
@@ -567,7 +673,58 @@ private fun ArchiveEditScreen(
                             "${formatAmount(link.product.contentQty)} ${link.product.contentUnit.symbol} · 换算 ${formatAmount(link.conversionRatio)} ${archiveDetail.archive.stockUnit.symbol}" +
                                 if (link.isDefault) " · 默认商品" else "",
                         )
+                        CulinaryTextButton(
+                            text = "解除关联",
+                            onClick = { onUnlinkProduct(link.product.id.value) },
+                            enabled = !state.isLinking,
+                            danger = true,
+                        )
                     }
+                }
+                if (state.isNew) {
+                    ArchiveEditReadOnlyRow("商品关联", "保存档案后可关联采购商品")
+                } else {
+                    EditPickerField(
+                        label = "选择采购商品",
+                        value = state.linkProductLabel,
+                        placeholder = "请选择未关联商品",
+                        error = state.linkError,
+                        onClick = { picker = EditPicker.Product },
+                    )
+                    ArchiveEditorInlineField(
+                        value = state.linkRatio,
+                        onValueChange = onLinkRatioChange,
+                        placeholder = "换算比，默认 1",
+                        keyboardType = KeyboardType.Decimal,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(vertical = CulinarySpacing.xs),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("设为默认采购商品", style = MaterialTheme.typography.bodyMedium)
+                            Text(
+                                "默认商品用于入库时预选",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                        Switch(checked = state.linkIsDefault, onCheckedChange = onLinkDefaultChange)
+                    }
+                    CulinaryTextButton(
+                        text = if (state.isLinking) "处理中" else "＋ 关联采购商品",
+                        onClick = onLinkProduct,
+                        enabled = !state.isLinking && state.linkProductId != null,
+                    )
+                }
+                state.linkMessage?.let { message ->
+                    Text(
+                        text = message,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.secondary,
+                        modifier = Modifier.padding(vertical = CulinarySpacing.xs),
+                    )
                 }
                 ArchiveEditorSectionHeader(index = "", english = "STOCK OVERVIEW", title = "库存情况")
                 ArchiveEditReadOnlyRow("当前库存", archiveDetail?.let { "${formatAmount(it.row.onHand)} ${it.archive.stockUnit.symbol}" } ?: "暂无库存数据")
@@ -676,6 +833,26 @@ private fun ArchiveEditScreen(
                 onDismiss = { picker = null },
                 onSelect = { id ->
                     onLocationChange(id)
+                    picker = null
+                },
+            )
+
+        is EditPicker.Product ->
+            OptionPickerDialog(
+                title = "选择采购商品",
+                options = state.options.products
+                    .filterNot { product -> state.detail?.links?.any { it.product.id == product.id } == true }
+                    .map { product ->
+                        PickerOption(
+                            product.id.value,
+                            product.sku?.let { "${product.name} · $it" } ?: product.name,
+                        )
+                    },
+                selectedId = state.linkProductId,
+                allowNone = false,
+                onDismiss = { picker = null },
+                onSelect = { id ->
+                    onLinkProductSelected(id)
                     picker = null
                 },
             )
