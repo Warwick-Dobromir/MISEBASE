@@ -66,7 +66,7 @@ class ScanConfirmUiTest {
         compose.onNodeWithText("EAN13").assertIsDisplayed()
         compose.onNodeWithText("相机识别").assertIsDisplayed()
         compose.onNodeWithText("低筋面粉").assertIsDisplayed()
-        compose.onNodeWithText("确认导入").assertIsEnabled()
+        compose.onNodeWithText("下一步：建立库存档案").assertIsEnabled()
     }
 
     @Test
@@ -155,7 +155,7 @@ class ScanConfirmUiTest {
         }
 
         compose.onNodeWithText("新食材名称").performScrollTo().assertIsDisplayed()
-        compose.onNodeWithText("确认导入").assertIsEnabled()
+        compose.onNodeWithText("下一步：建立库存档案").assertIsEnabled()
     }
 
     @Test

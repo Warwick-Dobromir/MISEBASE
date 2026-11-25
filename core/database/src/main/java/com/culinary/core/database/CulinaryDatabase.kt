@@ -29,6 +29,7 @@ import com.culinary.core.database.dao.InventoryIssueDao
 import com.culinary.core.database.dao.InventoryLedgerDao
 import com.culinary.core.database.dao.InventoryLifecycleDao
 import com.culinary.core.database.dao.InventoryReservationDao
+import com.culinary.core.database.dao.PendingStockDao
 import com.culinary.core.database.dao.InventoryStocktakeDao
 import com.culinary.core.database.dao.KitchenReferenceContentDao
 import com.culinary.core.database.dao.KitchenReferenceDao
@@ -77,6 +78,8 @@ import com.culinary.core.database.entity.InventoryLocationTransferEntity
 import com.culinary.core.database.entity.InventoryPrintJobEntity
 import com.culinary.core.database.entity.InventoryReservationEntity
 import com.culinary.core.database.entity.InventoryStocktakeEntity
+import com.culinary.core.database.entity.PendingStockDateAllocationEntity
+import com.culinary.core.database.entity.PendingStockItemEntity
 import com.culinary.core.database.entity.InventoryStocktakeLineEntity
 import com.culinary.core.database.entity.KitchenReferenceContentEntity
 import com.culinary.core.database.entity.KitchenReferenceEntity
@@ -101,7 +104,7 @@ import com.culinary.core.database.entity.SupplierEntity
 import com.culinary.core.database.entity.UnitEntity
 
 /** Single source of truth for Room and startup compatibility checks. */
-const val CULINARY_DATABASE_SCHEMA_VERSION: Int = 13
+const val CULINARY_DATABASE_SCHEMA_VERSION: Int = 14
 
 /**
  * CULINARY 数据库（schema v11）。
@@ -170,6 +173,8 @@ const val CULINARY_DATABASE_SCHEMA_VERSION: Int = 13
         InventoryPrintJobEntity::class,
         InventoryStocktakeEntity::class,
         InventoryStocktakeLineEntity::class,
+        PendingStockItemEntity::class,
+        PendingStockDateAllocationEntity::class,
     ],
     version = CULINARY_DATABASE_SCHEMA_VERSION,
     exportSchema = true,
@@ -225,6 +230,8 @@ abstract class CulinaryDatabase : RoomDatabase() {
     abstract fun inventoryIssueDao(): InventoryIssueDao
 
     abstract fun inventoryStocktakeDao(): InventoryStocktakeDao
+
+    abstract fun pendingStockDao(): PendingStockDao
 
     abstract fun productionPlanDao(): ProductionPlanDao
 

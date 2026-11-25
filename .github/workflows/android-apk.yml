@@ -1,11 +1,11 @@
 name: Android APK
-# Rebuild latest archive navigation changes.
+# Build the pending-stock inventory workflow.
 # Re-run signed build after repository signing secrets were configured.
 # Rebuild after coroutine-safe archive auto-scroll correction.
 
 on:
   push:
-    branches: [main, feat/ingredient-detail-rebuild-20261121, fix/archive-category-interactions, fix/archive-sort-feedback, build/pen-flip-90fb110, ui/subcategory-search-sort-20261118, fix/archive-sort-autoscroll-20261118, fix/archive-sort-elastic-20261118, fix/archive-sort-save-actions-20261118, fix/detail-relations-follow-editor-state, work/inventory-subcategory-full-20261125, fix/inventory-archive-reference-match-20261125, fix/inventory-archive-reference-implementation-20261126, fix/inventory-archive-edit-layout-20261126, fix/scan-multiframe-checksum-20261125]
+    branches: [main, feat/ingredient-detail-rebuild-20261121, fix/archive-category-interactions, fix/archive-sort-feedback, build/pen-flip-90fb110, ui/subcategory-search-sort-20261118, fix/archive-sort-autoscroll-20261118, fix/archive-sort-elastic-20261118, fix/archive-sort-save-actions-20261118, fix/detail-relations-follow-editor-state, work/inventory-subcategory-full-20261125, fix/inventory-archive-reference-match-20261125, fix/inventory-archive-reference-implementation-20261126, fix/inventory-archive-edit-layout-20261126, fix/scan-multiframe-checksum-20261125, feat/pending-stock-20261126, feat/scan-mode-feedback-20261126]
   workflow_dispatch:
 
 permissions:
@@ -59,7 +59,7 @@ jobs:
           AAPT="$(find "$ANDROID_HOME/build-tools" -type f -name aapt | sort -V | tail -n 1)"
           test -x "$APKSIGNER"
           test -x "$AAPT"
-          "$AAPT" dump badging "$APK" | grep -F "package: name='com.culinary' versionCode='11' versionName='1.1.0'"
+          "$AAPT" dump badging "$APK" | grep -F "package: name='com.culinary' versionCode='12' versionName='1.2.0'"
           CERT_OUTPUT="$("$APKSIGNER" verify --print-certs "$APK" 2>&1)"
           printf '%s\\n' "$CERT_OUTPUT"
           ACTUAL="$(printf '%s\\n' "$CERT_OUTPUT" | grep -i 'certificate SHA-256 digest:' | head -n 1 | sed -E 's/.*digest:[[:space:]]*//' | tr -d ': ' | tr '[:upper:]' '[:lower:]')"
@@ -74,7 +74,7 @@ jobs:
         if: github.ref != 'refs/heads/main'
         uses: actions/upload-artifact@v4
         with:
-          name: MISEBASE-pen-flip-90fb110
+          name: MISEBASE-scan-mode-feedback-20261126
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
           retention-days: 90

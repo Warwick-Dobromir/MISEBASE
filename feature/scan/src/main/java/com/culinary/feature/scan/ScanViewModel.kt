@@ -8,6 +8,8 @@ import com.culinary.core.domain.barcode.ScanCapture
 import com.culinary.core.domain.barcode.ScanFrameGate
 import com.culinary.core.domain.barcode.ScanSource
 import com.culinary.core.domain.repository.InventoryArchiveRepository
+import com.culinary.core.domain.repository.PendingStockDraft
+import com.culinary.core.domain.repository.PendingStockRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -32,12 +34,33 @@ class ScanViewModel
         private val gate: ScanFrameGate,
         private val clock: Clock,
         private val archiveRepository: InventoryArchiveRepository?,
+        private val pendingStockRepository: PendingStockRepository? = null,
     ) : ViewModel() {
         private val _uiState = MutableStateFlow(ScanUiState())
         val uiState: StateFlow<ScanUiState> = _uiState.asStateFlow()
 
-        private var matchedBarcode: String? = null
         private var dismissMatchJob: Job? = null
+        private var feedbackSequence = 0L
+
+        fun onToggleMode() {
+            if (_uiState.value.lookupInProgress) return
+            gate.reset()
+            dismissMatchJob?.cancel()
+            _uiState.update { state ->
+                state.copy(
+                    mode = if (state.mode == ScanMode.STOCK_IN) ScanMode.VIEW_DETAILS else ScanMode.STOCK_IN,
+                    matchedArchive = null,
+                    successFeedbacks = emptyList(),
+                    openArchiveId = null,
+                    status = null,
+                    error = null,
+                )
+            }
+        }
+
+        fun onArchiveNavigationConsumed() {
+            _uiState.update { it.copy(openArchiveId = null) }
+        }
 
         fun onCameraAvailability(available: Boolean) {
             _uiState.update { state ->
@@ -118,7 +141,17 @@ class ScanViewModel
             val repository = archiveRepository
             // Null is used only by isolated ViewModel tests; production Hilt injects the repository.
             if (repository == null) {
-                _uiState.update { it.copy(lookupInProgress = false, pendingCapture = capture) }
+                if (_uiState.value.mode == ScanMode.VIEW_DETAILS) {
+                    _uiState.update { state ->
+                        state.copy(
+                            lookupInProgress = false,
+                            scanning = state.hasCamera && state.cameraAccess == CameraAccessState.GRANTED,
+                            error = "当前无法查询库存档案，请重试。",
+                        )
+                    }
+                } else {
+                    _uiState.update { it.copy(lookupInProgress = false, pendingCapture = capture) }
+                }
                 return
             }
             viewModelScope.launch {
@@ -140,34 +173,107 @@ class ScanViewModel
                                 it.barcode?.trim()?.equals(capture.rawValue.trim(), ignoreCase = false) == true
                             }
                         if (archive == null) {
-                            _uiState.update { it.copy(lookupInProgress = false, pendingCapture = capture) }
-                        } else {
+                            if (_uiState.value.mode == ScanMode.VIEW_DETAILS) {
+                                gate.resume()
+                                _uiState.update { state ->
+                                    state.copy(
+                                        lookupInProgress = false,
+                                        scanning = state.hasCamera && state.cameraAccess == CameraAccessState.GRANTED,
+                                        error = "未找到对应库存档案。",
+                                    )
+                                }
+                            } else {
+                                _uiState.update { it.copy(lookupInProgress = false, pendingCapture = capture) }
+                            }
+                            return@launch
+                        }
+
+                        if (_uiState.value.mode == ScanMode.VIEW_DETAILS) {
                             gate.resume()
-                            val shouldShow = matchedBarcode != capture.normalizedValue
-                            matchedBarcode = capture.normalizedValue
                             _uiState.update { state ->
                                 state.copy(
                                     lookupInProgress = false,
-                                    scanning = state.hasCamera && state.cameraAccess == CameraAccessState.GRANTED,
-                                    manualEntry =
-                                        if (state.hasCamera && state.cameraAccess == CameraAccessState.GRANTED) {
-                                            false
-                                        } else {
-                                            state.manualEntry
-                                        },
-                                    matchedArchive = if (shouldShow) archive else state.matchedArchive,
+                                    scanning = false,
+                                    matchedArchive = null,
+                                    openArchiveId = archive.id,
+                                    status = null,
                                     error = null,
                                 )
                             }
-                            if (shouldShow) {
-                                dismissMatchJob?.cancel()
-                                dismissMatchJob =
-                                    viewModelScope.launch {
-                                        delay(MATCH_NOTICE_MILLIS)
-                                        _uiState.update { it.copy(matchedArchive = null) }
-                                    }
+                            return@launch
+                        }
+
+                        val pendingRepository = pendingStockRepository
+                        val added =
+                            pendingRepository != null &&
+                                runCatching {
+                                    val links =
+                                        when (val linkResult = repository.archiveLinks(archive.id)) {
+                                            is Outcome.Success -> linkResult.value
+                                            is Outcome.Failure -> emptyList()
+                                        }
+                                    pendingRepository.addOrIncrement(
+                                        PendingStockDraft(
+                                            archiveId = archive.id,
+                                            name = archive.name,
+                                            brand = archive.brand,
+                                            specification = archive.productSpecification,
+                                            imageUri = archive.imageUri,
+                                            stockUnitId = archive.stockUnit.id.value,
+                                            sourceProductId = links.firstOrNull { it.isDefault }?.product?.id?.value
+                                                ?: links.firstOrNull()?.product?.id?.value,
+                                        ),
+                                    )
+                                }.isSuccess
+
+                        gate.resume()
+                        val feedback = if (added) ScanSuccessFeedback(++feedbackSequence) else null
+                        _uiState.update { state ->
+                            state.copy(
+                                lookupInProgress = false,
+                                scanning = state.hasCamera && state.cameraAccess == CameraAccessState.GRANTED,
+                                manualEntry =
+                                    if (state.hasCamera && state.cameraAccess == CameraAccessState.GRANTED) {
+                                        false
+                                    } else {
+                                        state.manualEntry
+                                    },
+                                matchedArchive = archive,
+                                successFeedbacks =
+                                    feedback?.let { (state.successFeedbacks + it).takeLast(MAX_SUCCESS_FEEDBACKS) }
+                                        ?: state.successFeedbacks,
+                                status = null,
+                                error =
+                                    when {
+                                        added -> null
+                                        pendingRepository == null -> "待入库服务不可用，请重试。"
+                                        else -> "加入待入库失败，请重试。"
+                                    },
+                            )
+                        }
+
+                        if (feedback != null) {
+                            viewModelScope.launch {
+                                delay(SUCCESS_FEEDBACK_MILLIS - SUCCESS_FEEDBACK_EXIT_MILLIS)
+                                _uiState.update { state ->
+                                    state.copy(
+                                        successFeedbacks = state.successFeedbacks.map {
+                                            if (it.id == feedback.id) it.copy(visible = false) else it
+                                        },
+                                    )
+                                }
+                                delay(SUCCESS_FEEDBACK_EXIT_MILLIS)
+                                _uiState.update { state ->
+                                    state.copy(successFeedbacks = state.successFeedbacks.filterNot { it.id == feedback.id })
+                                }
                             }
                         }
+                        dismissMatchJob?.cancel()
+                        dismissMatchJob =
+                            viewModelScope.launch {
+                                delay(MATCH_NOTICE_MILLIS)
+                                _uiState.update { it.copy(matchedArchive = null) }
+                            }
                     }
                 }
             }
@@ -176,7 +282,6 @@ class ScanViewModel
         /** 返回扫码页时清除本次会话的去抖记录，允许重新识别同一条码。 */
         fun onResumeScanning() {
             gate.reset()
-            matchedBarcode = null
             dismissMatchJob?.cancel()
             _uiState.update { state ->
                 state.copy(
@@ -268,5 +373,8 @@ class ScanViewModel
         private companion object {
             const val TORCH_UNSUPPORTED = "此设备不支持手电筒。"
             const val MATCH_NOTICE_MILLIS = 2_600L
+            const val SUCCESS_FEEDBACK_MILLIS = 1_800L
+            const val SUCCESS_FEEDBACK_EXIT_MILLIS = 180L
+            const val MAX_SUCCESS_FEEDBACKS = 3
         }
     }

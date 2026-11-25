@@ -1,6 +1,14 @@
 package com.culinary.feature.scan
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -12,6 +20,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -21,9 +30,12 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -35,6 +47,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.zIndex
 import coil3.compose.AsyncImage
 import com.culinary.core.designsystem.component.BrandPageHeader
 import com.culinary.core.designsystem.component.CulinaryButton
@@ -67,6 +80,7 @@ internal fun ScanScreen(
     onToggleTorch: () -> Unit,
     onResumeScanning: () -> Unit,
     onBack: () -> Unit,
+    onToggleMode: () -> Unit,
     onDismissTorchNotice: () -> Unit,
     cameraContent: @Composable () -> Unit,
     modifier: Modifier = Modifier,
@@ -88,8 +102,9 @@ internal fun ScanScreen(
                         onOpenManualEntry = onOpenManualEntry,
                         onResumeScanning = onResumeScanning,
                     )
-                    ScanBackButton(
-                        onBack = onBack,
+                    ScanModeButton(
+                        state = state,
+                        onToggleMode = onToggleMode,
                         modifier = Modifier.align(Alignment.TopStart).padding(CulinarySpacing.sm),
                     )
                 }
@@ -125,14 +140,6 @@ internal fun ScanScreen(
                         message = message,
                         actionLabel = stringResource(R.string.scan_retry),
                         onAction = onDismissTorchNotice,
-                    )
-                }
-                state.status?.let { message ->
-                    Text(
-                        text = message,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.padding(CulinarySpacing.md),
                     )
                 }
             }
@@ -191,6 +198,9 @@ internal fun ScanScreen(
                                         overflow = TextOverflow.Ellipsis,
                                     )
                                 }
+                            }
+                            if (state.successFeedbacks.isNotEmpty()) {
+                                ScanSuccessStack(feedbacks = state.successFeedbacks)
                             }
                         }
                     }
@@ -251,6 +261,40 @@ private fun CameraActions(
         verticalArrangement = Arrangement.Bottom,
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(3.dp),
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                Icon(
+                    imageVector = if (state.mode == ScanMode.STOCK_IN) CulinaryIcons.Inventory else CulinaryIcons.Search,
+                    contentDescription = null,
+                    tint = Color(0xFFD2BA8A),
+                    modifier = Modifier.size(16.dp),
+                )
+                Text(
+                    text = stringResource(
+                        if (state.mode == ScanMode.STOCK_IN) R.string.scan_mode_stock_in
+                        else R.string.scan_mode_view_details,
+                    ),
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = Color(0xFFD2BA8A),
+                )
+            }
+            Text(
+                text = stringResource(
+                    if (state.mode == ScanMode.STOCK_IN) R.string.scan_mode_stock_in_support
+                    else R.string.scan_mode_view_details_support,
+                ),
+                style = MaterialTheme.typography.bodySmall,
+                color = Color.White.copy(alpha = 0.76f),
+            )
+        }
+        Spacer(modifier = Modifier.height(CulinarySpacing.sm))
         Text(
             text = stringResource(R.string.scan_frame_hint),
             style = MaterialTheme.typography.bodyMedium,
@@ -283,21 +327,80 @@ private fun CameraActions(
     }
 }
 
-/** 相机页的返回按钮：浮在预览左上角，避免底部动作区被挤成两行。 */
+/** 相机页左上角圆形模式切换按钮；图标始终表示当前模式。 */
 @Composable
-private fun ScanBackButton(
-    onBack: () -> Unit,
+private fun ScanModeButton(
+    state: ScanUiState,
+    onToggleMode: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     IconButton(
-        onClick = onBack,
+        onClick = onToggleMode,
+        enabled = !state.lookupInProgress,
         modifier = modifier.background(Color.Black.copy(alpha = 0.45f), CircleShape),
     ) {
         Icon(
-            imageVector = CulinaryIcons.Back,
-            contentDescription = stringResource(R.string.scan_back),
+            imageVector = if (state.mode == ScanMode.STOCK_IN) CulinaryIcons.Inventory else CulinaryIcons.Search,
+            contentDescription = stringResource(
+                if (state.mode == ScanMode.STOCK_IN) R.string.scan_mode_toggle_to_view
+                else R.string.scan_mode_toggle_to_stock_in,
+            ),
             tint = Color.White,
         )
+    }
+}
+
+/** 固定边长的成功徽记叠层：旧项只露出顶部边缘，最新项完整显示在最前。 */
+@Composable
+private fun ScanSuccessStack(feedbacks: List<ScanSuccessFeedback>) {
+    Box(
+        modifier =
+            Modifier
+                .size(width = 44.dp, height = 52.dp)
+                .clipToBounds(),
+    ) {
+        feedbacks.takeLast(3).forEachIndexed { index, feedback ->
+            key(feedback.id) {
+                val foldedOffset by animateDpAsState(
+                    targetValue = (index * 5).dp,
+                    animationSpec = spring(dampingRatio = 0.78f, stiffness = 520f),
+                    label = "scan-success-fold-${feedback.id}",
+                )
+                AnimatedVisibility(
+                    visible = feedback.visible,
+                    enter = slideInVertically(
+                        initialOffsetY = { fullHeight -> fullHeight / 2 },
+                        animationSpec = tween(180),
+                    ) +
+                        scaleIn(initialScale = 0.76f, animationSpec = tween(170)) +
+                        fadeIn(animationSpec = tween(130)),
+                    exit = scaleOut(targetScale = 0.84f, animationSpec = tween(180)) +
+                        fadeOut(animationSpec = tween(180)),
+                    modifier =
+                        Modifier
+                            .align(Alignment.TopCenter)
+                            .offset(y = foldedOffset)
+                            .zIndex(index.toFloat()),
+                ) {
+                    Box(
+                        modifier =
+                            Modifier
+                                .size(40.dp)
+                                .clip(RoundedCornerShape(10.dp))
+                                .background(Color(0xFFE7F1E9))
+                                .border(1.dp, Color(0xFFB9D1BF), RoundedCornerShape(10.dp)),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Icon(
+                            imageVector = CulinaryIcons.CheckCircle,
+                            contentDescription = stringResource(R.string.scan_success_feedback),
+                            tint = Color(0xFF4E8A60),
+                            modifier = Modifier.size(23.dp),
+                        )
+                    }
+                }
+            }
+        }
     }
 }
 

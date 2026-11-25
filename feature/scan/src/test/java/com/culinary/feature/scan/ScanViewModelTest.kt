@@ -47,6 +47,32 @@ class ScanViewModelTest {
     }
 
     @Test
+    fun `scan mode toggles without stopping camera scanning`() {
+        val viewModel = grantedViewModel()
+
+        assertThat(viewModel.uiState.value.mode).isEqualTo(ScanMode.STOCK_IN)
+        viewModel.onToggleMode()
+        assertThat(viewModel.uiState.value.mode).isEqualTo(ScanMode.VIEW_DETAILS)
+        assertThat(viewModel.uiState.value.scanning).isTrue()
+
+        viewModel.onToggleMode()
+        assertThat(viewModel.uiState.value.mode).isEqualTo(ScanMode.STOCK_IN)
+        assertThat(viewModel.uiState.value.scanning).isTrue()
+    }
+
+    @Test
+    fun `view mode does not send an unknown barcode to archive creation`() {
+        val viewModel = grantedViewModel()
+        viewModel.onToggleMode()
+
+        viewModel.onCameraFrame(cameraValue("unknown-code"))
+
+        assertThat(viewModel.uiState.value.pendingCapture).isNull()
+        assertThat(viewModel.uiState.value.error).isEqualTo("当前无法查询库存档案，请重试。")
+        assertThat(viewModel.uiState.value.scanning).isTrue()
+    }
+
+    @Test
     fun `denied permission keeps the explanation without scanning`() {
         val viewModel = viewModel()
         viewModel.onCameraAvailability(true)

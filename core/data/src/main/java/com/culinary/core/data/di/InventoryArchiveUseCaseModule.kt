@@ -15,6 +15,7 @@ import com.culinary.core.domain.usecase.inventory.BatchRecycleUseCases
 import com.culinary.core.domain.usecase.inventory.BuildManualIssuePlanUseCase
 import com.culinary.core.domain.usecase.inventory.BuildRecipeIssuePlanUseCase
 import com.culinary.core.domain.usecase.inventory.ConfirmIssueUseCase
+import com.culinary.core.domain.usecase.inventory.ConfirmPendingStockUseCase
 import com.culinary.core.domain.usecase.inventory.CreatePrintJobUseCase
 import com.culinary.core.domain.usecase.inventory.FreezeBatchUseCase
 import com.culinary.core.domain.usecase.inventory.GetInventoryArchiveDetailUseCase
@@ -31,6 +32,7 @@ import com.culinary.core.domain.usecase.inventory.ListStorageLocationsUseCase
 import com.culinary.core.domain.usecase.inventory.PrintJobUseCases
 import com.culinary.core.domain.usecase.inventory.RecordArchiveReceiptUseCase
 import com.culinary.core.domain.usecase.inventory.RecordPurchaseReceiptUseCase
+import com.culinary.core.domain.repository.PendingStockRepository
 import com.culinary.core.domain.usecase.inventory.SaveInventoryArchiveUseCase
 import com.culinary.core.domain.usecase.inventory.SaveStorageLocationUseCase
 import com.culinary.core.domain.usecase.inventory.StocktakeUseCases
@@ -169,6 +171,16 @@ object InventoryArchiveUseCaseModule {
         transactionRunner: TransactionRunner,
         idGenerator: IdGenerator,
     ): RecordPurchaseReceiptUseCase = RecordPurchaseReceiptUseCase(recordReceipt, transactionRunner, idGenerator)
+
+    @Provides
+    @Singleton
+    fun provideConfirmPendingStockUseCase(
+        pending: PendingStockRepository,
+        recordReceipt: RecordArchiveReceiptUseCase,
+        archiveRepository: InventoryArchiveRepository,
+        transactionRunner: TransactionRunner,
+    ): ConfirmPendingStockUseCase =
+        ConfirmPendingStockUseCase(pending, recordReceipt, archiveRepository, transactionRunner)
 
     @Provides
     @Singleton

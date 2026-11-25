@@ -177,6 +177,8 @@ class SaveInventoryArchiveUseCase(
                 unitConversion = archive.unitConversion?.trim()?.takeIf { it.isNotEmpty() },
                 measurementPrecision = archive.measurementPrecision?.coerceIn(0, 8),
                 batchManagementEnabled = archive.batchManagementEnabled,
+                defaultShelfLifeValue = archive.defaultShelfLifeValue,
+                defaultShelfLifeUnit = archive.defaultShelfLifeUnit,
                 shelfLifeEnabled = archive.shelfLifeEnabled,
                 shelfLifeCalculationMethod = archive.shelfLifeCalculationMethod?.trim()?.takeIf { it.isNotEmpty() },
                 shelfLifeDays = archive.shelfLifeDays,

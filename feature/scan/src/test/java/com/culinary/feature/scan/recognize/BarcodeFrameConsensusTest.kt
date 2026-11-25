@@ -54,13 +54,19 @@ class BarcodeFrameConsensusTest {
     }
 
     @Test
-    fun `does not emit more than once until reset`() {
+    fun `reset after a confirmed capture allows a later scan of the same code`() {
         val consensus = BarcodeFrameConsensus()
 
-        repeat(3) { consensus.offer(ean()) }
+        assertThat(consensus.offer(ean())).isNull()
+        assertThat(consensus.offer(ean())).isNull()
+        assertThat(consensus.offer(ean())).isEqualTo(ean())
         assertThat(consensus.offer(ean())).isNull()
 
+        // CameraBarcodeSession resets consensus immediately after emitting the capture.
         consensus.reset()
+
         assertThat(consensus.offer(ean())).isNull()
+        assertThat(consensus.offer(ean())).isNull()
+        assertThat(consensus.offer(ean())).isEqualTo(ean())
     }
 }

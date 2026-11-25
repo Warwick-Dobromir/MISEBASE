@@ -119,7 +119,7 @@ class SchemaExportTest {
 
     @Test
     fun `registers all forward migrations`() {
-        assertThat(CulinaryMigrations.ALL).hasLength(8)
+        assertThat(CulinaryMigrations.ALL).hasLength(13)
         assertThat(CulinaryMigrations.MIGRATION_1_2.startVersion).isEqualTo(1)
         assertThat(CulinaryMigrations.MIGRATION_1_2.endVersion).isEqualTo(2)
         assertThat(CulinaryMigrations.MIGRATION_2_3.startVersion).isEqualTo(2)
@@ -136,6 +136,8 @@ class SchemaExportTest {
         assertThat(CulinaryMigrations.MIGRATION_7_8.endVersion).isEqualTo(8)
         assertThat(CulinaryMigrations.MIGRATION_8_9.startVersion).isEqualTo(8)
         assertThat(CulinaryMigrations.MIGRATION_8_9.endVersion).isEqualTo(9)
+        assertThat(CulinaryMigrations.MIGRATION_13_14.startVersion).isEqualTo(13)
+        assertThat(CulinaryMigrations.MIGRATION_13_14.endVersion).isEqualTo(14)
     }
 
     private fun tableCount(file: File): Int = Regex("\"tableName\"").findAll(file.readText()).count()

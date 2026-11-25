@@ -332,6 +332,7 @@ fun ArchiveWideImage(
     bytes: ByteArray,
     caption: String?,
     modifier: Modifier = Modifier,
+    contentScale: ContentScale = ContentScale.Crop,
 ) {
     val bitmap = remember(bytes) { BitmapFactory.decodeByteArray(bytes, 0, bytes.size) }
     if (bitmap == null) return
@@ -339,7 +340,7 @@ fun ArchiveWideImage(
         Image(
             bitmap = bitmap.asImageBitmap(),
             contentDescription = null,
-            contentScale = ContentScale.Crop,
+            contentScale = contentScale,
             modifier =
                 Modifier
                     .fillMaxWidth()

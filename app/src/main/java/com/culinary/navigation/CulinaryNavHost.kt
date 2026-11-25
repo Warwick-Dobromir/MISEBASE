@@ -67,6 +67,7 @@ import com.culinary.feature.inventory.IssueRoute
 import com.culinary.feature.inventory.LedgerV9Route
 import com.culinary.feature.inventory.LocationRoute
 import com.culinary.feature.inventory.PrintPreviewRoute
+import com.culinary.feature.inventory.PendingStockRoute
 import com.culinary.feature.inventory.ReceiptRoute
 import com.culinary.feature.inventory.RecycleRoute
 import com.culinary.feature.inventory.RequirementPlanRoute
@@ -581,6 +582,7 @@ private fun NavGraphBuilder.inventoryGraph(navController: NavHostController) {
             onOpenArchive = { archiveId -> navController.navigate(InventoryRoutes.archive(archiveId)) },
             onOpenCategory = { categoryId -> navController.navigate(InventoryRoutes.category(categoryId)) },
             onAddCategory = { navController.navigate(InventoryRoutes.categories()) },
+            onOpenPendingStock = { navController.navigate(InventoryRoutes.pendingStock()) },
             onOpenReceipt = { navController.navigate(InventoryRoutes.receipt()) },
             onOpenIssue = { navController.navigate(InventoryRoutes.issue()) },
             onOpenStocktake = { navController.navigate(InventoryRoutes.stocktake()) },
@@ -634,11 +636,18 @@ private fun NavGraphBuilder.inventoryGraph(navController: NavHostController) {
                 nullableString(InventoryRoutes.ARG_NAME),
                 nullableString(InventoryRoutes.ARG_BARCODE),
             ),
-    ) {
+    ) { entry ->
+        val scannedBarcode = entry.arguments?.getString(InventoryRoutes.ARG_BARCODE).orEmpty()
         ArchiveEditRoute(
             onSaved = { archiveId ->
-                navController.navigate(InventoryRoutes.archive(archiveId)) {
-                    popUpTo(INVENTORY_ROUTE)
+                if (scannedBarcode.isNotBlank()) {
+                    navController.navigate(InventoryRoutes.pendingStock()) {
+                        popUpTo(SCAN_ROUTE) { inclusive = false }
+                    }
+                } else {
+                    navController.navigate(InventoryRoutes.archive(archiveId)) {
+                        popUpTo(INVENTORY_ROUTE)
+                    }
                 }
             },
             onBack = { navController.popBackStack() },
@@ -654,6 +663,12 @@ private fun NavGraphBuilder.inventoryGraph(navController: NavHostController) {
                 navController.navigate(InventoryRoutes.printPreview("LABEL", batchId, 58))
             },
             onBack = { navController.popBackStack() },
+        )
+    }
+    composable(InventoryRoutes.PENDING_STOCK) {
+        PendingStockRoute(
+            onBack = { navController.popBackStack() },
+            onCompleted = { navController.popBackStack() },
         )
     }
     composable(
@@ -777,6 +792,9 @@ private fun NavGraphBuilder.scanGraph(navController: NavHostController) {
         ScanRoute(
             onCapture = { capture ->
                 navController.navigate(InventoryRoutes.archiveNew(barcode = capture.rawValue))
+            },
+            onOpenArchive = { archiveId ->
+                navController.navigate(InventoryRoutes.archive(archiveId))
             },
             onBack = { navController.backOrStart(APP_START_ROUTE) },
         )

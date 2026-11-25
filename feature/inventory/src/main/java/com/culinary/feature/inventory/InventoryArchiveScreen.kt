@@ -235,7 +235,7 @@ private fun ArchiveDetailScreen(
                     }
                     imageBytes?.let { bytes ->
                         Spacer(modifier = Modifier.height(CulinarySpacing.md))
-                        ArchiveWideImage(bytes = bytes, caption = null)
+                        ArchiveWideImage(bytes = bytes, caption = null, contentScale = androidx.compose.ui.layout.ContentScale.Fit)
                     }
                     state.message?.let { message ->
                         StatusBadge(
