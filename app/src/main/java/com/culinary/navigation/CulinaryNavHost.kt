@@ -793,6 +793,9 @@ private fun NavGraphBuilder.scanGraph(navController: NavHostController) {
             onCapture = { capture ->
                 navController.navigate(InventoryRoutes.archiveNew(barcode = capture.rawValue))
             },
+            onOpenArchive = { archiveId ->
+                navController.navigate(InventoryRoutes.archive(archiveId))
+            },
             onBack = { navController.backOrStart(APP_START_ROUTE) },
         )
     }
