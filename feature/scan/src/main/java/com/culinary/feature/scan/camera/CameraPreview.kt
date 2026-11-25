@@ -73,10 +73,9 @@ internal fun CameraBarcodePreview(
                 else -> Unit
             }
         }
+        // LifecycleRegistry immediately dispatches the current state to a newly added observer.
+        // Avoid a second explicit rebind when this destination is already RESUMED.
         lifecycleOwner.lifecycle.addObserver(observer)
-        if (lifecycleOwner.lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) {
-            session.onLifecycleResumed(currentActive)
-        }
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
