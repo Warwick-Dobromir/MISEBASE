@@ -19,7 +19,7 @@ enum class ScanMode {
 }
 
 /** 一次成功入库反馈；id 用于让连续动画彼此独立。 */
-data class ScanSuccessFeedback(val id: Long)
+data class ScanSuccessFeedback(val id: Long, val visible: Boolean = true)
 
 /** 扫码页状态；新档案通过 pendingCapture 一次性导航，已有档案按当前模式处理。 */
 data class ScanUiState(
