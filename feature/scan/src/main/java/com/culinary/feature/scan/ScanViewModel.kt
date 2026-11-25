@@ -40,12 +40,14 @@ class ScanViewModel
         val uiState: StateFlow<ScanUiState> = _uiState.asStateFlow()
 
         private var dismissMatchJob: Job? = null
+        private val feedbackDismissJobs = mutableMapOf<Long, Job>()
         private var feedbackSequence = 0L
 
         fun onToggleMode() {
             if (_uiState.value.lookupInProgress) return
             gate.reset()
             dismissMatchJob?.cancel()
+            cancelFeedbackDismissJobs()
             _uiState.update { state ->
                 state.copy(
                     mode = if (state.mode == ScanMode.STOCK_IN) ScanMode.VIEW_DETAILS else ScanMode.STOCK_IN,
@@ -227,17 +229,21 @@ class ScanViewModel
                                 }.isSuccess
 
                         gate.resume()
-                        val feedback =
-                            if (added) {
-                                ScanSuccessFeedback(
-                                    id = ++feedbackSequence,
-                                    name = archive.name,
-                                    brand = archive.brand,
-                                    specification = archive.productSpecification,
-                                )
-                            } else {
-                                null
-                            }
+                        val feedback = ScanSuccessFeedback(
+                            id = ++feedbackSequence,
+                            name = archive.name,
+                            brand = archive.brand,
+                            specification = archive.productSpecification,
+                            imageUri = archive.imageUri,
+                            success = added,
+                        )
+                        val retainedIds = _uiState.value.successFeedbacks
+                            .takeLast(MAX_SUCCESS_FEEDBACKS - 1)
+                            .map { it.id }
+                            .toSet()
+                        _uiState.value.successFeedbacks
+                            .filterNot { it.id in retainedIds }
+                            .forEach { old -> feedbackDismissJobs.remove(old.id)?.cancel() }
                         _uiState.update { state ->
                             state.copy(
                                 lookupInProgress = false,
@@ -249,9 +255,7 @@ class ScanViewModel
                                         state.manualEntry
                                     },
                                 matchedArchive = archive,
-                                successFeedbacks =
-                                    feedback?.let { (state.successFeedbacks + it).takeLast(MAX_SUCCESS_FEEDBACKS) }
-                                        ?: state.successFeedbacks,
+                                successFeedbacks = (state.successFeedbacks + feedback).takeLast(MAX_SUCCESS_FEEDBACKS),
                                 status = null,
                                 error =
                                     when {
@@ -262,6 +266,7 @@ class ScanViewModel
                             )
                         }
 
+                        scheduleFeedbackDismissal(feedback.id)
                         dismissMatchJob?.cancel()
                         dismissMatchJob =
                             viewModelScope.launch {
@@ -277,6 +282,7 @@ class ScanViewModel
         fun onResumeScanning() {
             gate.reset()
             dismissMatchJob?.cancel()
+            cancelFeedbackDismissJobs()
             _uiState.update { state ->
                 state.copy(
                     scanning = state.hasCamera && state.cameraAccess == CameraAccessState.GRANTED,
@@ -364,9 +370,35 @@ class ScanViewModel
             _uiState.update { it.copy(error = null) }
         }
 
+        private fun scheduleFeedbackDismissal(feedbackId: Long) {
+            feedbackDismissJobs[feedbackId]?.cancel()
+            feedbackDismissJobs[feedbackId] = viewModelScope.launch {
+                delay(FEEDBACK_VISIBLE_MILLIS)
+                _uiState.update { state ->
+                    state.copy(
+                        successFeedbacks = state.successFeedbacks.map { feedback ->
+                            if (feedback.id == feedbackId) feedback.copy(visible = false) else feedback
+                        },
+                    )
+                }
+                delay(FEEDBACK_EXIT_MILLIS)
+                _uiState.update { state ->
+                    state.copy(successFeedbacks = state.successFeedbacks.filterNot { it.id == feedbackId })
+                }
+                feedbackDismissJobs.remove(feedbackId)
+            }
+        }
+
+        private fun cancelFeedbackDismissJobs() {
+            feedbackDismissJobs.values.forEach { it.cancel() }
+            feedbackDismissJobs.clear()
+        }
+
         private companion object {
             const val TORCH_UNSUPPORTED = "此设备不支持手电筒。"
             const val MATCH_NOTICE_MILLIS = 2_600L
+            const val FEEDBACK_VISIBLE_MILLIS = 2_350L
+            const val FEEDBACK_EXIT_MILLIS = 280L
             const val MAX_SUCCESS_FEEDBACKS = 3
         }
     }
