@@ -33,6 +33,7 @@ internal object CulinaryMigrations {
     val MIGRATION_8_9: Migration = MIGRATION_8_9_IMPL
     val MIGRATION_9_10: Migration = MIGRATION_9_10_IMPL
     val MIGRATION_10_11: Migration = MIGRATION_10_11_IMPL
+    val MIGRATION_11_12: Migration = MIGRATION_11_12_IMPL
 
     val ALL: Array<Migration> =
         arrayOf(
@@ -46,6 +47,7 @@ internal object CulinaryMigrations {
             MIGRATION_8_9,
             MIGRATION_9_10,
             MIGRATION_10_11,
+            MIGRATION_11_12,
         )
 }
 
@@ -441,6 +443,37 @@ private val MIGRATION_10_11_IMPL =
             db.execSQL("ALTER TABLE `ingredient` ADD COLUMN `edible_parts` TEXT")
             db.execSQL("ALTER TABLE `ingredient_version` ADD COLUMN `culinary_use` TEXT")
             db.execSQL("ALTER TABLE `ingredient_version` ADD COLUMN `edible_parts` TEXT")
+        }
+    }
+
+/** v11 → v12：库存档案字段独立持久化。 */
+private val MIGRATION_11_12_IMPL =
+    object : Migration(11, 12) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            CulinarySchemaExtras.dropPartialIndexes(db)
+            db.execSQL("ALTER TABLE `inventory_archive` ADD COLUMN `brand` TEXT")
+            db.execSQL("ALTER TABLE `inventory_archive` ADD COLUMN `product_specification` TEXT")
+            db.execSQL("ALTER TABLE `inventory_archive` ADD COLUMN `product_code` TEXT")
+            db.execSQL("ALTER TABLE `inventory_archive` ADD COLUMN `barcode` TEXT")
+            db.execSQL("ALTER TABLE `inventory_archive` ADD COLUMN `purchase_unit_id` TEXT")
+            db.execSQL("ALTER TABLE `inventory_archive` ADD COLUMN `purchase_specification` TEXT")
+            db.execSQL("ALTER TABLE `inventory_archive` ADD COLUMN `unit_conversion` TEXT")
+            db.execSQL("ALTER TABLE `inventory_archive` ADD COLUMN `measurement_precision` INTEGER")
+            db.execSQL("ALTER TABLE `inventory_archive` ADD COLUMN `batch_management_enabled` INTEGER NOT NULL DEFAULT 1")
+            db.execSQL("ALTER TABLE `inventory_archive` ADD COLUMN `shelf_life_enabled` INTEGER NOT NULL DEFAULT 0")
+            db.execSQL("ALTER TABLE `inventory_archive` ADD COLUMN `shelf_life_calculation_method` TEXT")
+            db.execSQL("ALTER TABLE `inventory_archive` ADD COLUMN `shelf_life_days` INTEGER")
+            db.execSQL("ALTER TABLE `inventory_archive` ADD COLUMN `opened_shelf_life_days` INTEGER")
+            db.execSQL("ALTER TABLE `inventory_archive` ADD COLUMN `track_opened_date` INTEGER NOT NULL DEFAULT 0")
+            db.execSQL("ALTER TABLE `inventory_archive` ADD COLUMN `supplier_name` TEXT")
+            db.execSQL("ALTER TABLE `inventory_archive` ADD COLUMN `purchase_price_minor` INTEGER")
+            db.execSQL("ALTER TABLE `inventory_archive` ADD COLUMN `purchase_price_unit` TEXT")
+            db.execSQL("UPDATE `inventory_archive` SET `brand` = (SELECT p.`brand` FROM `inventory_archive_product` ap JOIN `product` p ON p.`id` = ap.`product_id` WHERE ap.`archive_id` = `inventory_archive`.`id` ORDER BY ap.`is_default` DESC, ap.`created_at` ASC LIMIT 1)")
+            db.execSQL("UPDATE `inventory_archive` SET `product_specification` = (SELECT p.`package_label` FROM `inventory_archive_product` ap JOIN `product` p ON p.`id` = ap.`product_id` WHERE ap.`archive_id` = `inventory_archive`.`id` ORDER BY ap.`is_default` DESC, ap.`created_at` ASC LIMIT 1)")
+            db.execSQL("UPDATE `inventory_archive` SET `product_code` = (SELECT p.`sku` FROM `inventory_archive_product` ap JOIN `product` p ON p.`id` = ap.`product_id` WHERE ap.`archive_id` = `inventory_archive`.`id` ORDER BY ap.`is_default` DESC, ap.`created_at` ASC LIMIT 1)")
+            db.execSQL("UPDATE `inventory_archive` SET `shelf_life_days` = (SELECT p.`shelf_life_days` FROM `inventory_archive_product` ap JOIN `product` p ON p.`id` = ap.`product_id` WHERE ap.`archive_id` = `inventory_archive`.`id` ORDER BY ap.`is_default` DESC, ap.`created_at` ASC LIMIT 1)")
+            db.execSQL("UPDATE `inventory_archive` SET `purchase_price_minor` = (SELECT p.`last_unit_price_minor` FROM `inventory_archive_product` ap JOIN `product` p ON p.`id` = ap.`product_id` WHERE ap.`archive_id` = `inventory_archive`.`id` ORDER BY ap.`is_default` DESC, ap.`created_at` ASC LIMIT 1)")
+            db.execSQL("UPDATE `inventory_archive` SET `shelf_life_enabled` = CASE WHEN `shelf_life_days` IS NOT NULL THEN 1 ELSE 0 END")
         }
     }
 
