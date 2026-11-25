@@ -579,6 +579,12 @@ private fun ArchiveEditScreen(
                         ArchiveEditReadOnlyRow("更多批次", "共 ${archiveDetail.batches.size} 个，返回展示页查看")
                     }
                 }
+                if (!archiveDetail?.relatedRecipeNames.isNullOrEmpty()) {
+                    ArchiveEditorSectionHeader(index = "", english = "RELATED RECIPES", title = "关联菜谱")
+                    archiveDetail!!.relatedRecipeNames.forEach { recipeName ->
+                        ArchiveEditReadOnlyRow("菜谱", recipeName)
+                    }
+                }
                 ArchiveEditorSectionHeader(index = "", english = "STOCK TRANSACTIONS", title = "库存流水")
                 if (archiveDetail?.ledger.isNullOrEmpty()) {
                     ArchiveEditReadOnlyRow("流水", "暂无流水")
