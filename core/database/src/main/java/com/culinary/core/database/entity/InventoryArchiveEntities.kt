@@ -86,6 +86,40 @@ data class InventoryArchiveEntity(
     val defaultLocationId: String? = null,
     @ColumnInfo(name = "description")
     val description: String? = null,
+    @ColumnInfo(name = "brand")
+    val brand: String? = null,
+    @ColumnInfo(name = "product_specification")
+    val productSpecification: String? = null,
+    @ColumnInfo(name = "product_code")
+    val productCode: String? = null,
+    @ColumnInfo(name = "barcode")
+    val barcode: String? = null,
+    @ColumnInfo(name = "purchase_unit_id")
+    val purchaseUnitId: String? = null,
+    @ColumnInfo(name = "purchase_specification")
+    val purchaseSpecification: String? = null,
+    @ColumnInfo(name = "unit_conversion")
+    val unitConversion: String? = null,
+    @ColumnInfo(name = "measurement_precision")
+    val measurementPrecision: Int? = null,
+    @ColumnInfo(name = "batch_management_enabled", defaultValue = "1")
+    val batchManagementEnabled: Boolean = true,
+    @ColumnInfo(name = "shelf_life_enabled", defaultValue = "0")
+    val shelfLifeEnabled: Boolean = false,
+    @ColumnInfo(name = "shelf_life_calculation_method")
+    val shelfLifeCalculationMethod: String? = null,
+    @ColumnInfo(name = "shelf_life_days")
+    val shelfLifeDays: Int? = null,
+    @ColumnInfo(name = "opened_shelf_life_days")
+    val openedShelfLifeDays: Int? = null,
+    @ColumnInfo(name = "track_opened_date", defaultValue = "0")
+    val trackOpenedDate: Boolean = false,
+    @ColumnInfo(name = "supplier_name")
+    val supplierName: String? = null,
+    @ColumnInfo(name = "purchase_price_minor")
+    val purchasePriceMinor: Long? = null,
+    @ColumnInfo(name = "purchase_price_unit")
+    val purchasePriceUnit: String? = null,
     @ColumnInfo(name = "status")
     val status: EntityStatusDb = EntityStatusDb.ACTIVE,
     @ColumnInfo(name = "created_at")
