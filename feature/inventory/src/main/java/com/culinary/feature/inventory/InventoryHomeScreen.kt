@@ -143,7 +143,6 @@ class InventoryHomeViewModel
 fun InventoryHomeRoute(
     onOpenArchive: (String) -> Unit,
     onOpenCategory: (String?) -> Unit,
-    onOpenPendingStock: () -> Unit,
     onAddCategory: () -> Unit,
     onOpenPendingStock: () -> Unit,
     onOpenReceipt: () -> Unit,
@@ -179,6 +178,7 @@ private fun InventoryHomeScreen(
     onOpenArchive: (String) -> Unit,
     onOpenCategory: (String?) -> Unit,
     onAddCategory: () -> Unit,
+    onOpenPendingStock: () -> Unit,
     onOpenReceipt: () -> Unit,
     onOpenIssue: () -> Unit,
     onOpenStocktake: () -> Unit,
