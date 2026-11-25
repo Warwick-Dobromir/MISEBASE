@@ -54,7 +54,6 @@ import com.culinary.core.common.Outcome
 import com.culinary.core.designsystem.component.ArchiveEditorInlineField
 import com.culinary.core.designsystem.component.ArchiveEditorSectionHeader
 import com.culinary.core.designsystem.component.ArchiveEditorTopBar
-import com.culinary.core.designsystem.component.CulinaryRule
 import com.culinary.core.designsystem.component.CulinaryTextButton
 import com.culinary.core.designsystem.component.ErrorBanner
 import com.culinary.core.designsystem.component.InlineError
@@ -1144,7 +1143,10 @@ private fun InventoryArchiveEditField(
             )
         }
         error?.let {
-            InlineError(message = it, modifier = Modifier.padding(start = 104.dp))
+            Row(modifier = Modifier.fillMaxWidth()) {
+                Spacer(modifier = Modifier.width(104.dp))
+                InlineError(message = it)
+            }
         }
     }
 }
@@ -1183,7 +1185,10 @@ private fun EditPickerField(
             )
         }
         error?.let {
-            InlineError(message = it, modifier = Modifier.padding(start = 104.dp))
+            Row(modifier = Modifier.fillMaxWidth()) {
+                Spacer(modifier = Modifier.width(104.dp))
+                InlineError(message = it)
+            }
         }
     }
 }
