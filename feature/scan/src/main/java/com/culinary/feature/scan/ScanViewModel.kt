@@ -374,6 +374,7 @@ class ScanViewModel
             const val TORCH_UNSUPPORTED = "此设备不支持手电筒。"
             const val MATCH_NOTICE_MILLIS = 2_600L
             const val SUCCESS_FEEDBACK_MILLIS = 1_800L
+            const val SUCCESS_FEEDBACK_EXIT_MILLIS = 180L
             const val MAX_SUCCESS_FEEDBACKS = 3
         }
     }
