@@ -269,7 +269,6 @@ class ArchiveEditViewModel
 
         fun onPackageLabelChange(value: String) = update("packageLabel") { it.copy(packageLabel = value) }
 
-        fun onSupplierChange(value: String) = update("supplier") { it.copy(supplierId = value) }
 
         fun onShelfLifeChange(value: String) = update("shelfLife") { it.copy(shelfLifeDays = value) }
 
@@ -541,7 +540,6 @@ fun ArchiveEditRoute(
         onSauceChange = viewModel::onSauceChange,
         onBrandChange = viewModel::onBrandChange,
         onPackageLabelChange = viewModel::onPackageLabelChange,
-        onSupplierChange = viewModel::onSupplierChange,
         onShelfLifeChange = viewModel::onShelfLifeChange,
         onStorageNoteChange = viewModel::onStorageNoteChange,
         onPurchasePriceChange = viewModel::onPurchasePriceChange,
@@ -590,7 +588,6 @@ private fun ArchiveEditScreen(
     onSauceChange: (String?) -> Unit,
     onBrandChange: (String) -> Unit,
     onPackageLabelChange: (String) -> Unit,
-    onSupplierChange: (String) -> Unit,
     onShelfLifeChange: (String) -> Unit,
     onStorageNoteChange: (String) -> Unit,
     onPurchasePriceChange: (String) -> Unit,
@@ -685,6 +682,9 @@ private fun ArchiveEditScreen(
                 )
                 InventoryArchiveEditField("中文名称", state.name, onNameChange, "输入中文名称", state.fieldErrors["name"])
                 InventoryArchiveEditField("英文名称", state.englishName, onEnglishNameChange, "输入英文名称")
+                state.detail?.links?.firstOrNull()?.let { link ->
+                    InventoryArchiveEditField("品牌", state.brand, onBrandChange, "输入品牌")
+                }
                 EditPickerField(
                     label = "所属分类",
                     value = state.categoryLabel,
@@ -692,9 +692,7 @@ private fun ArchiveEditScreen(
                     error = state.fieldErrors["category"],
                     onClick = { picker = EditPicker.Category },
                 )
-                ArchiveEditReadOnlyRow("档案类型", if (state.kind == ArchiveKind.SAUCE) "酱汁现货档案" else "食材库存档案")
                 state.detail?.links?.firstOrNull()?.let { link ->
-                    InventoryArchiveEditField("品牌", state.brand, onBrandChange, "输入品牌")
                     InventoryArchiveEditField("商品规格", state.packageLabel, onPackageLabelChange, "输入商品规格")
                     ArchiveEditReadOnlyRow("商品编码", link.product.sku ?: "未生成")
                     ArchiveEditReadOnlyRow("条码", "商品条码需在扫码关联后显示")
@@ -741,6 +739,7 @@ private fun ArchiveEditScreen(
                         CulinaryRule()
                     }
                 }
+                ArchiveEditReadOnlyRow("批次管理", "已启用")
                 EditPickerField(
                     label = "默认库位",
                     value = state.locationLabel,
@@ -751,6 +750,8 @@ private fun ArchiveEditScreen(
                 ArchiveEditorSectionHeader(index = "", english = "SHELF LIFE & STORAGE", title = "保质期与储存")
                 InventoryArchiveEditField("储存方式", state.storageMethod, onStorageMethodChange, "例如：密封、避光、冷藏")
                 InventoryArchiveEditField("储存温度", state.storageTemperature, onStorageTemperatureChange, "例如：2–8 ℃、常温")
+                ArchiveEditReadOnlyRow("保质期管理", if (state.shelfLifeDays.isNotBlank()) "已启用" else "未启用")
+                ArchiveEditReadOnlyRow("计算方式", "生产日期起算")
                 InventoryArchiveEditField("保质期时长", state.shelfLifeDays, onShelfLifeChange, "输入天数", state.fieldErrors["shelfLife"])
                 InventoryArchiveEditField("开封后保质期说明", state.storageNote, onStorageNoteChange, "输入开封后储存要求")
                 ArchiveEditReadOnlyRow("最近到期", state.detail?.row?.nearestExpiry?.let(::formatDate) ?: "未登记")
