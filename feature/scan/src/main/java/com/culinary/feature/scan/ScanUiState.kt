@@ -24,6 +24,8 @@ data class ScanSuccessFeedback(
     val name: String = "",
     val brand: String? = null,
     val specification: String? = null,
+    val imageUri: String? = null,
+    val success: Boolean = true,
     val visible: Boolean = true,
 )
 
