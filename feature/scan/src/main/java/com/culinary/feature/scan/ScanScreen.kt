@@ -165,7 +165,9 @@ internal fun ScanScreen(
                         }
                         Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                             Text(
-                                text = archive.brand?.takeIf { it.isNotBlank() }?.let { "${archive.name} · $it" } ?: archive.name,
+                                text =
+                                    archive.brand?.takeIf { it.isNotBlank() }?.let { "${archive.name} · $it" }
+                                        ?: archive.name,
                                 style = MaterialTheme.typography.titleSmall,
                                 fontWeight = FontWeight.SemiBold,
                                 color = Color.White,
