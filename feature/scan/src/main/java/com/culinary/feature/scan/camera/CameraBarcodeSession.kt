@@ -52,6 +52,7 @@ internal class CameraBarcodeSession(
 
     private var provider: ProcessCameraProvider? = null
     private var camera: Camera? = null
+    private var preview: Preview? = null
     private var analysis: ImageAnalysis? = null
 
     private val analyzer =
@@ -109,8 +110,9 @@ internal class CameraBarcodeSession(
                 return false
             }
         provider = cameraProvider
-        val preview = Preview.Builder().build()
-        preview.setSurfaceProvider(previewView.surfaceProvider)
+        val previewUseCase = Preview.Builder().build()
+        previewUseCase.setSurfaceProvider(previewView.surfaceProvider)
+        preview = previewUseCase
         val imageAnalysis =
             ImageAnalysis
                 .Builder()
@@ -124,7 +126,7 @@ internal class CameraBarcodeSession(
                 cameraProvider.bindToLifecycle(
                     lifecycleOwner,
                     CameraSelector.DEFAULT_BACK_CAMERA,
-                    preview,
+                    previewUseCase,
                     imageAnalysis,
                 )
             true
@@ -154,6 +156,41 @@ internal class CameraBarcodeSession(
     }
 
     /**
+     * Nav destinations can keep their composition while their LifecycleOwner is stopped.
+     * CameraX pauses lifecycle-bound use cases in that interval; explicitly rebind on resume
+     * so the retained PreviewView and analyzer cannot return in a preview-only state.
+     */
+    fun onLifecycleResumed(active: Boolean) {
+        val cameraProvider = provider
+        val previewUseCase = preview
+        val imageAnalysis = analysis
+        if (cameraProvider == null || previewUseCase == null || imageAnalysis == null) {
+            setActive(active)
+            return
+        }
+
+        analysisGeneration.incrementAndGet()
+        frameConsensus.reset()
+        decodingFrame.set(false)
+        analyzing.set(false)
+        runCatching { cameraProvider.unbind(previewUseCase, imageAnalysis) }
+        try {
+            camera =
+                cameraProvider.bindToLifecycle(
+                    lifecycleOwner,
+                    CameraSelector.DEFAULT_BACK_CAMERA,
+                    previewUseCase,
+                    imageAnalysis,
+                )
+            analyzing.set(active)
+        } catch (e: IllegalArgumentException) {
+            onError("${ERROR_BIND}（${e.message ?: "configuration rejected"}）")
+        } catch (e: IllegalStateException) {
+            onError("${ERROR_BIND}（${e.message ?: "camera unavailable"}）")
+        }
+    }
+
+    /**
      * 开关手电筒。
      *
      * @return `false` 表示设备没有闪光灯或相机尚未就绪，调用方应提示而不假装成功。
@@ -175,6 +212,7 @@ internal class CameraBarcodeSession(
         runCatching { decoder.close() }
         executor.shutdown()
         analysis = null
+        preview = null
         provider = null
         camera = null
     }
