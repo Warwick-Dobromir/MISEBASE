@@ -43,8 +43,10 @@ internal class CameraBarcodeSession(
     private val decoder = MlKitBarcodeDecoder()
     private val frameConsensus = BarcodeFrameConsensus()
     private val analyzing = AtomicBoolean(false)
+
     // ML Kit callbacks may outlive analyze() itself; keep only one decode in flight to preserve frame order.
     private val decodingFrame = AtomicBoolean(false)
+
     // Invalidates decode callbacks that started before a pause/resume transition.
     private val analysisGeneration = AtomicLong(0L)
 
