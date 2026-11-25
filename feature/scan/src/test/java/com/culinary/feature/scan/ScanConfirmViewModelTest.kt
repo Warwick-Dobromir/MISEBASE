@@ -9,6 +9,7 @@ import com.culinary.core.domain.model.BatchId
 import com.culinary.core.domain.model.EntityStatus
 import com.culinary.core.domain.model.Ingredient
 import com.culinary.core.domain.model.IngredientId
+import com.culinary.core.domain.model.IngredientVersion
 import com.culinary.core.domain.model.InventoryItem
 import com.culinary.core.domain.model.InventoryLedgerEntry
 import com.culinary.core.domain.model.LedgerEntryId
@@ -493,6 +494,8 @@ class ScanConfirmViewModelTest {
             state.value = state.value + ingredient
             return Outcome.success(ingredient.id)
         }
+
+        override suspend fun listVersions(id: IngredientId): List<IngredientVersion> = emptyList()
 
         override suspend fun archive(id: IngredientId): Outcome<kotlin.Unit> {
             archived += id
