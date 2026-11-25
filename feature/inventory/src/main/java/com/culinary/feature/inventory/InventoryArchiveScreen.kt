@@ -257,7 +257,6 @@ private fun ArchiveDetailScreen(
                         "预留库存",
                         "${formatAmount(detail.row.reserved)} ${detail.archive.stockUnit.symbol}",
                     )
-                    InventoryArchiveValueRow("库存状态", InventoryText.stockStatus(detail.row.status), status = true)
                     InventoryArchiveValueRow("有效批次", detail.row.batchCount.toString())
                     InventoryArchiveValueRow("涉及库位", detail.row.locationNames.joinToString("、").ifBlank { "未指定" })
 
