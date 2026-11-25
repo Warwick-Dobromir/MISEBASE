@@ -805,6 +805,7 @@ private fun ArchiveEditScreen(
                     label = "采购单位",
                     value = state.purchaseUnitLabel,
                     placeholder = "请选择采购单位",
+                    error = state.fieldErrors["purchaseUnit"],
                     onClick = { picker = EditPicker.PurchaseUnit },
                 )
                 InventoryArchiveEditField("采购规格", state.purchaseSpecification, onPurchaseSpecificationChange, "例如：1 kg / 块")
@@ -825,10 +826,6 @@ private fun ArchiveEditScreen(
                         CulinaryRule()
                     }
                 }
-                Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                    Text("批次管理", modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
-                    Switch(checked = state.batchManagementEnabled, onCheckedChange = onBatchManagementChange)
-                }
                 EditPickerField(
                     label = "默认存放位置",
                     value = state.locationLabel,
@@ -836,6 +833,10 @@ private fun ArchiveEditScreen(
                     error = state.fieldErrors["location"],
                     onClick = { picker = EditPicker.Location },
                 )
+                Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Text("批次管理", modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
+                    Switch(checked = state.batchManagementEnabled, onCheckedChange = onBatchManagementChange)
+                }
                 ArchiveEditorSectionHeader(index = "", english = "SHELF LIFE & STORAGE", title = "保质期与储存")
                 Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     Text("保质期管理", modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
@@ -845,6 +846,7 @@ private fun ArchiveEditScreen(
                     label = "计算方式",
                     value = state.shelfLifeCalculationMethod.takeIf { it.isNotBlank() },
                     placeholder = "请选择计算方式",
+                    error = state.fieldErrors["shelfLifeMethod"],
                     onClick = { picker = EditPicker.ShelfLifeCalculation },
                 )
                 InventoryArchiveEditField("保质期时长", state.shelfLifeDays, onShelfLifeChange, "输入天数", state.fieldErrors["shelfLife"])
