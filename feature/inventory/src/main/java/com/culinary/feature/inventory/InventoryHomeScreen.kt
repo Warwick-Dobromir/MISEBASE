@@ -341,17 +341,12 @@ private fun HomeActionsSection(
         modifier = Modifier.padding(horizontal = CulinarySpacing.pageHorizontal),
         horizontalArrangement = Arrangement.spacedBy(CulinarySpacing.xs),
     ) {
-        Row(
-            modifier = Modifier.clickable(role = Role.Button, onClick = onOpenPendingStock)
-                .defaultMinSize(minHeight = CulinarySizes.touchTarget),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                text = "待入库",
-                style = MaterialTheme.typography.labelLarge,
-                color = if (pendingStockCount > 0) CulinaryColorScheme.current.danger else MaterialTheme.colorScheme.secondary,
-            )
-        }
+        CulinaryTextButton(
+            text = "待入库",
+            onClick = onOpenPendingStock,
+            danger = pendingStockCount > 0,
+            modifier = Modifier.defaultMinSize(minHeight = CulinarySizes.touchTarget),
+        )
         CulinaryTextButton(
             text = "入库",
             onClick = onOpenReceipt,
