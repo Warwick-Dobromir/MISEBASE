@@ -225,8 +225,12 @@ private fun ArchiveDetailScreen(
                         StatusBadge(text = InventoryText.stockStatus(detail.row.status), tone = StatusTone.Accent)
                         Spacer(modifier = Modifier.width(CulinarySpacing.xs))
                         Text(detail.archive.stockUnit.symbol, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        detail.links.firstOrNull()?.let { link ->
-                            Text(" · ${link.product.packageLabel ?: "${formatAmount(link.product.contentQty)} ${link.product.contentUnit.symbol}"}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        val productSpecification = detail.archive.productSpecification
+                            ?: detail.links.firstOrNull()?.let { link ->
+                                link.product.packageLabel ?: "${formatAmount(link.product.contentQty)} ${link.product.contentUnit.symbol}"
+                            }
+                        productSpecification?.takeIf { it.isNotBlank() }?.let { specification ->
+                            Text(" · $specification", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
                     imageBytes?.let { bytes ->
