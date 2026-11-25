@@ -52,6 +52,7 @@ import com.culinary.core.designsystem.component.StatusTone
 import com.culinary.core.designsystem.theme.CulinaryColorScheme
 import com.culinary.core.designsystem.theme.CulinarySpacing
 import com.culinary.core.designsystem.theme.CulinaryTextStyles
+import com.culinary.core.domain.model.ArchiveKind
 import com.culinary.core.domain.model.ArchiveProductLink
 import com.culinary.core.domain.model.InventoryArchiveDetail
 import com.culinary.core.domain.model.InventoryBatchRecord
