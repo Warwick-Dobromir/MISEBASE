@@ -10,6 +10,8 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.culinary.core.domain.barcode.ScanCapture
 
@@ -33,6 +35,7 @@ internal fun CameraBarcodePreview(
     val currentOnCapture by rememberUpdatedState(onCapture)
     val currentOnTorchResult by rememberUpdatedState(onTorchResult)
     val currentOnError by rememberUpdatedState(onError)
+    val currentActive by rememberUpdatedState(active)
     val previewView =
         remember {
             PreviewView(context).apply {
@@ -59,6 +62,24 @@ internal fun CameraBarcodePreview(
         }
     }
     LaunchedEffect(active) { session.setActive(active) }
+
+    DisposableEffect(session, lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            when (event) {
+                Lifecycle.Event.ON_RESUME -> session.onLifecycleResumed(currentActive)
+                Lifecycle.Event.ON_PAUSE,
+                Lifecycle.Event.ON_STOP,
+                -> session.setActive(false)
+                else -> Unit
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        if (lifecycleOwner.lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) {
+            session.onLifecycleResumed(currentActive)
+        }
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
+
     LaunchedEffect(torchOn) {
         if (torchOn) {
             if (!session.setTorch(true)) currentOnTorchResult(false)
