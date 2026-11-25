@@ -54,6 +54,7 @@ import com.culinary.core.designsystem.icon.CulinaryIcons
 import com.culinary.core.designsystem.theme.CulinarySpacing
 import com.culinary.core.domain.model.ArchiveKind
 import com.culinary.core.domain.model.InventoryArchive
+import com.culinary.core.domain.model.InventoryArchiveDetail
 import com.culinary.core.domain.model.LocationId
 import com.culinary.core.domain.model.Unit as StockUnit
 import com.culinary.core.domain.usecase.inventory.ArchiveFormOptions
@@ -73,6 +74,7 @@ import kotlinx.coroutines.withContext
 /** 新建/编辑共用的表单状态；字段错误按字段名保存在 map 里，避免一处错误刷新整页。 */
 data class ArchiveEditUiState(
     val archiveId: String? = null,
+    val detail: InventoryArchiveDetail? = null,
     val isNew: Boolean = true,
     val kind: ArchiveKind = ArchiveKind.INGREDIENT,
     val options: ArchiveFormOptions = ArchiveFormOptions(),
@@ -178,6 +180,7 @@ class ArchiveEditViewModel
             return Outcome.success(
                 ArchiveEditUiState(
                     archiveId = archive?.id ?: archiveId,
+                    detail = existing,
                     isNew = archive == null,
                     kind = kind,
                     options = options,
