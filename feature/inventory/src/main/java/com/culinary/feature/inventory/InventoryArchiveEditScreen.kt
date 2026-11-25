@@ -508,6 +508,7 @@ private fun ArchiveEditScreen(
                     error = state.fieldErrors["unit"],
                     onClick = { picker = EditPicker.Unit },
                 )
+                ArchiveEditorSectionHeader(index = "", english = "INVENTORY MANAGEMENT", title = "库存管理")
                 Row(horizontalArrangement = Arrangement.spacedBy(CulinarySpacing.md)) {
                     Column(modifier = Modifier.weight(1f)) {
                         Text("最低库存", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -522,7 +523,6 @@ private fun ArchiveEditScreen(
                         CulinaryRule()
                     }
                 }
-                ArchiveEditorSectionHeader(index = "", english = "INVENTORY MANAGEMENT", title = "库存管理")
                 EditPickerField(
                     label = "默认库位",
                     value = state.locationLabel,
@@ -534,11 +534,61 @@ private fun ArchiveEditScreen(
                 InventoryArchiveEditField("储存方式", state.storageMethod, onStorageMethodChange, "例如：密封、避光、冷藏")
                 InventoryArchiveEditField("储存温度", state.storageTemperature, onStorageTemperatureChange, "例如：2–8 ℃、常温")
                 ArchiveEditorSectionHeader(index = "", english = "PURCHASING INFORMATION", title = "采购信息")
-                Text(
-                    "采购单位、采购规格与供应商信息当前未纳入库存档案数据模型，因此本次不新增虚构字段。",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+                val archiveDetail = state.detail
+                if (archiveDetail?.links.isNullOrEmpty()) {
+                    ArchiveEditReadOnlyRow("关联采购商品", "尚未关联")
+                } else {
+                    archiveDetail!!.links.forEach { link ->
+                        ArchiveEditReadOnlyRow(
+                            link.product.name,
+                            "${formatAmount(link.product.contentQty)} ${link.product.contentUnit.symbol} · 换算 ${formatAmount(link.conversionRatio)} ${archiveDetail.archive.stockUnit.symbol}" +
+                                if (link.isDefault) " · 默认商品" else "",
+                        )
+                    }
+                }
+                ArchiveEditorSectionHeader(index = "", english = "STOCK OVERVIEW", title = "库存情况")
+                ArchiveEditReadOnlyRow("当前库存", archiveDetail?.let { "${formatAmount(it.row.onHand)} ${it.archive.stockUnit.symbol}" } ?: "暂无库存数据")
+                ArchiveEditReadOnlyRow("可用库存", archiveDetail?.let { "${formatAmount(it.row.available)} ${it.archive.stockUnit.symbol}" } ?: "暂无库存数据")
+                ArchiveEditReadOnlyRow("预留库存", archiveDetail?.let { "${formatAmount(it.row.reserved)} ${it.archive.stockUnit.symbol}" } ?: "暂无库存数据")
+                ArchiveEditReadOnlyRow("库存状态", archiveDetail?.let { InventoryText.stockStatus(it.row.status) } ?: "暂无库存数据")
+                ArchiveEditReadOnlyRow("最近到期", archiveDetail?.row?.nearestExpiry?.let(::formatDate) ?: "未登记")
+                ArchiveEditReadOnlyRow("涉及库位", archiveDetail?.row?.locationNames?.joinToString("、")?.ifBlank { "未指定" } ?: "未指定")
+                ArchiveEditorSectionHeader(index = "", english = "BATCH RECORDS", title = "库存批次")
+                if (archiveDetail?.batches.isNullOrEmpty()) {
+                    ArchiveEditReadOnlyRow("批次", "暂无批次")
+                } else {
+                    archiveDetail!!.batches.take(3).forEach { batch ->
+                        ArchiveEditReadOnlyRow(
+                            batch.batchCode?.takeIf { it.isNotBlank() } ?: batch.id.take(8),
+                            InventoryText.batchStatus(batch.status),
+                        )
+                    }
+                    if (archiveDetail.batches.size > 3) {
+                        ArchiveEditReadOnlyRow("更多批次", "共 ${archiveDetail.batches.size} 个，返回展示页查看")
+                    }
+                }
+                ArchiveEditorSectionHeader(index = "", english = "STOCK TRANSACTIONS", title = "库存流水")
+                if (archiveDetail?.ledger.isNullOrEmpty()) {
+                    ArchiveEditReadOnlyRow("流水", "暂无流水")
+                } else {
+                    archiveDetail!!.ledger.take(3).forEach { entry ->
+                        val delta = when {
+                            entry.onHandDelta > 0.0 -> "+${formatAmount(entry.onHandDelta)}"
+                            entry.onHandDelta < 0.0 -> formatAmount(entry.onHandDelta)
+                            else -> "0"
+                        }
+                        ArchiveEditReadOnlyRow(
+                            InventoryText.ledgerType(entry.type),
+                            "${formatInstant(entry.occurredAt)} · $delta ${entry.stockUnit.symbol}",
+                        )
+                    }
+                    if (archiveDetail.ledger.size > 3) {
+                        ArchiveEditReadOnlyRow("更多流水", "共 ${archiveDetail.ledger.size} 条，返回展示页查看")
+                    }
+                }
+                ArchiveEditorSectionHeader(index = "", english = "ARCHIVE RECORD", title = "档案记录")
+                ArchiveEditReadOnlyRow("档案编号", archiveDetail?.archive?.id ?: "保存后生成")
+                ArchiveEditReadOnlyRow("档案类型", if (state.kind == ArchiveKind.SAUCE) "酱汁现货档案" else "食材库存档案")
                 ArchiveEditorSectionHeader(index = "", english = "ARCHIVE NOTES", title = "备注")
                 ArchiveEditorInlineField(
                     value = state.description,
@@ -607,6 +657,25 @@ private fun ArchiveEditScreen(
                     picker = null
                 },
             )
+    }
+}
+
+@Composable
+private fun ArchiveEditReadOnlyRow(
+    label: String,
+    value: String,
+) {
+    Column(modifier = Modifier.fillMaxWidth().padding(vertical = CulinarySpacing.xs)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                label,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.weight(1f),
+            )
+            Text(value, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface)
+        }
+        CulinaryRule()
     }
 }
 
