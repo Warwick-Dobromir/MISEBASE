@@ -12,7 +12,16 @@ enum class CameraAccessState {
     UNAVAILABLE,
 }
 
-/** 扫码页状态；新档案通过 pendingCapture 一次性导航，已有档案只显示短暂识别提示。 */
+/** 扫码工作模式。 */
+enum class ScanMode {
+    STOCK_IN,
+    VIEW_DETAILS,
+}
+
+/** 一次成功入库反馈；id 用于让连续动画彼此独立。 */
+data class ScanSuccessFeedback(val id: Long)
+
+/** 扫码页状态；新档案通过 pendingCapture 一次性导航，已有档案按当前模式处理。 */
 data class ScanUiState(
     val cameraAccess: CameraAccessState = CameraAccessState.CHECKING,
     val hasCamera: Boolean = true,
@@ -25,6 +34,9 @@ data class ScanUiState(
     val manualError: String? = null,
     val error: String? = null,
     val status: String? = null,
+    val mode: ScanMode = ScanMode.STOCK_IN,
+    val successFeedbacks: List<ScanSuccessFeedback> = emptyList(),
+    val openArchiveId: String? = null,
     val pendingCapture: ScanCapture? = null,
     val matchedArchive: InventoryArchive? = null,
 ) {
