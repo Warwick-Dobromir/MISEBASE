@@ -236,6 +236,7 @@ private fun PendingStockScreen(
     onSaveDates: (String, List<PendingStockDateAllocation>) -> Unit,
     onConfirm: () -> Unit,
     onDismissIncomplete: () -> Unit,
+    onDismissMissingLocation: () -> Unit,
 ) {
     var editingItem by remember { mutableStateOf<PendingStockEntry?>(null) }
     var selectedItemIds by remember { mutableStateOf<Set<String>>(emptySet()) }
