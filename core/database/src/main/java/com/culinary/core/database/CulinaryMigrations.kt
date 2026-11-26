@@ -38,6 +38,7 @@ internal object CulinaryMigrations {
     val MIGRATION_13_14: Migration = MIGRATION_13_14_IMPL
     val MIGRATION_14_15: Migration = MIGRATION_14_15_IMPL
     val MIGRATION_15_16: Migration = MIGRATION_15_16_IMPL
+    val MIGRATION_16_17: Migration = MIGRATION_16_17_IMPL
 
     val ALL: Array<Migration> =
         arrayOf(
@@ -56,6 +57,7 @@ internal object CulinaryMigrations {
             MIGRATION_13_14,
             MIGRATION_14_15,
             MIGRATION_15_16,
+            MIGRATION_16_17,
         )
 }
 
@@ -1053,3 +1055,18 @@ private val MIGRATION_15_16_IMPL =
             db.execSQL("CREATE INDEX IF NOT EXISTS `index_inventory_batch_capacity_allocation_cell_id` ON `inventory_batch_capacity_allocation` (`cell_id`)")
         }
     }
+
+
+private val MIGRATION_16_17_IMPL = object : Migration(16, 17) {
+ override fun migrate(db: SupportSQLiteDatabase) {
+  CulinarySchemaExtras.dropPartialIndexes(db)
+  db.execSQL("CREATE TABLE IF NOT EXISTS `temporary_barcode` (`id` TEXT NOT NULL, `barcode` TEXT NOT NULL, `status` TEXT NOT NULL DEFAULT 'FREE', `batch_id` TEXT, `allocated_at` INTEGER, `released_at` INTEGER, `created_at` INTEGER NOT NULL, `updated_at` INTEGER NOT NULL, PRIMARY KEY(`id`))")
+  db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS `index_temporary_barcode_barcode` ON `temporary_barcode` (`barcode`)")
+  db.execSQL("CREATE INDEX IF NOT EXISTS `index_temporary_barcode_status_updated_at` ON `temporary_barcode` (`status`, `updated_at`)")
+  db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS `index_temporary_barcode_batch_id` ON `temporary_barcode` (`batch_id`)")
+  db.execSQL("CREATE TABLE IF NOT EXISTS `temporary_barcode_history` (`id` TEXT NOT NULL, `barcode_id` TEXT NOT NULL, `barcode` TEXT NOT NULL, `batch_id` TEXT NOT NULL, `action` TEXT NOT NULL, `occurred_at` INTEGER NOT NULL, PRIMARY KEY(`id`))")
+  db.execSQL("CREATE INDEX IF NOT EXISTS `index_temporary_barcode_history_barcode_id_occurred_at` ON `temporary_barcode_history` (`barcode_id`, `occurred_at`)")
+  db.execSQL("CREATE INDEX IF NOT EXISTS `index_temporary_barcode_history_batch_id_occurred_at` ON `temporary_barcode_history` (`batch_id`, `occurred_at`)")
+  db.execSQL("CREATE TRIGGER IF NOT EXISTS `release_temporary_barcode_on_batch_close` AFTER UPDATE OF `status` ON `inventory_batch` WHEN NEW.`status` IN ('DEPLETED','RECYCLED','DISPOSED') AND OLD.`status` NOT IN ('DEPLETED','RECYCLED','DISPOSED') BEGIN INSERT INTO `temporary_barcode_history` (`id`,`barcode_id`,`barcode`,`batch_id`,`action`,`occurred_at`) SELECT lower(hex(randomblob(16))), `id`, `barcode`, NEW.`id`, 'RELEASED', CAST(strftime('%s','now') AS INTEGER)*1000 FROM `temporary_barcode` WHERE `batch_id`=NEW.`id` AND `status`='ALLOCATED'; UPDATE `temporary_barcode` SET `status`='FREE', `batch_id`=NULL, `released_at`=CAST(strftime('%s','now') AS INTEGER)*1000, `updated_at`=CAST(strftime('%s','now') AS INTEGER)*1000 WHERE `batch_id`=NEW.`id` AND `status`='ALLOCATED'; END")
+ }
+}
