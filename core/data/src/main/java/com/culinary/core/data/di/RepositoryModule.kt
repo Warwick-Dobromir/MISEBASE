@@ -11,6 +11,7 @@ import com.culinary.core.data.repository.KitchenRelationRepositoryImpl
 import com.culinary.core.data.repository.RecipeImageRepositoryImpl
 import com.culinary.core.data.repository.RecipeRepositoryImpl
 import com.culinary.core.data.repository.PendingStockRepositoryImpl
+import com.culinary.core.data.repository.TemporaryBarcodeRepositoryImpl
 import com.culinary.core.data.repository.SauceImageRepositoryImpl
 import com.culinary.core.data.repository.SauceRepositoryImpl
 import com.culinary.core.data.repository.UnitRepositoryImpl
@@ -25,6 +26,7 @@ import com.culinary.core.domain.repository.KitchenRelationRepository
 import com.culinary.core.domain.repository.RecipeImageRepository
 import com.culinary.core.domain.repository.RecipeRepository
 import com.culinary.core.domain.repository.PendingStockRepository
+import com.culinary.core.domain.repository.TemporaryBarcodeRepository
 import com.culinary.core.domain.repository.SauceImageRepository
 import com.culinary.core.domain.repository.SauceRepository
 import com.culinary.core.domain.repository.UnitRepository
@@ -93,4 +95,8 @@ abstract class RepositoryModule {
     @Binds
     @Singleton
     abstract fun bindPendingStockRepository(impl: PendingStockRepositoryImpl): PendingStockRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindTemporaryBarcodeRepository(impl: TemporaryBarcodeRepositoryImpl): TemporaryBarcodeRepository
 }
