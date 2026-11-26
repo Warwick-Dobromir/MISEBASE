@@ -13,6 +13,7 @@ import androidx.core.content.ContextCompat
 import androidx.room.withTransaction
 import androidx.work.CoroutineWorker
 import androidx.work.ExistingWorkPolicy
+import androidx.work.WorkInfo
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
@@ -195,9 +196,27 @@ class ExpiryReminderWorker(context: Context, parameters: WorkerParameters) : Cor
 
 object ExpiryReminderScheduler {
     fun ensureScheduled(context: Context) {
-        val preferences = context.getSharedPreferences("expiry_reminder_schedule", Context.MODE_PRIVATE)
-        if (preferences.getBoolean("initialized", false)) return
-        ExpiryReminderWorker.scheduleNext(context, ExpiryReminderWorker.WORK_A)
-        preferences.edit().putBoolean("initialized", true).apply()
+        val workManager = WorkManager.getInstance(context)
+        val executor = Executors.newSingleThreadExecutor()
+        val names = listOf(ExpiryReminderWorker.WORK_A, ExpiryReminderWorker.WORK_B)
+        executor.execute {
+            try {
+                val workInfos = names.flatMap { name ->
+                    workManager.getWorkInfosForUniqueWork(name).get()
+                }
+                val hasPendingWork = workInfos.any { info ->
+                    info.state == WorkInfo.State.ENQUEUED ||
+                        info.state == WorkInfo.State.RUNNING ||
+                        info.state == WorkInfo.State.BLOCKED
+                }
+                if (!hasPendingWork) {
+                    ExpiryReminderWorker.scheduleNext(context.applicationContext, ExpiryReminderWorker.WORK_A)
+                }
+            } catch (_: Exception) {
+                // A later app start retries the scheduling health check.
+            } finally {
+                executor.shutdown()
+            }
+        }
     }
 }

@@ -18,10 +18,13 @@ class ExpiryTestNotificationWorker(
     parameters: WorkerParameters,
 ) : CoroutineWorker(context, parameters) {
     override suspend fun doWork(): Result {
+        val preferences = applicationContext.getSharedPreferences(TEST_STATE_PREFS, Context.MODE_PRIVATE)
+        preferences.edit().putString(TEST_STATE_KEY, "后台任务已启动").putLong(TEST_UPDATED_KEY, System.currentTimeMillis()).apply()
         if (Build.VERSION.SDK_INT >= 33 &&
             ContextCompat.checkSelfPermission(applicationContext, Manifest.permission.POST_NOTIFICATIONS) !=
             PackageManager.PERMISSION_GRANTED
         ) {
+            preferences.edit().putString(TEST_STATE_KEY, "通知权限未授予").putLong(TEST_UPDATED_KEY, System.currentTimeMillis()).apply()
             return Result.success()
         }
         val productCount = inputData.getInt(KEY_PRODUCT_COUNT, 0)
@@ -56,7 +59,12 @@ class ExpiryTestNotificationWorker(
             .setAutoCancel(true)
         if (pendingIntent != null) builder.setContentIntent(pendingIntent)
         val notification = builder.build()
+        if (!manager.areNotificationsEnabled()) {
+            preferences.edit().putString(TEST_STATE_KEY, "系统通知已关闭").putLong(TEST_UPDATED_KEY, System.currentTimeMillis()).apply()
+            return Result.success()
+        }
         manager.notify(NOTIFICATION_ID, notification)
+        preferences.edit().putString(TEST_STATE_KEY, "系统通知已发送").putLong(TEST_UPDATED_KEY, System.currentTimeMillis()).apply()
         return Result.success()
     }
 
@@ -65,6 +73,9 @@ class ExpiryTestNotificationWorker(
         const val KEY_PRODUCT_COUNT = "product_count"
         const val KEY_BATCH_COUNT = "batch_count"
         private const val CHANNEL_ID = "inventory_expiry_test"
+        const val TEST_STATE_PREFS = "expiry_scan_test_state"
+        const val TEST_STATE_KEY = "state"
+        const val TEST_UPDATED_KEY = "updated_at"
         private const val NOTIFICATION_ID = 4107
     }
 }

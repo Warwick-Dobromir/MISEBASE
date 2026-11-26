@@ -77,6 +77,7 @@ import javax.inject.Inject
 data class BatchDetailUiState(
     val batch: InventoryBatchRecord? = null,
     val archiveName: String = "",
+    val expiryInfo: BatchExpiryInfo = BatchExpiryInfo.pending(),
     val ledger: List<InventoryLedgerEntry> = emptyList(),
     val freezeRecords: List<FreezeRecord> = emptyList(),
     val locations: List<StorageLocation> = emptyList(),
@@ -122,6 +123,7 @@ class BatchDetailViewModel
                             it.copy(
                                 batch = result.value.batch,
                                 archiveName = result.value.archiveName,
+                                expiryInfo = result.value.expiryInfo,
                                 ledger = result.value.ledger,
                                 freezeRecords = result.value.freezeRecords,
                                 locations = result.value.locations,
@@ -168,6 +170,7 @@ class BatchDetailViewModel
                 BatchDetailUiState(
                     batch = batch,
                     archiveName = detail.archive.name,
+                    expiryInfo = calculateBatchExpiryInfo(batch, detail.archive),
                     ledger = ledger,
                     freezeRecords = freezeRecords.sortedByDescending { it.occurredAt },
                     locations = locations,
@@ -306,8 +309,13 @@ private fun BatchDetailScreen(
                         supporting = state.archiveName,
                         actions = {
                             StatusBadge(
-                                text = InventoryText.batchStatus(batch.status),
-                                tone = InventoryText.batchTone(batch.status),
+                                text = state.expiryInfo.statusLabel,
+                                tone = when (state.expiryInfo.status) {
+                                    ExpiryDisplayStatus.NORMAL -> StatusTone.Success
+                                    ExpiryDisplayStatus.ATTENTION -> StatusTone.Warning
+                                    ExpiryDisplayStatus.NEAR, ExpiryDisplayStatus.EXPIRED -> StatusTone.Danger
+                                    ExpiryDisplayStatus.PENDING -> StatusTone.Neutral
+                                },
                             )
                         },
                     )
@@ -341,7 +349,7 @@ private fun BatchDetailScreen(
                         )
                         CulinaryInfoRow(
                             label = "到期日期",
-                            value = batch.expiresOn?.let(::formatDate) ?: "未登记",
+                            value = state.expiryInfo.expiryDate?.let(::formatDate) ?: "待补充",
                         )
                         CulinaryInfoRow(label = "当前库位", value = batch.locationName ?: "未指定")
                         CulinaryInfoRow(label = "来源商品", value = batch.sourceProductName ?: "未关联商品")

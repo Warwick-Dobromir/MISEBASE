@@ -278,7 +278,7 @@ data class BatchExpiryInfo(
 
 enum class ExpiryDisplayStatus { NORMAL, ATTENTION, NEAR, EXPIRED, PENDING }
 
-private fun calculateBatchExpiryInfo(batch: InventoryBatchRecord, archive: InventoryArchive): BatchExpiryInfo {
+fun calculateBatchExpiryInfo(batch: InventoryBatchRecord, archive: InventoryArchive): BatchExpiryInfo {
     val expiry = batch.expiresOn ?: run {
         calculateDefaultExpiryDate(
             productionDate = batch.productionDate,

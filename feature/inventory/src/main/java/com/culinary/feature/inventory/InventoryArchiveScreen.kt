@@ -337,7 +337,7 @@ private fun ArchiveDetailScreen(
                         )
                     } else {
                         detail.batches.take(3).forEach { batch ->
-                            ArchiveBatchRow(batch = batch, onClick = { onOpenBatch(batch.id) })
+                            ArchiveBatchRow(batch = batch, archive = detail.archive, onClick = { onOpenBatch(batch.id) })
                         }
                     }
                     if (detail.relatedRecipeNames.isNotEmpty()) {
@@ -501,6 +501,7 @@ private fun ArchiveLinkRow(
 @Composable
 private fun ArchiveBatchRow(
     batch: InventoryBatchRecord,
+    archive: com.culinary.core.domain.model.InventoryArchive,
     onClick: () -> Unit,
 ) {
     Row(
@@ -528,9 +529,15 @@ private fun ArchiveBatchRow(
             )
         }
         Spacer(modifier = Modifier.width(CulinarySpacing.sm))
+        val expiryInfo = calculateBatchExpiryInfo(batch, archive)
         StatusBadge(
-            text = InventoryText.batchStatus(batch.status),
-            tone = InventoryText.batchTone(batch.status),
+            text = expiryInfo.statusLabel,
+            tone = when (expiryInfo.status) {
+                ExpiryDisplayStatus.NORMAL -> StatusTone.Success
+                ExpiryDisplayStatus.ATTENTION -> StatusTone.Warning
+                ExpiryDisplayStatus.NEAR, ExpiryDisplayStatus.EXPIRED -> StatusTone.Danger
+                ExpiryDisplayStatus.PENDING -> StatusTone.Neutral
+            },
         )
     }
 }

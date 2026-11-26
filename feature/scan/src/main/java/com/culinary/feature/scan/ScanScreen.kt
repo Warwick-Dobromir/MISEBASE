@@ -111,7 +111,6 @@ internal fun ScanScreen(
                         onManualCodeChange = onManualCodeChange,
                         onSubmitManualCode = onSubmitManualCode,
                         onCloseManualEntry = onCloseManualEntry,
-                        onBack = onBack,
                     )
 
                 else ->
@@ -157,7 +156,7 @@ private fun ScanFrameOverlay(modifier: Modifier = Modifier) {
         val frameWidth = size.width * FRAME_WIDTH_RATIO
         val frameHeight = minOf(frameWidth, size.height * FRAME_HEIGHT_RATIO)
         val left = (size.width - frameWidth) / 2f
-        val top = (size.height - frameHeight) / 2f
+        val top = ((size.height - frameHeight) / 2f - size.height * 0.04f).coerceAtLeast(0f)
         drawRect(color = scrim, size = Size(size.width, top))
         drawRect(
             color = scrim,
@@ -485,7 +484,6 @@ private fun ManualEntryPane(
     onManualCodeChange: (String) -> Unit,
     onSubmitManualCode: () -> Unit,
     onCloseManualEntry: () -> Unit,
-    onBack: () -> Unit,
 ) {
     Column(
         modifier = Modifier.fillMaxSize().padding(CulinarySpacing.lg),
@@ -531,11 +529,6 @@ private fun ManualEntryPane(
             variant = CulinaryButtonVariant.Secondary,
             enabled = state.hasCamera,
             modifier = Modifier.fillMaxWidth(),
-        )
-        Spacer(modifier = Modifier.height(CulinarySpacing.xs))
-        CulinaryTextButton(
-            text = stringResource(R.string.scan_back),
-            onClick = onBack,
         )
     }
 }
