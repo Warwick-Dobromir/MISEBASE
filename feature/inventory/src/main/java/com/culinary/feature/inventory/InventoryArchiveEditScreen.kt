@@ -874,10 +874,7 @@ private fun ArchiveEditScreen(
                 ArchiveEditReadOnlyRow("商品编码", state.productCode.ifBlank { "保存档案后自动生成" })
                 Row(modifier = Modifier.fillMaxWidth().padding(vertical = CulinarySpacing.xs), verticalAlignment = Alignment.CenterVertically) {
                     Text("条码", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.width(104.dp))
-                    ArchiveEditorInlineField(value = state.barcode, onValueChange = onBarcodeChange, placeholder = "扫描或填写商品条码", modifier = Modifier.weight(1f))
-                    IconButton(onClick = onScanBarcode, modifier = Modifier.size(36.dp)) {
-                        Icon(imageVector = CulinaryIcons.Scan, contentDescription = "扫描条码", tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(16.dp))
-                    }
+                    ArchiveEditorInlineField(value = state.barcode, onValueChange = onBarcodeChange, placeholder = "填写商品条码", modifier = Modifier.weight(1f))
                 }
                 if (state.kind == ArchiveKind.SAUCE) {
                     EditPickerField(
