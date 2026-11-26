@@ -7,12 +7,15 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
@@ -22,6 +25,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -33,6 +38,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.dialog
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
@@ -629,6 +635,7 @@ private fun NavGraphBuilder.inventoryGraph(navController: NavHostController) {
             onReceipt = { archiveId -> navController.navigate(InventoryRoutes.receipt(archiveId)) },
             onIssue = { archiveId -> navController.navigate(InventoryRoutes.issue(archiveId)) },
             onStocktake = { archiveId -> navController.navigate(InventoryRoutes.stocktake(scope = "ARCHIVE", scopeRef = archiveId)) },
+            onScanBarcode = { navController.navigate(ARCHIVE_BARCODE_SCAN_ROUTE) },
         )
     }
     composable(
@@ -802,7 +809,13 @@ private fun nullableString(name: String): NamedNavArgument =
  * 扫码入口：已有库存档案由扫码页顶部短暂提示；未建档物品直接进入新建库存档案。
  */
 private fun NavGraphBuilder.scanGraph(navController: NavHostController) {
-    composable(ARCHIVE_BARCODE_SCAN_ROUTE) {
+    dialog(ARCHIVE_BARCODE_SCAN_ROUTE) {
+        Dialog(onDismissRequest = { navController.popBackStack() }) {
+            Surface(
+                modifier = Modifier.fillMaxWidth().fillMaxHeight(0.88f),
+                shape = RoundedCornerShape(6.dp),
+                color = MaterialTheme.colorScheme.surface,
+            ) {
         ScanRoute(
             onCapture = { capture ->
                 navController.previousBackStackEntry?.savedStateHandle?.set("archive_barcode_scan_result", capture.rawValue)
@@ -823,6 +836,8 @@ private fun NavGraphBuilder.scanGraph(navController: NavHostController) {
             onBack = { navController.popBackStack() },
             initialMode = ScanMode.BARCODE_ASSIGNMENT,
         )
+            }
+        }
     }
     composable(SCAN_ROUTE) {
         ScanRoute(
