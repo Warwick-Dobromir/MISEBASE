@@ -307,7 +307,7 @@ class ListInventoryArchivesUseCase(
 class ReplaceInventoryArchiveBarcodeUseCase(
     private val repository: InventoryArchiveRepository,
 ) {
-    suspend operator fun invoke(archiveId: String, newBarcode: String): Outcome<Unit> {
+    suspend operator fun invoke(archiveId: String, newBarcode: String): Outcome<kotlin.Unit> {
         val barcode = newBarcode.trim()
         if (barcode.isBlank()) {
             return Outcome.failure(CulinaryError.Validation(field = "barcode", rule = "must not be blank"))
@@ -317,7 +317,7 @@ class ReplaceInventoryArchiveBarcodeUseCase(
             is Outcome.Success -> result.value
                 ?: return Outcome.failure(CulinaryError.NotFound("inventory_archive", archiveId))
         }
-        if (archive.barcode == barcode) return Outcome.success(Unit)
+        if (archive.barcode == barcode) return Outcome.success(kotlin.Unit)
         val duplicate = when (val result = repository.listArchives()) {
             is Outcome.Failure -> return result
             is Outcome.Success -> result.value.firstOrNull {
