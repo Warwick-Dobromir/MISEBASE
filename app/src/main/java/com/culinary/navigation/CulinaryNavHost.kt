@@ -84,6 +84,7 @@ import com.culinary.feature.sauces.SauceDetailRoute
 import com.culinary.feature.sauces.SauceEditorRoute
 import com.culinary.feature.sauces.SaucesRoute
 import com.culinary.feature.sauces.SaucesRoutes
+import com.culinary.feature.scan.ScanMode
 import com.culinary.feature.scan.ScanRoute
 import com.culinary.home.HOME_PLACEHOLDER_ROUTE
 import com.culinary.home.HOME_PLACEHOLDER_SECTION_ARG
@@ -815,6 +816,7 @@ private fun NavGraphBuilder.scanGraph(navController: NavHostController) {
                 navController.popBackStack()
             },
             onBack = { navController.popBackStack() },
+            initialMode = ScanMode.VIEW_DETAILS,
         )
     }
     composable(SCAN_ROUTE) {
