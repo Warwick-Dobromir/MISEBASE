@@ -37,7 +37,6 @@ import com.culinary.core.designsystem.component.PageHeader
 import com.culinary.core.designsystem.icon.CulinaryIcons
 import com.culinary.core.designsystem.theme.CulinaryColorScheme
 import com.culinary.core.designsystem.theme.CulinarySpacing
-import com.culinary.core.domain.model.DefaultShelfLifeUnit
 import com.culinary.core.domain.model.InventoryArchive
 import com.culinary.core.domain.rule.inventory.calculateDefaultExpiryDate
 import com.culinary.core.domain.model.InventoryBatchRecord
