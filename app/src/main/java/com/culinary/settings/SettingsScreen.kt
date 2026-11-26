@@ -66,6 +66,7 @@ private val RESTORE_MIME_TYPES = arrayOf(ZIP_MIME, "application/octet-stream")
 /** N3 第 5 项“设置”：备份、恢复、诊断与关于。 */
 @Composable
 fun SettingsRoute(
+    onOpenUnits: () -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: SettingsViewModel = hiltViewModel(),
 ) {
@@ -87,6 +88,7 @@ fun SettingsRoute(
 
     SettingsScreen(
         state = state,
+        onOpenUnits = onOpenUnits,
         onBackupClick = { backupLauncher.launch("MISEBASE-backup-${fileStamp()}.zip") },
         onRestoreClick = { restoreLauncher.launch(RESTORE_MIME_TYPES) },
         onConfirmRestore = viewModel::confirmRestore,
@@ -112,6 +114,7 @@ fun SettingsRoute(
 @Composable
 internal fun SettingsScreen(
     state: SettingsUiState,
+    onOpenUnits: () -> Unit,
     onBackupClick: () -> Unit,
     onRestoreClick: () -> Unit,
     onConfirmRestore: () -> Unit,
@@ -143,6 +146,7 @@ internal fun SettingsScreen(
         )
         CulinaryRule()
         Column(modifier = Modifier.padding(horizontal = CulinarySpacing.pageHorizontal)) {
+            UnitManagementSection(onOpenUnits = onOpenUnits)
             BackupSection(state = state, onBackupClick = onBackupClick)
             RestoreSection(
                 state = state,
@@ -221,6 +225,21 @@ internal fun SettingsScreen(
             onDismiss = { showSeedClearConfirm = false },
         )
     }
+}
+
+@Composable
+private fun UnitManagementSection(onOpenUnits: () -> Unit) {
+    SectionHeader(title = "计量单位")
+    Text(
+        text = "管理厨房与库存共用的计量单位",
+        style = MaterialTheme.typography.bodyMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onOpenUnits)
+            .padding(vertical = CulinarySpacing.sm),
+    )
+    CulinaryRule()
 }
 
 @Composable
