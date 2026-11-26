@@ -644,10 +644,15 @@ private fun NavGraphBuilder.inventoryGraph(navController: NavHostController) {
         val scannedBarcodeResult by entry.savedStateHandle
             .getStateFlow<String?>(ARCHIVE_BARCODE_SCAN_RESULT_KEY, null)
             .collectAsStateWithLifecycle()
+        val duplicateBarcodeArchiveId by entry.savedStateHandle
+            .getStateFlow<String?>(ARCHIVE_BARCODE_DUPLICATE_KEY, null)
+            .collectAsStateWithLifecycle()
         ArchiveEditRoute(
             onScanBarcode = { navController.navigate(SCAN_ROUTE) },
             scannedBarcode = scannedBarcodeResult,
+            duplicateBarcodeArchiveId = duplicateBarcodeArchiveId,
             onScannedBarcodeConsumed = { entry.savedStateHandle[ARCHIVE_BARCODE_SCAN_RESULT_KEY] = null },
+            onDuplicateBarcodeConsumed = { entry.savedStateHandle[ARCHIVE_BARCODE_DUPLICATE_KEY] = null },
             onSaved = { archiveId ->
                 if (scannedBarcode.isNotBlank()) {
                     navController.navigate(InventoryRoutes.pendingStock()) {
@@ -813,7 +818,13 @@ private fun NavGraphBuilder.scanGraph(navController: NavHostController) {
                 }
             },
             onOpenArchive = { archiveId ->
-                navController.navigate(InventoryRoutes.archive(archiveId))
+                val previous = navController.previousBackStackEntry
+                if (previous?.destination?.route == InventoryRoutes.ARCHIVE_EDIT) {
+                    previous.savedStateHandle[ARCHIVE_BARCODE_DUPLICATE_KEY] = archiveId
+                    navController.popBackStack()
+                } else {
+                    navController.navigate(InventoryRoutes.archive(archiveId))
+                }
             },
             onBack = { navController.backOrStart(APP_START_ROUTE) },
         )
@@ -821,6 +832,7 @@ private fun NavGraphBuilder.scanGraph(navController: NavHostController) {
 }
 
 private const val ARCHIVE_BARCODE_SCAN_RESULT_KEY = "archiveBarcodeScanResult"
+private const val ARCHIVE_BARCODE_DUPLICATE_KEY = "archiveBarcodeDuplicateOwner"
 private const val UNIT_MANAGEMENT_ROUTE = "settings/units"
 
 private fun NavGraphBuilder.settingsGraph(navController: NavHostController) {
