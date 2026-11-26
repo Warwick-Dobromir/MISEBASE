@@ -609,7 +609,7 @@ private fun PendingStockDateSheet(
                 Text("+", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold)
                 Text(
                     "  添加生产日期分组",
-                    color = CulinaryColorScheme.current.accent,
+                    color = MaterialTheme.colorScheme.primary,
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.Medium,
                 )
@@ -654,11 +654,11 @@ private fun PendingStockDateSheet(
             ) {
                 Text(
                     "保存日期分配",
-                    color = if (valid) CulinaryColorScheme.current.accent else MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = if (valid) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.SemiBold,
                 )
-                Text("  →", color = CulinaryColorScheme.current.accent)
+                Text("  →", color = MaterialTheme.colorScheme.primary)
             }
         }
     }
