@@ -28,6 +28,7 @@ import com.culinary.feature.scan.permission.CameraPermission
 fun ScanRoute(
     onCapture: (ScanCapture) -> Unit,
     onOpenArchive: (String) -> Unit,
+    onOpenBatch: (String) -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: ScanViewModel = hiltViewModel(),
@@ -62,6 +63,12 @@ fun ScanRoute(
         val archiveId = state.openArchiveId ?: return@LaunchedEffect
         viewModel.onArchiveNavigationConsumed()
         onOpenArchive(archiveId)
+    }
+
+    LaunchedEffect(state.openBatchId) {
+        val batchId = state.openBatchId ?: return@LaunchedEffect
+        viewModel.onBatchNavigationConsumed()
+        onOpenBatch(batchId)
     }
 
     LaunchedEffect(state.pendingCapture) {
