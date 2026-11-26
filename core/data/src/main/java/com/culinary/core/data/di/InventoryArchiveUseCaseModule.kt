@@ -33,6 +33,7 @@ import com.culinary.core.domain.usecase.inventory.ListInventoryCapacityCellsUseC
 import com.culinary.core.domain.usecase.inventory.ListInventoryCategoryTreeUseCase
 import com.culinary.core.domain.usecase.inventory.ListStorageLocationsUseCase
 import com.culinary.core.domain.usecase.inventory.PrintJobUseCases
+import com.culinary.core.domain.usecase.inventory.ReplaceInventoryArchiveBarcodeUseCase
 import com.culinary.core.domain.usecase.inventory.RecordArchiveReceiptUseCase
 import com.culinary.core.domain.usecase.inventory.RecordPurchaseReceiptUseCase
 import com.culinary.core.domain.usecase.inventory.SaveInventoryArchiveUseCase
@@ -79,6 +80,12 @@ object InventoryArchiveUseCaseModule {
         clock: Clock,
     ): SaveInventoryArchiveUseCase =
         SaveInventoryArchiveUseCase(repository, categoryRepository, idGenerator, clock)
+
+    @Provides
+    @Singleton
+    fun provideReplaceInventoryArchiveBarcodeUseCase(
+        repository: InventoryArchiveRepository,
+    ): ReplaceInventoryArchiveBarcodeUseCase = ReplaceInventoryArchiveBarcodeUseCase(repository)
 
     @Provides
     @Singleton
