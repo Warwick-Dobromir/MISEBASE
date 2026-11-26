@@ -9,6 +9,7 @@ import androidx.work.WorkManager
 import androidx.work.workDataOf
 import com.culinary.core.common.Clock
 import com.culinary.core.common.Outcome
+import com.culinary.core.domain.model.DefaultShelfLifeUnit
 import com.culinary.core.domain.repository.InventoryArchiveRepository
 import com.culinary.core.domain.rule.inventory.calculateDefaultExpiryDate
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -63,8 +64,8 @@ class ExpiryScanTestViewModel @Inject constructor(
                         val calculatedExpiry = if (archive.shelfLifeEnabled) {
                             calculateDefaultExpiryDate(
                                 productionDate = batch.productionDate,
-                                shelfLifeValue = archive.defaultShelfLifeValue,
-                                shelfLifeUnit = archive.defaultShelfLifeUnit,
+                                shelfLifeValue = archive.defaultShelfLifeValue ?: archive.shelfLifeDays,
+                                shelfLifeUnit = archive.defaultShelfLifeUnit ?: DefaultShelfLifeUnit.DAY,
                             )
                         } else {
                             null
