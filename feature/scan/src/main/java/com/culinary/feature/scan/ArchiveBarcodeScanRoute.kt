@@ -27,6 +27,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -101,6 +102,7 @@ fun ArchiveBarcodeScanRoute(
                 Spacer(Modifier.height(12.dp))
                 Box(
                     modifier = Modifier.fillMaxWidth().height(188.dp)
+                        .clip(RoundedCornerShape(12.dp))
                         .background(Color(0xFFF1F1F0), RoundedCornerShape(12.dp)),
                 ) {
                     if (hasCamera && permissionGranted) {
