@@ -16,6 +16,7 @@ enum class CameraAccessState {
 enum class ScanMode {
     STOCK_IN,
     VIEW_DETAILS,
+    BARCODE_ASSIGNMENT,
 }
 
 /** 一次成功入库反馈；id 用于让连续动画彼此独立。 */
