@@ -1096,7 +1096,7 @@ private val MIGRATION_16_17_IMPL =
             db.execSQL("""
                 CREATE TRIGGER IF NOT EXISTS trg_release_temporary_barcode_on_batch_close
                 AFTER UPDATE OF status ON inventory_batch
-                WHEN NEW.status IN ('DEPLETED', 'RECYCLED', 'DISPOSED')
+                WHEN NEW.status IN ('DEPLETED', 'EXPIRED', 'DISCARDED', 'RECYCLED')
                 BEGIN
                     INSERT INTO temporary_barcode_history
                         (id, barcode_id, barcode_code, batch_id, action, occurred_at)
