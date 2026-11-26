@@ -29,7 +29,7 @@ import com.culinary.core.designsystem.component.BrandPageHeader
 import com.culinary.core.designsystem.component.CulinaryRule
 import com.culinary.core.designsystem.component.SectionHeader
 import com.culinary.core.designsystem.theme.CulinarySpacing
-import com.culinary.core.domain.model.Unit
+import com.culinary.core.domain.model.Unit as MeasureUnit
 import com.culinary.core.domain.model.UnitDimension
 
 @Composable
@@ -37,7 +37,7 @@ fun UnitManagementRoute(
         viewModel: UnitManagementViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
-    var editing by remember { mutableStateOf<Unit?>(null) }
+    var editing by remember { mutableStateOf<MeasureUnit?>(null) }
     var showEditor by remember { mutableStateOf(false) }
     Column(
         Modifier.fillMaxSize().verticalScroll(rememberScrollState())
@@ -88,7 +88,7 @@ fun UnitManagementRoute(
                             modifier = Modifier.clickable { editing = unit; showEditor = true }.padding(horizontal = 8.dp),
                         )
                         Text(
-                            if (unit.isActive()) "停用" else "启用",
+                            if (unit.isActive) "停用" else "启用",
                             color = MaterialTheme.colorScheme.secondary,
                             modifier = Modifier.clickable { viewModel.setActive(unit, !unit.isActive()) }
                                 .padding(start = 8.dp),
@@ -121,7 +121,7 @@ fun UnitManagementRoute(
 
 @Composable
 private fun UnitEditorDialog(
-    initial: Unit?,
+    initial: MeasureUnit?,
     onDismiss: () -> Unit,
     onSave: (String, String, UnitDimension, Double) -> Unit,
 ) {
