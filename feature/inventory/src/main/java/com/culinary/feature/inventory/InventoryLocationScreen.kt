@@ -3,11 +3,11 @@ package com.culinary.feature.inventory
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
@@ -23,8 +23,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.culinary.core.common.Outcome
 import com.culinary.core.designsystem.component.CulinaryButton
@@ -42,18 +42,22 @@ import com.culinary.core.designsystem.component.StatusBadge
 import com.culinary.core.designsystem.component.StatusTone
 import com.culinary.core.designsystem.icon.CulinaryIcons
 import com.culinary.core.designsystem.theme.CulinarySpacing
+import com.culinary.core.domain.model.CapacityCellSummary
 import com.culinary.core.domain.model.LocationId
 import com.culinary.core.domain.model.StorageLocation
+import com.culinary.core.domain.usecase.inventory.GetLocationCapacityLimitUseCase
 import com.culinary.core.domain.usecase.inventory.ListInventoryArchivesUseCase
+import com.culinary.core.domain.usecase.inventory.ListInventoryCapacityCellsUseCase
 import com.culinary.core.domain.usecase.inventory.ListStorageLocationsUseCase
 import com.culinary.core.domain.usecase.inventory.SaveStorageLocationUseCase
+import com.culinary.core.domain.usecase.inventory.SetLocationCapacityLimitUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import javax.inject.Inject
 
 // ---------------------------------------------------------------------------
 // 路由
@@ -74,6 +78,7 @@ fun LocationRoute(
         onNameChange = viewModel::onNameChange,
         onParentSelected = viewModel::onParentSelected,
         onKindSelected = viewModel::onKindSelected,
+        onCapacityLimitChange = viewModel::onCapacityLimitChange,
         onSave = viewModel::save,
         onDismissDialog = viewModel::closeDialog,
         onRequestDelete = viewModel::requestDelete,
@@ -94,6 +99,7 @@ data class LocationRow(
     val depth: Int,
     val childCount: Int,
     val hasStock: Boolean,
+    val capacityCells: List<CapacityCellSummary> = emptyList(),
 )
 
 /** 库位编辑弹窗状态。 */
@@ -111,6 +117,8 @@ data class LocationUiState(
     val deleteTargetId: String? = null,
     val deleteTargetName: String? = null,
     val deleteBlocked: Boolean = false,
+    val capacityLimitCu: String = "100",
+    val capacityCells: List<CapacityCellSummary> = emptyList(),
 )
 
 /** 库位类型；与 `storage_location.kind` 的取值一致。 */
@@ -133,6 +141,9 @@ class LocationViewModel
         private val listLocations: ListStorageLocationsUseCase,
         private val listArchives: ListInventoryArchivesUseCase,
         private val saveLocation: SaveStorageLocationUseCase,
+        private val getCapacityLimit: GetLocationCapacityLimitUseCase,
+        private val setCapacityLimit: SetLocationCapacityLimitUseCase,
+        private val listCapacityCells: ListInventoryCapacityCellsUseCase,
     ) : ViewModel() {
         private val _uiState = MutableStateFlow(LocationUiState())
         val uiState: StateFlow<LocationUiState> = _uiState.asStateFlow()
@@ -160,9 +171,14 @@ class LocationViewModel
                         is Outcome.Failure -> emptySet()
                         is Outcome.Success -> result.value.rows.flatMap { it.locationNames }.toSet()
                     }
+                val capacityCells = when (val result = listCapacityCells()) {
+                    is Outcome.Success -> result.value
+                    is Outcome.Failure -> emptyList()
+                }
                 _uiState.update {
                     it.copy(
-                        rows = buildTree(locations, stockedLocationNames),
+                        capacityCells = capacityCells,
+                        rows = buildTree(locations, stockedLocationNames, capacityCells),
                         isLoading = false,
                     )
                 }
@@ -173,6 +189,7 @@ class LocationViewModel
         private fun buildTree(
             locations: List<StorageLocation>,
             stockedNames: Set<String>,
+            capacityCells: List<CapacityCellSummary>,
         ): List<LocationRow> {
             val byParent = locations.groupBy { it.parentId?.value }
             val ids = locations.map { it.id.value }.toSet()
@@ -191,6 +208,7 @@ class LocationViewModel
                         depth = depth,
                         childCount = children.size,
                         hasStock = location.name in stockedNames,
+                        capacityCells = capacityCells.filter { it.baseLocationId == location.id },
                     )
                 children.forEach { visit(it, depth + 1) }
             }
@@ -207,6 +225,7 @@ class LocationViewModel
                     name = "",
                     parentId = null,
                     kind = "OTHER",
+                    capacityLimitCu = "100",
                     error = null,
                 )
             }
@@ -223,6 +242,16 @@ class LocationViewModel
                     error = null,
                 )
             }
+            viewModelScope.launch {
+                when (val result = getCapacityLimit(locationId)) {
+                    is Outcome.Success -> _uiState.update { it.copy(capacityLimitCu = result.value.toString()) }
+                    is Outcome.Failure -> _uiState.update { it.copy(error = InventoryErrorMessages.describe(result.error)) }
+                }
+            }
+        }
+
+        fun onCapacityLimitChange(value: String) {
+            _uiState.update { it.copy(capacityLimitCu = value, error = null) }
         }
 
         fun onNameChange(value: String) {
@@ -248,6 +277,11 @@ class LocationViewModel
                 _uiState.update { it.copy(error = "库位名称不能为空。") }
                 return
             }
+            val capacity = state.capacityLimitCu.trim().toDoubleOrNull()
+            if (capacity == null || !capacity.isFinite() || capacity <= 0.0) {
+                _uiState.update { it.copy(error = "容量上限必须是大于 0 的数字。") }
+                return
+            }
             val editingId = state.editingId
             // 重命名时不能把自己设为自己的父库位，避免形成环。
             val parentId = state.parentId?.takeIf { it != editingId }
@@ -261,13 +295,19 @@ class LocationViewModel
                         }
 
                     is Outcome.Success -> {
+                        when (val capacityResult = setCapacityLimit(result.value.value, capacity)) {
+                            is Outcome.Failure -> {
+                                _uiState.update {
+                                    it.copy(isWorking = false, editingId = result.value.value, error = InventoryErrorMessages.describe(capacityResult.error))
+                                }
+                                return@launch
+                            }
+                            is Outcome.Success -> Unit
+                        }
                         _uiState.update {
                             it.copy(
-                                isWorking = false,
-                                dialogOpen = false,
-                                editingId = null,
-                                name = "",
-                                parentId = null,
+                                isWorking = false, dialogOpen = false, editingId = null,
+                                name = "", parentId = null,
                                 message = if (editingId == null) "库位已创建。" else "库位已重命名。",
                             )
                         }
@@ -338,6 +378,7 @@ internal fun LocationScreen(
     onNameChange: (String) -> Unit,
     onParentSelected: (String?) -> Unit,
     onKindSelected: (String) -> Unit,
+    onCapacityLimitChange: (String) -> Unit,
     onSave: () -> Unit,
     onDismissDialog: () -> Unit,
     onRequestDelete: (String) -> Unit,
@@ -450,6 +491,12 @@ internal fun LocationScreen(
                         variant = CulinaryButtonVariant.Secondary,
                         icon = CulinaryIcons.ChevronDown,
                         modifier = Modifier.fillMaxWidth().padding(top = CulinarySpacing.md),
+                    )
+                    CulinaryTextField(
+                        value = state.capacityLimitCu,
+                        onValueChange = onCapacityLimitChange,
+                        label = "单个容量格上限（CU）",
+                        singleLine = true,
                     )
                     Text(
                         text = "库位类型",
@@ -614,6 +661,17 @@ private fun LocationTreeRow(
                 onClick = onDelete,
                 enabled = enabled && !row.hasStock,
                 danger = true,
+            )
+        }
+        if (row.capacityCells.isNotEmpty()) {
+            Text(
+                text = row.capacityCells.joinToString("  ·  ") { cell ->
+                    "${cell.displayName}  ${cell.occupiedCu.stripTrailingZeros().toPlainString()}/${cell.capacityCu.stripTrailingZeros().toPlainString()} CU" +
+                        if (cell.isOverConfiguredLimit) "（超出新上限）" else ""
+                },
+                style = MaterialTheme.typography.bodySmall,
+                color = if (row.capacityCells.any { it.isOverConfiguredLimit }) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = CulinarySpacing.xxs),
             )
         }
         if (row.hasStock) {

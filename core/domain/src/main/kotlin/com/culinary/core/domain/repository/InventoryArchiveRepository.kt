@@ -2,6 +2,7 @@ package com.culinary.core.domain.repository
 
 import com.culinary.core.common.Outcome
 import com.culinary.core.domain.model.ArchiveProductLink
+import com.culinary.core.domain.model.CapacityCellSummary
 import com.culinary.core.domain.model.FreezeRecord
 import com.culinary.core.domain.model.InventoryArchive
 import com.culinary.core.domain.model.InventoryBatchRecord
@@ -213,6 +214,14 @@ interface InventoryArchiveRepository {
     ): Outcome<LocationId>
 
     suspend fun batchCountAtLocation(locationId: String): Outcome<Int>
+
+    /** 设置某真实库位的容量格模板；已有格超出新模板时保留原上限并显式标记。 */
+    suspend fun getLocationCapacityLimit(locationId: String): Outcome<Double>
+
+    suspend fun setLocationCapacityLimit(locationId: String, capacityCu: Double): Outcome<Unit>
+
+    /** 读取逻辑容量格；读取时同步更新已跨越效期分级阈值的批次分组。 */
+    suspend fun listCapacityCells(): Outcome<List<CapacityCellSummary>>
 
     // ---- 规则 ----
     suspend fun readRules(): InventoryRules

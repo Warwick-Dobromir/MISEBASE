@@ -6,16 +6,39 @@ import com.culinary.core.domain.model.ArchiveCategory
 import com.culinary.core.domain.model.ArchiveCategoryAssignment
 import com.culinary.core.domain.model.ArchiveLibrary
 import com.culinary.core.domain.model.DefaultShelfLifeUnit
-import com.culinary.core.domain.model.KitchenRecordKind
 import com.culinary.core.domain.model.InventoryArchive
+import com.culinary.core.domain.model.KitchenRecordKind
 import com.culinary.core.domain.repository.ArchiveCategoryRepository
 import com.google.common.truth.Truth.assertThat
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.runBlocking
 import org.junit.Test
 
 class SaveInventoryArchiveUseCaseTest {
+    @Test
+    fun `persists capacity unit coefficient`() = runBlocking {
+        val repository = FakeInventoryArchiveRepository()
+        val useCase = SaveInventoryArchiveUseCase(
+            repository = repository,
+            categoryRepository = EmptyArchiveCategoryRepository,
+            idGenerator = IdGenerator { "archive-cu" },
+            clock = TestClock,
+        )
+
+        val result = useCase(
+            InventoryArchive(
+                id = "",
+                name = "黄油",
+                stockUnit = Gram,
+                capacityUnitPerStockUnit = 2.5,
+            ),
+        )
+
+        assertThat(result).isInstanceOf(Outcome.Success::class.java)
+        assertThat(repository.archives.getValue("archive-cu").capacityUnitPerStockUnit).isWithin(1e-9).of(2.5)
+    }
+
     @Test
     fun `persists default shelf life value and unit`() = runBlocking {
         val repository = FakeInventoryArchiveRepository()

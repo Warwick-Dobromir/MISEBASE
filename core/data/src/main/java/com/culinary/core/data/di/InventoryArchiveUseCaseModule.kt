@@ -6,6 +6,7 @@ import com.culinary.core.domain.repository.ArchiveCategoryRepository
 import com.culinary.core.domain.repository.IngredientRepository
 import com.culinary.core.domain.repository.InventoryArchiveRepository
 import com.culinary.core.domain.repository.InventoryRepository
+import com.culinary.core.domain.repository.PendingStockRepository
 import com.culinary.core.domain.repository.RecipeRepository
 import com.culinary.core.domain.repository.SauceRepository
 import com.culinary.core.domain.repository.UnitRepository
@@ -19,6 +20,7 @@ import com.culinary.core.domain.usecase.inventory.ConfirmPendingStockUseCase
 import com.culinary.core.domain.usecase.inventory.CreatePrintJobUseCase
 import com.culinary.core.domain.usecase.inventory.FreezeBatchUseCase
 import com.culinary.core.domain.usecase.inventory.GetInventoryArchiveDetailUseCase
+import com.culinary.core.domain.usecase.inventory.GetLocationCapacityLimitUseCase
 import com.culinary.core.domain.usecase.inventory.InventoryCategoryUseCases
 import com.culinary.core.domain.usecase.inventory.InventoryLedgerUseCases
 import com.culinary.core.domain.usecase.inventory.InventoryRulesUseCases
@@ -27,23 +29,24 @@ import com.culinary.core.domain.usecase.inventory.ListArchiveFormOptionsUseCase
 import com.culinary.core.domain.usecase.inventory.ListArchiveProductLinksUseCase
 import com.culinary.core.domain.usecase.inventory.ListFrozenBatchesUseCase
 import com.culinary.core.domain.usecase.inventory.ListInventoryArchivesUseCase
+import com.culinary.core.domain.usecase.inventory.ListInventoryCapacityCellsUseCase
 import com.culinary.core.domain.usecase.inventory.ListInventoryCategoryTreeUseCase
 import com.culinary.core.domain.usecase.inventory.ListStorageLocationsUseCase
 import com.culinary.core.domain.usecase.inventory.PrintJobUseCases
 import com.culinary.core.domain.usecase.inventory.RecordArchiveReceiptUseCase
 import com.culinary.core.domain.usecase.inventory.RecordPurchaseReceiptUseCase
-import com.culinary.core.domain.repository.PendingStockRepository
 import com.culinary.core.domain.usecase.inventory.SaveInventoryArchiveUseCase
 import com.culinary.core.domain.usecase.inventory.SaveStorageLocationUseCase
+import com.culinary.core.domain.usecase.inventory.SetLocationCapacityLimitUseCase
 import com.culinary.core.domain.usecase.inventory.StocktakeUseCases
 import com.culinary.core.domain.usecase.inventory.TemporaryStockUseCases
 import com.culinary.core.domain.usecase.inventory.TransferBatchLocationUseCase
 import com.culinary.core.domain.usecase.inventory.UnfreezeBatchUseCase
 import com.culinary.core.domain.usecase.inventory.UnlinkArchiveProductUseCase
+import dagger.hilt.components.SingletonComponent
+import dagger.hilt.InstallIn
 import dagger.Module
 import dagger.Provides
-import dagger.hilt.InstallIn
-import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
 
 /** 库存档案化（v9）用例装配；规则与写入内核全部复用既有实现。 */
@@ -74,7 +77,8 @@ object InventoryArchiveUseCaseModule {
         categoryRepository: ArchiveCategoryRepository,
         idGenerator: IdGenerator,
         clock: Clock,
-    ): SaveInventoryArchiveUseCase = SaveInventoryArchiveUseCase(repository, categoryRepository, idGenerator, clock)
+    ): SaveInventoryArchiveUseCase =
+        SaveInventoryArchiveUseCase(repository, categoryRepository, idGenerator, clock)
 
     @Provides
     @Singleton
@@ -119,6 +123,24 @@ object InventoryArchiveUseCaseModule {
     fun provideListStorageLocationsUseCase(
         repository: InventoryArchiveRepository,
     ): ListStorageLocationsUseCase = ListStorageLocationsUseCase(repository)
+
+    @Provides
+    @Singleton
+    fun provideGetLocationCapacityLimitUseCase(
+        repository: InventoryArchiveRepository,
+    ): GetLocationCapacityLimitUseCase = GetLocationCapacityLimitUseCase(repository)
+
+    @Provides
+    @Singleton
+    fun provideSetLocationCapacityLimitUseCase(
+        repository: InventoryArchiveRepository,
+    ): SetLocationCapacityLimitUseCase = SetLocationCapacityLimitUseCase(repository)
+
+    @Provides
+    @Singleton
+    fun provideListInventoryCapacityCellsUseCase(
+        repository: InventoryArchiveRepository,
+    ): ListInventoryCapacityCellsUseCase = ListInventoryCapacityCellsUseCase(repository)
 
     @Provides
     @Singleton

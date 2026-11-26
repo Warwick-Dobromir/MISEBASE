@@ -96,6 +96,7 @@ data class ArchiveEditUiState(
     val englishName: String = "",
     val categoryId: String? = null,
     val unitId: String = "",
+    val capacityUnitPerStockUnit: String = "1",
     val minimumStock: String = "",
     val targetStock: String = "",
     val storageMethod: String = "",
@@ -243,6 +244,7 @@ class ArchiveEditViewModel
                     englishName = archive?.englishName.orEmpty(),
                     categoryId = archive?.categoryId,
                     unitId = archive?.stockUnit?.id?.value.orEmpty(),
+                    capacityUnitPerStockUnit = archive?.capacityUnitPerStockUnit?.let(::formatAmount) ?: "1",
                     minimumStock = archive?.minimumStock?.let(::formatAmount).orEmpty(),
                     targetStock = archive?.targetStock?.let(::formatAmount).orEmpty(),
                     storageMethod = archive?.storageMethod.orEmpty(),
@@ -283,6 +285,9 @@ class ArchiveEditViewModel
         fun onCategoryChange(categoryId: String?) = update("category") { it.copy(categoryId = categoryId) }
 
         fun onUnitChange(unitId: String) = update("unit") { it.copy(unitId = unitId) }
+
+        fun onCapacityUnitPerStockUnitChange(value: String) =
+            update("capacityUnitPerStockUnit") { it.copy(capacityUnitPerStockUnit = value) }
 
         fun onMinimumStockChange(value: String) = update("minimum") { it.copy(minimumStock = value) }
 
@@ -518,6 +523,8 @@ class ArchiveEditViewModel
                 name.length > 40 -> errors["name"] = "中文名称最多 40 个字。"
             }
             if (state.unitId.isBlank()) errors["unit"] = "请选择库存单位。"
+            val cu = state.capacityUnitPerStockUnit.trim().toDoubleOrNull()
+            if (cu == null || !cu.isFinite() || cu <= 0.0) errors["capacityUnitPerStockUnit"] = "CU 系数必须是大于 0 的数字。"
             val defaultShelfLife = state.defaultShelfLifeValue.trim()
             if (defaultShelfLife.isNotEmpty() && (defaultShelfLife.toIntOrNull() == null || defaultShelfLife.toInt() <= 0)) {
                 errors["defaultShelfLife"] = "默认保质期必须是大于 0 的整数。"
@@ -599,6 +606,7 @@ private fun ArchiveEditUiState.toArchive(unit: StockUnit): InventoryArchive =
         kind = kind,
         sauceId = sauceId?.takeIf { it.isNotBlank() },
         stockUnit = unit,
+        capacityUnitPerStockUnit = capacityUnitPerStockUnit.trim().toDoubleOrNull() ?: 1.0,
         minimumStock = minimumStock.trim().takeIf { it.isNotEmpty() }?.toDoubleOrNull(),
         targetStock = targetStock.trim().takeIf { it.isNotEmpty() }?.toDoubleOrNull(),
         imageUri = imageUri.trim().takeIf { it.isNotEmpty() },
@@ -645,6 +653,7 @@ fun ArchiveEditRoute(
         onEnglishNameChange = viewModel::onEnglishNameChange,
         onCategoryChange = viewModel::onCategoryChange,
         onUnitChange = viewModel::onUnitChange,
+        onCapacityUnitPerStockUnitChange = viewModel::onCapacityUnitPerStockUnitChange,
         onMinimumStockChange = viewModel::onMinimumStockChange,
         onTargetStockChange = viewModel::onTargetStockChange,
         onStorageMethodChange = viewModel::onStorageMethodChange,
@@ -714,6 +723,7 @@ private fun ArchiveEditScreen(
     onEnglishNameChange: (String) -> Unit,
     onCategoryChange: (String?) -> Unit,
     onUnitChange: (String) -> Unit,
+    onCapacityUnitPerStockUnitChange: (String) -> Unit,
     onMinimumStockChange: (String) -> Unit,
     onTargetStockChange: (String) -> Unit,
     onStorageMethodChange: (String) -> Unit,
@@ -840,6 +850,7 @@ private fun ArchiveEditScreen(
                     onClick = { picker = EditPicker.Category },
                 )
                 InventoryArchiveEditField("商品规格", state.packageLabel, onPackageLabelChange, "例如：1 kg / 块")
+                InventoryArchiveEditField("容量系数（CU / 库存单位）", state.capacityUnitPerStockUnit, onCapacityUnitPerStockUnitChange, "例如：1", state.fieldErrors["capacityUnitPerStockUnit"])
                 ArchiveEditReadOnlyRow("商品编码", state.productCode.ifBlank { "保存档案后自动生成" })
                 InventoryArchiveEditField("条码", state.barcode, onBarcodeChange, "扫描或填写商品条码")
                 if (state.kind == ArchiveKind.SAUCE) {

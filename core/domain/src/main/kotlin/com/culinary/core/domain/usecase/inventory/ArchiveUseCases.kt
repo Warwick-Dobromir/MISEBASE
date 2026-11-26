@@ -2,6 +2,7 @@ package com.culinary.core.domain.usecase.inventory
 
 import com.culinary.core.common.Clock
 import com.culinary.core.common.CulinaryError
+import com.culinary.core.common.flatMap
 import com.culinary.core.common.IdGenerator
 import com.culinary.core.common.Outcome
 import com.culinary.core.domain.model.ArchiveCategory
@@ -161,6 +162,7 @@ class SaveInventoryArchiveUseCase(
                 kind = archive.kind,
                 sauceId = archive.sauceId?.takeIf { it.isNotBlank() },
                 stockUnit = archive.stockUnit,
+                capacityUnitPerStockUnit = archive.capacityUnitPerStockUnit,
                 minimumStock = minimum,
                 targetStock = target,
                 imageUri = archive.imageUri?.takeIf { it.isNotBlank() },
@@ -189,12 +191,7 @@ class SaveInventoryArchiveUseCase(
                 purchasePriceUnit = archive.purchasePriceUnit?.trim()?.takeIf { it.isNotEmpty() },
                 status = EntityStatus.ACTIVE,
             )
-        return repository.saveArchive(saved).also {
-            if (it is Outcome.Success && existing == null) {
-                // 新档案默认库位保持用户选择；未选择时由入库时回落默认库位。
-                Unit
-            }
-        }
+        return repository.saveArchive(saved)
     }
 
     private fun invalid(
@@ -213,6 +210,12 @@ class ListInventoryArchivesUseCase(
         query: String = "",
         categoryId: String? = null,
     ): Outcome<InventoryArchiveList> {
+        // Refresh logical expiry partitions on the normal inventory entry path so daily
+        // percentage-threshold changes do not require a physical stock movement.
+        when (val refresh = repository.listCapacityCells()) {
+            is Outcome.Failure -> return Outcome.failure(refresh.error)
+            is Outcome.Success -> Unit
+        }
         val archives =
             when (val result = repository.listArchives()) {
                 is Outcome.Failure -> return result

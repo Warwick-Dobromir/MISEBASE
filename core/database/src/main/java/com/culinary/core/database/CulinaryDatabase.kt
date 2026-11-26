@@ -20,22 +20,23 @@ import com.culinary.core.database.dao.GoodsReceiptItemDao
 import com.culinary.core.database.dao.ImageAssetDao
 import com.culinary.core.database.dao.IngredientAliasDao
 import com.culinary.core.database.dao.IngredientDao
-import com.culinary.core.database.dao.IngredientVersionDao
 import com.culinary.core.database.dao.IngredientUnitConversionDao
+import com.culinary.core.database.dao.IngredientVersionDao
 import com.culinary.core.database.dao.InventoryArchiveDao
 import com.culinary.core.database.dao.InventoryArchiveProductDao
 import com.culinary.core.database.dao.InventoryBatchDao
+import com.culinary.core.database.dao.InventoryCapacityDao
 import com.culinary.core.database.dao.InventoryIssueDao
 import com.culinary.core.database.dao.InventoryLedgerDao
 import com.culinary.core.database.dao.InventoryLifecycleDao
 import com.culinary.core.database.dao.InventoryReservationDao
-import com.culinary.core.database.dao.PendingStockDao
 import com.culinary.core.database.dao.InventoryStocktakeDao
 import com.culinary.core.database.dao.KitchenReferenceContentDao
 import com.culinary.core.database.dao.KitchenReferenceDao
 import com.culinary.core.database.dao.KitchenRelationDao
 import com.culinary.core.database.dao.MaterialRequirementDao
 import com.culinary.core.database.dao.MaterialRequirementSourceDao
+import com.culinary.core.database.dao.PendingStockDao
 import com.culinary.core.database.dao.PlanSnapshotDao
 import com.culinary.core.database.dao.ProcurementRequirementDao
 import com.culinary.core.database.dao.ProductDao
@@ -65,11 +66,13 @@ import com.culinary.core.database.entity.GoodsReceiptItemEntity
 import com.culinary.core.database.entity.ImageAssetEntity
 import com.culinary.core.database.entity.IngredientAliasEntity
 import com.culinary.core.database.entity.IngredientEntity
-import com.culinary.core.database.entity.IngredientVersionEntity
 import com.culinary.core.database.entity.IngredientUnitConversionEntity
+import com.culinary.core.database.entity.IngredientVersionEntity
 import com.culinary.core.database.entity.InventoryArchiveEntity
 import com.culinary.core.database.entity.InventoryArchiveProductEntity
+import com.culinary.core.database.entity.InventoryBatchCapacityAllocationEntity
 import com.culinary.core.database.entity.InventoryBatchEntity
+import com.culinary.core.database.entity.InventoryCapacityCellEntity
 import com.culinary.core.database.entity.InventoryFreezeRecordEntity
 import com.culinary.core.database.entity.InventoryIssueSlipEntity
 import com.culinary.core.database.entity.InventoryIssueSlipLineEntity
@@ -78,14 +81,14 @@ import com.culinary.core.database.entity.InventoryLocationTransferEntity
 import com.culinary.core.database.entity.InventoryPrintJobEntity
 import com.culinary.core.database.entity.InventoryReservationEntity
 import com.culinary.core.database.entity.InventoryStocktakeEntity
-import com.culinary.core.database.entity.PendingStockDateAllocationEntity
-import com.culinary.core.database.entity.PendingStockItemEntity
 import com.culinary.core.database.entity.InventoryStocktakeLineEntity
 import com.culinary.core.database.entity.KitchenReferenceContentEntity
 import com.culinary.core.database.entity.KitchenReferenceEntity
 import com.culinary.core.database.entity.KitchenRelationEntity
 import com.culinary.core.database.entity.MaterialRequirementEntity
 import com.culinary.core.database.entity.MaterialRequirementSourceEntity
+import com.culinary.core.database.entity.PendingStockDateAllocationEntity
+import com.culinary.core.database.entity.PendingStockItemEntity
 import com.culinary.core.database.entity.ProcurementRequirementEntity
 import com.culinary.core.database.entity.ProductEntity
 import com.culinary.core.database.entity.ProductionPlanEntity
@@ -104,7 +107,7 @@ import com.culinary.core.database.entity.SupplierEntity
 import com.culinary.core.database.entity.UnitEntity
 
 /** Single source of truth for Room and startup compatibility checks. */
-const val CULINARY_DATABASE_SCHEMA_VERSION: Int = 15
+const val CULINARY_DATABASE_SCHEMA_VERSION: Int = 16
 
 /**
  * CULINARY 数据库（schema v11）。
@@ -175,6 +178,8 @@ const val CULINARY_DATABASE_SCHEMA_VERSION: Int = 15
         InventoryStocktakeLineEntity::class,
         PendingStockItemEntity::class,
         PendingStockDateAllocationEntity::class,
+        InventoryCapacityCellEntity::class,
+        InventoryBatchCapacityAllocationEntity::class,
     ],
     version = CULINARY_DATABASE_SCHEMA_VERSION,
     exportSchema = true,
@@ -218,6 +223,8 @@ abstract class CulinaryDatabase : RoomDatabase() {
     abstract fun storageLocationDao(): StorageLocationDao
 
     abstract fun inventoryBatchDao(): InventoryBatchDao
+
+    abstract fun inventoryCapacityDao(): InventoryCapacityDao
 
     abstract fun inventoryLedgerDao(): InventoryLedgerDao
 

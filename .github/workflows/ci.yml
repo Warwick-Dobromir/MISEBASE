@@ -2,7 +2,7 @@
 
 on:
   push:
-    branches: [main, master, feat/ingredient-detail-rebuild-20261121, work/inventory-subcategory-full-20261125, fix/inventory-archive-reference-match-20261125, fix/inventory-archive-reference-implementation-20261126, fix/scan-multiframe-checksum-20261125, feat/pending-stock-20261126, feat/scan-mode-feedback-20261126, feat/custom-unit-management-20261126]
+    branches: [main, master, feat/ingredient-detail-rebuild-20261121, work/inventory-subcategory-full-20261125, fix/inventory-archive-reference-match-20261125, fix/inventory-archive-reference-implementation-20261126, fix/scan-multiframe-checksum-20261125, feat/pending-stock-20261126, feat/scan-mode-feedback-20261126, feat/custom-unit-management-20261126, feat/inventory-cu-location-capacity-20261126]
   pull_request:
 
 jobs:

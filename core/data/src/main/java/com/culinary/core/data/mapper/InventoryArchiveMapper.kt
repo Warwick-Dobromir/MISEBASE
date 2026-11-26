@@ -23,8 +23,8 @@ import com.culinary.core.database.model.StocktakeStatusDb
 import com.culinary.core.domain.model.ArchiveKind
 import com.culinary.core.domain.model.ArchiveProductLink
 import com.culinary.core.domain.model.BatchLifecycleStatus
-import com.culinary.core.domain.model.EntityStatus
 import com.culinary.core.domain.model.DefaultShelfLifeUnit
+import com.culinary.core.domain.model.EntityStatus
 import com.culinary.core.domain.model.FreezeAction
 import com.culinary.core.domain.model.FreezeRecord
 import com.culinary.core.domain.model.InventoryArchive
@@ -66,6 +66,7 @@ object InventoryArchiveMapper {
             kind = toDomain(entity.archiveKind),
             sauceId = entity.sauceId,
             stockUnit = stockUnit,
+            capacityUnitPerStockUnit = entity.capacityUnitPerStockUnit,
             minimumStock = entity.minimumStock,
             targetStock = entity.targetStock,
             imageUri = entity.imageUri,
@@ -115,6 +116,7 @@ object InventoryArchiveMapper {
             archiveKind = toDb(archive.kind),
             sauceId = archive.sauceId,
             stockUnitId = archive.stockUnit.id.value,
+            capacityUnitPerStockUnit = archive.capacityUnitPerStockUnit,
             minimumStock = archive.minimumStock,
             targetStock = archive.targetStock,
             imageUri = archive.imageUri,

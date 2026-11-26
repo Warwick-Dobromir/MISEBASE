@@ -4,6 +4,7 @@ import com.culinary.core.database.CulinaryDatabase
 import com.culinary.core.database.dao.InventoryArchiveDao
 import com.culinary.core.database.dao.InventoryArchiveProductDao
 import com.culinary.core.database.dao.InventoryBatchDao
+import com.culinary.core.database.dao.InventoryCapacityDao
 import com.culinary.core.database.dao.InventoryIssueDao
 import com.culinary.core.database.dao.InventoryLedgerDao
 import com.culinary.core.database.dao.InventoryLifecycleDao
@@ -25,6 +26,10 @@ object InventoryDaoModule {
     @Provides
     @Singleton
     fun provideInventoryBatchDao(database: CulinaryDatabase): InventoryBatchDao = database.inventoryBatchDao()
+
+    @Provides
+    @Singleton
+    fun provideInventoryCapacityDao(database: CulinaryDatabase): InventoryCapacityDao = database.inventoryCapacityDao()
 
     @Provides
     @Singleton

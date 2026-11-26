@@ -37,6 +37,7 @@ internal object CulinaryMigrations {
     val MIGRATION_12_13: Migration = MIGRATION_12_13_IMPL
     val MIGRATION_13_14: Migration = MIGRATION_13_14_IMPL
     val MIGRATION_14_15: Migration = MIGRATION_14_15_IMPL
+    val MIGRATION_15_16: Migration = MIGRATION_15_16_IMPL
 
     val ALL: Array<Migration> =
         arrayOf(
@@ -54,6 +55,7 @@ internal object CulinaryMigrations {
             MIGRATION_12_13,
             MIGRATION_13_14,
             MIGRATION_14_15,
+            MIGRATION_15_16,
         )
 }
 
@@ -1013,5 +1015,41 @@ private val MIGRATION_14_15_IMPL =
                 "CREATE INDEX IF NOT EXISTS `index_pending_stock_date_allocation_location_id` " +
                     "ON `pending_stock_date_allocation` (`location_id`)",
             )
+        }
+    }
+
+ 
+/** v15 → v16：增加库存档案 CU 系数及独立逻辑容量格/批次分配表。 */
+private val MIGRATION_15_16_IMPL =
+    object : Migration(15, 16) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            CulinarySchemaExtras.dropPartialIndexes(db)
+            db.execSQL("ALTER TABLE `inventory_archive` ADD COLUMN `capacity_unit_per_stock_unit` REAL NOT NULL DEFAULT 1.0")
+            db.execSQL("""
+                CREATE TABLE IF NOT EXISTS `inventory_capacity_cell` (
+                    `id` TEXT NOT NULL, `base_location_id` TEXT NOT NULL,
+                    `expiry_zone` TEXT NOT NULL, `sequence` INTEGER NOT NULL,
+                    `capacity_cu` REAL NOT NULL, `occupied_cu` REAL NOT NULL,
+                    `created_at` INTEGER NOT NULL, `updated_at` INTEGER NOT NULL,
+                    PRIMARY KEY(`id`),
+                    FOREIGN KEY(`base_location_id`) REFERENCES `storage_location`(`id`)
+                        ON UPDATE NO ACTION ON DELETE RESTRICT
+                )
+            """.trimIndent())
+            db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS `index_inventory_capacity_cell_base_location_id_expiry_zone_sequence` ON `inventory_capacity_cell` (`base_location_id`, `expiry_zone`, `sequence`)")
+            db.execSQL("""
+                CREATE TABLE IF NOT EXISTS `inventory_batch_capacity_allocation` (
+                    `id` TEXT NOT NULL, `batch_id` TEXT NOT NULL, `cell_id` TEXT NOT NULL,
+                    `quantity` REAL NOT NULL, `occupied_cu` REAL NOT NULL,
+                    `created_at` INTEGER NOT NULL, `updated_at` INTEGER NOT NULL,
+                    PRIMARY KEY(`id`),
+                    FOREIGN KEY(`batch_id`) REFERENCES `inventory_batch`(`id`)
+                        ON UPDATE NO ACTION ON DELETE RESTRICT,
+                    FOREIGN KEY(`cell_id`) REFERENCES `inventory_capacity_cell`(`id`)
+                        ON UPDATE NO ACTION ON DELETE RESTRICT
+                )
+            """.trimIndent())
+            db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS `index_inventory_batch_capacity_allocation_batch_id_cell_id` ON `inventory_batch_capacity_allocation` (`batch_id`, `cell_id`)")
+            db.execSQL("CREATE INDEX IF NOT EXISTS `index_inventory_batch_capacity_allocation_cell_id` ON `inventory_batch_capacity_allocation` (`cell_id`)")
         }
     }

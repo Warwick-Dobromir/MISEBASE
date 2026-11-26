@@ -72,6 +72,8 @@ data class InventoryArchiveEntity(
     val sauceId: String? = null,
     @ColumnInfo(name = "stock_unit_id")
     val stockUnitId: String,
+    @ColumnInfo(name = "capacity_unit_per_stock_unit", defaultValue = "1.0")
+    val capacityUnitPerStockUnit: Double = 1.0,
     @ColumnInfo(name = "minimum_stock")
     val minimumStock: Double? = null,
     @ColumnInfo(name = "target_stock")

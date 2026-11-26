@@ -33,6 +33,8 @@ data class InventoryArchive(
     /** 酱汁现货档案绑定的酱汁；普通食材为 null。 */
     val sauceId: String? = null,
     val stockUnit: Unit,
+    /** 每一个库存单位占用的容量单位（CU），必须为正数。 */
+    val capacityUnitPerStockUnit: Double = 1.0,
     val minimumStock: Double? = null,
     val targetStock: Double? = null,
     val imageUri: String? = null,
@@ -65,6 +67,12 @@ data class InventoryArchive(
     val updatedAt: Instant = Instant.EPOCH,
     val revision: Int = 1,
 ) {
+    init {
+        require(capacityUnitPerStockUnit.isFinite() && capacityUnitPerStockUnit > 0.0) {
+            "capacityUnitPerStockUnit must be finite and positive"
+        }
+    }
+
     fun statusFor(available: Double): StockStatus =
         when {
             available <= EPSILON -> StockStatus.OUT

@@ -15,6 +15,7 @@ import com.culinary.core.database.dao.AppMetadataDao
 import com.culinary.core.database.dao.InventoryArchiveDao
 import com.culinary.core.database.dao.InventoryArchiveProductDao
 import com.culinary.core.database.dao.InventoryBatchDao
+import com.culinary.core.database.dao.InventoryCapacityDao
 import com.culinary.core.database.dao.InventoryIssueDao
 import com.culinary.core.database.dao.InventoryLedgerDao
 import com.culinary.core.database.dao.InventoryLifecycleDao
@@ -25,7 +26,9 @@ import com.culinary.core.database.dao.UnitDao
 import com.culinary.core.database.entity.AppMetadataEntity
 import com.culinary.core.database.entity.InventoryArchiveEntity
 import com.culinary.core.database.entity.InventoryArchiveProductEntity
+import com.culinary.core.database.entity.InventoryBatchCapacityAllocationEntity
 import com.culinary.core.database.entity.InventoryBatchEntity
+import com.culinary.core.database.entity.InventoryCapacityCellEntity
 import com.culinary.core.database.entity.InventoryFreezeRecordEntity
 import com.culinary.core.database.entity.InventoryIssueSlipEntity
 import com.culinary.core.database.entity.InventoryIssueSlipLineEntity
@@ -42,6 +45,10 @@ import com.culinary.core.database.model.PrintJobStatusDb
 import com.culinary.core.database.model.StocktakeStatusDb
 import com.culinary.core.database.model.StorageLocationKindDb
 import com.culinary.core.domain.model.ArchiveProductLink
+import com.culinary.core.domain.model.CapacityCellSnapshot
+import com.culinary.core.domain.model.CapacityCellSummary
+import com.culinary.core.domain.model.CapacityUnitAllocator
+import com.culinary.core.domain.model.ExpiryCapacityZone
 import com.culinary.core.domain.model.FreezeRecord
 import com.culinary.core.domain.model.IngredientId
 import com.culinary.core.domain.model.InventoryArchive
@@ -60,13 +67,17 @@ import com.culinary.core.domain.model.PrintKind
 import com.culinary.core.domain.model.PrintStatus
 import com.culinary.core.domain.model.Stocktake
 import com.culinary.core.domain.model.StorageLocation
+import com.culinary.core.domain.model.Unit as UnitModel
 import com.culinary.core.domain.repository.InventoryArchiveRepository
 import com.culinary.core.domain.rule.common.NameText
-import kotlinx.coroutines.CancellationException
+import com.culinary.core.domain.transaction.TransactionRunner
+import java.math.BigDecimal
 import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneId
 import javax.inject.Inject
 import kotlin.math.abs
-import com.culinary.core.domain.model.Unit as UnitModel
+import kotlinx.coroutines.CancellationException
 
 /**
  * 库存档案化 Repository 的 Room 实现（v9）。
@@ -82,6 +93,8 @@ class InventoryArchiveRepositoryImpl
         private val archiveDao: InventoryArchiveDao,
         private val archiveProductDao: InventoryArchiveProductDao,
         private val batchDao: InventoryBatchDao,
+        private val capacityDao: InventoryCapacityDao,
+        private val transactionRunner: TransactionRunner,
         private val ledgerDao: InventoryLedgerDao,
         private val lifecycleDao: InventoryLifecycleDao,
         private val issueDao: InventoryIssueDao,
@@ -102,7 +115,7 @@ class InventoryArchiveRepositoryImpl
             read { archiveDao.findById(id)?.let { toArchive(it) } }
 
         override suspend fun saveArchive(archive: InventoryArchive): Outcome<String> =
-            read {
+            transactionRunner.write {
                 val now = clock.now().toEpochMilli()
                 val existing = archiveDao.findById(archive.id)
                 val normalizedName = NameText.normalize(archive.name)
@@ -128,6 +141,16 @@ class InventoryArchiveRepositoryImpl
                             revision = existing.revision + 1,
                         ),
                     )
+                }
+                if (existing != null &&
+                    kotlin.math.abs(existing.capacityUnitPerStockUnit - archive.capacityUnitPerStockUnit) > EPSILON
+                ) {
+                    batchDao.listByArchive(archive.id).forEach { batch ->
+                        if (batch.quantityOnHand > EPSILON) {
+                            releaseCapacity(batch, batch.quantityOnHand)
+                            allocateCapacity(batch, batch.quantityOnHand)
+                        }
+                    }
                 }
                 archive.id
             }
@@ -278,7 +301,7 @@ class InventoryArchiveRepositoryImpl
         // ---- 流水 ----
 
         override suspend fun appendLedger(entry: InventoryLedgerEntry): Outcome<Boolean> =
-            guard { applyLedger(entry) }
+            applyLedger(entry)
 
         override suspend fun findLedgerByIdempotencyKey(key: String): Outcome<InventoryLedgerEntry?> =
             read { ledgerDao.findByIdempotencyKey(key)?.let { toLedger(it) } }
@@ -365,31 +388,30 @@ class InventoryArchiveRepositoryImpl
             toLocationId: String,
             note: String?,
             at: Instant,
-        ): Outcome<Unit> =
-            guard {
-                val batch =
-                    batchDao.findById(batchId)
-                        ?: return@guard Outcome.failure(
-                            CulinaryError.NotFound(entity = "inventory_batch", id = batchId),
-                        )
-                val stamp = at.toEpochMilli()
-                val rows = batchDao.updateLocation(batchId, toLocationId, stamp)
-                if (rows != 1) {
-                    return@guard Outcome.failure(CulinaryError.Conflict(entity = "inventory_batch"))
-                }
-                lifecycleDao.insertTransfer(
-                    InventoryLocationTransferEntity(
-                        id = idGenerator.newId(),
-                        batchId = batchId,
-                        fromLocationId = batch.locationId,
-                        toLocationId = toLocationId,
-                        quantity = batch.quantityOnHand,
-                        note = note,
-                        occurredAt = stamp,
-                    ),
-                )
-                Outcome.success(Unit)
+        ): Outcome<Unit> {
+            val batch = batchDao.findById(batchId)
+                ?: return Outcome.failure(CulinaryError.NotFound(entity = "inventory_batch", id = batchId))
+            val stamp = at.toEpochMilli()
+            if (batch.quantityOnHand > EPSILON) releaseCapacity(batch, batch.quantityOnHand)
+            check(batchDao.updateLocation(batchId, toLocationId, stamp) == 1) {
+                "batch location changed concurrently"
             }
+            if (batch.quantityOnHand > EPSILON) {
+                allocateCapacity(batch.copy(locationId = toLocationId), batch.quantityOnHand)
+            }
+            lifecycleDao.insertTransfer(
+                InventoryLocationTransferEntity(
+                    id = idGenerator.newId(),
+                    batchId = batchId,
+                    fromLocationId = batch.locationId,
+                    toLocationId = toLocationId,
+                    quantity = batch.quantityOnHand,
+                    note = note,
+                    occurredAt = stamp,
+                ),
+            )
+            return Outcome.success(Unit)
+        }
 
         override suspend fun transfers(batchId: String): Outcome<List<LocationTransferRecord>> =
             read {
@@ -701,6 +723,82 @@ class InventoryArchiveRepositoryImpl
         override suspend fun batchCountAtLocation(locationId: String): Outcome<Int> =
             read { batchDao.countAtLocation(locationId) }
 
+        override suspend fun getLocationCapacityLimit(locationId: String): Outcome<Double> =
+            read {
+                if (locationDao.findById(locationId) == null) {
+                    throw NoSuchElementException("storage location not found: $locationId")
+                }
+                metadataDao.find(capacityLimitKey(locationId))?.value?.toDoubleOrNull()
+                    ?.takeIf { it.isFinite() && it > 0.0 } ?: DEFAULT_CELL_CAPACITY_CU
+            }
+
+        override suspend fun setLocationCapacityLimit(locationId: String, capacityCu: Double): Outcome<Unit> {
+            if (!capacityCu.isFinite() || capacityCu <= 0.0) {
+                return Outcome.failure(CulinaryError.Validation("capacityCu", "must be finite and positive"))
+            }
+            if (locationDao.findById(locationId) == null) {
+                return Outcome.failure(CulinaryError.NotFound("storage_location", locationId))
+            }
+            return transactionRunner.write {
+                check(locationDao.findById(locationId) != null) { "storage location disappeared during capacity update" }
+                val stamp = clock.now().toEpochMilli()
+                writeMetadata(capacityLimitKey(locationId), capacityCu.toString(), stamp)
+                // Lowering the template never silently shrinks a currently occupied cell.
+                capacityDao.allCells().filter { it.baseLocationId == locationId }.forEach { cell ->
+                    capacityDao.updateCapacityIfFits(cell.id, capacityCu, stamp)
+                }
+                Unit
+            }
+        }
+
+        override suspend fun listCapacityCells(): Outcome<List<CapacityCellSummary>> =
+            transactionRunner.write {
+                refreshExpiryCapacityZones()
+                capacityDao.allCells().mapNotNull { cell ->
+                    val location = locationDao.findById(cell.baseLocationId) ?: return@mapNotNull null
+                    val configured = metadataDao.find(capacityLimitKey(cell.baseLocationId))
+                        ?.value?.toDoubleOrNull()?.takeIf { it.isFinite() && it > 0.0 }
+                        ?: DEFAULT_CELL_CAPACITY_CU
+                    // Once an over-capacity cell falls back under the new template, apply the
+                    // configured limit. Until then its previous limit remains visible.
+                    val effectiveCapacity = if (cell.occupiedCu <= configured) {
+                        capacityDao.updateCapacityIfFits(cell.id, configured, clock.now().toEpochMilli())
+                        configured
+                    } else {
+                        cell.capacityCu
+                    }
+                    CapacityCellSummary(
+                        id = cell.id,
+                        baseLocationId = LocationId(cell.baseLocationId),
+                        baseLocationName = location.name,
+                        expiryZone = ExpiryCapacityZone.entries.firstOrNull { it.name == cell.expiryZone }
+                            ?: ExpiryCapacityZone.UNCLASSIFIED,
+                        sequence = cell.sequence,
+                        capacityCu = BigDecimal(effectiveCapacity.toString()),
+                        occupiedCu = BigDecimal(cell.occupiedCu.toString()),
+                        configuredCapacityCu = BigDecimal(configured.toString()),
+                    )
+                }
+            }
+
+        private suspend fun refreshExpiryCapacityZones() {
+            batchDao.listLive().forEach { batch ->
+                if (batch.quantityOnHand <= EPSILON || batch.archiveId == null) return@forEach
+                val expected = expiryZone(batch).name
+                val current = capacityDao.allocationsForBatch(batch.id)
+                val actualZones = current.mapNotNull { capacityDao.findCell(it.cellId)?.expiryZone }.distinct()
+                if (current.isNotEmpty() && (actualZones.size != 1 || actualZones.singleOrNull() != expected)) {
+                    releaseCapacity(batch, batch.quantityOnHand)
+                    allocateCapacity(batch, batch.quantityOnHand)
+                } else if (current.isEmpty()) {
+                    allocateCapacity(batch, batch.quantityOnHand)
+                }
+            }
+        }
+
+        private fun capacityLimitKey(locationId: String): String =
+            "inventory.capacity.location.$locationId.limit_cu"
+
         // ---- 规则 ----
 
         override suspend fun readRules(): InventoryRules =
@@ -770,6 +868,11 @@ class InventoryArchiveRepositoryImpl
             if (newReserved < -EPSILON || newReserved > newOnHand + EPSILON) {
                 return Outcome.failure(CulinaryError.Conflict(entity = "inventory_batch"))
             }
+            if (entry.onHandDelta > EPSILON) {
+                allocateCapacity(batch, entry.onHandDelta)
+            } else if (entry.onHandDelta < -EPSILON) {
+                releaseCapacity(batch, -entry.onHandDelta)
+            }
             val rows =
                 batchDao.applyDeltas(
                     id = entry.batchId.value,
@@ -784,6 +887,128 @@ class InventoryArchiveRepositoryImpl
                 InventoryMapper.toEntity(entry.copy(onHandAfter = newOnHand, reservedAfter = newReserved)),
             )
             return Outcome.success(true)
+        }
+
+
+        /**
+         * Capacity is a materialized projection of stock ledger changes. Generated cells are
+         * logical partitions only; physical location remains inventory_batch.location_id.
+         */
+        private suspend fun allocateCapacity(batch: InventoryBatchEntity, quantity: Double) {
+            if (quantity <= EPSILON) return
+            val archiveId = batch.archiveId ?: return
+            val archive = archiveDao.findById(archiveId) ?: return
+            val coefficient = archive.capacityUnitPerStockUnit
+            require(coefficient.isFinite() && coefficient > 0.0) { "invalid archive CU coefficient" }
+            val zone = expiryZone(batch)
+            val cellLimit = metadataDao.find(capacityLimitKey(batch.locationId))?.value?.toDoubleOrNull()
+                ?.takeIf { it.isFinite() && it > 0.0 } ?: DEFAULT_CELL_CAPACITY_CU
+            val stamp = clock.now().toEpochMilli()
+            val initialCells = capacityDao.cellsForScope(batch.locationId, zone.name)
+            // Apply a changed template to cells that currently fit. A cell already above the
+            // new limit keeps its historical limit for display, but is treated as full for new stock.
+            initialCells.filter { it.occupiedCu <= cellLimit }.forEach { cell ->
+                capacityDao.updateCapacityIfFits(cell.id, cellLimit, stamp)
+            }
+            val cells = capacityDao.cellsForScope(batch.locationId, zone.name)
+            val snapshots = cells.map {
+                CapacityCellSnapshot(
+                    it.sequence,
+                    BigDecimal(minOf(it.capacityCu, cellLimit).toString()),
+                    BigDecimal(it.occupiedCu.toString()),
+                )
+            }
+            val requestedCu = CapacityUnitAllocator.calculateRequiredCu(quantity, coefficient)
+            val plan = CapacityUnitAllocator.plan(requestedCu, BigDecimal(cellLimit.toString()), snapshots)
+            val bySequence = cells.associateBy { it.sequence }
+            val existingAllocations = capacityDao.allocationsForBatch(batch.id).associateBy { it.cellId }
+            var quantityRemaining = quantity
+            plan.allocations.forEachIndexed { index, item ->
+                val cell = bySequence[item.sequence] ?: InventoryCapacityCellEntity(
+                    id = idGenerator.newId(),
+                    baseLocationId = batch.locationId,
+                    expiryZone = zone.name,
+                    sequence = item.sequence,
+                    capacityCu = cellLimit,
+                    occupiedCu = 0.0,
+                    createdAt = stamp,
+                    updatedAt = stamp,
+                ).also { capacityDao.insertCell(it) }
+                val cu = item.allocatedCu.toDouble()
+                check(capacityDao.changeOccupied(cell.id, cu, stamp) == 1) {
+                    "capacity cell is full or concurrently allocated"
+                }
+                val allocatedQuantity =
+                    if (index == plan.allocations.lastIndex) {
+                        quantityRemaining
+                    } else {
+                        (quantity * cu / requestedCu.toDouble()).also { quantityRemaining -= it }
+                    }
+                val prior = existingAllocations[cell.id]
+                if (prior == null) {
+                    capacityDao.insertAllocation(
+                        InventoryBatchCapacityAllocationEntity(
+                            idGenerator.newId(),
+                            batch.id,
+                            cell.id,
+                            allocatedQuantity,
+                            cu,
+                            stamp,
+                            stamp,
+                        ),
+                    )
+                } else {
+                    capacityDao.updateAllocation(
+                        prior.copy(
+                            quantity = prior.quantity + allocatedQuantity,
+                            occupiedCu = prior.occupiedCu + cu,
+                            updatedAt = stamp,
+                        ),
+                    )
+                }
+            }
+        }
+
+        /** Partial outbound releases the exact CU share from batch allocations in stable order. */
+        private suspend fun releaseCapacity(batch: InventoryBatchEntity, quantity: Double) {
+            if (quantity <= EPSILON || batch.archiveId == null) return
+            var remaining = quantity
+            var allocations = capacityDao.allocationsForBatch(batch.id)
+            if (allocations.isEmpty() && batch.quantityOnHand > EPSILON) {
+                // Backfill pre-v16 live stock without rewriting immutable stock ledger history.
+                allocateCapacity(batch, batch.quantityOnHand)
+                allocations = capacityDao.allocationsForBatch(batch.id)
+            }
+            val stamp = clock.now().toEpochMilli()
+            allocations.forEach { allocation ->
+                if (remaining <= EPSILON) return@forEach
+                val take = minOf(remaining, allocation.quantity)
+                val cu = allocation.occupiedCu * (take / allocation.quantity)
+                check(capacityDao.changeOccupied(allocation.cellId, -cu, stamp) == 1) {
+                    "capacity occupancy is inconsistent"
+                }
+                val leftQuantity = allocation.quantity - take
+                val leftCu = allocation.occupiedCu - cu
+                if (leftQuantity <= EPSILON || leftCu <= EPSILON) {
+                    capacityDao.deleteAllocation(allocation.id)
+                } else {
+                    capacityDao.updateAllocation(allocation.copy(quantity = leftQuantity, occupiedCu = leftCu, updatedAt = stamp))
+                }
+                remaining -= take
+            }
+            check(remaining <= EPSILON) { "batch capacity allocation is incomplete" }
+        }
+
+        private fun expiryZone(batch: InventoryBatchEntity): ExpiryCapacityZone {
+            val production = batch.productionDate?.let { runCatching { LocalDate.parse(it) }.getOrNull() }
+            val expiry = batch.expiryDate?.let { runCatching { LocalDate.parse(it) }.getOrNull() }
+            if (production == null || expiry == null) return ExpiryCapacityZone.UNCLASSIFIED
+            val total = java.time.temporal.ChronoUnit.DAYS.between(production, expiry)
+            if (total <= 0) return ExpiryCapacityZone.EXPIRED
+            val today = LocalDate.ofInstant(clock.now(), ZoneId.systemDefault())
+            val remaining = java.time.temporal.ChronoUnit.DAYS.between(today, expiry)
+            val ratio = BigDecimal(remaining).divide(BigDecimal(total), 8, java.math.RoundingMode.HALF_UP)
+            return ExpiryCapacityZone.fromRemainingRatio(ratio) ?: ExpiryCapacityZone.UNCLASSIFIED
         }
 
         private suspend fun toArchive(entity: InventoryArchiveEntity): InventoryArchive {
@@ -895,6 +1120,7 @@ class InventoryArchiveRepositoryImpl
 
         private companion object {
             const val EPSILON = 1e-9
+            const val DEFAULT_CELL_CAPACITY_CU = 100.0
             const val KEY_TEMPORARY_REMIND_DAYS = "inventory.rule.temporary_remind_days"
             const val KEY_TEMPORARY_PENDING_DAYS = "inventory.rule.temporary_pending_days"
             const val KEY_RECYCLE_RETENTION_DAYS = "inventory.rule.recycle_retention_days"
