@@ -94,19 +94,6 @@ class ArchiveDetailViewModel
 
         init {
             viewModelScope.launch {
-                savedStateHandle.getStateFlow<String?>("archive_barcode_scan_result", null).collect { scanned ->
-                    if (!scanned.isNullOrBlank()) {
-                        savedStateHandle["archive_barcode_scan_result"] = null
-                        val current = _uiState.value.detail?.archive?.barcode.orEmpty()
-                        if (current == scanned) {
-                            _uiState.update { it.copy(message = "条形码没有变化。") }
-                        } else {
-                            _uiState.update { it.copy(pendingScannedBarcode = scanned, error = null) }
-                        }
-                    }
-                }
-            }
-            viewModelScope.launch {
                 savedStateHandle.getStateFlow<Boolean>("archive_barcode_duplicate", false).collect { duplicate ->
                     if (duplicate) {
                         savedStateHandle["archive_barcode_duplicate"] = false
@@ -115,6 +102,25 @@ class ArchiveDetailViewModel
                 }
             }
             load()
+        }
+
+        /**
+         * Consume the scanner result only after the archive detail destination resumes.
+         * Reading the saved value here avoids losing a one-shot result while a dialog
+         * destination is being removed from the navigation back stack.
+         */
+        fun consumeScannedBarcodeResult() {
+            val scanned = savedStateHandle.get<String>("archive_barcode_scan_result")
+                ?.trim()
+                ?.takeIf { it.isNotEmpty() }
+                ?: return
+            savedStateHandle["archive_barcode_scan_result"] = null
+            val current = _uiState.value.detail?.archive?.barcode.orEmpty()
+            if (current == scanned) {
+                _uiState.update { it.copy(message = "条形码没有变化。") }
+            } else {
+                _uiState.update { it.copy(pendingScannedBarcode = scanned, error = null) }
+            }
         }
 
         fun dismissBarcodeReplacement() {
@@ -199,7 +205,10 @@ fun ArchiveDetailRoute(
     viewModel: ArchiveDetailViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
-    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { viewModel.load() }
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+        viewModel.consumeScannedBarcodeResult()
+        viewModel.load()
+    }
     ArchiveDetailScreen(
         state = state,
         onOpenBatch = onOpenBatch,
