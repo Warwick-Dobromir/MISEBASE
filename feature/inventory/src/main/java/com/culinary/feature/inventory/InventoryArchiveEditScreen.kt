@@ -53,6 +53,7 @@ import androidx.lifecycle.viewModelScope
 import com.culinary.core.common.CulinaryError
 import com.culinary.core.common.Outcome
 import com.culinary.core.database.dao.InventoryArchiveDao
+import com.culinary.core.database.dao.TemporaryBatchBarcodeDao
 import com.culinary.core.designsystem.component.ArchiveEditorInlineField
 import com.culinary.core.designsystem.component.ArchiveEditorSectionHeader
 import com.culinary.core.designsystem.component.ArchiveEditorTopBar
@@ -186,6 +187,7 @@ class ArchiveEditViewModel
         private val unlinkArchiveProduct: UnlinkArchiveProductUseCase,
         private val inventoryRepository: InventoryRepository,
         private val inventoryArchiveDao: InventoryArchiveDao,
+        private val temporaryBatchBarcodeDao: TemporaryBatchBarcodeDao,
         private val pendingStockRepository: PendingStockRepository? = null,
     ) : ViewModel() {
         private val archiveId: String? =
@@ -456,6 +458,15 @@ class ArchiveEditViewModel
                         it.copy(
                             isSaving = false,
                             fieldErrors = mapOf("barcode" to "该条码已被其他库存档案占用，不能重复使用。"),
+                        )
+                    }
+                    return@launch
+                }
+                if (barcode.isNotEmpty() && temporaryBatchBarcodeDao.findByBarcode(barcode) != null) {
+                    _uiState.update {
+                        it.copy(
+                            isSaving = false,
+                            fieldErrors = mapOf("barcode" to "该编号属于系统临时条码池，不能作为商品原生条码。"),
                         )
                     }
                     return@launch
