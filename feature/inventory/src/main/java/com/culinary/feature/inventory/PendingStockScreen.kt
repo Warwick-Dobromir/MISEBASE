@@ -1,11 +1,15 @@
 package com.culinary.feature.inventory
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.weight
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
@@ -199,6 +203,7 @@ private fun PendingStockScreen(
     var editingItem by remember { mutableStateOf<PendingStockEntry?>(null) }
     var selectedItemIds by remember { mutableStateOf<Set<String>>(emptySet()) }
     var showBulkDateDialog by remember { mutableStateOf(false) }
+
     Column(modifier = Modifier.fillMaxSize()) {
         PageHeader(
             eyebrow = "INVENTORY / PENDING STOCK",
@@ -206,12 +211,17 @@ private fun PendingStockScreen(
             supporting = "商品核对与入库管理",
             actions = { CulinaryTextButton(text = "返回", onClick = onBack) },
         )
-        state.error?.let { ErrorBanner(message = it, modifier = Modifier.padding(horizontal = CulinarySpacing.pageHorizontal)) }
+        state.error?.let {
+            ErrorBanner(message = it, modifier = Modifier.padding(horizontal = CulinarySpacing.pageHorizontal))
+        }
+
         if (state.isLoading) {
             LoadingRows()
         } else {
+            // 商品列表独立滚动；汇总与底部操作区不参与列表滚动。
             Column(
-                modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(bottom = CulinarySpacing.lg),
+                modifier = Modifier.weight(1f).fillMaxWidth()
+                    .verticalScroll(rememberScrollState()),
             ) {
                 SectionHeader(
                     title = "待入库概况",
@@ -221,7 +231,10 @@ private fun PendingStockScreen(
                 CulinaryRule()
                 if (selectedItemIds.isNotEmpty()) {
                     Row(
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = CulinarySpacing.pageHorizontal, vertical = CulinarySpacing.xs),
+                        modifier = Modifier.fillMaxWidth().padding(
+                            horizontal = CulinarySpacing.pageHorizontal,
+                            vertical = CulinarySpacing.xs,
+                        ),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween,
                     ) {
@@ -258,42 +271,69 @@ private fun PendingStockScreen(
                         onIncrease = { onChangeQuantity(item.id, 1.0) },
                     )
                     val missing = item.unallocatedQuantity
-                    if (missing > 1e-9) {
-                        Text(
-                            text = "尚有 ${formatAmount(missing)} 件未填写生产日期",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = CulinaryColorScheme.current.danger,
-                            modifier = Modifier.padding(start = CulinarySpacing.pageHorizontal, bottom = CulinarySpacing.xs),
-                        )
-                    } else {
-                        Text(
-                            text = "生产日期已填写",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.padding(start = CulinarySpacing.pageHorizontal, bottom = CulinarySpacing.xs),
-                        )
-                    }
+                    Text(
+                        text = if (missing > 1e-9) {
+                            "尚有 ${formatAmount(missing)} 件未填写生产日期"
+                        } else {
+                            "生产日期已填写"
+                        },
+                        style = MaterialTheme.typography.labelSmall,
+                        color = if (missing > 1e-9) CulinaryColorScheme.current.danger
+                        else MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(
+                            start = CulinarySpacing.pageHorizontal,
+                            bottom = CulinarySpacing.xs,
+                        ),
+                    )
                     CulinaryRule()
                 }
-                SectionHeader(
-                    title = "清单汇总",
-                    subtitle = "商品种类 ${state.items.size} · 总件数 ${formatAmount(state.totalQuantity)}",
-                    modifier = Modifier.padding(horizontal = CulinarySpacing.pageHorizontal).padding(top = CulinarySpacing.md),
-                )
+            }
+
+            // 固定底栏：商品再多也不随列表长度移动。
+            Column(
+                modifier = Modifier.fillMaxWidth()
+                    .background(MaterialTheme.colorScheme.surface)
+                    .padding(horizontal = CulinarySpacing.pageHorizontal)
+                    .padding(top = CulinarySpacing.sm, bottom = CulinarySpacing.md),
+                verticalArrangement = Arrangement.spacedBy(CulinarySpacing.xs),
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("清单汇总", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                    Spacer(modifier = Modifier.weight(1f))
+                    Text(
+                        "商品 ${state.items.size} 项",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Text(
+                        "  ·  总件数 ${formatAmount(state.totalQuantity)}",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                CulinaryRule()
                 Row(
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = CulinarySpacing.pageHorizontal, vertical = CulinarySpacing.sm),
+                    modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    CulinaryTextButton(text = "清空清单", onClick = onClear, enabled = state.items.isNotEmpty() && !state.isSaving)
-                    CulinaryTextButton(text = if (state.isSaving) "正在入库" else "确认入库", onClick = onConfirm, enabled = state.items.isNotEmpty() && !state.isSaving)
+                    CulinaryTextButton(
+                        text = "清空清单",
+                        onClick = onClear,
+                        enabled = state.items.isNotEmpty() && !state.isSaving,
+                    )
+                    CulinaryTextButton(
+                        text = if (state.isSaving) "正在入库" else "确认入库",
+                        onClick = onConfirm,
+                        enabled = state.items.isNotEmpty() && !state.isSaving,
+                    )
                 }
             }
         }
     }
 
     editingItem?.let { item ->
-        PendingStockDateDialog(
+        PendingStockDateSheet(
             item = item,
             onDismiss = { editingItem = null },
             onSave = { rows ->
@@ -436,69 +476,164 @@ private fun PendingStockRow(
 }
 
 @Composable
-private fun PendingStockDateDialog(
+private fun PendingStockDateSheet(
     item: PendingStockEntry,
     onDismiss: () -> Unit,
     onSave: (List<PendingStockDateAllocation>) -> Unit,
 ) {
     var rows by remember(item.id) {
         mutableStateOf(
-            item.allocations.map { PendingDateDraft(it.productionDate.toString(), formatAmount(it.quantity)) }
-                .ifEmpty { listOf(PendingDateDraft("", "")) },
+            item.allocations.map { it.productionDate.toString() to formatAmount(it.quantity) }
+                .ifEmpty { listOf("" to "") },
         )
     }
-    val allocated = rows.sumOf { it.quantity.toDoubleOrNull()?.takeIf { value -> value.isFinite() && value > 0 } ?: 0.0 }
-    AlertDialog(
+    val allocated = rows.sumOf { it.second.toDoubleOrNull()?.takeIf { value -> value.isFinite() && value > 0 } ?: 0.0 }
+    val remaining = (item.quantity - allocated).coerceAtLeast(0.0)
+    val valid = allocated <= item.quantity + 1e-9 && rows.all { (date, quantity) ->
+        date.isBlank() && quantity.isBlank() ||
+            runCatching { LocalDate.parse(date.trim()) }.isSuccess &&
+            (quantity.toDoubleOrNull()?.let { it.isFinite() && it > 0 } == true)
+    }
+    val sheetState = androidx.compose.material3.rememberModalBottomSheetState(skipPartiallyExpanded = true)
+
+    androidx.compose.material3.ModalBottomSheet(
         onDismissRequest = onDismiss,
-        title = { Text("生产日期分配") },
-        text = {
+        sheetState = sheetState,
+        containerColor = MaterialTheme.colorScheme.surface,
+        contentColor = MaterialTheme.colorScheme.onSurface,
+        dragHandle = {
             Column(
-                modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(CulinarySpacing.xs),
+                modifier = Modifier.fillMaxWidth().padding(top = 10.dp, bottom = 4.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                Text("商品：${item.name}", style = MaterialTheme.typography.bodyMedium)
-                Text("待入库总数：${formatAmount(item.quantity)}；已分配：${formatAmount(allocated)}", style = MaterialTheme.typography.bodySmall)
-                rows.forEachIndexed { index, row ->
-                    Row(horizontalArrangement = Arrangement.spacedBy(CulinarySpacing.xs), verticalAlignment = Alignment.CenterVertically) {
-                        OutlinedTextField(
-                            value = row.date,
-                            onValueChange = { value -> rows = rows.toMutableList().also { it[index] = row.copy(date = value) } },
-                            label = { Text("生产日期") },
-                            placeholder = { Text("YYYY-MM-DD") },
-                            singleLine = true,
-                            modifier = Modifier.weight(1.3f),
-                        )
-                        OutlinedTextField(
-                            value = row.quantity,
-                            onValueChange = { value -> rows = rows.toMutableList().also { it[index] = row.copy(quantity = value) } },
-                            label = { Text("数量") },
-                            singleLine = true,
-                            modifier = Modifier.weight(0.7f),
-                        )
-                        TextButton(
-                            onClick = { if (rows.size > 1) rows = rows.toMutableList().also { it.removeAt(index) } },
-                            enabled = rows.size > 1,
-                        ) { Text("−") }
-                    }
-                }
-                CulinaryTextButton(
-                    text = "＋ 添加日期分组",
-                    onClick = { rows = rows + PendingDateDraft("", "") },
-                )
-                val remaining = (item.quantity - allocated).coerceAtLeast(0.0)
-                Text(
-                    text = if (remaining > 1e-9) "尚有 ${formatAmount(remaining)} 件待分配" else if (allocated > item.quantity + 1e-9) "分配数量超过待入库总数" else "数量已分配完成",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = if (remaining > 1e-9 || allocated > item.quantity + 1e-9) CulinaryColorScheme.current.danger else MaterialTheme.colorScheme.onSurfaceVariant,
+                androidx.compose.foundation.layout.Box(
+                    modifier = Modifier.size(width = 34.dp, height = 4.dp)
+                        .clip(RoundedCornerShape(50))
+                        .background(MaterialTheme.colorScheme.outlineVariant),
                 )
             }
         },
-        confirmButton = {
-            TextButton(
-                onClick = {
+    ) {
+        Column(
+            modifier = Modifier.fillMaxWidth()
+                .heightIn(max = 680.dp)
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = CulinarySpacing.pageHorizontal)
+                .padding(bottom = CulinarySpacing.xl),
+            verticalArrangement = Arrangement.spacedBy(CulinarySpacing.sm),
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                    Text(
+                        "生产日期分配",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                    Text(
+                        item.name,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                TextButton(onClick = onDismiss) { Text("关闭") }
+            }
+            CulinaryRule()
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text("待分配总量", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(
+                    "${formatAmount(item.quantity)} 件",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                )
+            }
+
+            rows.forEachIndexed { index, row ->
+                Column(verticalArrangement = Arrangement.spacedBy(CulinarySpacing.xs)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            "${(index + 1).toString().padStart(2, '0')}",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = CulinaryColorScheme.current.accent,
+                            fontWeight = FontWeight.SemiBold,
+                        )
+                        Text(
+                            "  日期分组",
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.Medium,
+                        )
+                        Spacer(modifier = Modifier.weight(1f))
+                        if (rows.size > 1) {
+                            TextButton(onClick = {
+                                rows = rows.toMutableList().also { it.removeAt(index) }
+                            }) { Text("移除") }
+                        }
+                    }
+                    Text("生产日期", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    OutlinedTextField(
+                        value = row.first,
+                        onValueChange = { value ->
+                            rows = rows.toMutableList().also { it[index] = value to row.second }
+                        },
+                        placeholder = { Text("YYYY-MM-DD") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(8.dp),
+                    )
+                    Text("对应数量", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    OutlinedTextField(
+                        value = row.second,
+                        onValueChange = { value ->
+                            rows = rows.toMutableList().also { it[index] = row.first to value }
+                        },
+                        placeholder = { Text("填写数量") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(8.dp),
+                    )
+                }
+                if (index != rows.lastIndex) CulinaryRule()
+            }
+
+            Row(
+                modifier = Modifier.fillMaxWidth().clickable { rows = rows + ("" to "") }.padding(vertical = CulinarySpacing.sm),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text("+", color = CulinaryColorScheme.current.accent, fontWeight = FontWeight.SemiBold)
+                Text(
+                    "  添加生产日期分组",
+                    color = CulinaryColorScheme.current.accent,
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Medium,
+                )
+            }
+            CulinaryRule()
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Text("已分配", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("${formatAmount(allocated)} 件", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                }
+                Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Text("尚未分配", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(
+                        "${formatAmount(remaining)} 件",
+                        style = MaterialTheme.typography.titleSmall,
+                        color = if (remaining > 1e-9) CulinaryColorScheme.current.danger else MaterialTheme.colorScheme.onSurface,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                }
+            }
+            Row(
+                modifier = Modifier.fillMaxWidth().clickable(enabled = valid) {
                     val parsed = rows.mapIndexedNotNull { index, row ->
-                        val date = runCatching { LocalDate.parse(row.date.trim()) }.getOrNull()
-                        val qty = row.quantity.trim().toDoubleOrNull()
+                        val date = runCatching { LocalDate.parse(row.first.trim()) }.getOrNull()
+                        val qty = row.second.trim().toDoubleOrNull()
                         if (date != null && qty != null && qty.isFinite() && qty > 0) {
                             PendingStockDateAllocation(
                                 id = item.allocations.getOrNull(index)?.id.orEmpty(),
@@ -508,15 +643,19 @@ private fun PendingStockDateDialog(
                             )
                         } else null
                     }
-                    if (parsed.sumOf { it.quantity } <= item.quantity + 1e-9) onSave(parsed)
-                },
-                enabled = allocated <= item.quantity + 1e-9 && rows.all {
-                    it.date.isBlank() && it.quantity.isBlank() ||
-                        runCatching { LocalDate.parse(it.date.trim()) }.isSuccess &&
-                        (it.quantity.toDoubleOrNull()?.let { q -> q.isFinite() && q > 0 } == true)
-                },
-            ) { Text("保存") }
-        },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("取消") } },
-    )
+                    onSave(parsed)
+                }.padding(vertical = CulinarySpacing.md),
+                horizontalArrangement = Arrangement.End,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    "保存日期分配",
+                    color = if (valid) CulinaryColorScheme.current.accent else MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold,
+                )
+                Text("  →", color = CulinaryColorScheme.current.accent)
+            }
+        }
+    }
 }
