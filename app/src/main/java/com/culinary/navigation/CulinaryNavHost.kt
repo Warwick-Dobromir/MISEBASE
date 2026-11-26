@@ -813,7 +813,7 @@ private fun nullableString(name: String): NamedNavArgument =
  * 扫码入口：已有库存档案由扫码页顶部短暂提示；未建档物品直接进入新建库存档案。
  */
 private fun NavGraphBuilder.scanGraph(navController: NavHostController) {
-    composable(ARCHIVE_BARCODE_SCAN_ROUTE) {
+    dialog(ARCHIVE_BARCODE_SCAN_ROUTE) {
         val archiveEntry = navController.getBackStackEntry(InventoryRoutes.ARCHIVE)
         ArchiveBarcodeScanRoute(
             oldBarcode = archiveEntry.savedStateHandle.get<String>("archive_barcode_current"),
