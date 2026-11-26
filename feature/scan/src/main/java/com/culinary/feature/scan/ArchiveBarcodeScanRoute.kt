@@ -166,7 +166,7 @@ fun ArchiveBarcodeScanRoute(
                             selected = false
                             viewModel.resetFrames()
                             scanning = true
-                        }.padding(start = 8.dp, vertical = 6.dp),
+                        }.padding(start = 8.dp, top = 6.dp, bottom = 6.dp),
                         color = accent,
                         style = MaterialTheme.typography.bodySmall,
                     )
