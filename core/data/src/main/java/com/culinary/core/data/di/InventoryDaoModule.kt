@@ -3,7 +3,6 @@ package com.culinary.core.data.di
 import com.culinary.core.database.CulinaryDatabase
 import com.culinary.core.database.dao.InventoryArchiveDao
 import com.culinary.core.database.dao.InventoryArchiveProductDao
-import com.culinary.core.database.dao.TemporaryBarcodeDao
 import com.culinary.core.database.dao.InventoryBatchDao
 import com.culinary.core.database.dao.InventoryCapacityDao
 import com.culinary.core.database.dao.InventoryIssueDao
@@ -13,6 +12,7 @@ import com.culinary.core.database.dao.InventoryStocktakeDao
 import com.culinary.core.database.dao.PendingStockDao
 import com.culinary.core.database.dao.ProductDao
 import com.culinary.core.database.dao.StorageLocationDao
+import com.culinary.core.database.dao.TemporaryBarcodeDao
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
