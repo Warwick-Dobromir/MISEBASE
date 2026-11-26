@@ -208,7 +208,6 @@ private fun InventoryHomeScreen(
                 CulinaryTextButton(text = "···", onClick = onOpenManagement)
             },
         )
-        CulinaryRule()
         if (state.isLoading) {
             LoadingRows()
         } else {
