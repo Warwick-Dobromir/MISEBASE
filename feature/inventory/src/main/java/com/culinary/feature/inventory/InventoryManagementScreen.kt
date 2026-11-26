@@ -39,6 +39,7 @@ fun InventoryManagementRoute(
     onLedger: () -> Unit,
     onFreeze: () -> Unit,
     onTemporary: () -> Unit,
+    onBarcodePool: () -> Unit,
     onRules: () -> Unit,
 ) {
     Column(modifier = Modifier.fillMaxSize()) {
@@ -113,6 +114,12 @@ fun InventoryManagementRoute(
                 title = "临时库存",
                 subtitle = "按规则提醒存放过久的临时批次",
                 onClick = onTemporary,
+                trailing = { ManagementChevron() },
+            )
+            ArchiveListItem(
+                title = "临时条码池",
+                subtitle = "统一管理空闲、已分配与待清洁条码",
+                onClick = onBarcodePool,
                 trailing = { ManagementChevron() },
             )
             ArchiveListItem(

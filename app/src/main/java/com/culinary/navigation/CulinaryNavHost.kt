@@ -56,6 +56,7 @@ import com.culinary.feature.inventory.ArchiveListRoute
 import com.culinary.feature.inventory.BatchDetailRoute
 import com.culinary.feature.inventory.BatchHistoryRoute
 import com.culinary.feature.inventory.BatchListRoute
+import com.culinary.feature.inventory.BarcodePoolRoute
 import com.culinary.feature.inventory.CategoryManageRoute
 import com.culinary.feature.inventory.FreezeRoute
 import com.culinary.feature.inventory.InventoryCategoryRoute
@@ -729,6 +730,9 @@ private fun NavGraphBuilder.inventoryGraph(navController: NavHostController) {
     composable(InventoryRoutes.TEMPORARY) {
         TemporaryRoute(onBack = { navController.popBackStack() })
     }
+    composable(InventoryRoutes.BARCODE_POOL) {
+        BarcodePoolRoute(onBack = { navController.popBackStack() })
+    }
     composable(InventoryRoutes.LOCATIONS) {
         LocationRoute(onBack = { navController.popBackStack() })
     }
@@ -750,6 +754,7 @@ private fun NavGraphBuilder.inventoryGraph(navController: NavHostController) {
             onLedger = { navController.navigate(InventoryRoutes.ledgerV9()) },
             onFreeze = { navController.navigate(InventoryRoutes.freeze()) },
             onTemporary = { navController.navigate(InventoryRoutes.temporary()) },
+            onBarcodePool = { navController.navigate(InventoryRoutes.barcodePool()) },
             onRules = { navController.navigate(InventoryRoutes.rules()) },
         )
     }
