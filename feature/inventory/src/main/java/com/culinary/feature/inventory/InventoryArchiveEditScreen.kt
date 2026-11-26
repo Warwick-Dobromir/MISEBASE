@@ -114,6 +114,7 @@ data class ArchiveEditUiState(
     val purchasePrice: String = "",
     val productCode: String = "",
     val barcode: String = "",
+    val pendingScannedBarcode: String? = null,
     val purchaseUnitId: String = "",
     val purchaseSpecification: String = "",
     val unitConversion: String = "",
@@ -197,8 +198,24 @@ class ArchiveEditViewModel
         val uiState: StateFlow<ArchiveEditUiState> = _uiState.asStateFlow()
 
         init {
+            viewModelScope.launch {
+                savedStateHandle.getStateFlow<String?>("archive_barcode_scan_result", null).collect { scanned ->
+                    if (!scanned.isNullOrBlank()) {
+                        savedStateHandle["archive_barcode_scan_result"] = null
+                        if (_uiState.value.barcode.isBlank() || _uiState.value.barcode == scanned) onBarcodeChange(scanned)
+                        else _uiState.update { it.copy(pendingScannedBarcode = scanned) }
+                    }
+                }
+            }
             load()
         }
+
+        fun confirmScannedBarcodeReplacement() {
+            val scanned = _uiState.value.pendingScannedBarcode ?: return
+            onBarcodeChange(scanned)
+            _uiState.update { it.copy(pendingScannedBarcode = null) }
+        }
+        fun dismissScannedBarcodeReplacement() { _uiState.update { it.copy(pendingScannedBarcode = null) } }
 
         fun load() {
             viewModelScope.launch {
@@ -674,6 +691,8 @@ fun ArchiveEditRoute(
         onPurchasePriceChange = viewModel::onPurchasePriceChange,
         onProductCodeChange = viewModel::onProductCodeChange,
         onBarcodeChange = viewModel::onBarcodeChange,
+        onConfirmBarcodeReplacement = viewModel::confirmScannedBarcodeReplacement,
+        onDismissBarcodeReplacement = viewModel::dismissScannedBarcodeReplacement,
         onPurchaseUnitIdChange = viewModel::onPurchaseUnitIdChange,
         onPurchaseSpecificationChange = viewModel::onPurchaseSpecificationChange,
         onUnitConversionChange = viewModel::onUnitConversionChange,
@@ -745,6 +764,8 @@ private fun ArchiveEditScreen(
     onPurchasePriceChange: (String) -> Unit,
     onProductCodeChange: (String) -> Unit,
     onBarcodeChange: (String) -> Unit,
+    onConfirmBarcodeReplacement: () -> Unit,
+    onDismissBarcodeReplacement: () -> Unit,
     onPurchaseUnitIdChange: (String) -> Unit,
     onPurchaseSpecificationChange: (String) -> Unit,
     onUnitConversionChange: (String) -> Unit,
