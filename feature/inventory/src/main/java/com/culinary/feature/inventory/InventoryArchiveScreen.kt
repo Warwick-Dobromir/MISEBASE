@@ -202,7 +202,7 @@ fun ArchiveDetailRoute(
     onReceipt: (String) -> Unit,
     onIssue: (String) -> Unit,
     onStocktake: (String) -> Unit,
-    onScanBarcode: () -> Unit,
+    onScanBarcode: (String) -> Unit,
     viewModel: ArchiveDetailViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -237,7 +237,7 @@ private fun ArchiveDetailScreen(
     onReceipt: (String) -> Unit,
     onIssue: (String) -> Unit,
     onStocktake: (String) -> Unit,
-    onScanBarcode: () -> Unit,
+    onScanBarcode: (String) -> Unit,
     onConfirmBarcodeReplacement: () -> Unit,
     onDismissBarcodeReplacement: () -> Unit,
     onRetry: () -> Unit,
@@ -370,7 +370,7 @@ private fun ArchiveDetailScreen(
                             color = MaterialTheme.colorScheme.onSurface,
                         )
                         androidx.compose.material3.IconButton(
-                            onClick = onScanBarcode,
+                            onClick = { onScanBarcode(detail.archive.barcode.orEmpty()) },
                             modifier = Modifier.height(32.dp),
                         ) {
                             androidx.compose.material3.Icon(
