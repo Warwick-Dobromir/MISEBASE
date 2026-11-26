@@ -784,6 +784,16 @@ private fun ArchiveEditScreen(
     onUnlinkProduct: (String) -> Unit,
 ) {
     var picker by remember { mutableStateOf<EditPicker?>(null) }
+    state.pendingScannedBarcode?.let { scanned ->
+        AlertDialog(
+            onDismissRequest = onDismissBarcodeReplacement,
+            title = { Text("替换档案条码？") },
+            text = { Text("当前条码：${state.barcode}\\n扫描条码：$scanned") },
+            confirmButton = { CulinaryTextButton(text = "确认替换", onClick = onConfirmBarcodeReplacement) },
+            dismissButton = { CulinaryTextButton(text = "取消", onClick = onDismissBarcodeReplacement) },
+        )
+    }
+
     val context = LocalContext.current.applicationContext
     val imageUri = state.imageUri.takeIf { it.isNotBlank() }
     val imageBytes by produceState<ByteArray?>(initialValue = null, key1 = imageUri) {
