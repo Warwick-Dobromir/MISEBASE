@@ -110,7 +110,6 @@ class ExpiryReminderWorker(context: Context, parameters: WorkerParameters) : Cor
         if (!coefficient.isFinite() || coefficient <= 0.0) return
         val dao = db.inventoryCapacityDao()
         val existing = dao.allocationsForBatch(batch.id)
-        val currentZone = existing.firstOrNull()?.let { dao.findCell(it.cellId)?.expiryZone }
         if (existing.isNotEmpty() && existing.all { dao.findCell(it.cellId)?.expiryZone == zone.name }) return
         val now = System.currentTimeMillis()
         existing.forEach { allocation ->

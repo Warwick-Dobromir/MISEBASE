@@ -106,6 +106,8 @@ android {
 dependencies {
     implementation(project(":core:data"))
     implementation(project(":core:database"))
+    implementation(project(":core:domain"))
+    implementation(libs.androidx.room.ktx)
     implementation(project(":core:platform"))
     implementation(project(":core:designsystem"))
 
