@@ -25,6 +25,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -51,6 +52,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.culinary.core.common.CulinaryError
 import com.culinary.core.common.Outcome
+import com.culinary.core.database.dao.InventoryArchiveDao
+import com.culinary.core.database.dao.TemporaryBatchBarcodeDao
 import com.culinary.core.designsystem.component.ArchiveEditorInlineField
 import com.culinary.core.designsystem.component.ArchiveEditorSectionHeader
 import com.culinary.core.designsystem.component.ArchiveEditorTopBar
@@ -113,6 +116,7 @@ data class ArchiveEditUiState(
     val purchasePrice: String = "",
     val productCode: String = "",
     val barcode: String = "",
+    val pendingScannedBarcode: String? = null,
     val purchaseUnitId: String = "",
     val purchaseSpecification: String = "",
     val unitConversion: String = "",
@@ -182,6 +186,8 @@ class ArchiveEditViewModel
         private val linkArchiveProduct: LinkArchiveProductUseCase,
         private val unlinkArchiveProduct: UnlinkArchiveProductUseCase,
         private val inventoryRepository: InventoryRepository,
+        private val inventoryArchiveDao: InventoryArchiveDao,
+        private val temporaryBatchBarcodeDao: TemporaryBatchBarcodeDao,
         private val pendingStockRepository: PendingStockRepository? = null,
     ) : ViewModel() {
         private val archiveId: String? =
@@ -318,7 +324,19 @@ class ArchiveEditViewModel
 
         fun onPurchasePriceChange(value: String) = update("price") { it.copy(purchasePrice = value) }
         fun onProductCodeChange(value: String) = update("productCode") { it.copy(productCode = value) }
-        fun onBarcodeChange(value: String) = update("barcode") { it.copy(barcode = value) }
+        fun onBarcodeChange(value: String) { _uiState.update { it.copy(barcode = value, fieldErrors = it.fieldErrors - "barcode") } }
+
+        fun onBarcodeScanned(value: String) { _uiState.update { it.copy(pendingScannedBarcode = value, fieldErrors = it.fieldErrors - "barcode") } }
+
+        fun confirmScannedBarcode() {
+            _uiState.update { it.copy(barcode = it.pendingScannedBarcode.orEmpty(), pendingScannedBarcode = null) }
+        }
+
+        fun dismissScannedBarcode() { _uiState.update { it.copy(pendingScannedBarcode = null) } }
+
+        fun onBarcodeConflict(archiveId: String) {
+            _uiState.update { it.copy(fieldErrors = it.fieldErrors + ("barcode" to "该条码已被其他库存档案占用（$archiveId），不能重复使用。")) }
+        }
         fun onPurchaseUnitIdChange(value: String) = update("purchaseUnit") { it.copy(purchaseUnitId = value) }
         fun onPurchaseSpecificationChange(value: String) = update("purchaseSpecification") { it.copy(purchaseSpecification = value) }
         fun onUnitConversionChange(value: String) = update("unitConversion") { it.copy(unitConversion = value) }
@@ -433,6 +451,26 @@ class ArchiveEditViewModel
             }
             viewModelScope.launch {
                 _uiState.update { it.copy(isSaving = true, fieldErrors = emptyMap(), error = null) }
+                val barcode = state.barcode.trim()
+                val duplicateBarcode = barcode.takeIf { it.isNotEmpty() }?.let { inventoryArchiveDao.findByBarcode(it) }
+                if (duplicateBarcode != null && duplicateBarcode.id != state.archiveId) {
+                    _uiState.update {
+                        it.copy(
+                            isSaving = false,
+                            fieldErrors = mapOf("barcode" to "该条码已被其他库存档案占用，不能重复使用。"),
+                        )
+                    }
+                    return@launch
+                }
+                if (barcode.isNotEmpty() && temporaryBatchBarcodeDao.findByBarcode(barcode) != null) {
+                    _uiState.update {
+                        it.copy(
+                            isSaving = false,
+                            fieldErrors = mapOf("barcode" to "该编号属于系统临时条码池，不能作为商品原生条码。"),
+                        )
+                    }
+                    return@launch
+                }
                 when (val result = saveArchive(state.toArchive(unit))) {
                     is Outcome.Success -> {
                         val product = state.detail?.links?.firstOrNull()?.product
@@ -517,6 +555,7 @@ class ArchiveEditViewModel
 
         private fun validate(state: ArchiveEditUiState): Map<String, String> {
             val errors = mutableMapOf<String, String>()
+            state.fieldErrors["barcode"]?.let { errors["barcode"] = it }
             val name = state.name.trim()
             when {
                 name.isEmpty() -> errors["name"] = "请输入中文名称。"
@@ -639,15 +678,52 @@ private fun ArchiveEditUiState.toArchive(unit: StockUnit): InventoryArchive =
 fun ArchiveEditRoute(
     onSaved: (String) -> Unit,
     onBack: () -> Unit,
+    onScanBarcode: () -> Unit,
+    scannedBarcode: String?,
+    duplicateBarcodeArchiveId: String?,
+    onScannedBarcodeConsumed: () -> Unit,
+    onDuplicateBarcodeConsumed: () -> Unit,
     viewModel: ArchiveEditViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     LaunchedEffect(state.savedId) {
         state.savedId?.let(onSaved)
     }
+    LaunchedEffect(scannedBarcode) {
+        scannedBarcode?.takeIf { it.isNotBlank() }?.let(viewModel::onBarcodeScanned)
+        if (scannedBarcode != null) onScannedBarcodeConsumed()
+    }
+    LaunchedEffect(duplicateBarcodeArchiveId) {
+        duplicateBarcodeArchiveId?.takeIf { it.isNotBlank() }?.let(viewModel::onBarcodeConflict)
+        if (duplicateBarcodeArchiveId != null) onDuplicateBarcodeConsumed()
+    }
+    state.pendingScannedBarcode?.let { candidate ->
+        AlertDialog(
+            onDismissRequest = viewModel::dismissScannedBarcode,
+            title = { Text(if (state.barcode.isBlank()) "使用扫描条码？" else "确认替换条码？") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(CulinarySpacing.xs)) {
+                    if (state.barcode.isNotBlank()) {
+                        Text("当前条码：${state.barcode}", style = MaterialTheme.typography.bodySmall)
+                    }
+                    Text("扫描结果：$candidate", style = MaterialTheme.typography.bodyMedium)
+                }
+            },
+            confirmButton = {
+                CulinaryTextButton(
+                    text = if (state.barcode.isBlank()) "使用条码" else "确认替换",
+                    onClick = viewModel::confirmScannedBarcode,
+                )
+            },
+            dismissButton = {
+                CulinaryTextButton(text = "取消", onClick = viewModel::dismissScannedBarcode)
+            },
+        )
+    }
     ArchiveEditScreen(
         state = state,
         onBack = onBack,
+        onScanBarcode = onScanBarcode,
         onSave = viewModel::save,
         onNameChange = viewModel::onNameChange,
         onEnglishNameChange = viewModel::onEnglishNameChange,
@@ -718,6 +794,7 @@ private data class PickerOption(
 private fun ArchiveEditScreen(
     state: ArchiveEditUiState,
     onBack: () -> Unit,
+    onScanBarcode: () -> Unit,
     onSave: () -> Unit,
     onNameChange: (String) -> Unit,
     onEnglishNameChange: (String) -> Unit,
@@ -852,7 +929,7 @@ private fun ArchiveEditScreen(
                 InventoryArchiveEditField("商品规格", state.packageLabel, onPackageLabelChange, "例如：1 kg / 块")
                 InventoryArchiveEditField("容量系数（CU / 库存单位）", state.capacityUnitPerStockUnit, onCapacityUnitPerStockUnitChange, "例如：1", state.fieldErrors["capacityUnitPerStockUnit"])
                 ArchiveEditReadOnlyRow("商品编码", state.productCode.ifBlank { "保存档案后自动生成" })
-                InventoryArchiveEditField("条码", state.barcode, onBarcodeChange, "扫描或填写商品条码")
+                InventoryArchiveBarcodeField(state.barcode, onBarcodeChange, onScanBarcode, state.fieldErrors["barcode"])
                 if (state.kind == ArchiveKind.SAUCE) {
                     EditPickerField(
                         label = "关联酱汁",
@@ -1231,6 +1308,45 @@ private fun InventoryArchiveEditField(
                 placeholder = placeholder,
                 modifier = Modifier.weight(1f),
             )
+        }
+        error?.let {
+            Row(modifier = Modifier.fillMaxWidth()) {
+                Spacer(modifier = Modifier.width(104.dp))
+                InlineError(message = it)
+            }
+        }
+    }
+}
+
+@Composable
+private fun InventoryArchiveBarcodeField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    onScan: () -> Unit,
+    error: String? = null,
+) {
+    Column(modifier = Modifier.fillMaxWidth().padding(vertical = CulinarySpacing.xs)) {
+        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                "条码",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.width(104.dp),
+            )
+            ArchiveEditorInlineField(
+                value = value,
+                onValueChange = onValueChange,
+                placeholder = "扫描或填写商品条码",
+                modifier = Modifier.weight(1f),
+            )
+            IconButton(onClick = onScan, modifier = Modifier.size(36.dp)) {
+                Icon(
+                    imageVector = CulinaryIcons.Scan,
+                    contentDescription = "扫描条码",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(16.dp),
+                )
+            }
         }
         error?.let {
             Row(modifier = Modifier.fillMaxWidth()) {

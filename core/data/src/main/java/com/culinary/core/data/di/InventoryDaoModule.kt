@@ -12,6 +12,7 @@ import com.culinary.core.database.dao.InventoryStocktakeDao
 import com.culinary.core.database.dao.PendingStockDao
 import com.culinary.core.database.dao.ProductDao
 import com.culinary.core.database.dao.StorageLocationDao
+import com.culinary.core.database.dao.TemporaryBatchBarcodeDao
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -26,6 +27,10 @@ object InventoryDaoModule {
     @Provides
     @Singleton
     fun provideInventoryBatchDao(database: CulinaryDatabase): InventoryBatchDao = database.inventoryBatchDao()
+
+    @Provides
+    @Singleton
+    fun provideTemporaryBatchBarcodeDao(database: CulinaryDatabase): TemporaryBatchBarcodeDao = database.temporaryBatchBarcodeDao()
 
     @Provides
     @Singleton

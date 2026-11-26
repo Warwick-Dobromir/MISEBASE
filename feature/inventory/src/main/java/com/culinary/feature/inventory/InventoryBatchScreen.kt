@@ -36,6 +36,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
 import com.culinary.core.common.CulinaryError
 import com.culinary.core.common.Outcome
+import com.culinary.core.database.dao.TemporaryBatchBarcodeDao
+import com.culinary.core.database.dao.InventoryArchiveDao
+import com.culinary.core.database.entity.TemporaryBatchBarcodeHistoryEntity
 import com.culinary.core.designsystem.component.CulinaryButton
 import com.culinary.core.designsystem.component.CulinaryInfoRow
 import com.culinary.core.designsystem.component.CulinaryRule
@@ -72,11 +75,13 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import java.util.UUID
 
 /** 批次详情：数量、信息、冻结/解冻/转移、冻结历史与完整流水。 */
 data class BatchDetailUiState(
     val batch: InventoryBatchRecord? = null,
     val archiveName: String = "",
+    val temporaryBarcode: String? = null,
     val expiryInfo: BatchExpiryInfo = BatchExpiryInfo.pending(),
     val ledger: List<InventoryLedgerEntry> = emptyList(),
     val freezeRecords: List<FreezeRecord> = emptyList(),
@@ -99,6 +104,8 @@ class BatchDetailViewModel
         private val unfreezeBatch: UnfreezeBatchUseCase,
         private val transferBatch: TransferBatchLocationUseCase,
         private val listLocations: ListStorageLocationsUseCase,
+        private val temporaryBarcodeDao: TemporaryBatchBarcodeDao,
+        private val inventoryArchiveDao: InventoryArchiveDao,
     ) : ViewModel() {
         private val batchId: String =
             savedStateHandle.get<String>(InventoryRoutes.ARG_BATCH_ID).orEmpty()
@@ -118,11 +125,13 @@ class BatchDetailViewModel
                     return@launch
                 }
                 when (val result = read()) {
-                    is Outcome.Success ->
+                    is Outcome.Success -> {
+                        result.value.batch?.let { releaseTemporaryBarcodeIfTerminal(it) }
                         _uiState.update {
                             it.copy(
                                 batch = result.value.batch,
                                 archiveName = result.value.archiveName,
+                                temporaryBarcode = temporaryBarcodeDao.findAssignedToBatch(batchId)?.barcode,
                                 expiryInfo = result.value.expiryInfo,
                                 ledger = result.value.ledger,
                                 freezeRecords = result.value.freezeRecords,
@@ -130,6 +139,7 @@ class BatchDetailViewModel
                                 isLoading = false,
                             )
                         }
+                    }
 
                     is Outcome.Failure ->
                         _uiState.update {
@@ -177,6 +187,83 @@ class BatchDetailViewModel
                     isLoading = false,
                 ),
             )
+        }
+
+        fun allocateTemporaryBarcode() {
+            if (_uiState.value.isWorking) return
+            viewModelScope.launch {
+                val current = _uiState.value.batch ?: return@launch
+                if (!current.isLive || current.onHand <= 0.0) return@launch
+                val existing = temporaryBarcodeDao.findAssignedToBatch(batchId)
+                if (existing != null) {
+                    _uiState.update { it.copy(temporaryBarcode = existing.barcode, message = "该批次已有临时条码。") }
+                    return@launch
+                }
+                _uiState.update { it.copy(isWorking = true, error = null, message = null) }
+                val now = System.currentTimeMillis()
+                var allocated: String? = null
+                temporaryBarcodeDao.listFree().forEach { free ->
+                    if (allocated == null) {
+                        if (inventoryArchiveDao.findByBarcode(free.barcode) != null) {
+                            temporaryBarcodeDao.retireFree(free.barcode)
+                        } else {
+                            val event = TemporaryBatchBarcodeHistoryEntity(
+                                id = UUID.randomUUID().toString(),
+                                barcode = free.barcode,
+                                batchId = batchId,
+                                action = "ASSIGNED",
+                                occurredAt = now,
+                            )
+                            if (temporaryBarcodeDao.allocateFree(free.barcode, batchId, now, event)) {
+                                allocated = free.barcode
+                            }
+                        }
+                    }
+                }
+                repeat(8) {
+                    if (allocated == null) {
+                        val code = "TMP" + UUID.randomUUID().toString().replace("-", "").take(12).uppercase()
+                        if (inventoryArchiveDao.findByBarcode(code) == null) {
+                            val event = TemporaryBatchBarcodeHistoryEntity(
+                                id = UUID.randomUUID().toString(),
+                                barcode = code,
+                                batchId = batchId,
+                                action = "ASSIGNED",
+                                occurredAt = now,
+                            )
+                            if (temporaryBarcodeDao.allocate(code, batchId, now, event)) allocated = code
+                        }
+                    }
+                }
+                if (allocated == null) {
+                    _uiState.update { it.copy(isWorking = false, error = "临时条码分配失败，请重试。") }
+                } else {
+                    _uiState.update { it.copy(isWorking = false, temporaryBarcode = allocated, message = "已分配临时条码。") }
+                }
+            }
+        }
+
+        private suspend fun releaseTemporaryBarcodeIfTerminal(batch: InventoryBatchRecord) {
+            if (batch.status !in setOf(
+                    com.culinary.core.domain.model.BatchLifecycleStatus.DEPLETED,
+                    com.culinary.core.domain.model.BatchLifecycleStatus.EXPIRED,
+                    com.culinary.core.domain.model.BatchLifecycleStatus.DISCARDED,
+                    com.culinary.core.domain.model.BatchLifecycleStatus.RECYCLED,
+                )
+            ) return
+            val assigned = temporaryBarcodeDao.findAssignedToBatch(batch.id) ?: return
+            val now = System.currentTimeMillis()
+            if (temporaryBarcodeDao.releaseBatch(batch.id, now) == 1) {
+                temporaryBarcodeDao.appendHistory(
+                    TemporaryBatchBarcodeHistoryEntity(
+                        id = UUID.randomUUID().toString(),
+                        barcode = assigned.barcode,
+                        batchId = batch.id,
+                        action = "RELEASED",
+                        occurredAt = now,
+                    ),
+                )
+            }
         }
 
         fun freeze(reason: String) = runAction("已冻结该批次。") { freezeBatch(batchId, reason) }
@@ -243,6 +330,7 @@ fun BatchDetailRoute(
         onUnfreeze = viewModel::unfreeze,
         onTransferConfirm = viewModel::transfer,
         onRetry = viewModel::load,
+        onAllocateTemporaryBarcode = viewModel::allocateTemporaryBarcode,
     )
 }
 
@@ -256,6 +344,7 @@ private fun BatchDetailScreen(
     onUnfreeze: (String) -> Unit,
     onTransferConfirm: (String, String?) -> Unit,
     onRetry: () -> Unit,
+    onAllocateTemporaryBarcode: () -> Unit,
 ) {
     var reasonDialog by remember { mutableStateOf<FreezeDialogMode?>(null) }
     var transferDialog by remember { mutableStateOf(false) }
@@ -366,11 +455,21 @@ private fun BatchDetailScreen(
                             )
                         }
                         SectionHeader(title = "批次操作")
+                        if (state.temporaryBarcode != null) {
+                            CulinaryInfoRow(label = "临时条码", value = state.temporaryBarcode)
+                        }
                     }
                     Row(
                         modifier = Modifier.padding(horizontal = CulinarySpacing.pageHorizontal),
                         horizontalArrangement = Arrangement.spacedBy(CulinarySpacing.xs),
                     ) {
+                        if (state.temporaryBarcode == null && batch.isLive && batch.onHand > 0.0) {
+                            CulinaryTextButton(
+                                text = if (state.isWorking) "分配中…" else "分配临时条码",
+                                onClick = onAllocateTemporaryBarcode,
+                                modifier = Modifier.defaultMinSize(minHeight = 48.dp),
+                            )
+                        }
                         if (batch.isFrozen) {
                             CulinaryTextButton(
                                 text = "解冻",

@@ -38,6 +38,7 @@ internal object CulinaryMigrations {
     val MIGRATION_13_14: Migration = MIGRATION_13_14_IMPL
     val MIGRATION_14_15: Migration = MIGRATION_14_15_IMPL
     val MIGRATION_15_16: Migration = MIGRATION_15_16_IMPL
+    val MIGRATION_16_17: Migration = MIGRATION_16_17_IMPL
 
     val ALL: Array<Migration> =
         arrayOf(
@@ -56,8 +57,58 @@ internal object CulinaryMigrations {
             MIGRATION_13_14,
             MIGRATION_14_15,
             MIGRATION_15_16,
+            MIGRATION_16_17,
         )
 }
+
+
+private val MIGRATION_16_17_IMPL =
+    object : Migration(16, 17) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            CulinarySchemaExtras.dropPartialIndexes(db)
+            db.execSQL("""
+                CREATE TABLE IF NOT EXISTS `temporary_batch_barcode` (
+                    `barcode` TEXT NOT NULL,
+                    `batch_id` TEXT,
+                    `state` TEXT NOT NULL,
+                    `created_at` INTEGER NOT NULL,
+                    `assigned_at` INTEGER,
+                    `released_at` INTEGER,
+                    PRIMARY KEY(`barcode`)
+                )
+            """.trimIndent())
+            db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS `index_temporary_batch_barcode_batch_id` ON `temporary_batch_barcode` (`batch_id`)")
+            db.execSQL("CREATE INDEX IF NOT EXISTS `index_temporary_batch_barcode_state` ON `temporary_batch_barcode` (`state`)")
+            db.execSQL("""
+                CREATE TABLE IF NOT EXISTS `temporary_batch_barcode_history` (
+                    `id` TEXT NOT NULL,
+                    `barcode` TEXT NOT NULL,
+                    `batch_id` TEXT NOT NULL,
+                    `action` TEXT NOT NULL,
+                    `occurred_at` INTEGER NOT NULL,
+                    PRIMARY KEY(`id`)
+                )
+            """.trimIndent())
+            db.execSQL("CREATE INDEX IF NOT EXISTS `index_temporary_batch_barcode_history_barcode` ON `temporary_batch_barcode_history` (`barcode`)")
+            db.execSQL("CREATE INDEX IF NOT EXISTS `index_temporary_batch_barcode_history_batch_id` ON `temporary_batch_barcode_history` (`batch_id`)")
+            db.execSQL("CREATE INDEX IF NOT EXISTS `index_temporary_batch_barcode_history_occurred_at` ON `temporary_batch_barcode_history` (`occurred_at`)")
+            db.execSQL("""
+                CREATE TRIGGER IF NOT EXISTS `release_temporary_barcode_on_batch_terminal`
+                AFTER UPDATE OF `status` ON `inventory_batch`
+                WHEN NEW.`status` IN ('DEPLETED', 'EXPIRED', 'DISCARDED', 'RECYCLED')
+                     AND OLD.`status` NOT IN ('DEPLETED', 'EXPIRED', 'DISCARDED', 'RECYCLED')
+                BEGIN
+                    INSERT INTO `temporary_batch_barcode_history` (`id`, `barcode`, `batch_id`, `action`, `occurred_at`)
+                    SELECT lower(hex(randomblob(16))), `barcode`, NEW.`id`, 'RELEASED', CAST(strftime('%s', 'now') AS INTEGER) * 1000
+                    FROM `temporary_batch_barcode`
+                    WHERE `batch_id` = NEW.`id` AND `state` = 'ASSIGNED';
+                    UPDATE `temporary_batch_barcode`
+                    SET `batch_id` = NULL, `state` = 'FREE', `released_at` = CAST(strftime('%s', 'now') AS INTEGER) * 1000
+                    WHERE `batch_id` = NEW.`id` AND `state` = 'ASSIGNED';
+                END
+            """.trimIndent())
+        }
+    }
 
 private val MIGRATION_1_2_IMPL =
     object : Migration(1, 2) {
