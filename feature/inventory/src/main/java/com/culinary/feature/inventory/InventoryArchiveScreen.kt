@@ -186,6 +186,7 @@ fun ArchiveDetailRoute(
     onReceipt: (String) -> Unit,
     onIssue: (String) -> Unit,
     onStocktake: (String) -> Unit,
+    onScanBarcode: () -> Unit,
     viewModel: ArchiveDetailViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -199,6 +200,9 @@ fun ArchiveDetailRoute(
         onReceipt = onReceipt,
         onIssue = onIssue,
         onStocktake = onStocktake,
+        onScanBarcode = onScanBarcode,
+        onConfirmBarcodeReplacement = viewModel::confirmBarcodeReplacement,
+        onDismissBarcodeReplacement = viewModel::dismissBarcodeReplacement,
         onRetry = viewModel::load,
     )
 }
@@ -214,6 +218,9 @@ private fun ArchiveDetailScreen(
     onReceipt: (String) -> Unit,
     onIssue: (String) -> Unit,
     onStocktake: (String) -> Unit,
+    onScanBarcode: () -> Unit,
+    onConfirmBarcodeReplacement: () -> Unit,
+    onDismissBarcodeReplacement: () -> Unit,
     onRetry: () -> Unit,
 ) {
     val detail = state.detail
