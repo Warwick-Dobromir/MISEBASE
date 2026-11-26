@@ -50,6 +50,7 @@ import com.culinary.core.designsystem.theme.CulinarySpacing
 import com.culinary.core.domain.model.ArchiveProductLink
 import com.culinary.core.domain.model.InventoryArchive
 import com.culinary.core.domain.model.InventoryArchiveRow
+import com.culinary.core.domain.rule.inventory.calculateDefaultExpiryDate
 import com.culinary.core.domain.model.LocationId
 import com.culinary.core.domain.model.StorageLocation
 import com.culinary.core.domain.model.Unit as MeasureUnit
@@ -268,13 +269,12 @@ class ReceiptViewModel
             }
         }
 
-        /** 档案默认库位优先，未设置时回落第一个库位。 */
+        /** 只采用档案明确配置的默认库位；绝不把列表第一项当成实际存放位置。 */
         private fun defaultLocationId(
             archive: InventoryArchive?,
             locations: List<StorageLocation>,
         ): String? =
             archive?.defaultLocationId?.value?.takeIf { id -> locations.any { it.id.value == id } }
-                ?: locations.firstOrNull()?.id?.value
 
         private suspend fun loadLinks(archiveId: String) {
             val links =
@@ -313,7 +313,21 @@ class ReceiptViewModel
         }
 
         fun onProductionDateChange(value: String) {
-            _uiState.update { it.copy(productionDate = value, error = null) }
+            val state = _uiState.value
+            val productionDate = parseOrNull(value)
+            val archive = state.selectedArchive
+            val calculatedExpiry = calculateDefaultExpiryDate(
+                productionDate = productionDate,
+                shelfLifeValue = archive?.defaultShelfLifeValue,
+                shelfLifeUnit = archive?.defaultShelfLifeUnit,
+            )
+            _uiState.update {
+                it.copy(
+                    productionDate = value,
+                    expiresOn = calculatedExpiry?.toString().orEmpty(),
+                    error = null,
+                )
+            }
         }
 
         fun onExpiresOnChange(value: String) {
@@ -368,6 +382,15 @@ class ReceiptViewModel
                 _uiState.update { it.copy(error = "请选择单位。") }
                 return
             }
+            if (state.locationId == null) {
+                _uiState.update { it.copy(error = "请选择这批商品实际存放的库位。系统不会自动指定库位。") }
+                return
+            }
+            val calculatedExpiry = calculateDefaultExpiryDate(
+                productionDate = production,
+                shelfLifeValue = state.selectedArchive?.defaultShelfLifeValue,
+                shelfLifeUnit = state.selectedArchive?.defaultShelfLifeUnit,
+            )
             val line =
                 ReceiptPurchaseLine(
                     rowId = UUID.randomUUID().toString(),
@@ -378,7 +401,7 @@ class ReceiptViewModel
                     unitSymbol = unit.symbol,
                     batchCode = state.batchCode.trim().takeIf { it.isNotEmpty() },
                     productionDate = production,
-                    expiresOn = expires,
+                    expiresOn = expires ?: calculatedExpiry,
                     locationId = state.locationId,
                     locationName = state.selectedLocationName,
                 )
@@ -416,6 +439,10 @@ class ReceiptViewModel
                 _uiState.update { it.copy(error = "请选择单位。") }
                 return
             }
+            if (state.locationId == null) {
+                _uiState.update { it.copy(error = "请选择这批商品实际存放的库位。系统不会自动指定库位。") }
+                return
+            }
             val production = parseOrNull(state.productionDate)
             if (state.productionDate.isNotBlank() && production == null) {
                 _uiState.update { it.copy(error = "生产日期格式应为 YYYY-MM-DD。") }
@@ -436,8 +463,12 @@ class ReceiptViewModel
                             unitId = unit.id.value,
                             batchCode = state.batchCode.trim().takeIf { it.isNotEmpty() },
                             productionDate = production,
-                            expiresOn = expires,
-                            locationId = state.locationId?.let(::LocationId),
+                            expiresOn = expires ?: calculateDefaultExpiryDate(
+                                productionDate = production,
+                                shelfLifeValue = state.selectedArchive?.defaultShelfLifeValue,
+                                shelfLifeUnit = state.selectedArchive?.defaultShelfLifeUnit,
+                            ),
+                            locationId = state.locationId.let(::LocationId),
                             sourceProductId = state.sourceProductId,
                             note = state.note.trim().takeIf { it.isNotEmpty() },
                             isTemporary = state.isTemporary,
@@ -852,7 +883,7 @@ private fun ReceiptDraftRow(
                         append(it)
                     }
                     append(" · ")
-                    append(line.locationName ?: "默认库位")
+                    append(line.locationName ?: "未指定库位")
                     line.productionDate?.let {
                         append(" · 生产 ")
                         append(it)

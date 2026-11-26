@@ -1,6 +1,5 @@
 package com.culinary.feature.inventory
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -16,7 +15,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -26,7 +24,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
@@ -37,7 +34,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
 import com.culinary.core.common.CulinaryError
 import com.culinary.core.common.Outcome
-import com.culinary.core.designsystem.component.ArchiveModuleHeader
 import com.culinary.core.designsystem.component.CulinaryButton
 import com.culinary.core.designsystem.component.CulinaryInfoRow
 import com.culinary.core.designsystem.component.CulinaryRule
@@ -52,7 +48,6 @@ import com.culinary.core.designsystem.component.QuantityText
 import com.culinary.core.designsystem.component.SectionHeader
 import com.culinary.core.designsystem.component.StatusBadge
 import com.culinary.core.designsystem.component.StatusTone
-import com.culinary.core.designsystem.icon.CulinaryIcons
 import com.culinary.core.designsystem.theme.CulinaryColorScheme
 import com.culinary.core.designsystem.theme.CulinarySpacing
 import com.culinary.core.designsystem.theme.CulinaryTextStyles
@@ -231,14 +226,12 @@ private fun batchErrorText(error: CulinaryError): String =
 fun BatchDetailRoute(
     onTransfer: (String) -> Unit,
     onPrintLabel: (String) -> Unit,
-    onBack: () -> Unit,
     viewModel: BatchDetailViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { viewModel.load() }
     BatchDetailScreen(
         state = state,
-        onBack = onBack,
         onTransfer = onTransfer,
         onPrintLabel = onPrintLabel,
         onFreeze = viewModel::freeze,
@@ -252,7 +245,6 @@ fun BatchDetailRoute(
 @Composable
 private fun BatchDetailScreen(
     state: BatchDetailUiState,
-    onBack: () -> Unit,
     onTransfer: (String) -> Unit,
     onPrintLabel: (String) -> Unit,
     onFreeze: (String) -> Unit,
@@ -263,7 +255,6 @@ private fun BatchDetailScreen(
     var reasonDialog by remember { mutableStateOf<FreezeDialogMode?>(null) }
     var transferDialog by remember { mutableStateOf(false) }
     Column(modifier = Modifier.fillMaxSize()) {
-        BatchBackBar(onBack = onBack)
         state.error?.let { message ->
             ErrorBanner(
                 message = message,
@@ -319,7 +310,7 @@ private fun BatchDetailScreen(
                         },
                     )
                     Column(modifier = Modifier.padding(horizontal = CulinarySpacing.pageHorizontal)) {
-                        ArchiveModuleHeader(number = "01", english = "QUANTITY", chinese = "数量")
+                        SectionHeader(title = "库存数量", subtitle = "本批次入库、剩余与累计出库")
                         Row(horizontalArrangement = Arrangement.spacedBy(CulinarySpacing.md)) {
                             BatchMetric(
                                 label = "原始入库",
@@ -340,7 +331,7 @@ private fun BatchDetailScreen(
                                 modifier = Modifier.weight(1f),
                             )
                         }
-                        ArchiveModuleHeader(number = "02", english = "DETAIL", chinese = "批次信息")
+                        SectionHeader(title = "批次信息")
                         CulinaryInfoRow(label = "入库时间", value = formatInstant(batch.receivedAt))
                         CulinaryInfoRow(
                             label = "生产日期",
@@ -352,10 +343,6 @@ private fun BatchDetailScreen(
                         )
                         CulinaryInfoRow(label = "当前库位", value = batch.locationName ?: "未指定")
                         CulinaryInfoRow(label = "来源商品", value = batch.sourceProductName ?: "未关联商品")
-                        CulinaryInfoRow(
-                            label = "状态",
-                            value = InventoryText.batchStatus(batch.status),
-                        )
                         if (batch.isFrozen) {
                             CulinaryInfoRow(
                                 label = "冻结原因",
@@ -368,7 +355,7 @@ private fun BatchDetailScreen(
                                 modifier = Modifier.padding(top = CulinarySpacing.xxs),
                             )
                         }
-                        ArchiveModuleHeader(number = "03", english = "ACTIONS", chinese = "操作")
+                        SectionHeader(title = "批次操作")
                     }
                     Row(
                         modifier = Modifier.padding(horizontal = CulinarySpacing.pageHorizontal),
@@ -481,42 +468,6 @@ private fun BatchDetailScreen(
 private enum class FreezeDialogMode {
     Freeze,
     Unfreeze,
-}
-
-@Composable
-private fun BatchBackBar(onBack: () -> Unit) {
-    Column(modifier = Modifier.fillMaxWidth()) {
-        Row(
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .height(CulinarySpacing.xxl)
-                    .padding(horizontal = CulinarySpacing.pageHorizontal),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Row(
-                modifier =
-                    Modifier
-                        .clickable(role = Role.Button, onClick = onBack)
-                        .defaultMinSize(minHeight = 44.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Icon(
-                    imageVector = CulinaryIcons.Back,
-                    contentDescription = "返回",
-                    tint = MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.size(18.dp),
-                )
-            }
-            Spacer(modifier = Modifier.weight(1f))
-            Text(
-                text = "BATCH DETAIL",
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-        CulinaryRule()
-    }
 }
 
 @Composable

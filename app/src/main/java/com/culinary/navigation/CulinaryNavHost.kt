@@ -669,7 +669,6 @@ private fun NavGraphBuilder.inventoryGraph(navController: NavHostController) {
             onPrintLabel = { batchId ->
                 navController.navigate(InventoryRoutes.printPreview("LABEL", batchId, 58))
             },
-            onBack = { navController.popBackStack() },
         )
     }
     composable(InventoryRoutes.PENDING_STOCK) {
