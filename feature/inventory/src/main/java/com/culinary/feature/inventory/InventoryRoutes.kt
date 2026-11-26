@@ -30,6 +30,7 @@ object InventoryRoutes {
     const val ARCHIVE_EDIT = "inventory/archive/edit?archiveId={archiveId}&kind={kind}&sauceId={sauceId}&name={name}&barcode={barcode}"
     const val BATCHES = "inventory/archive/{archiveId}/batches"
     const val BATCH = "inventory/batch/{batchId}"
+    const val BATCH_HISTORY = "inventory/batch-history"
     const val PENDING_STOCK = "inventory/pending-stock"
     const val RECEIPT = "inventory/receipt?archiveId={archiveId}"
     const val PURCHASE = "inventory/purchase"
@@ -100,6 +101,8 @@ object InventoryRoutes {
     fun batches(archiveId: String): String = "inventory/archive/$archiveId/batches"
 
     fun batch(batchId: String): String = "inventory/batch/$batchId"
+
+    fun batchHistory(): String = BATCH_HISTORY
 
     fun pendingStock(): String = PENDING_STOCK
 

@@ -54,6 +54,7 @@ import com.culinary.feature.inventory.ArchiveDetailRoute
 import com.culinary.feature.inventory.ArchiveEditRoute
 import com.culinary.feature.inventory.ArchiveListRoute
 import com.culinary.feature.inventory.BatchDetailRoute
+import com.culinary.feature.inventory.BatchHistoryRoute
 import com.culinary.feature.inventory.BatchListRoute
 import com.culinary.feature.inventory.CategoryManageRoute
 import com.culinary.feature.inventory.FreezeRoute
@@ -657,6 +658,12 @@ private fun NavGraphBuilder.inventoryGraph(navController: NavHostController) {
     composable(InventoryRoutes.BATCHES) {
         BatchListRoute(onOpenBatch = { batchId -> navController.navigate(InventoryRoutes.batch(batchId)) })
     }
+    composable(InventoryRoutes.BATCH_HISTORY) {
+        BatchHistoryRoute(
+            onOpenBatch = { batchId -> navController.navigate(InventoryRoutes.batch(batchId)) },
+            onBack = { navController.popBackStack() },
+        )
+    }
     composable(InventoryRoutes.BATCH) {
         BatchDetailRoute(
             onTransfer = { navController.navigate(InventoryRoutes.locations()) },
@@ -806,7 +813,11 @@ private const val UNIT_MANAGEMENT_ROUTE = "settings/units"
 
 private fun NavGraphBuilder.settingsGraph(navController: NavHostController) {
     composable(SETTINGS_ROUTE) {
-        SettingsRoute(onOpenUnits = { navController.navigate(UNIT_MANAGEMENT_ROUTE) })
+        SettingsRoute(
+            onOpenUnits = { navController.navigate(UNIT_MANAGEMENT_ROUTE) },
+            onOpenBatchHistory = { navController.navigate(InventoryRoutes.batchHistory()) },
+            onOpenInventoryLedger = { navController.navigate(InventoryRoutes.ledgerV9()) },
+        )
     }
     composable(UNIT_MANAGEMENT_ROUTE) {
         UnitManagementRoute()

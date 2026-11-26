@@ -67,6 +67,8 @@ private val RESTORE_MIME_TYPES = arrayOf(ZIP_MIME, "application/octet-stream")
 @Composable
 fun SettingsRoute(
     onOpenUnits: () -> Unit = {},
+    onOpenBatchHistory: () -> Unit = {},
+    onOpenInventoryLedger: () -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: SettingsViewModel = hiltViewModel(),
 ) {
@@ -89,6 +91,8 @@ fun SettingsRoute(
     SettingsScreen(
         state = state,
         onOpenUnits = onOpenUnits,
+        onOpenBatchHistory = onOpenBatchHistory,
+        onOpenInventoryLedger = onOpenInventoryLedger,
         onBackupClick = { backupLauncher.launch("MISEBASE-backup-${fileStamp()}.zip") },
         onRestoreClick = { restoreLauncher.launch(RESTORE_MIME_TYPES) },
         onConfirmRestore = viewModel::confirmRestore,
@@ -115,6 +119,8 @@ fun SettingsRoute(
 internal fun SettingsScreen(
     state: SettingsUiState,
     onOpenUnits: () -> Unit,
+    onOpenBatchHistory: () -> Unit,
+    onOpenInventoryLedger: () -> Unit,
     onBackupClick: () -> Unit,
     onRestoreClick: () -> Unit,
     onConfirmRestore: () -> Unit,
@@ -147,6 +153,10 @@ internal fun SettingsScreen(
         CulinaryRule()
         Column(modifier = Modifier.padding(horizontal = CulinarySpacing.pageHorizontal)) {
             UnitManagementSection(onOpenUnits = onOpenUnits)
+            InventoryHistorySection(
+                onOpenBatches = onOpenBatchHistory,
+                onOpenLedger = onOpenInventoryLedger,
+            )
             BackupSection(state = state, onBackupClick = onBackupClick)
             RestoreSection(
                 state = state,
@@ -238,6 +248,34 @@ private fun UnitManagementSection(onOpenUnits: () -> Unit) {
             .fillMaxWidth()
             .clickable(onClick = onOpenUnits)
             .padding(vertical = CulinarySpacing.sm),
+    )
+    CulinaryRule()
+}
+
+@Composable
+private fun InventoryHistorySection(
+    onOpenBatches: () -> Unit,
+    onOpenLedger: () -> Unit,
+) {
+    SectionHeader(title = "批次与库存历史")
+    Text(
+        text = "查看批次完整生命周期，以及每一笔库存数量变化记录",
+        style = MaterialTheme.typography.bodyMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(bottom = CulinarySpacing.xs),
+    )
+    Text(
+        text = "批次记录",
+        style = MaterialTheme.typography.bodyLarge,
+        color = MaterialTheme.colorScheme.onSurface,
+        modifier = Modifier.fillMaxWidth().clickable(onClick = onOpenBatches).padding(vertical = CulinarySpacing.sm),
+    )
+    CulinaryRule()
+    Text(
+        text = "库存流水",
+        style = MaterialTheme.typography.bodyLarge,
+        color = MaterialTheme.colorScheme.onSurface,
+        modifier = Modifier.fillMaxWidth().clickable(onClick = onOpenLedger).padding(vertical = CulinarySpacing.sm),
     )
     CulinaryRule()
 }
