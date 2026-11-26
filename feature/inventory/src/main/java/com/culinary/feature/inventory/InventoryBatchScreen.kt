@@ -126,7 +126,7 @@ class BatchDetailViewModel
                 }
                 when (val result = read()) {
                     is Outcome.Success -> {
-                        releaseTemporaryBarcodeIfTerminal(result.value.batch)
+                        result.value.batch?.let { releaseTemporaryBarcodeIfTerminal(it) }
                         _uiState.update {
                             it.copy(
                                 batch = result.value.batch,
