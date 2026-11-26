@@ -12,6 +12,9 @@ interface TemporaryBarcodeDao {
     @Query("SELECT * FROM temporary_barcode WHERE batch_id = :batchId AND status = 'ALLOCATED' LIMIT 1")
     suspend fun findAllocatedForBatch(batchId: String): TemporaryBarcodeEntity?
 
+    @Query("SELECT * FROM temporary_barcode WHERE barcode = :barcode AND status = 'ALLOCATED' LIMIT 1")
+    suspend fun findAllocatedByBarcode(barcode: String): TemporaryBarcodeEntity?
+
     @Query("SELECT * FROM temporary_barcode WHERE status = 'FREE' ORDER BY updated_at, barcode LIMIT 1")
     suspend fun findFree(): TemporaryBarcodeEntity?
 
