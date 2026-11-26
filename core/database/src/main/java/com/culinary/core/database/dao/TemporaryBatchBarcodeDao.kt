@@ -31,8 +31,11 @@ interface TemporaryBatchBarcodeDao {
     @Query("SELECT * FROM temporary_batch_barcode_history WHERE batch_id = :batchId ORDER BY occurred_at DESC")
     suspend fun historyForBatch(batchId: String): List<TemporaryBatchBarcodeHistoryEntity>
 
-    @Query("SELECT * FROM temporary_batch_barcode WHERE state = 'FREE' ORDER BY created_at, barcode LIMIT 1")
-    suspend fun findFree(): TemporaryBatchBarcodeEntity?
+    @Query("SELECT * FROM temporary_batch_barcode WHERE state = 'FREE' ORDER BY created_at, barcode")
+    suspend fun listFree(): List<TemporaryBatchBarcodeEntity>
+
+    @Query("UPDATE temporary_batch_barcode SET state = 'RETIRED' WHERE barcode = :barcode AND state = 'FREE'")
+    suspend fun retireFree(barcode: String): Int
 
     @Transaction
     suspend fun allocateFree(barcode: String, batchId: String, at: Long, history: TemporaryBatchBarcodeHistoryEntity): Boolean {
