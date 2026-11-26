@@ -16,6 +16,7 @@ data class Unit(
     val isBase: Boolean,
     val isApproximate: Boolean,
     val displayPrecision: Int,
+    val isActive: Boolean = true,
 ) {
     init {
         require(code.isNotBlank()) { "unit code must not be blank" }
