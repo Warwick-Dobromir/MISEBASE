@@ -641,7 +641,13 @@ private fun NavGraphBuilder.inventoryGraph(navController: NavHostController) {
             ),
     ) { entry ->
         val scannedBarcode = entry.arguments?.getString(InventoryRoutes.ARG_BARCODE).orEmpty()
+        val scannedBarcodeResult by entry.savedStateHandle
+            .getStateFlow<String?>(ARCHIVE_BARCODE_SCAN_RESULT_KEY, null)
+            .collectAsStateWithLifecycle()
         ArchiveEditRoute(
+            onScanBarcode = { navController.navigate(SCAN_ROUTE) },
+            scannedBarcode = scannedBarcodeResult,
+            onScannedBarcodeConsumed = { entry.savedStateHandle[ARCHIVE_BARCODE_SCAN_RESULT_KEY] = null },
             onSaved = { archiveId ->
                 if (scannedBarcode.isNotBlank()) {
                     navController.navigate(InventoryRoutes.pendingStock()) {
@@ -798,7 +804,13 @@ private fun NavGraphBuilder.scanGraph(navController: NavHostController) {
     composable(SCAN_ROUTE) {
         ScanRoute(
             onCapture = { capture ->
-                navController.navigate(InventoryRoutes.archiveNew(barcode = capture.rawValue))
+                val previous = navController.previousBackStackEntry
+                if (previous?.destination?.route == InventoryRoutes.ARCHIVE_EDIT) {
+                    previous.savedStateHandle[ARCHIVE_BARCODE_SCAN_RESULT_KEY] = capture.rawValue
+                    navController.popBackStack()
+                } else {
+                    navController.navigate(InventoryRoutes.archiveNew(barcode = capture.rawValue))
+                }
             },
             onOpenArchive = { archiveId ->
                 navController.navigate(InventoryRoutes.archive(archiveId))
@@ -808,6 +820,7 @@ private fun NavGraphBuilder.scanGraph(navController: NavHostController) {
     }
 }
 
+private const val ARCHIVE_BARCODE_SCAN_RESULT_KEY = "archiveBarcodeScanResult"
 private const val UNIT_MANAGEMENT_ROUTE = "settings/units"
 
 private fun NavGraphBuilder.settingsGraph(navController: NavHostController) {
