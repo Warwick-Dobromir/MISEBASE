@@ -37,7 +37,9 @@ import com.culinary.core.designsystem.component.PageHeader
 import com.culinary.core.designsystem.icon.CulinaryIcons
 import com.culinary.core.designsystem.theme.CulinaryColorScheme
 import com.culinary.core.designsystem.theme.CulinarySpacing
-import com.culinary.core.domain.model.BatchLifecycleStatus
+import com.culinary.core.domain.model.DefaultShelfLifeUnit
+import com.culinary.core.domain.model.InventoryArchive
+import com.culinary.core.domain.rule.inventory.calculateDefaultExpiryDate
 import com.culinary.core.domain.model.InventoryBatchRecord
 import com.culinary.core.domain.usecase.inventory.GetInventoryArchiveDetailUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -55,6 +57,7 @@ data class BatchListUiState(
     val archiveName: String = "",
     val unitSymbol: String = "",
     val batches: List<InventoryBatchRecord> = emptyList(),
+    val expiryInfo: Map<String, BatchExpiryInfo> = emptyMap(),
     val isLoading: Boolean = true,
     val error: String? = null,
 )
@@ -90,6 +93,7 @@ class BatchListViewModel
                                 archiveName = result.value.archive.name,
                                 unitSymbol = result.value.archive.stockUnit.symbol,
                                 batches = result.value.batches,
+                                expiryInfo = result.value.batches.associate { batch -> batch.id to calculateBatchExpiryInfo(batch, result.value.archive) },
                                 isLoading = false,
                             )
                         }
@@ -160,7 +164,7 @@ private fun BatchListScreen(
                 BatchTableHeader()
                 LazyColumn(modifier = Modifier.fillMaxSize()) {
                     items(state.batches, key = { it.id }) { batch ->
-                        BatchTableRow(batch = batch, onClick = { onOpenBatch(batch.id) })
+                        BatchTableRow(batch = batch, expiryInfo = state.expiryInfo[batch.id] ?: BatchExpiryInfo.pending(), onClick = { onOpenBatch(batch.id) })
                     }
                     item {
                         Spacer(modifier = Modifier.height(CulinarySpacing.xl))
@@ -214,6 +218,7 @@ private fun RowScope.BatchHeadCell(
 @Composable
 private fun BatchTableRow(
     batch: InventoryBatchRecord,
+    expiryInfo: BatchExpiryInfo,
     onClick: () -> Unit,
 ) {
     Column(modifier = Modifier.fillMaxWidth()) {
@@ -236,14 +241,10 @@ private fun BatchTableRow(
             )
             BatchBodyCell(text = shortBatchDate(batch.receivedAt.toLocalDate()), weight = 1f)
             BatchBodyCell(text = shortBatchDate(batch.productionDate), weight = 1f)
-            BatchBodyCell(text = shortBatchDate(batch.expiresOn), weight = 1f)
+            BatchBodyCell(text = shortBatchDate(expiryInfo.expiryDate), weight = 1f)
             BatchBodyCell(text = formatAmount(batch.onHand), weight = 0.9f)
             BatchBodyCell(text = batch.locationName ?: "—", weight = 1.1f)
-            BatchBodyCell(
-                text = InventoryText.batchStatus(batch.status),
-                weight = 1f,
-                color = batchStatusColor(batch),
-            )
+            BatchExpiryStatusCell(info = expiryInfo, weight = 1f)
         }
         CulinaryRule(modifier = Modifier.padding(start = CulinarySpacing.pageHorizontal))
     }
@@ -266,13 +267,60 @@ private fun RowScope.BatchBodyCell(
 }
 
 @Composable
-private fun batchStatusColor(batch: InventoryBatchRecord): Color =
-    when {
-        batch.isFrozen -> CulinaryColorScheme.current.warning
-        batch.isRecycled -> MaterialTheme.colorScheme.onSurfaceVariant
-        batch.status == BatchLifecycleStatus.ACTIVE -> CulinaryColorScheme.current.success
-        else -> CulinaryColorScheme.current.danger
+data class BatchExpiryInfo(
+    val expiryDate: LocalDate?,
+    val remainingDays: Long?,
+    val statusLabel: String,
+    val status: ExpiryDisplayStatus,
+) {
+    companion object {
+        fun pending() = BatchExpiryInfo(null, null, "待补充", ExpiryDisplayStatus.PENDING)
     }
+}
+
+enum class ExpiryDisplayStatus { NORMAL, ATTENTION, NEAR, EXPIRED, PENDING }
+
+private fun calculateBatchExpiryInfo(batch: InventoryBatchRecord, archive: InventoryArchive): BatchExpiryInfo {
+    val expiry = batch.expiresOn ?: if (archive.shelfLifeEnabled) {
+        calculateDefaultExpiryDate(
+            productionDate = batch.productionDate,
+            shelfLifeValue = archive.defaultShelfLifeValue ?: archive.shelfLifeDays,
+            shelfLifeUnit = archive.defaultShelfLifeUnit ?: DefaultShelfLifeUnit.DAY,
+        )
+    } else null
+    val production = batch.productionDate
+    if (expiry == null || production == null) return BatchExpiryInfo(expiry, null, "待补充", ExpiryDisplayStatus.PENDING)
+    val totalDays = java.time.temporal.ChronoUnit.DAYS.between(production, expiry)
+    if (totalDays <= 0) return BatchExpiryInfo(expiry, 0, "过期", ExpiryDisplayStatus.EXPIRED)
+    val remaining = java.time.temporal.ChronoUnit.DAYS.between(LocalDate.now(), expiry)
+    if (remaining <= 0) return BatchExpiryInfo(expiry, remaining, "过期", ExpiryDisplayStatus.EXPIRED)
+    val ratio = remaining.toDouble() / totalDays.toDouble()
+    return when {
+        ratio > 0.5 -> BatchExpiryInfo(expiry, remaining, "正常", ExpiryDisplayStatus.NORMAL)
+        ratio > 0.2 -> BatchExpiryInfo(expiry, remaining, "关注", ExpiryDisplayStatus.ATTENTION)
+        else -> BatchExpiryInfo(expiry, remaining, "临期", ExpiryDisplayStatus.NEAR)
+    }
+}
+
+@Composable
+private fun RowScope.BatchExpiryStatusCell(info: BatchExpiryInfo, weight: Float) {
+    val color = when (info.status) {
+        ExpiryDisplayStatus.NORMAL -> CulinaryColorScheme.current.success
+        ExpiryDisplayStatus.ATTENTION -> CulinaryColorScheme.current.warning
+        ExpiryDisplayStatus.NEAR, ExpiryDisplayStatus.EXPIRED -> CulinaryColorScheme.current.danger
+        ExpiryDisplayStatus.PENDING -> MaterialTheme.colorScheme.onSurfaceVariant
+    }
+    Column(modifier = Modifier.weight(weight)) {
+        Text(text = info.statusLabel, style = MaterialTheme.typography.bodySmall, color = color, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        Text(
+            text = info.remainingDays?.let { if (it < 0) "超期 ${-it} 天" else "剩余 ${it} 天" } ?: "日期不全",
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+    }
+}
 
 private val batchDateFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("MM-dd")
 

@@ -59,7 +59,7 @@ jobs:
           AAPT="$(find "$ANDROID_HOME/build-tools" -type f -name aapt | sort -V | tail -n 1)"
           test -x "$APKSIGNER"
           test -x "$AAPT"
-          "$AAPT" dump badging "$APK" | grep -F "package: name='com.culinary' versionCode='12' versionName='1.2.0'"
+          "$AAPT" dump badging "$APK" | grep -F "package: name='com.culinary' versionCode='13' versionName='1.2.1'"
           CERT_OUTPUT="$("$APKSIGNER" verify --print-certs "$APK" 2>&1)"
           printf '%s\\n' "$CERT_OUTPUT"
           ACTUAL="$(printf '%s\\n' "$CERT_OUTPUT" | grep -i 'certificate SHA-256 digest:' | head -n 1 | sed -E 's/.*digest:[[:space:]]*//' | tr -d ': ' | tr '[:upper:]' '[:lower:]')"
@@ -74,7 +74,7 @@ jobs:
         if: github.ref != 'refs/heads/main'
         uses: actions/upload-artifact@v4
         with:
-          name: MISEBASE-scan-feedback-layout-c-20261126
+          name: MISEBASE-expiry-reminder-20261127
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
           retention-days: 90

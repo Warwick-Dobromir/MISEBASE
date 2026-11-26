@@ -51,8 +51,8 @@ android {
         // 1.0.6 (7)：菜谱/酱汁档案详情统一改版 + 步骤时间 + 统一制作模式（schema v7）。
         // 1.0.7 (8)：计时交互与完成反馈修复 + 菜谱草稿编辑/详情 + 最小制作容量字段名（schema v7）。
         // 本次 1.0.9 (10)：菜谱编辑分类层级、关联与图片控件进一步对齐酱汁编辑器；详情页分节间距统一。
-        versionCode = 12
-        versionName = "1.2.0"
+        versionCode = 13
+        versionName = "1.2.1"
     }
 
     testOptions {
@@ -105,6 +105,7 @@ android {
 // 组合根：只做模块装配，不承载业务规则（A03A §4；MB-D-004 的 14 模块）。
 dependencies {
     implementation(project(":core:data"))
+    implementation(project(":core:database"))
     implementation(project(":core:platform"))
     implementation(project(":core:designsystem"))
 
