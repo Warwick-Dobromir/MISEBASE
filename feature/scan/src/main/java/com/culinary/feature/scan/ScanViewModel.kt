@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.culinary.core.common.Clock
 import com.culinary.core.common.Outcome
+import com.culinary.core.database.dao.TemporaryBarcodeDao
 import com.culinary.core.domain.barcode.ScanCapture
 import com.culinary.core.domain.barcode.ScanFrameGate
 import com.culinary.core.domain.barcode.ScanSource
@@ -35,6 +36,7 @@ class ScanViewModel
         private val clock: Clock,
         private val archiveRepository: InventoryArchiveRepository?,
         private val pendingStockRepository: PendingStockRepository? = null,
+        private val temporaryBarcodeDao: TemporaryBarcodeDao? = null,
     ) : ViewModel() {
         private val _uiState = MutableStateFlow(ScanUiState())
         val uiState: StateFlow<ScanUiState> = _uiState.asStateFlow()
@@ -54,6 +56,7 @@ class ScanViewModel
                     matchedArchive = null,
                     successFeedbacks = emptyList(),
                     openArchiveId = null,
+                    openBatchId = null,
                     status = null,
                     error = null,
                 )
@@ -62,6 +65,10 @@ class ScanViewModel
 
         fun onArchiveNavigationConsumed() {
             _uiState.update { it.copy(openArchiveId = null) }
+        }
+
+        fun onBatchNavigationConsumed() {
+            _uiState.update { it.copy(openBatchId = null) }
         }
 
         fun onCameraAvailability(available: Boolean) {
@@ -157,6 +164,21 @@ class ScanViewModel
                 return
             }
             viewModelScope.launch {
+                val temporaryBarcode = temporaryBarcodeDao?.findAllocatedByBarcode(capture.rawValue.trim())
+                if (temporaryBarcode?.batchId != null) {
+                    gate.resume()
+                    _uiState.update { state ->
+                        state.copy(
+                            lookupInProgress = false,
+                            scanning = false,
+                            pendingCapture = null,
+                            matchedArchive = null,
+                            openBatchId = temporaryBarcode.batchId,
+                            error = null,
+                        )
+                    }
+                    return@launch
+                }
                 when (val result = repository.listArchives()) {
                     is Outcome.Failure -> {
                         gate.resume()
