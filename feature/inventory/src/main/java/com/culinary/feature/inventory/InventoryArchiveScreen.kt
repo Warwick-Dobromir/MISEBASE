@@ -335,7 +335,27 @@ private fun ArchiveDetailScreen(
                     InventoryArchiveValueRow("品牌", detail.archive.brand ?: detail.links.firstOrNull()?.product?.brand ?: "未设置")
                     InventoryArchiveValueRow("商品规格", detail.archive.productSpecification ?: detail.links.firstOrNull()?.product?.packageLabel ?: "未设置")
                     InventoryArchiveValueRow("商品编码", detail.archive.productCode ?: detail.links.firstOrNull()?.product?.sku ?: "未生成")
-                    InventoryArchiveValueRow("条码", detail.archive.barcode?.takeIf { it.isNotBlank() } ?: "未关联")
+                    Row(
+                        modifier = Modifier.fillMaxWidth().heightIn(min = 42.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text("条码", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.weight(1f))
+                        Text(
+                            detail.archive.barcode?.takeIf { it.isNotBlank() } ?: "未关联",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurface,
+                        )
+                        androidx.compose.material3.IconButton(
+                            onClick = onScanBarcode,
+                            modifier = Modifier.height(32.dp),
+                        ) {
+                            androidx.compose.material3.Icon(
+                                imageVector = com.culinary.core.designsystem.icon.CulinaryIcons.Scan,
+                                contentDescription = "扫描并更换条形码",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    }
                     detail.sauceName?.let { InventoryArchiveValueRow("关联酱汁", it) }
                     InventoryArchiveSectionHeader(english = "SHELF LIFE & STORAGE", title = "保质期与储存")
                     InventoryArchiveValueRow(
