@@ -190,6 +190,7 @@ class BatchDetailViewModel
         }
 
         fun allocateTemporaryBarcode() {
+            if (_uiState.value.isWorking) return
             viewModelScope.launch {
                 val current = _uiState.value.batch ?: return@launch
                 if (!current.isLive || current.onHand <= 0.0) return@launch
@@ -224,12 +225,12 @@ class BatchDetailViewModel
                         val code = "TMP" + UUID.randomUUID().toString().replace("-", "").take(12).uppercase()
                         if (inventoryArchiveDao.findByBarcode(code) == null) {
                             val event = TemporaryBatchBarcodeHistoryEntity(
-                            id = UUID.randomUUID().toString(),
-                            barcode = code,
-                            batchId = batchId,
-                            action = "ASSIGNED",
-                            occurredAt = now,
-                        )
+                                id = UUID.randomUUID().toString(),
+                                barcode = code,
+                                batchId = batchId,
+                                action = "ASSIGNED",
+                                occurredAt = now,
+                            )
                             if (temporaryBarcodeDao.allocate(code, batchId, now, event)) allocated = code
                         }
                     }
