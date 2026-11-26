@@ -81,7 +81,7 @@ data class ArchiveDetailUiState(
 class ArchiveDetailViewModel
     @Inject
     constructor(
-        savedStateHandle: SavedStateHandle,
+        private val savedStateHandle: SavedStateHandle,
         private val getArchiveDetail: GetInventoryArchiveDetailUseCase,
         private val listLocations: ListStorageLocationsUseCase,
         private val replaceBarcode: ReplaceInventoryArchiveBarcodeUseCase,
