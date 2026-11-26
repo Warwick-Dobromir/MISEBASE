@@ -123,7 +123,8 @@ class BatchDetailViewModel
                     return@launch
                 }
                 when (val result = read()) {
-                    is Outcome.Success ->
+                    is Outcome.Success -> {
+                        val allocatedBarcode = temporaryBarcodes.findAllocatedForBatch(batchId)?.barcode
                         _uiState.update {
                             it.copy(
                                 batch = result.value.batch,
@@ -132,10 +133,11 @@ class BatchDetailViewModel
                                 ledger = result.value.ledger,
                                 freezeRecords = result.value.freezeRecords,
                                 locations = result.value.locations,
-                                temporaryBarcode = temporaryBarcodes.findAllocatedForBatch(batchId)?.barcode,
+                                temporaryBarcode = allocatedBarcode,
                                 isLoading = false,
                             )
                         }
+                    }
 
                     is Outcome.Failure ->
                         _uiState.update {
