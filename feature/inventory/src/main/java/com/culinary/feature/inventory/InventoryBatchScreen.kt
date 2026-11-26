@@ -202,8 +202,7 @@ class BatchDetailViewModel
                     val checksum = prefix.mapIndexed { index, char -> char.digitToInt() * if (index % 2 == 0) 1 else 3 }.sum().let { (10 - it % 10) % 10 }
                     TemporaryBarcodeEntity(id = java.util.UUID.randomUUID().toString(), barcode = prefix + checksum, createdAt = now, updatedAt = now).also { temporaryBarcodes.insert(it) }
                 }
-                if (temporaryBarcodes.allocate(resource.id, batchId, now) == 1) {
-                    temporaryBarcodes.insertHistory(TemporaryBarcodeHistoryEntity(id = java.util.UUID.randomUUID().toString(), barcodeId = resource.id, barcode = resource.barcode, batchId = batchId, action = "ALLOCATED", occurredAt = now))
+                if (temporaryBarcodes.allocateAndLog(resource.id, batchId, now, TemporaryBarcodeHistoryEntity(id = java.util.UUID.randomUUID().toString(), barcodeId = resource.id, barcode = resource.barcode, batchId = batchId, action = "ALLOCATED", occurredAt = now)) == 1) {
                     _uiState.update { it.copy(isWorking = false, temporaryBarcode = resource.barcode, message = "已分配临时条码。") }
                 } else {
                     _uiState.update { it.copy(isWorking = false, error = "条码资源已被占用，请重试。") }
@@ -215,8 +214,7 @@ class BatchDetailViewModel
             viewModelScope.launch {
                 val resource = temporaryBarcodes.findAllocatedForBatch(batchId) ?: return@launch
                 val now = System.currentTimeMillis()
-                if (temporaryBarcodes.release(resource.id, now) == 1) {
-                    temporaryBarcodes.insertHistory(TemporaryBarcodeHistoryEntity(id = java.util.UUID.randomUUID().toString(), barcodeId = resource.id, barcode = resource.barcode, batchId = batchId, action = "RELEASED", occurredAt = now))
+                if (temporaryBarcodes.releaseAndLog(resource.id, now, TemporaryBarcodeHistoryEntity(id = java.util.UUID.randomUUID().toString(), barcodeId = resource.id, barcode = resource.barcode, batchId = batchId, action = "RELEASED", occurredAt = now)) == 1) {
                     _uiState.update { it.copy(temporaryBarcode = null, message = "临时条码已释放并回到分配池。") }
                 }
             }
