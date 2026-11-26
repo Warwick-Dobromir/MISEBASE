@@ -281,13 +281,13 @@ data class BatchExpiryInfo(
 enum class ExpiryDisplayStatus { NORMAL, ATTENTION, NEAR, EXPIRED, PENDING }
 
 private fun calculateBatchExpiryInfo(batch: InventoryBatchRecord, archive: InventoryArchive): BatchExpiryInfo {
-    val expiry = batch.expiresOn ?: if (archive.shelfLifeEnabled) {
+    val expiry = batch.expiresOn ?: run {
         calculateDefaultExpiryDate(
             productionDate = batch.productionDate,
             shelfLifeValue = archive.defaultShelfLifeValue ?: archive.shelfLifeDays,
             shelfLifeUnit = archive.defaultShelfLifeUnit ?: DefaultShelfLifeUnit.DAY,
         )
-    } else null
+    }
     val production = batch.productionDate
     if (expiry == null || production == null) return BatchExpiryInfo(expiry, null, "待补充", ExpiryDisplayStatus.PENDING)
     val totalDays = java.time.temporal.ChronoUnit.DAYS.between(production, expiry)
