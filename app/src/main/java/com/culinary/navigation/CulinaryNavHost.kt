@@ -810,6 +810,10 @@ private fun NavGraphBuilder.scanGraph(navController: NavHostController) {
                 }
                 navController.popBackStack()
             },
+            onOpenBatch = {
+                navController.previousBackStackEntry?.savedStateHandle?.set("archive_barcode_duplicate", true)
+                navController.popBackStack()
+            },
             onBack = { navController.popBackStack() },
         )
     }
@@ -820,6 +824,9 @@ private fun NavGraphBuilder.scanGraph(navController: NavHostController) {
             },
             onOpenArchive = { archiveId ->
                 navController.navigate(InventoryRoutes.archive(archiveId))
+            },
+            onOpenBatch = { batchId ->
+                navController.navigate(InventoryRoutes.batch(batchId))
             },
             onBack = { navController.backOrStart(APP_START_ROUTE) },
         )
