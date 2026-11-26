@@ -303,6 +303,39 @@ class ListInventoryArchivesUseCase(
     }
 }
 
+/** 仅替换单个库存档案条码；先检查全档案占用，再保存完整档案副本。 */
+class ReplaceInventoryArchiveBarcodeUseCase(
+    private val repository: InventoryArchiveRepository,
+) {
+    suspend operator fun invoke(archiveId: String, newBarcode: String): Outcome<Unit> {
+        val barcode = newBarcode.trim()
+        if (barcode.isBlank()) {
+            return Outcome.failure(CulinaryError.Validation(field = "barcode", rule = "must not be blank"))
+        }
+        val archive = when (val result = repository.findArchive(archiveId)) {
+            is Outcome.Failure -> return result
+            is Outcome.Success -> result.value
+                ?: return Outcome.failure(CulinaryError.NotFound("inventory_archive", archiveId))
+        }
+        if (archive.barcode == barcode) return Outcome.success(Unit)
+        val duplicate = when (val result = repository.listArchives()) {
+            is Outcome.Failure -> return result
+            is Outcome.Success -> result.value.firstOrNull {
+                it.id != archiveId && it.barcode?.trim() == barcode
+            }
+        }
+        if (duplicate != null) {
+            return Outcome.failure(
+                CulinaryError.Validation(field = "barcode", rule = "barcode already assigned to another archive: ${duplicate.name}"),
+            )
+        }
+        return when (val result = repository.saveArchive(archive.copy(barcode = barcode))) {
+            is Outcome.Failure -> result
+            is Outcome.Success -> Outcome.success(Unit)
+        }
+    }
+}
+
 /** 档案详情：档案、批次、流水、采购商品与关联菜谱。 */
 class GetInventoryArchiveDetailUseCase(
     private val repository: InventoryArchiveRepository,
