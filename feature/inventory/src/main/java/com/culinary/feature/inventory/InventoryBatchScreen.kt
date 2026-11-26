@@ -37,6 +37,7 @@ import androidx.lifecycle.viewModelScope
 import com.culinary.core.common.CulinaryError
 import com.culinary.core.common.Outcome
 import com.culinary.core.database.dao.TemporaryBatchBarcodeDao
+import com.culinary.core.database.dao.InventoryArchiveDao
 import com.culinary.core.database.entity.TemporaryBatchBarcodeHistoryEntity
 import com.culinary.core.designsystem.component.CulinaryButton
 import com.culinary.core.designsystem.component.CulinaryInfoRow
@@ -104,6 +105,7 @@ class BatchDetailViewModel
         private val transferBatch: TransferBatchLocationUseCase,
         private val listLocations: ListStorageLocationsUseCase,
         private val temporaryBarcodeDao: TemporaryBatchBarcodeDao,
+        private val inventoryArchiveDao: InventoryArchiveDao,
     ) : ViewModel() {
         private val batchId: String =
             savedStateHandle.get<String>(InventoryRoutes.ARG_BATCH_ID).orEmpty()
@@ -199,30 +201,37 @@ class BatchDetailViewModel
                 _uiState.update { it.copy(isWorking = true, error = null, message = null) }
                 val now = System.currentTimeMillis()
                 var allocated: String? = null
-                val free = temporaryBarcodeDao.findFree()
-                if (free != null) {
-                    val event = TemporaryBatchBarcodeHistoryEntity(
-                        id = UUID.randomUUID().toString(),
-                        barcode = free.barcode,
-                        batchId = batchId,
-                        action = "ASSIGNED",
-                        occurredAt = now,
-                    )
-                    if (temporaryBarcodeDao.allocateFree(free.barcode, batchId, now, event)) {
-                        allocated = free.barcode
+                temporaryBarcodeDao.listFree().forEach { free ->
+                    if (allocated == null) {
+                        if (inventoryArchiveDao.findByBarcode(free.barcode) != null) {
+                            temporaryBarcodeDao.retireFree(free.barcode)
+                        } else {
+                            val event = TemporaryBatchBarcodeHistoryEntity(
+                                id = UUID.randomUUID().toString(),
+                                barcode = free.barcode,
+                                batchId = batchId,
+                                action = "ASSIGNED",
+                                occurredAt = now,
+                            )
+                            if (temporaryBarcodeDao.allocateFree(free.barcode, batchId, now, event)) {
+                                allocated = free.barcode
+                            }
+                        }
                     }
                 }
                 repeat(8) {
                     if (allocated == null) {
                         val code = "TMP" + UUID.randomUUID().toString().replace("-", "").take(12).uppercase()
-                        val event = TemporaryBatchBarcodeHistoryEntity(
+                        if (inventoryArchiveDao.findByBarcode(code) == null) {
+                            val event = TemporaryBatchBarcodeHistoryEntity(
                             id = UUID.randomUUID().toString(),
                             barcode = code,
                             batchId = batchId,
                             action = "ASSIGNED",
                             occurredAt = now,
                         )
-                        if (temporaryBarcodeDao.allocate(code, batchId, now, event)) allocated = code
+                            if (temporaryBarcodeDao.allocate(code, batchId, now, event)) allocated = code
+                        }
                     }
                 }
                 if (allocated == null) {
