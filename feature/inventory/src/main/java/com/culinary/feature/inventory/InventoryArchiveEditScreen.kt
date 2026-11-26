@@ -320,9 +320,9 @@ class ArchiveEditViewModel
 
         fun onPurchasePriceChange(value: String) = update("price") { it.copy(purchasePrice = value) }
         fun onProductCodeChange(value: String) = update("productCode") { it.copy(productCode = value) }
-        fun onBarcodeChange(value: String) = update("barcode") { it.copy(barcode = value) }
+        fun onBarcodeChange(value: String) { _uiState.update { it.copy(barcode = value, fieldErrors = it.fieldErrors - "barcode") } }
 
-        fun onBarcodeScanned(value: String) { _uiState.update { it.copy(pendingScannedBarcode = value) } }
+        fun onBarcodeScanned(value: String) { _uiState.update { it.copy(pendingScannedBarcode = value, fieldErrors = it.fieldErrors - "barcode") } }
 
         fun confirmScannedBarcode() {
             _uiState.update { it.copy(barcode = it.pendingScannedBarcode.orEmpty(), pendingScannedBarcode = null) }
@@ -531,6 +531,7 @@ class ArchiveEditViewModel
 
         private fun validate(state: ArchiveEditUiState): Map<String, String> {
             val errors = mutableMapOf<String, String>()
+            state.fieldErrors["barcode"]?.let { errors["barcode"] = it }
             val name = state.name.trim()
             when {
                 name.isEmpty() -> errors["name"] = "请输入中文名称。"
