@@ -292,6 +292,8 @@ private fun BatchDetailScreen(
     onUnfreeze: (String) -> Unit,
     onTransferConfirm: (String, String?) -> Unit,
     onRetry: () -> Unit,
+    onAssignTemporaryBarcode: () -> Unit,
+    onReleaseTemporaryBarcode: () -> Unit,
 ) {
     var reasonDialog by remember { mutableStateOf<FreezeDialogMode?>(null) }
     var transferDialog by remember { mutableStateOf(false) }
