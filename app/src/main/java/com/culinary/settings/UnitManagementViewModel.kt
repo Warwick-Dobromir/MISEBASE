@@ -33,7 +33,7 @@ class UnitManagementViewModel
         fun refresh() {
             viewModelScope.launch {
                 val units = withContext(Dispatchers.IO) { repository.allIncludingInactive() }
-                _uiState.value = UnitManagementUiState(units = units, loading = false)
+                _uiState.value = _uiState.value.copy(units = units, loading = false)
             }
         }
 
