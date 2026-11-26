@@ -51,10 +51,8 @@ object ExpiryAlertStore {
         )
     }
 
-    private companion object {
-        const val KEY_PRODUCTS = "expired_products"
-        const val KEY_BATCHES = "expired_batches"
-        const val KEY_NAMES = "archive_names"
-        const val KEY_SCANNED_AT = "scanned_at"
-    }
+    private const val KEY_PRODUCTS = "expired_products"
+    private const val KEY_BATCHES = "expired_batches"
+    private const val KEY_NAMES = "archive_names"
+    private const val KEY_SCANNED_AT = "scanned_at"
 }
