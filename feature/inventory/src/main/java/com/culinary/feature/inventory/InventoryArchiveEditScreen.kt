@@ -25,6 +25,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -639,15 +640,23 @@ private fun ArchiveEditUiState.toArchive(unit: StockUnit): InventoryArchive =
 fun ArchiveEditRoute(
     onSaved: (String) -> Unit,
     onBack: () -> Unit,
+    onScanBarcode: () -> Unit,
+    scannedBarcode: String?,
+    onScannedBarcodeConsumed: () -> Unit,
     viewModel: ArchiveEditViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     LaunchedEffect(state.savedId) {
         state.savedId?.let(onSaved)
     }
+    LaunchedEffect(scannedBarcode) {
+        scannedBarcode?.takeIf { it.isNotBlank() }?.let(viewModel::onBarcodeChange)
+        if (scannedBarcode != null) onScannedBarcodeConsumed()
+    }
     ArchiveEditScreen(
         state = state,
         onBack = onBack,
+        onScanBarcode = onScanBarcode,
         onSave = viewModel::save,
         onNameChange = viewModel::onNameChange,
         onEnglishNameChange = viewModel::onEnglishNameChange,
@@ -718,6 +727,7 @@ private data class PickerOption(
 private fun ArchiveEditScreen(
     state: ArchiveEditUiState,
     onBack: () -> Unit,
+    onScanBarcode: () -> Unit,
     onSave: () -> Unit,
     onNameChange: (String) -> Unit,
     onEnglishNameChange: (String) -> Unit,
@@ -852,7 +862,7 @@ private fun ArchiveEditScreen(
                 InventoryArchiveEditField("商品规格", state.packageLabel, onPackageLabelChange, "例如：1 kg / 块")
                 InventoryArchiveEditField("容量系数（CU / 库存单位）", state.capacityUnitPerStockUnit, onCapacityUnitPerStockUnitChange, "例如：1", state.fieldErrors["capacityUnitPerStockUnit"])
                 ArchiveEditReadOnlyRow("商品编码", state.productCode.ifBlank { "保存档案后自动生成" })
-                InventoryArchiveEditField("条码", state.barcode, onBarcodeChange, "扫描或填写商品条码")
+                InventoryArchiveBarcodeField(state.barcode, onBarcodeChange, onScanBarcode, state.fieldErrors["barcode"])
                 if (state.kind == ArchiveKind.SAUCE) {
                     EditPickerField(
                         label = "关联酱汁",
@@ -1231,6 +1241,45 @@ private fun InventoryArchiveEditField(
                 placeholder = placeholder,
                 modifier = Modifier.weight(1f),
             )
+        }
+        error?.let {
+            Row(modifier = Modifier.fillMaxWidth()) {
+                Spacer(modifier = Modifier.width(104.dp))
+                InlineError(message = it)
+            }
+        }
+    }
+}
+
+@Composable
+private fun InventoryArchiveBarcodeField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    onScan: () -> Unit,
+    error: String? = null,
+) {
+    Column(modifier = Modifier.fillMaxWidth().padding(vertical = CulinarySpacing.xs)) {
+        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                "条码",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.width(104.dp),
+            )
+            ArchiveEditorInlineField(
+                value = value,
+                onValueChange = onValueChange,
+                placeholder = "扫描或填写商品条码",
+                modifier = Modifier.weight(1f),
+            )
+            IconButton(onClick = onScan, modifier = Modifier.size(36.dp)) {
+                Icon(
+                    imageVector = CulinaryIcons.Scan,
+                    contentDescription = "扫描条码",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(16.dp),
+                )
+            }
         }
         error?.let {
             Row(modifier = Modifier.fillMaxWidth()) {
