@@ -216,7 +216,6 @@ private fun PendingStockScreen(
             eyebrow = "INVENTORY / PENDING STOCK",
             title = "待入库",
             supporting = "商品核对与入库管理",
-            actions = { CulinaryTextButton(text = "返回", onClick = onBack) },
         )
         state.error?.let {
             ErrorBanner(message = it, modifier = Modifier.padding(horizontal = CulinarySpacing.pageHorizontal))
