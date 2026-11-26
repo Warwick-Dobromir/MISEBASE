@@ -284,7 +284,7 @@ private fun calculateBatchExpiryInfo(batch: InventoryBatchRecord, archive: Inven
         calculateDefaultExpiryDate(
             productionDate = batch.productionDate,
             shelfLifeValue = archive.defaultShelfLifeValue ?: archive.shelfLifeDays,
-            shelfLifeUnit = archive.defaultShelfLifeUnit ?: DefaultShelfLifeUnit.DAY,
+            shelfLifeUnit = archive.defaultShelfLifeUnit,
         )
     }
     val production = batch.productionDate
