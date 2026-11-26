@@ -199,6 +199,19 @@ class BatchDetailViewModel
                 _uiState.update { it.copy(isWorking = true, error = null, message = null) }
                 val now = System.currentTimeMillis()
                 var allocated: String? = null
+                val free = temporaryBarcodeDao.findFree()
+                if (free != null) {
+                    val event = TemporaryBatchBarcodeHistoryEntity(
+                        id = UUID.randomUUID().toString(),
+                        barcode = free.barcode,
+                        batchId = batchId,
+                        action = "ASSIGNED",
+                        occurredAt = now,
+                    )
+                    if (temporaryBarcodeDao.allocateFree(free.barcode, batchId, now, event)) {
+                        allocated = free.barcode
+                    }
+                }
                 repeat(8) {
                     if (allocated == null) {
                         val code = "TMP" + UUID.randomUUID().toString().replace("-", "").take(12).uppercase()
