@@ -289,16 +289,14 @@ private fun ScanModeButton(
     }
 }
 
-/** 模式切换按钮恢复左上角原位；反馈卡紧邻其右侧，同一水平线展开。 */
+/** 模式切换按钮右侧显示反馈；每条记录始终使用同一动画节点，最新记录置顶完整展开。 */
 @Composable
 private fun ScanSuccessStack(
     feedbacks: List<ScanSuccessFeedback>,
     modifier: Modifier = Modifier,
 ) {
     Box(modifier = modifier.clipToBounds()) {
-        val visibleFeedbacks = feedbacks.takeLast(3)
-        val olderFeedbacks = visibleFeedbacks.dropLast(1)
-        val latestFeedback = visibleFeedbacks.lastOrNull()
+        val displayedFeedbacks = feedbacks.takeLast(3).asReversed()
 
         Column(
             modifier =
@@ -313,46 +311,9 @@ private fun ScanSuccessStack(
             verticalArrangement = Arrangement.spacedBy(5.dp),
             horizontalAlignment = Alignment.Start,
         ) {
-            olderFeedbacks.forEachIndexed { index, feedback ->
+            displayedFeedbacks.forEachIndexed { index, feedback ->
                 key(feedback.id) {
-                    AnimatedVisibility(
-                        visible = feedback.visible,
-                        enter =
-                            fadeIn(tween(100)) +
-                                slideInVertically(
-                                    initialOffsetY = { it / 3 },
-                                    animationSpec = tween(150),
-                                ),
-                        exit = fadeOut(tween(120)) + shrinkVertically(tween(120)),
-                    ) {
-                        Row(
-                            modifier =
-                                Modifier
-                                    .fillMaxWidth()
-                                    .height(25.dp)
-                                    .clip(RoundedCornerShape(7.dp))
-                                    .background(
-                                        Color(0xF0141414).copy(
-                                            alpha = if (index == 0) 0.48f else 0.72f,
-                                        ),
-                                    )
-                                    .padding(horizontal = 13.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Text(
-                                text = feedback.name,
-                                style = MaterialTheme.typography.labelSmall,
-                                color = Color.White.copy(alpha = 0.88f),
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                            )
-                        }
-                    }
-                }
-            }
-
-            latestFeedback?.let { feedback ->
-                key(feedback.id) {
+                    val isLatest = index == 0
                     AnimatedVisibility(
                         visible = feedback.visible,
                         enter =
@@ -363,61 +324,78 @@ private fun ScanSuccessStack(
                                 ),
                         exit = fadeOut(tween(140)) + shrinkVertically(tween(140)),
                     ) {
-                        Row(
-                            modifier =
-                                Modifier
-                                    .fillMaxWidth()
-                                    .clip(RoundedCornerShape(10.dp))
-                                    .background(Color(0xF0141414))
-                                    .border(
-                                        1.dp,
-                                        Color.White.copy(alpha = 0.12f),
-                                        RoundedCornerShape(10.dp),
-                                    )
-                                    .padding(horizontal = 14.dp, vertical = 12.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(9.dp),
-                        ) {
-                            feedback.imageUri?.takeIf { it.isNotBlank() }?.let { imageUri ->
-                                AsyncImage(
-                                    model = imageUri,
-                                    contentDescription = null,
-                                    contentScale = ContentScale.Crop,
-                                    modifier = Modifier.size(52.dp).clip(RoundedCornerShape(8.dp)),
-                                )
-                            }
-                            Column(
-                                modifier = Modifier.weight(1f),
-                                verticalArrangement = Arrangement.spacedBy(2.dp),
+                        if (isLatest) {
+                            Row(
+                                modifier =
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .clip(RoundedCornerShape(10.dp))
+                                        .background(Color(0xF0141414))
+                                        .border(1.dp, Color.White.copy(alpha = 0.12f), RoundedCornerShape(10.dp))
+                                        .padding(horizontal = 14.dp, vertical = 12.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(9.dp),
                             ) {
-                                Text(
-                                    text = feedback.name,
-                                    style = MaterialTheme.typography.titleSmall,
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = Color.White,
-                                    maxLines = 2,
-                                    overflow = TextOverflow.Ellipsis,
-                                )
-                                val detail = listOfNotNull(
-                                    feedback.brand?.takeIf { it.isNotBlank() },
-                                    feedback.specification?.takeIf { it.isNotBlank() },
-                                ).joinToString(" · ")
-                                if (detail.isNotBlank()) {
+                                feedback.imageUri?.takeIf { it.isNotBlank() }?.let { imageUri ->
+                                    AsyncImage(
+                                        model = imageUri,
+                                        contentDescription = null,
+                                        contentScale = ContentScale.Crop,
+                                        modifier = Modifier.size(52.dp).clip(RoundedCornerShape(8.dp)),
+                                    )
+                                }
+                                Column(
+                                    modifier = Modifier.weight(1f),
+                                    verticalArrangement = Arrangement.spacedBy(2.dp),
+                                ) {
                                     Text(
-                                        text = detail,
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = Color.White.copy(alpha = 0.78f),
+                                        text = feedback.name,
+                                        style = MaterialTheme.typography.titleSmall,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = Color.White,
                                         maxLines = 2,
                                         overflow = TextOverflow.Ellipsis,
                                     )
+                                    val detail = listOfNotNull(
+                                        feedback.brand?.takeIf { it.isNotBlank() },
+                                        feedback.specification?.takeIf { it.isNotBlank() },
+                                    ).joinToString(" · ")
+                                    if (detail.isNotBlank()) {
+                                        Text(
+                                            text = detail,
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = Color.White.copy(alpha = 0.78f),
+                                            maxLines = 2,
+                                            overflow = TextOverflow.Ellipsis,
+                                        )
+                                    }
+                                }
+                                if (feedback.success) {
+                                    Icon(
+                                        imageVector = CulinaryIcons.CheckCircle,
+                                        contentDescription = stringResource(R.string.scan_success_feedback),
+                                        tint = Color(0xFFD2BA8A),
+                                        modifier = Modifier.size(19.dp),
+                                    )
                                 }
                             }
-                            if (feedback.success) {
-                                Icon(
-                                    imageVector = CulinaryIcons.CheckCircle,
-                                    contentDescription = stringResource(R.string.scan_success_feedback),
-                                    tint = Color(0xFFD2BA8A),
-                                    modifier = Modifier.size(19.dp),
+                        } else {
+                            Row(
+                                modifier =
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .height(25.dp)
+                                        .clip(RoundedCornerShape(7.dp))
+                                        .background(Color(0xF0141414).copy(alpha = 0.72f))
+                                        .padding(horizontal = 13.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Text(
+                                    text = feedback.name,
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = Color.White.copy(alpha = 0.88f),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
                                 )
                             }
                         }
@@ -427,7 +405,6 @@ private fun ScanSuccessStack(
         }
     }
 }
-
 @Suppress("LongMethod") // 权限说明的三个分支文案与动作同屏，拆分只会增加参数。
 @Composable
 private fun PermissionPane(
