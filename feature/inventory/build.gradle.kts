@@ -13,6 +13,7 @@ android {
 // 表现层：只含 UI 与 ViewModel；业务规则在 core:domain，持久化在 core:data（A03A §4.9）。
 dependencies {
     implementation(project(":core:domain"))
+    implementation(project(":core:database"))
     implementation(project(":core:common"))
     implementation(project(":core:designsystem"))
     implementation("io.coil-kt.coil3:coil-compose:3.3.0")
