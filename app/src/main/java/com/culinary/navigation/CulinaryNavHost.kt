@@ -636,7 +636,10 @@ private fun NavGraphBuilder.inventoryGraph(navController: NavHostController) {
             onReceipt = { archiveId -> navController.navigate(InventoryRoutes.receipt(archiveId)) },
             onIssue = { archiveId -> navController.navigate(InventoryRoutes.issue(archiveId)) },
             onStocktake = { archiveId -> navController.navigate(InventoryRoutes.stocktake(scope = "ARCHIVE", scopeRef = archiveId)) },
-            onScanBarcode = { navController.navigate(ARCHIVE_BARCODE_SCAN_ROUTE) },
+            onScanBarcode = { currentBarcode ->
+                navController.currentBackStackEntry?.savedStateHandle?.set("archive_barcode_current", currentBarcode)
+                navController.navigate(ARCHIVE_BARCODE_SCAN_ROUTE)
+            },
         )
     }
     composable(
@@ -810,25 +813,16 @@ private fun nullableString(name: String): NamedNavArgument =
  * 扫码入口：已有库存档案由扫码页顶部短暂提示；未建档物品直接进入新建库存档案。
  */
 private fun NavGraphBuilder.scanGraph(navController: NavHostController) {
-    dialog(ARCHIVE_BARCODE_SCAN_ROUTE) {
-        Dialog(onDismissRequest = { navController.popBackStack() }) {
-            Surface(
-                modifier = Modifier.fillMaxWidth().fillMaxHeight(0.88f),
-                shape = RoundedCornerShape(6.dp),
-                color = MaterialTheme.colorScheme.surface,
-            ) {
+    composable(ARCHIVE_BARCODE_SCAN_ROUTE) {
+        val archiveEntry = navController.getBackStackEntry(InventoryRoutes.ARCHIVE)
         ArchiveBarcodeScanRoute(
-            onCapture = { capture ->
-                // Target the archive detail entry explicitly; a dialog destination's
-                // previousBackStackEntry is not a reliable result owner.
-                navController.getBackStackEntry(InventoryRoutes.ARCHIVE)
-                    .savedStateHandle["archive_barcode_scan_result"] = capture.rawValue
+            oldBarcode = archiveEntry.savedStateHandle.get<String>("archive_barcode_current"),
+            onConfirm = { barcode ->
+                archiveEntry.savedStateHandle["archive_barcode_scan_result"] = barcode
                 navController.popBackStack()
             },
             onBack = { navController.popBackStack() },
         )
-            }
-        }
     }
     composable(SCAN_ROUTE) {
         ScanRoute(
