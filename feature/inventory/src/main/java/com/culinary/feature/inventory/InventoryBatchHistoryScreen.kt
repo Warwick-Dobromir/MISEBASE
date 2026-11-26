@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -76,7 +77,6 @@ class BatchHistoryViewModel
 @Composable
 fun BatchHistoryRoute(
     onOpenBatch: (String) -> Unit,
-    onBack: () -> Unit,
     viewModel: BatchHistoryViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -108,7 +108,7 @@ private fun BatchHistoryScreen(
                 items(state.batches, key = { it.id }) { batch ->
                     BatchHistoryRow(batch = batch, onClick = { onOpenBatch(batch.id) })
                 }
-                item { Spacer(modifier = Modifier.padding(bottom = CulinarySpacing.xl)) }
+                item { Spacer(modifier = Modifier.height(CulinarySpacing.xl)) }
             }
         }
     }
@@ -150,7 +150,7 @@ private fun BatchHistoryRow(
             }
             Column(horizontalAlignment = Alignment.End) {
                 Text(
-                    text = formatAmount(batch.onHand) + " " + batch.unit.symbol,
+                    text = batch.onHand.toString().trimEnd('0').trimEnd('.') + " " + batch.unit.symbol,
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurface,
                 )

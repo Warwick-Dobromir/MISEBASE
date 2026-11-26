@@ -227,9 +227,6 @@ class InventoryArchiveRepositoryImpl
         override suspend fun listBatches(archiveId: String): Outcome<List<InventoryBatchRecord>> =
             read { toBatchRecords(batchDao.listByArchive(archiveId)) }
 
-        override suspend fun listAllBatchHistory(): Outcome<List<InventoryBatchRecord>> =
-            read { toBatchRecords(batchDao.listAllHistory()) }
-
         override suspend fun listLiveBatches(): Outcome<List<InventoryBatchRecord>> =
             read { toBatchRecords(batchDao.listLive()) }
 

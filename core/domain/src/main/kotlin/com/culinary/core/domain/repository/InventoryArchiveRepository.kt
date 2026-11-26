@@ -66,9 +66,6 @@ interface InventoryArchiveRepository {
     // ---- 批次 ----
     suspend fun listBatches(archiveId: String): Outcome<List<InventoryBatchRecord>>
 
-    /** 所有批次历史，包含数量归零与已处置批次；历史记录永久保留。 */
-    suspend fun listAllBatchHistory(): Outcome<List<InventoryBatchRecord>>
-
     suspend fun listLiveBatches(): Outcome<List<InventoryBatchRecord>>
 
     suspend fun findBatch(batchId: String): Outcome<InventoryBatchRecord?>

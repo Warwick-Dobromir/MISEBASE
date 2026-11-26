@@ -661,7 +661,6 @@ private fun NavGraphBuilder.inventoryGraph(navController: NavHostController) {
     composable(InventoryRoutes.BATCH_HISTORY) {
         BatchHistoryRoute(
             onOpenBatch = { batchId -> navController.navigate(InventoryRoutes.batch(batchId)) },
-            onBack = { navController.popBackStack() },
         )
     }
     composable(InventoryRoutes.BATCH) {
