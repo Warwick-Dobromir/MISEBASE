@@ -820,7 +820,10 @@ private fun NavGraphBuilder.scanGraph(navController: NavHostController) {
             onOpenArchive = { archiveId ->
                 val previous = navController.previousBackStackEntry
                 if (previous?.destination?.route == InventoryRoutes.ARCHIVE_EDIT) {
-                    previous.savedStateHandle[ARCHIVE_BARCODE_DUPLICATE_KEY] = archiveId
+                    val editingArchiveId = previous.arguments?.getString(InventoryRoutes.ARG_ARCHIVE_ID)
+                    if (editingArchiveId != archiveId) {
+                        previous.savedStateHandle[ARCHIVE_BARCODE_DUPLICATE_KEY] = archiveId
+                    }
                     navController.popBackStack()
                 } else {
                     navController.navigate(InventoryRoutes.archive(archiveId))
