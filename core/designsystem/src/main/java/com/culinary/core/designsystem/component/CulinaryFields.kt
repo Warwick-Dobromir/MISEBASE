@@ -27,12 +27,75 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.OffsetMapping
+import androidx.compose.ui.text.input.TransformedText
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import com.culinary.core.designsystem.icon.CulinaryIcons
 import com.culinary.core.designsystem.theme.CulinarySizes
 import com.culinary.core.designsystem.theme.CulinarySpacing
 import com.culinary.core.designsystem.theme.CulinaryStrokes
+
+/**
+ * 日期输入：用户只输入数字，界面自动显示 YYYY-MM-DD。
+ * 状态值仅保存数字（最多 8 位），连字符由视觉转换生成，避免格式化回写造成光标跳动。
+ */
+@Composable
+fun CulinaryDateField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    label: String,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    isError: Boolean = false,
+    supportingText: (@Composable () -> Unit)? = null,
+) {
+    CulinaryTextField(
+        value = value,
+        onValueChange = { input -> onValueChange(input.filter(Char::isDigit).take(8)) },
+        label = { Text(text = label, style = MaterialTheme.typography.labelMedium) },
+        modifier = modifier,
+        enabled = enabled,
+        singleLine = true,
+        isError = isError,
+        supportingText = supportingText,
+        placeholder = { Text(text = "YYYY-MM-DD", style = MaterialTheme.typography.bodyMedium) },
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+        visualTransformation = DateDigitsVisualTransformation,
+    )
+}
+
+private object DateDigitsVisualTransformation : VisualTransformation {
+    override fun filter(text: AnnotatedString): TransformedText {
+        val digits = text.text.filter(Char::isDigit).take(8)
+        val display = buildString {
+            digits.forEachIndexed { index, char ->
+                if (index == 4 || index == 6) append('-')
+                append(char)
+            }
+        }
+        val offsetMapping = object : OffsetMapping {
+            override fun originalToTransformed(offset: Int): Int {
+                val safe = offset.coerceIn(0, digits.length)
+                return safe + (if (safe > 4) 1 else 0) + (if (safe > 6) 1 else 0)
+            }
+
+            override fun transformedToOriginal(offset: Int): Int {
+                val safe = offset.coerceIn(0, display.length)
+                return when {
+                    safe <= 4 -> safe
+                    safe == 5 -> 4
+                    safe <= 7 -> safe - 1
+                    safe == 8 -> 6
+                    else -> (safe - 2).coerceIn(0, digits.length)
+                }
+            }
+        }
+        return TransformedText(AnnotatedString(display), offsetMapping)
+    }
+}
 
 /**
  * 输入规范（MB-UI-001 §3.9 / §8.2）。

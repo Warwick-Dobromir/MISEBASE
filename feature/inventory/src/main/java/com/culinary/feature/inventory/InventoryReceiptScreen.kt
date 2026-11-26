@@ -34,6 +34,7 @@ import androidx.lifecycle.viewModelScope
 import com.culinary.core.common.Outcome
 import com.culinary.core.designsystem.component.CulinaryButton
 import com.culinary.core.designsystem.component.CulinaryButtonVariant
+import com.culinary.core.designsystem.component.CulinaryDateField
 import com.culinary.core.designsystem.component.CulinaryRule
 import com.culinary.core.designsystem.component.CulinaryTextButton
 import com.culinary.core.designsystem.component.CulinaryTextField
@@ -515,7 +516,13 @@ class ReceiptViewModel
             _uiState.update { it.copy(error = null) }
         }
 
-        private fun parseOrNull(text: String): LocalDate? = parseDate(text)
+        private fun parseOrNull(text: String): LocalDate? {
+            if (text.isBlank()) return null
+            val digits = text.filter(Char::isDigit)
+            if (digits.length != 8) return null
+            val isoDate = digits.substring(0, 4) + "-" + digits.substring(4, 6) + "-" + digits.substring(6, 8)
+            return runCatching { LocalDate.parse(isoDate) }.getOrNull()
+        }
     }
 
 // ---------------------------------------------------------------------------
@@ -767,22 +774,16 @@ private fun ReceiptFields(
         modifier = Modifier.padding(top = CulinarySpacing.md),
     )
     Row(modifier = Modifier.padding(top = CulinarySpacing.md), horizontalArrangement = Arrangement.spacedBy(CulinarySpacing.sm)) {
-        CulinaryTextField(
+        CulinaryDateField(
             value = state.productionDate,
             onValueChange = onProductionDateChange,
             label = "生产日期",
-            placeholder = "YYYY-MM-DD",
-            singleLine = true,
-            fillWidth = false,
             modifier = Modifier.weight(1f),
         )
-        CulinaryTextField(
+        CulinaryDateField(
             value = state.expiresOn,
             onValueChange = onExpiresOnChange,
             label = "到期日期",
-            placeholder = "YYYY-MM-DD",
-            singleLine = true,
-            fillWidth = false,
             modifier = Modifier.weight(1f),
         )
     }
