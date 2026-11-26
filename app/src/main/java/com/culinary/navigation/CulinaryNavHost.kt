@@ -819,7 +819,10 @@ private fun NavGraphBuilder.scanGraph(navController: NavHostController) {
             ) {
         ArchiveBarcodeScanRoute(
             onCapture = { capture ->
-                navController.previousBackStackEntry?.savedStateHandle?.set("archive_barcode_scan_result", capture.rawValue)
+                // Target the archive detail entry explicitly; a dialog destination's
+                // previousBackStackEntry is not a reliable result owner.
+                navController.getBackStackEntry(InventoryRoutes.ARCHIVE)
+                    .savedStateHandle["archive_barcode_scan_result"] = capture.rawValue
                 navController.popBackStack()
             },
             onBack = { navController.popBackStack() },
