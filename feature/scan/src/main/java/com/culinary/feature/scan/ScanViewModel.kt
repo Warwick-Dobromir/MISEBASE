@@ -221,7 +221,7 @@ class ScanViewModel
                             return@launch
                         }
 
-                        if (_uiState.value.mode == ScanMode.VIEW_DETAILS) {
+                        if (_uiState.value.mode == ScanMode.VIEW_DETAILS || _uiState.value.mode == ScanMode.BARCODE_ASSIGNMENT) {
                             gate.resume()
                             _uiState.update { state ->
                                 state.copy(
