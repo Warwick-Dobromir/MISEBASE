@@ -78,7 +78,15 @@ class ExpiryReminderAlarmReceiver : BroadcastReceiver() {
                 intent,
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
             )
-            alarmManager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAtMillis, pending)
+            if (canScheduleExactAlarms(context, alarmManager)) {
+                try {
+                    alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAtMillis, pending)
+                } catch (_: SecurityException) {
+                    alarmManager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAtMillis, pending)
+                }
+            } else {
+                alarmManager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAtMillis, pending)
+            }
         }
 
         fun scheduleTestNotification(
@@ -92,15 +100,31 @@ class ExpiryReminderAlarmReceiver : BroadcastReceiver() {
                 ExpiryTestNotificationWorker.TEST_STATE_PREFS,
                 Context.MODE_PRIVATE,
             )
-            preferences.edit()
-                .putBoolean(TEST_PENDING_KEY, true)
-                .putLong(TEST_TRIGGER_AT_KEY, triggerAt)
-                .putInt(TEST_PRODUCT_COUNT_KEY, productCount)
-                .putInt(TEST_BATCH_COUNT_KEY, batchCount)
-                .putString(ExpiryTestNotificationWorker.TEST_STATE_KEY, "测试通知已登记")
-                .putLong(ExpiryTestNotificationWorker.TEST_UPDATED_KEY, System.currentTimeMillis())
-                .commit()
-            scheduleTestAlarm(context, triggerAt)
+            val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+            check(canScheduleExactAlarms(context, alarmManager)) {
+                "请先在系统设置中允许 MISEBASE 使用闹钟和提醒权限。"
+            }
+            check(
+                preferences.edit()
+                    .putBoolean(TEST_PENDING_KEY, true)
+                    .putLong(TEST_TRIGGER_AT_KEY, triggerAt)
+                    .putInt(TEST_PRODUCT_COUNT_KEY, productCount)
+                    .putInt(TEST_BATCH_COUNT_KEY, batchCount)
+                    .putString(ExpiryTestNotificationWorker.TEST_STATE_KEY, "正在登记精确闹钟")
+                    .putLong(ExpiryTestNotificationWorker.TEST_UPDATED_KEY, System.currentTimeMillis())
+                    .commit(),
+            ) { "测试通知状态保存失败。" }
+            try {
+                scheduleTestAlarm(context, triggerAt)
+                updateTestState(preferences, "精确闹钟已登记")
+            } catch (error: Throwable) {
+                preferences.edit()
+                    .putBoolean(TEST_PENDING_KEY, false)
+                    .putString(ExpiryTestNotificationWorker.TEST_STATE_KEY, "后台闹钟登记失败：${error.message ?: error.javaClass.simpleName}")
+                    .putLong(ExpiryTestNotificationWorker.TEST_UPDATED_KEY, System.currentTimeMillis())
+                    .commit()
+                throw error
+            }
         }
 
         fun restorePendingTestNotification(context: Context) {
@@ -115,7 +139,13 @@ class ExpiryReminderAlarmReceiver : BroadcastReceiver() {
                 return
             }
             if (triggerAt > System.currentTimeMillis()) {
-                scheduleTestAlarm(context, triggerAt)
+                val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+                if (!canScheduleExactAlarms(context, alarmManager)) {
+                    updateTestState(preferences, "精确闹钟权限未授予，等待授权后恢复")
+                    return
+                }
+                runCatching { scheduleTestAlarm(context, triggerAt) }
+                    .onFailure { updateTestState(preferences, "后台闹钟恢复失败：${it.message ?: it.javaClass.simpleName}") }
                 return
             }
             val productCount = preferences.getInt(TEST_PRODUCT_COUNT_KEY, 0)
@@ -134,8 +164,14 @@ class ExpiryReminderAlarmReceiver : BroadcastReceiver() {
                 intent,
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
             )
-            alarmManager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAtMillis, pending)
+            check(canScheduleExactAlarms(context, alarmManager)) {
+                "精确闹钟权限未授予。"
+            }
+            alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAtMillis, pending)
         }
+
+        private fun canScheduleExactAlarms(context: Context, alarmManager: AlarmManager): Boolean =
+            Build.VERSION.SDK_INT < Build.VERSION_CODES.S || alarmManager.canScheduleExactAlarms()
 
         private fun showTestNotification(context: Context, productCount: Int, batchCount: Int) {
             val preferences = context.getSharedPreferences(
@@ -219,7 +255,8 @@ class ExpiryReminderBootReceiver : BroadcastReceiver() {
             intent?.action == Intent.ACTION_BOOT_COMPLETED ||
             intent?.action == Intent.ACTION_MY_PACKAGE_REPLACED ||
             intent?.action == Intent.ACTION_TIME_CHANGED ||
-            intent?.action == Intent.ACTION_TIMEZONE_CHANGED
+            intent?.action == Intent.ACTION_TIMEZONE_CHANGED ||
+            intent?.action == AlarmManager.ACTION_SCHEDULE_EXACT_ALARM_PERMISSION_STATE_CHANGED
         ) {
             ExpiryReminderScheduler.ensureScheduled(context.applicationContext)
         }

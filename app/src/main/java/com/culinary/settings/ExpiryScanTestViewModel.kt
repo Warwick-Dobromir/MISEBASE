@@ -37,6 +37,10 @@ class ExpiryScanTestViewModel @Inject constructor(
         _uiState.value = ExpiryScanTestUiState(message = "未授予通知权限，扫描测试未启动。请在系统设置中允许 MISEBASE 发送通知。")
     }
 
+    fun exactAlarmPermissionDenied() {
+        _uiState.value = ExpiryScanTestUiState(message = "未授予精确闹钟权限，扫描测试未启动。请在系统设置的“闹钟和提醒”中允许 MISEBASE。")
+    }
+
     fun scanInventory() {
         if (_uiState.value.isRunning) return
         viewModelScope.launch {
@@ -85,12 +89,16 @@ class ExpiryScanTestViewModel @Inject constructor(
             } else {
                 val (alert, batchCount) = result.getOrThrow()
                 ExpiryAlertStore.save(alert)
-                scheduleNotification(alert?.expiredProductCount ?: 0, batchCount)
+                val scheduling = runCatching {
+                    scheduleNotification(alert?.expiredProductCount ?: 0, batchCount)
+                }
                 _uiState.value = ExpiryScanTestUiState(
-                    message = if (alert == null) {
-                        "扫描完成：未发现过期库存。测试通知将在 3 分钟后发送。"
+                    message = if (scheduling.isFailure) {
+                        "库存扫描完成，但测试通知登记失败：${scheduling.exceptionOrNull()?.message ?: "未知错误"}"
+                    } else if (alert == null) {
+                        "扫描完成：未发现过期库存。精确测试通知将在 3 分钟后发送。"
                     } else {
-                        "扫描完成：发现 ${alert.expiredProductCount} 种商品、${alert.expiredBatchCount} 个过期批次。测试通知将在 3 分钟后发送。"
+                        "扫描完成：发现 ${alert.expiredProductCount} 种商品、${alert.expiredBatchCount} 个过期批次。精确测试通知将在 3 分钟后发送。"
                     },
                 )
             }
