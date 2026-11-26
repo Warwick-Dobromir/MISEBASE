@@ -77,7 +77,7 @@ private val MIGRATION_16_17_IMPL =
                     PRIMARY KEY(`barcode`)
                 )
             """.trimIndent())
-            db.execSQL("CREATE INDEX IF NOT EXISTS `index_temporary_batch_barcode_batch_id` ON `temporary_batch_barcode` (`batch_id`)")
+            db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS `index_temporary_batch_barcode_batch_id` ON `temporary_batch_barcode` (`batch_id`)")
             db.execSQL("CREATE INDEX IF NOT EXISTS `index_temporary_batch_barcode_state` ON `temporary_batch_barcode` (`state`)")
             db.execSQL("""
                 CREATE TABLE IF NOT EXISTS `temporary_batch_barcode_history` (
