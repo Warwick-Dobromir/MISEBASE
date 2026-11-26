@@ -165,16 +165,19 @@ class ScanViewModel
             }
             viewModelScope.launch {
                 val temporaryBarcode = temporaryBarcodeDao?.findAllocatedByBarcode(capture.rawValue.trim())
-                if (temporaryBarcode?.batchId != null) {
+                if (temporaryBarcode != null) {
+                    val activeBatchId =
+                        temporaryBarcode.batchId.takeIf { temporaryBarcode.status == "ALLOCATED" }
                     gate.resume()
                     _uiState.update { state ->
                         state.copy(
                             lookupInProgress = false,
-                            scanning = false,
+                            scanning = activeBatchId == null &&
+                                state.hasCamera && state.cameraAccess == CameraAccessState.GRANTED,
                             pendingCapture = null,
                             matchedArchive = null,
-                            openBatchId = temporaryBarcode.batchId,
-                            error = null,
+                            openBatchId = activeBatchId,
+                            error = if (activeBatchId == null) "此临时条码已回收，不能再用于识别库存批次。" else null,
                         )
                     }
                     return@launch
