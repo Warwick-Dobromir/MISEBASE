@@ -187,6 +187,36 @@ class BatchDetailViewModel
 
         fun unfreeze(reason: String) = runAction("已解冻该批次。") { unfreezeBatch(batchId, reason) }
 
+        fun assignTemporaryBarcode() {
+            viewModelScope.launch {
+                _uiState.update { it.copy(isWorking = true, error = null, message = null) }
+                val code = temporaryBarcodes.assign(batchId)
+                _uiState.update {
+                    it.copy(
+                        isWorking = false,
+                        temporaryBarcode = code ?: it.temporaryBarcode,
+                        message = if (code == null) null else "已分配临时条码。",
+                        error = if (code == null) "临时条码分配失败，请重试。" else null,
+                    )
+                }
+            }
+        }
+
+        fun releaseTemporaryBarcode() {
+            viewModelScope.launch {
+                _uiState.update { it.copy(isWorking = true, error = null, message = null) }
+                val released = temporaryBarcodes.release(batchId)
+                _uiState.update {
+                    it.copy(
+                        isWorking = false,
+                        temporaryBarcode = if (released) null else it.temporaryBarcode,
+                        message = if (released) "临时条码已回收到分配池。" else null,
+                        error = if (released) null else "临时条码回收失败，请重试。",
+                    )
+                }
+            }
+        }
+
         fun transfer(
             toLocationId: String,
             note: String?,
