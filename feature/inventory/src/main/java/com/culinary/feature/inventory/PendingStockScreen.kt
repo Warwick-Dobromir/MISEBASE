@@ -645,8 +645,14 @@ private fun PendingStockDateSheet(
                             onValueChange = {},
                             readOnly = true,
                             label = { Text("存放库位") },
-                            modifier = Modifier.fillMaxWidth().clickable { locationMenuExpanded = true },
+                            modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(8.dp),
+                        )
+                        // TextField 会消费自身区域的指针事件；使用覆盖层明确接管整行点击。
+                        Box(
+                            modifier = Modifier.matchParentSize().clickable {
+                                locationMenuExpanded = true
+                            },
                         )
                         DropdownMenu(
                             expanded = locationMenuExpanded,
