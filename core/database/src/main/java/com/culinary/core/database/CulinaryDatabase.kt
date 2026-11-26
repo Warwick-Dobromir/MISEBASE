@@ -31,6 +31,7 @@ import com.culinary.core.database.dao.InventoryLedgerDao
 import com.culinary.core.database.dao.InventoryLifecycleDao
 import com.culinary.core.database.dao.InventoryReservationDao
 import com.culinary.core.database.dao.InventoryStocktakeDao
+import com.culinary.core.database.dao.TemporaryBatchBarcodeDao
 import com.culinary.core.database.dao.KitchenReferenceContentDao
 import com.culinary.core.database.dao.KitchenReferenceDao
 import com.culinary.core.database.dao.KitchenRelationDao
@@ -71,6 +72,8 @@ import com.culinary.core.database.entity.IngredientVersionEntity
 import com.culinary.core.database.entity.InventoryArchiveEntity
 import com.culinary.core.database.entity.InventoryArchiveProductEntity
 import com.culinary.core.database.entity.InventoryBatchCapacityAllocationEntity
+import com.culinary.core.database.entity.TemporaryBatchBarcodeEntity
+import com.culinary.core.database.entity.TemporaryBatchBarcodeHistoryEntity
 import com.culinary.core.database.entity.InventoryBatchEntity
 import com.culinary.core.database.entity.InventoryCapacityCellEntity
 import com.culinary.core.database.entity.InventoryFreezeRecordEntity
@@ -107,7 +110,7 @@ import com.culinary.core.database.entity.SupplierEntity
 import com.culinary.core.database.entity.UnitEntity
 
 /** Single source of truth for Room and startup compatibility checks. */
-const val CULINARY_DATABASE_SCHEMA_VERSION: Int = 16
+const val CULINARY_DATABASE_SCHEMA_VERSION: Int = 17
 
 /**
  * CULINARY 数据库（schema v11）。
@@ -180,6 +183,8 @@ const val CULINARY_DATABASE_SCHEMA_VERSION: Int = 16
         PendingStockDateAllocationEntity::class,
         InventoryCapacityCellEntity::class,
         InventoryBatchCapacityAllocationEntity::class,
+        TemporaryBatchBarcodeEntity::class,
+        TemporaryBatchBarcodeHistoryEntity::class,
     ],
     version = CULINARY_DATABASE_SCHEMA_VERSION,
     exportSchema = true,
@@ -223,6 +228,8 @@ abstract class CulinaryDatabase : RoomDatabase() {
     abstract fun storageLocationDao(): StorageLocationDao
 
     abstract fun inventoryBatchDao(): InventoryBatchDao
+
+    abstract fun temporaryBatchBarcodeDao(): TemporaryBatchBarcodeDao
 
     abstract fun inventoryCapacityDao(): InventoryCapacityDao
 
