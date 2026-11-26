@@ -30,6 +30,10 @@ interface InventoryBatchDao {
     @Query("SELECT * FROM inventory_batch WHERE status IN ('ACTIVE', 'FROZEN') ORDER BY archive_id, received_at, id")
     suspend fun listLive(): List<InventoryBatchEntity>
 
+    /** 完整批次历史：包含在库、冻结、耗尽、回收及已处置批次；只读，不删除历史。 */
+    @Query("SELECT * FROM inventory_batch ORDER BY received_at DESC, id DESC")
+    suspend fun listAllHistory(): List<InventoryBatchEntity>
+
     @Query("SELECT * FROM inventory_batch WHERE archive_id = :archiveId AND status IN ('ACTIVE', 'FROZEN') ORDER BY received_at, id")
     suspend fun listByArchive(archiveId: String): List<InventoryBatchEntity>
 
