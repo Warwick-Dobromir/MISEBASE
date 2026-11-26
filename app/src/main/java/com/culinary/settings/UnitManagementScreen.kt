@@ -34,8 +34,7 @@ import com.culinary.core.domain.model.UnitDimension
 
 @Composable
 fun UnitManagementRoute(
-    onBack: () -> Unit,
-    viewModel: UnitManagementViewModel = hiltViewModel(),
+        viewModel: UnitManagementViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     var editing by remember { mutableStateOf<Unit?>(null) }
@@ -78,7 +77,7 @@ fun UnitManagementRoute(
                         Column(Modifier.weight(1f)) {
                             Text(unit.name, style = MaterialTheme.typography.bodyLarge)
                             Text(
-                                unit.symbol + if (unit.isActive()) "" else " · 已停用",
+                                unit.symbol + if (unit.isActive) "" else " · 已停用",
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
