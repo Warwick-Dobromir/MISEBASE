@@ -166,8 +166,6 @@ class PendingStockViewModel @Inject constructor(
     fun dismissIncomplete() { _uiState.update { it.copy(incompleteItemId = null) } }
 }
 
-private data class PendingDateDraft(val date: String, val quantity: String)
-
 private fun parseProductionDateDigits(value: String): LocalDate? {
     val digits = value.filter(Char::isDigit).take(8)
     if (digits.length != 8) return null
@@ -581,7 +579,6 @@ private fun PendingStockDateSheet(
                             }) { Text("移除") }
                         }
                     }
-                    Text("生产日期", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     CulinaryDateField(
                         value = row.first,
                         onValueChange = { value ->
