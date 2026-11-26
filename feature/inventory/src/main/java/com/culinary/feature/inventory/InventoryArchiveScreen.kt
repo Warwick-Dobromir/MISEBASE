@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Text
@@ -54,6 +55,7 @@ import com.culinary.core.domain.model.InventoryBatchRecord
 import com.culinary.core.domain.model.InventoryLedgerEntry
 import com.culinary.core.domain.usecase.inventory.GetInventoryArchiveDetailUseCase
 import com.culinary.core.domain.usecase.inventory.ListStorageLocationsUseCase
+import com.culinary.core.domain.usecase.inventory.ReplaceInventoryArchiveBarcodeUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.Dispatchers
@@ -71,6 +73,8 @@ data class ArchiveDetailUiState(
     val isLoading: Boolean = true,
     val error: String? = null,
     val message: String? = null,
+    val pendingScannedBarcode: String? = null,
+    val isReplacingBarcode: Boolean = false,
 )
 
 @HiltViewModel
@@ -80,6 +84,7 @@ class ArchiveDetailViewModel
         savedStateHandle: SavedStateHandle,
         private val getArchiveDetail: GetInventoryArchiveDetailUseCase,
         private val listLocations: ListStorageLocationsUseCase,
+        private val replaceBarcode: ReplaceInventoryArchiveBarcodeUseCase,
     ) : ViewModel() {
         private val archiveId: String =
             savedStateHandle.get<String>(InventoryRoutes.ARG_ARCHIVE_ID).orEmpty()
@@ -88,7 +93,50 @@ class ArchiveDetailViewModel
         val uiState: StateFlow<ArchiveDetailUiState> = _uiState.asStateFlow()
 
         init {
+            viewModelScope.launch {
+                savedStateHandle.getStateFlow<String?>("archive_barcode_scan_result", null).collect { scanned ->
+                    if (!scanned.isNullOrBlank()) {
+                        savedStateHandle["archive_barcode_scan_result"] = null
+                        val current = _uiState.value.detail?.archive?.barcode.orEmpty()
+                        if (current == scanned) {
+                            _uiState.update { it.copy(message = "条形码没有变化。") }
+                        } else {
+                            _uiState.update { it.copy(pendingScannedBarcode = scanned, error = null) }
+                        }
+                    }
+                }
+            }
+            viewModelScope.launch {
+                savedStateHandle.getStateFlow<Boolean>("archive_barcode_duplicate", false).collect { duplicate ->
+                    if (duplicate) {
+                        savedStateHandle["archive_barcode_duplicate"] = false
+                        _uiState.update { it.copy(error = "该条形码已分配给其他库存档案，不能更换。") }
+                    }
+                }
+            }
             load()
+        }
+
+        fun dismissBarcodeReplacement() {
+            _uiState.update { it.copy(pendingScannedBarcode = null) }
+        }
+
+        fun confirmBarcodeReplacement() {
+            val scanned = _uiState.value.pendingScannedBarcode ?: return
+            viewModelScope.launch {
+                _uiState.update { it.copy(isReplacingBarcode = true, error = null) }
+                when (val result = replaceBarcode(archiveId, scanned)) {
+                    is Outcome.Success -> {
+                        _uiState.update {
+                            it.copy(pendingScannedBarcode = null, isReplacingBarcode = false, message = "条形码已更换。")
+                        }
+                        load()
+                    }
+                    is Outcome.Failure -> _uiState.update {
+                        it.copy(isReplacingBarcode = false, error = InventoryErrorMessages.describe(result.error))
+                    }
+                }
+            }
         }
 
         fun load() {
@@ -140,6 +188,7 @@ fun ArchiveDetailRoute(
     onReceipt: (String) -> Unit,
     onIssue: (String) -> Unit,
     onStocktake: (String) -> Unit,
+    onScanBarcode: () -> Unit,
     viewModel: ArchiveDetailViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -153,6 +202,9 @@ fun ArchiveDetailRoute(
         onReceipt = onReceipt,
         onIssue = onIssue,
         onStocktake = onStocktake,
+        onScanBarcode = onScanBarcode,
+        onConfirmBarcodeReplacement = viewModel::confirmBarcodeReplacement,
+        onDismissBarcodeReplacement = viewModel::dismissBarcodeReplacement,
         onRetry = viewModel::load,
     )
 }
@@ -168,9 +220,40 @@ private fun ArchiveDetailScreen(
     onReceipt: (String) -> Unit,
     onIssue: (String) -> Unit,
     onStocktake: (String) -> Unit,
+    onScanBarcode: () -> Unit,
+    onConfirmBarcodeReplacement: () -> Unit,
+    onDismissBarcodeReplacement: () -> Unit,
     onRetry: () -> Unit,
 ) {
     val detail = state.detail
+    state.pendingScannedBarcode?.let { scanned ->
+        AlertDialog(
+            onDismissRequest = onDismissBarcodeReplacement,
+            title = { Text("确认更换条形码", style = MaterialTheme.typography.titleMedium) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(CulinarySpacing.sm)) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(CulinarySpacing.md)) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("原条形码", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(detail?.archive?.barcode?.ifBlank { "未关联" } ?: "未关联", style = MaterialTheme.typography.bodyMedium)
+                        }
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("新条形码", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(scanned, style = MaterialTheme.typography.bodyMedium)
+                        }
+                    }
+                    Text("确认后将替换当前档案的条形码。", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            },
+            confirmButton = {
+                CulinaryTextButton(
+                    text = if (state.isReplacingBarcode) "正在更换…" else "确认更换",
+                    onClick = onConfirmBarcodeReplacement,
+                )
+            },
+            dismissButton = { CulinaryTextButton(text = "取消", onClick = onDismissBarcodeReplacement) },
+        )
+    }
     Column(modifier = Modifier.fillMaxSize()) {
         state.error?.let { message ->
             ErrorBanner(
@@ -282,7 +365,32 @@ private fun ArchiveDetailScreen(
                     InventoryArchiveValueRow("品牌", detail.archive.brand ?: detail.links.firstOrNull()?.product?.brand ?: "未设置")
                     InventoryArchiveValueRow("商品规格", detail.archive.productSpecification ?: detail.links.firstOrNull()?.product?.packageLabel ?: "未设置")
                     InventoryArchiveValueRow("商品编码", detail.archive.productCode ?: detail.links.firstOrNull()?.product?.sku ?: "未生成")
-                    InventoryArchiveValueRow("条码", detail.archive.barcode?.takeIf { it.isNotBlank() } ?: "未关联")
+                    Row(
+                        modifier = Modifier.fillMaxWidth().heightIn(min = 42.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            "条码",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.weight(1f),
+                        )
+                        Text(
+                            detail.archive.barcode?.takeIf { it.isNotBlank() } ?: "未关联",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurface,
+                        )
+                        androidx.compose.material3.IconButton(
+                            onClick = onScanBarcode,
+                            modifier = Modifier.height(32.dp),
+                        ) {
+                            androidx.compose.material3.Icon(
+                                imageVector = com.culinary.core.designsystem.icon.CulinaryIcons.Scan,
+                                contentDescription = "扫描并更换条形码",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    }
                     detail.sauceName?.let { InventoryArchiveValueRow("关联酱汁", it) }
                     InventoryArchiveSectionHeader(english = "SHELF LIFE & STORAGE", title = "保质期与储存")
                     InventoryArchiveValueRow(
