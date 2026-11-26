@@ -802,7 +802,14 @@ private fun NavGraphBuilder.scanGraph(navController: NavHostController) {
                 navController.previousBackStackEntry?.savedStateHandle?.set("archive_barcode_scan_result", capture.rawValue)
                 navController.popBackStack()
             },
-            onOpenArchive = { archiveId -> navController.navigate(InventoryRoutes.archive(archiveId)) },
+            onOpenArchive = { archiveId ->
+                val editorEntry = navController.previousBackStackEntry
+                val editingArchiveId = editorEntry?.arguments?.getString(InventoryRoutes.ARG_ARCHIVE_ID)
+                if (archiveId != editingArchiveId) {
+                    editorEntry?.savedStateHandle?.set("archive_barcode_duplicate", true)
+                }
+                navController.popBackStack()
+            },
             onBack = { navController.popBackStack() },
         )
     }
