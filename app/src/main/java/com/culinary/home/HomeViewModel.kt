@@ -1,15 +1,11 @@
 package com.culinary.home
 
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
-import com.culinary.settings.ExpiryAlertStore
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 /**
@@ -24,14 +20,6 @@ class HomeViewModel
     constructor() : ViewModel() {
         private val _uiState = MutableStateFlow(HomeUiState())
         val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
-
-        init {
-            viewModelScope.launch {
-                ExpiryAlertStore.alert.collect { alert ->
-                    _uiState.update { it.copy(expiryAlert = alert) }
-                }
-            }
-        }
 
         /** 点击圆圈或计划文字均可切换完成状态；未知 id 不改变任何数据。 */
         fun togglePlan(planId: String) {

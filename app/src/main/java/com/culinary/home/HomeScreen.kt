@@ -49,6 +49,7 @@ import com.culinary.core.designsystem.component.CulinaryRule
 import com.culinary.core.designsystem.icon.CulinaryIcons
 import com.culinary.core.designsystem.theme.CulinarySpacing
 import com.culinary.core.designsystem.theme.CulinaryTextStyles
+import com.culinary.settings.ExpiryAlertStore
 import com.culinary.settings.InventoryExpiryAlert
 
 /**
@@ -70,9 +71,10 @@ fun HomeRoute(
     viewModel: HomeViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val expiryAlert by ExpiryAlertStore.alert.collectAsStateWithLifecycle()
 
     HomeScreen(
-        state = state,
+        state = state.copy(expiryAlert = expiryAlert),
         onTogglePlan = viewModel::togglePlan,
         onOpenTimer = onOpenTimer,
         onOpenSettings = onOpenSettings,
