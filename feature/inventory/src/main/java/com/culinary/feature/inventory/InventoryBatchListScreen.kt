@@ -266,7 +266,6 @@ private fun RowScope.BatchBodyCell(
     )
 }
 
-@Composable
 data class BatchExpiryInfo(
     val expiryDate: LocalDate?,
     val remainingDays: Long?,
