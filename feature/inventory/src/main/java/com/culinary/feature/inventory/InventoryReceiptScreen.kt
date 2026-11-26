@@ -50,10 +50,10 @@ import com.culinary.core.designsystem.theme.CulinarySpacing
 import com.culinary.core.domain.model.ArchiveProductLink
 import com.culinary.core.domain.model.InventoryArchive
 import com.culinary.core.domain.model.InventoryArchiveRow
-import com.culinary.core.domain.rule.inventory.calculateDefaultExpiryDate
 import com.culinary.core.domain.model.LocationId
 import com.culinary.core.domain.model.StorageLocation
 import com.culinary.core.domain.model.Unit as MeasureUnit
+import com.culinary.core.domain.rule.inventory.calculateDefaultExpiryDate
 import com.culinary.core.domain.usecase.inventory.ArchiveReceiptInput
 import com.culinary.core.domain.usecase.inventory.ListArchiveFormOptionsUseCase
 import com.culinary.core.domain.usecase.inventory.ListArchiveProductLinksUseCase
