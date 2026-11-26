@@ -210,15 +210,6 @@ class BatchDetailViewModel
             }
         }
 
-        fun releaseTemporaryBarcode() {
-            viewModelScope.launch {
-                val resource = temporaryBarcodes.findAllocatedForBatch(batchId) ?: return@launch
-                val now = System.currentTimeMillis()
-                if (temporaryBarcodes.releaseAndLog(resource.id, now, TemporaryBarcodeHistoryEntity(id = java.util.UUID.randomUUID().toString(), barcodeId = resource.id, barcode = resource.barcode, batchId = batchId, action = "RELEASED", occurredAt = now)) == 1) {
-                    _uiState.update { it.copy(temporaryBarcode = null, message = "临时条码已释放并回到分配池。") }
-                }
-            }
-        }
         fun freeze(reason: String) = runAction("已冻结该批次。") { freezeBatch(batchId, reason) }
 
         fun unfreeze(reason: String) = runAction("已解冻该批次。") { unfreezeBatch(batchId, reason) }
@@ -284,7 +275,6 @@ fun BatchDetailRoute(
         onTransferConfirm = viewModel::transfer,
         onRetry = viewModel::load,
         onAllocateTemporaryBarcode = viewModel::allocateTemporaryBarcode,
-        onReleaseTemporaryBarcode = viewModel::releaseTemporaryBarcode,
     )
 }
 
@@ -299,7 +289,6 @@ private fun BatchDetailScreen(
     onTransferConfirm: (String, String?) -> Unit,
     onRetry: () -> Unit,
     onAllocateTemporaryBarcode: () -> Unit,
-    onReleaseTemporaryBarcode: () -> Unit,
 ) {
     var reasonDialog by remember { mutableStateOf<FreezeDialogMode?>(null) }
     var transferDialog by remember { mutableStateOf(false) }
@@ -414,7 +403,6 @@ private fun BatchDetailScreen(
                             CulinaryTextButton(text = "分配临时条码", onClick = onAllocateTemporaryBarcode, modifier = Modifier.defaultMinSize(minHeight = 44.dp))
                         } else {
                             CulinaryInfoRow(label = "临时条码", value = state.temporaryBarcode)
-                            CulinaryTextButton(text = "释放并回收条码", onClick = onReleaseTemporaryBarcode, modifier = Modifier.defaultMinSize(minHeight = 44.dp))
                         }
                         SectionHeader(title = "批次操作")
                     }
