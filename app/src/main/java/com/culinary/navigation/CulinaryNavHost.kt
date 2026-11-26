@@ -91,6 +91,7 @@ import com.culinary.feature.sauces.SauceDetailRoute
 import com.culinary.feature.sauces.SauceEditorRoute
 import com.culinary.feature.sauces.SaucesRoute
 import com.culinary.feature.sauces.SaucesRoutes
+import com.culinary.feature.scan.ArchiveBarcodeScanRoute
 import com.culinary.feature.scan.ScanMode
 import com.culinary.feature.scan.ScanRoute
 import com.culinary.home.HOME_PLACEHOLDER_ROUTE
@@ -816,25 +817,12 @@ private fun NavGraphBuilder.scanGraph(navController: NavHostController) {
                 shape = RoundedCornerShape(6.dp),
                 color = MaterialTheme.colorScheme.surface,
             ) {
-        ScanRoute(
+        ArchiveBarcodeScanRoute(
             onCapture = { capture ->
                 navController.previousBackStackEntry?.savedStateHandle?.set("archive_barcode_scan_result", capture.rawValue)
                 navController.popBackStack()
             },
-            onOpenArchive = { archiveId ->
-                val editorEntry = navController.previousBackStackEntry
-                val editingArchiveId = editorEntry?.arguments?.getString(InventoryRoutes.ARG_ARCHIVE_ID)
-                if (archiveId != editingArchiveId) {
-                    editorEntry?.savedStateHandle?.set("archive_barcode_duplicate", true)
-                }
-                navController.popBackStack()
-            },
-            onOpenBatch = {
-                navController.previousBackStackEntry?.savedStateHandle?.set("archive_barcode_duplicate", true)
-                navController.popBackStack()
-            },
             onBack = { navController.popBackStack() },
-            initialMode = ScanMode.BARCODE_ASSIGNMENT,
         )
             }
         }

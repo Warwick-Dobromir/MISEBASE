@@ -147,7 +147,14 @@ class ArchiveDetailViewModel
                     return@launch
                 }
                 when (val result = read()) {
-                    is Outcome.Success -> _uiState.value = result.value
+                    is Outcome.Success -> {
+                        val current = _uiState.value
+                        _uiState.value = result.value.copy(
+                            pendingScannedBarcode = current.pendingScannedBarcode,
+                            isReplacingBarcode = current.isReplacingBarcode,
+                            message = current.message,
+                        )
+                    }
                     is Outcome.Failure ->
                         _uiState.update {
                             it.copy(isLoading = false, error = InventoryErrorMessages.describe(result.error))
