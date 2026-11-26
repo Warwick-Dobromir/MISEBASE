@@ -53,6 +53,9 @@ import com.culinary.core.designsystem.component.StatusTone
 import com.culinary.core.designsystem.theme.CulinaryColorScheme
 import com.culinary.core.designsystem.theme.CulinarySpacing
 import com.culinary.core.designsystem.theme.CulinaryTextStyles
+import com.culinary.core.database.dao.TemporaryBarcodeDao
+import com.culinary.core.database.entity.TemporaryBarcodeEntity
+import com.culinary.core.database.entity.TemporaryBarcodeHistoryEntity
 import com.culinary.core.domain.model.FreezeAction
 import com.culinary.core.domain.model.FreezeRecord
 import com.culinary.core.domain.model.InventoryBatchRecord
@@ -85,6 +88,7 @@ data class BatchDetailUiState(
     val isWorking: Boolean = false,
     val error: String? = null,
     val message: String? = null,
+    val temporaryBarcode: String? = null,
 )
 
 @HiltViewModel
@@ -99,6 +103,7 @@ class BatchDetailViewModel
         private val unfreezeBatch: UnfreezeBatchUseCase,
         private val transferBatch: TransferBatchLocationUseCase,
         private val listLocations: ListStorageLocationsUseCase,
+        private val temporaryBarcodes: TemporaryBarcodeDao,
     ) : ViewModel() {
         private val batchId: String =
             savedStateHandle.get<String>(InventoryRoutes.ARG_BATCH_ID).orEmpty()
@@ -127,6 +132,7 @@ class BatchDetailViewModel
                                 ledger = result.value.ledger,
                                 freezeRecords = result.value.freezeRecords,
                                 locations = result.value.locations,
+                                temporaryBarcode = temporaryBarcodes.findAllocatedForBatch(batchId)?.barcode,
                                 isLoading = false,
                             )
                         }
@@ -179,6 +185,40 @@ class BatchDetailViewModel
             )
         }
 
+        fun allocateTemporaryBarcode() {
+            viewModelScope.launch {
+                _uiState.update { it.copy(isWorking = true, error = null, message = null) }
+                val now = System.currentTimeMillis()
+                val current = temporaryBarcodes.findAllocatedForBatch(batchId)
+                if (current != null) {
+                    _uiState.update { it.copy(isWorking = false, temporaryBarcode = current.barcode) }
+                    return@launch
+                }
+                val free = temporaryBarcodes.findFree()
+                val resource = free ?: run {
+                    val prefix = "29" + now.toString().takeLast(10).padStart(10, '0')
+                    val checksum = prefix.mapIndexed { index, char -> char.digitToInt() * if (index % 2 == 0) 1 else 3 }.sum().let { (10 - it % 10) % 10 }
+                    TemporaryBarcodeEntity(id = java.util.UUID.randomUUID().toString(), barcode = prefix + checksum, createdAt = now, updatedAt = now).also { temporaryBarcodes.insert(it) }
+                }
+                if (temporaryBarcodes.allocate(resource.id, batchId, now) == 1) {
+                    temporaryBarcodes.insertHistory(TemporaryBarcodeHistoryEntity(id = java.util.UUID.randomUUID().toString(), barcodeId = resource.id, barcode = resource.barcode, batchId = batchId, action = "ALLOCATED", occurredAt = now))
+                    _uiState.update { it.copy(isWorking = false, temporaryBarcode = resource.barcode, message = "已分配临时条码。") }
+                } else {
+                    _uiState.update { it.copy(isWorking = false, error = "条码资源已被占用，请重试。") }
+                }
+            }
+        }
+
+        fun releaseTemporaryBarcode() {
+            viewModelScope.launch {
+                val resource = temporaryBarcodes.findAllocatedForBatch(batchId) ?: return@launch
+                val now = System.currentTimeMillis()
+                if (temporaryBarcodes.release(resource.id, now) == 1) {
+                    temporaryBarcodes.insertHistory(TemporaryBarcodeHistoryEntity(id = java.util.UUID.randomUUID().toString(), barcodeId = resource.id, barcode = resource.barcode, batchId = batchId, action = "RELEASED", occurredAt = now))
+                    _uiState.update { it.copy(temporaryBarcode = null, message = "临时条码已释放并回到分配池。") }
+                }
+            }
+        }
         fun freeze(reason: String) = runAction("已冻结该批次。") { freezeBatch(batchId, reason) }
 
         fun unfreeze(reason: String) = runAction("已解冻该批次。") { unfreezeBatch(batchId, reason) }
@@ -243,6 +283,8 @@ fun BatchDetailRoute(
         onUnfreeze = viewModel::unfreeze,
         onTransferConfirm = viewModel::transfer,
         onRetry = viewModel::load,
+        onAllocateTemporaryBarcode = viewModel::allocateTemporaryBarcode,
+        onReleaseTemporaryBarcode = viewModel::releaseTemporaryBarcode,
     )
 }
 
@@ -256,6 +298,8 @@ private fun BatchDetailScreen(
     onUnfreeze: (String) -> Unit,
     onTransferConfirm: (String, String?) -> Unit,
     onRetry: () -> Unit,
+    onAllocateTemporaryBarcode: () -> Unit,
+    onReleaseTemporaryBarcode: () -> Unit,
 ) {
     var reasonDialog by remember { mutableStateOf<FreezeDialogMode?>(null) }
     var transferDialog by remember { mutableStateOf(false) }
@@ -364,6 +408,13 @@ private fun BatchDetailScreen(
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.padding(top = CulinarySpacing.xxs),
                             )
+                        }
+                        SectionHeader(title = "临时条码")
+                        if (state.temporaryBarcode.isNullOrBlank()) {
+                            CulinaryTextButton(text = "分配临时条码", onClick = onAllocateTemporaryBarcode, modifier = Modifier.defaultMinSize(minHeight = 44.dp))
+                        } else {
+                            CulinaryInfoRow(label = "临时条码", value = state.temporaryBarcode)
+                            CulinaryTextButton(text = "释放并回收条码", onClick = onReleaseTemporaryBarcode, modifier = Modifier.defaultMinSize(minHeight = 44.dp))
                         }
                         SectionHeader(title = "批次操作")
                     }
