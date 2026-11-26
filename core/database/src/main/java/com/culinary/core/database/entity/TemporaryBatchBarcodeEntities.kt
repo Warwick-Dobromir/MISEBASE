@@ -8,7 +8,7 @@ import androidx.room.PrimaryKey
 /** 临时条码资源池。条码编号永久保留，释放后仅清空当前批次归属。 */
 @Entity(
     tableName = "temporary_batch_barcode",
-    indices = [Index(value = ["batch_id"]), Index(value = ["state"])],
+    indices = [Index(value = ["batch_id"], unique = true), Index(value = ["state"])],
 )
 data class TemporaryBatchBarcodeEntity(
     @PrimaryKey @ColumnInfo(name = "barcode") val barcode: String,
