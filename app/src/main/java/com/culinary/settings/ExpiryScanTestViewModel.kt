@@ -3,10 +3,6 @@ package com.culinary.settings
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.work.ExistingWorkPolicy
-import androidx.work.OneTimeWorkRequestBuilder
-import androidx.work.WorkManager
-import androidx.work.workDataOf
 import com.culinary.core.common.Clock
 import com.culinary.core.common.Outcome
 import com.culinary.core.domain.model.DefaultShelfLifeUnit
@@ -21,7 +17,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.time.ZoneId
-import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
 data class ExpiryScanTestUiState(
@@ -103,19 +98,11 @@ class ExpiryScanTestViewModel @Inject constructor(
     }
 
     private fun scheduleNotification(productCount: Int, batchCount: Int) {
-        val request = OneTimeWorkRequestBuilder<ExpiryTestNotificationWorker>()
-            .setInitialDelay(3, TimeUnit.MINUTES)
-            .setInputData(
-                workDataOf(
-                    ExpiryTestNotificationWorker.KEY_PRODUCT_COUNT to productCount,
-                    ExpiryTestNotificationWorker.KEY_BATCH_COUNT to batchCount,
-                ),
-            )
-            .build()
-        WorkManager.getInstance(context).enqueueUniqueWork(
-            ExpiryTestNotificationWorker.UNIQUE_WORK_NAME,
-            ExistingWorkPolicy.REPLACE,
-            request,
+        ExpiryReminderAlarmReceiver.scheduleTestNotification(
+            context.applicationContext,
+            productCount,
+            batchCount,
+            delayMinutes = 3,
         )
     }
 }
