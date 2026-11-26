@@ -654,6 +654,7 @@ private fun NavGraphBuilder.inventoryGraph(navController: NavHostController) {
                 }
             },
             onBack = { navController.popBackStack() },
+            onScanBarcode = { navController.navigate(ARCHIVE_BARCODE_SCAN_ROUTE) },
         )
     }
     composable(InventoryRoutes.BATCHES) {
@@ -795,6 +796,16 @@ private fun nullableString(name: String): NamedNavArgument =
  * 扫码入口：已有库存档案由扫码页顶部短暂提示；未建档物品直接进入新建库存档案。
  */
 private fun NavGraphBuilder.scanGraph(navController: NavHostController) {
+    composable(ARCHIVE_BARCODE_SCAN_ROUTE) {
+        ScanRoute(
+            onCapture = { capture ->
+                navController.previousBackStackEntry?.savedStateHandle?.set("archive_barcode_scan_result", capture.rawValue)
+                navController.popBackStack()
+            },
+            onOpenArchive = { archiveId -> navController.navigate(InventoryRoutes.archive(archiveId)) },
+            onBack = { navController.popBackStack() },
+        )
+    }
     composable(SCAN_ROUTE) {
         ScanRoute(
             onCapture = { capture ->
@@ -808,6 +819,7 @@ private fun NavGraphBuilder.scanGraph(navController: NavHostController) {
     }
 }
 
+private const val ARCHIVE_BARCODE_SCAN_ROUTE = "inventory/archive-barcode-scan"
 private const val UNIT_MANAGEMENT_ROUTE = "settings/units"
 
 private fun NavGraphBuilder.settingsGraph(navController: NavHostController) {
