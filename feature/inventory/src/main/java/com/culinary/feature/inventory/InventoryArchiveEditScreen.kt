@@ -114,6 +114,7 @@ data class ArchiveEditUiState(
     val purchasePrice: String = "",
     val productCode: String = "",
     val barcode: String = "",
+    val pendingScannedBarcode: String? = null,
     val purchaseUnitId: String = "",
     val purchaseSpecification: String = "",
     val unitConversion: String = "",
@@ -320,6 +321,14 @@ class ArchiveEditViewModel
         fun onPurchasePriceChange(value: String) = update("price") { it.copy(purchasePrice = value) }
         fun onProductCodeChange(value: String) = update("productCode") { it.copy(productCode = value) }
         fun onBarcodeChange(value: String) = update("barcode") { it.copy(barcode = value) }
+
+        fun onBarcodeScanned(value: String) { _uiState.update { it.copy(pendingScannedBarcode = value) } }
+
+        fun confirmScannedBarcode() {
+            _uiState.update { it.copy(barcode = it.pendingScannedBarcode.orEmpty(), pendingScannedBarcode = null) }
+        }
+
+        fun dismissScannedBarcode() { _uiState.update { it.copy(pendingScannedBarcode = null) } }
         fun onPurchaseUnitIdChange(value: String) = update("purchaseUnit") { it.copy(purchaseUnitId = value) }
         fun onPurchaseSpecificationChange(value: String) = update("purchaseSpecification") { it.copy(purchaseSpecification = value) }
         fun onUnitConversionChange(value: String) = update("unitConversion") { it.copy(unitConversion = value) }
@@ -650,8 +659,31 @@ fun ArchiveEditRoute(
         state.savedId?.let(onSaved)
     }
     LaunchedEffect(scannedBarcode) {
-        scannedBarcode?.takeIf { it.isNotBlank() }?.let(viewModel::onBarcodeChange)
+        scannedBarcode?.takeIf { it.isNotBlank() }?.let(viewModel::onBarcodeScanned)
         if (scannedBarcode != null) onScannedBarcodeConsumed()
+    }
+    state.pendingScannedBarcode?.let { candidate ->
+        AlertDialog(
+            onDismissRequest = viewModel::dismissScannedBarcode,
+            title = { Text(if (state.barcode.isBlank()) "使用扫描条码？" else "确认替换条码？") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(CulinarySpacing.xs)) {
+                    if (state.barcode.isNotBlank()) {
+                        Text("当前条码：${state.barcode}", style = MaterialTheme.typography.bodySmall)
+                    }
+                    Text("扫描结果：$candidate", style = MaterialTheme.typography.bodyMedium)
+                }
+            },
+            confirmButton = {
+                CulinaryTextButton(
+                    text = if (state.barcode.isBlank()) "使用条码" else "确认替换",
+                    onClick = viewModel::confirmScannedBarcode,
+                )
+            },
+            dismissButton = {
+                CulinaryTextButton(text = "取消", onClick = viewModel::dismissScannedBarcode)
+            },
+        )
     }
     ArchiveEditScreen(
         state = state,
