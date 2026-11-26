@@ -93,7 +93,48 @@ class ArchiveDetailViewModel
         val uiState: StateFlow<ArchiveDetailUiState> = _uiState.asStateFlow()
 
         init {
+            viewModelScope.launch {
+                savedStateHandle.getStateFlow<String?>("archive_barcode_scan_result", null).collect { scanned ->
+                    if (!scanned.isNullOrBlank()) {
+                        savedStateHandle["archive_barcode_scan_result"] = null
+                        val current = _uiState.value.detail?.archive?.barcode.orEmpty()
+                        if (current == scanned) {
+                            _uiState.update { it.copy(message = "条形码没有变化。") }
+                        } else {
+                            _uiState.update { it.copy(pendingScannedBarcode = scanned, error = null) }
+                        }
+                    }
+                }
+            }
+            viewModelScope.launch {
+                savedStateHandle.getStateFlow<Boolean>("archive_barcode_duplicate", false).collect { duplicate ->
+                    if (duplicate) {
+                        savedStateHandle["archive_barcode_duplicate"] = false
+                        _uiState.update { it.copy(error = "该条形码已分配给其他库存档案，不能更换。") }
+                    }
+                }
+            }
             load()
+        }
+
+        fun dismissBarcodeReplacement() {
+            _uiState.update { it.copy(pendingScannedBarcode = null) }
+        }
+
+        fun confirmBarcodeReplacement() {
+            val scanned = _uiState.value.pendingScannedBarcode ?: return
+            viewModelScope.launch {
+                _uiState.update { it.copy(isReplacingBarcode = true, error = null) }
+                when (val result = replaceBarcode(archiveId, scanned)) {
+                    is Outcome.Success -> {
+                        _uiState.update { it.copy(pendingScannedBarcode = null, isReplacingBarcode = false, message = "条形码已更换。") }
+                        load()
+                    }
+                    is Outcome.Failure -> _uiState.update {
+                        it.copy(isReplacingBarcode = false, error = InventoryErrorMessages.describe(result.error))
+                    }
+                }
+            }
         }
 
         fun load() {
