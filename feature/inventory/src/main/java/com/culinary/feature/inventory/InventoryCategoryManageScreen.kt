@@ -245,7 +245,6 @@ fun CategoryManageRoute(
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { viewModel.load() }
     CategoryManageScreen(
         state = state,
-        onBack = onBack,
         onCreate = viewModel::create,
         onRename = viewModel::rename,
         onMove = viewModel::move,
@@ -257,7 +256,6 @@ fun CategoryManageRoute(
 @Composable
 private fun CategoryManageScreen(
     state: CategoryManageUiState,
-    onBack: () -> Unit,
     onCreate: (String?, String) -> Unit,
     onRename: (String, String) -> Unit,
     onMove: (String, Int) -> Unit,
