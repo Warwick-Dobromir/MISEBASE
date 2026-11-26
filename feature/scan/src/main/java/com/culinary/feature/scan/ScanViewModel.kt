@@ -289,6 +289,7 @@ class ScanViewModel
                     lookupInProgress = false,
                     pendingCapture = null,
                     matchedArchive = null,
+                    successFeedbacks = emptyList(),
                     status = null,
                     error = null,
                     manualError = null,
