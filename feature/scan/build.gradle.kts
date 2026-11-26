@@ -21,6 +21,7 @@ android {
 // - 识别结果经 core:domain 端口交给业务模块，本模块不写食材/库存表。
 dependencies {
     implementation(project(":core:domain"))
+    implementation(project(":core:database"))
     implementation(project(":core:common"))
     implementation(project(":core:designsystem"))
     implementation("io.coil-kt.coil3:coil-compose:3.3.0")
