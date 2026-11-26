@@ -163,7 +163,7 @@ fun ArchiveBarcodeScanRoute(
                 Text("新码", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Spacer(Modifier.height(8.dp))
                 Text(
-                    candidate ?: "扫描后显示",
+                    candidate ?: "",
                     style = MaterialTheme.typography.bodyMedium,
                     color = if (candidate == null) MaterialTheme.colorScheme.outline else MaterialTheme.colorScheme.onSurface,
                 )
