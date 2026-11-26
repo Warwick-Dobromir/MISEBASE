@@ -291,6 +291,11 @@ class ReceiptViewModel
                 state.copy(
                     selectedArchiveId = archiveId,
                     unitCode = row?.archive?.stockUnit?.code ?: state.unitCode,
+                    expiresOn = calculateDefaultExpiryDate(
+                        productionDate = parseOrNull(state.productionDate),
+                        shelfLifeValue = row?.archive?.defaultShelfLifeValue,
+                        shelfLifeUnit = row?.archive?.defaultShelfLifeUnit,
+                    )?.toString().orEmpty(),
                     locationId = defaultLocationId(row?.archive, state.locations),
                     links = emptyList(),
                     sourceProductId = null,
@@ -818,8 +823,14 @@ private fun ReceiptFields(
             modifier = Modifier.weight(1f),
         )
     }
+    Text(
+        text = "填写生产日期后，系统按档案默认保质期自动计算；需要时可手动调整到期日期。",
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(top = CulinarySpacing.xs),
+    )
     CulinaryButton(
-        text = state.selectedLocationName ?: "选择库位",
+        text = state.selectedLocationName ?: "选择实际库位 *",
         onClick = { onOpenPicker(ReceiptPicker.LOCATION) },
         variant = CulinaryButtonVariant.Secondary,
         icon = CulinaryIcons.ChevronDown,

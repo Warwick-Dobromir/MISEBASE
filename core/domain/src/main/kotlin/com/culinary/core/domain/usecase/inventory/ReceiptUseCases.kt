@@ -19,7 +19,6 @@ import com.culinary.core.domain.repository.IngredientRepository
 import com.culinary.core.domain.repository.InventoryArchiveRepository
 import com.culinary.core.domain.repository.UnitRepository
 import com.culinary.core.domain.rule.unit.UnitConverter
-import com.culinary.core.domain.rule.inventory.calculateDefaultExpiryDate
 import com.culinary.core.domain.transaction.TransactionRunner
 import java.time.LocalDate
 
@@ -145,11 +144,7 @@ class RecordArchiveReceiptUseCase(
                             batchCode = input.batchCode?.trim()?.takeIf { it.isNotEmpty() },
                             receivedAt = now,
                             productionDate = input.productionDate,
-                            expiresOn = input.expiresOn ?: calculateDefaultExpiryDate(
-                                productionDate = input.productionDate,
-                                shelfLifeValue = archive.defaultShelfLifeValue,
-                                shelfLifeUnit = archive.defaultShelfLifeUnit,
-                            ),
+                            expiresOn = input.expiresOn,
                             stockUnit = archive.stockUnit,
                             isTemporary = input.isTemporary,
                         ),
@@ -216,14 +211,26 @@ class RecordArchiveReceiptUseCase(
     }
 
     private suspend fun resolveLocation(preferred: LocationId?): Outcome<StorageLocation> {
-        if (preferred == null) {
-            return invalid("locationId", "must be explicitly selected; never infer the first available location")
+        if (preferred != null) {
+            repository.listLocations().let { result ->
+                when (result) {
+                    is Outcome.Failure -> return result
+                    is Outcome.Success ->
+                        result.value.firstOrNull { it.id == preferred }?.let { return Outcome.success(it) }
+                }
+            }
         }
-        return when (val result = repository.listLocations()) {
-            is Outcome.Failure -> result
-            is Outcome.Success ->
-                result.value.firstOrNull { it.id == preferred }?.let { Outcome.success(it) }
-                    ?: Outcome.failure(CulinaryError.NotFound("storage_location", preferred.value))
+        val locations =
+            when (val result = repository.listLocations()) {
+                is Outcome.Failure -> return result
+                is Outcome.Success -> result.value
+            }
+        locations.firstOrNull()?.let { return Outcome.success(it) }
+        val created =
+            StorageLocation(id = LocationId(idGenerator.newId()), name = DEFAULT_LOCATION_NAME)
+        when (val saved = repository.saveLocation(created, "OTHER", 0)) {
+            is Outcome.Failure -> return saved
+            is Outcome.Success -> return Outcome.success(created)
         }
     }
 
@@ -255,6 +262,7 @@ class RecordArchiveReceiptUseCase(
 
     companion object {
         const val REFERENCE_TYPE = "stock_receipt"
+        const val DEFAULT_LOCATION_NAME = "默认储藏"
     }
 }
 
