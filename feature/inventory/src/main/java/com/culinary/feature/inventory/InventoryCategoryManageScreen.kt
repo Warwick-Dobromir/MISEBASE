@@ -61,7 +61,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-/** 分类管理的一行：缩进层级、子分类数与直属档案数决定可删除性与排序位置。 */
+/** 分类管理的一行：仅展示一级大分类；子分类数与直属档案数用于删除保护。 */
 data class CategoryManageRow(
     val category: ArchiveCategory,
     val depth: Int,
@@ -81,7 +81,7 @@ data class CategoryManageUiState(
     val message: String? = null,
 )
 
-/** 分类管理 ViewModel：读写全部走 [InventoryCategoryUseCases]，失败原因原样回显。 */
+/** 分类管理 ViewModel：只管理库存一级大分类，读写全部走 [InventoryCategoryUseCases]。 */
 @HiltViewModel
 class CategoryManageViewModel
     @Inject
@@ -126,37 +126,21 @@ class CategoryManageViewModel
                     is Outcome.Success -> result.value.rows
                 }
             val counts = archives.groupingBy { it.archive.categoryId }.eachCount()
-            return Outcome.success(flatten(categories, counts))
-        }
-
-        private fun flatten(
-            categories: List<ArchiveCategory>,
-            counts: Map<String?, Int>,
-        ): List<CategoryManageRow> {
-            val byParent = categories.groupBy { it.parentId }
-            val rows = mutableListOf<CategoryManageRow>()
-
-            fun walk(
-                parentId: String?,
-                depth: Int,
-            ) {
-                val siblings = byParent[parentId].orEmpty().sortedWith(compareBy({ it.sortOrder }, { it.name }))
-                siblings.forEachIndexed { index, category ->
-                    rows +=
-                        CategoryManageRow(
-                            category = category,
-                            depth = depth,
-                            childCount = byParent[category.id].orEmpty().size,
-                            archiveCount = counts[category.id] ?: 0,
-                            siblingIndex = index,
-                            siblingCount = siblings.size,
-                        )
-                    walk(category.id, depth + 1)
-                }
+            val rootCategories = categories
+                .filter { it.parentId == null }
+                .sortedWith(compareBy({ it.sortOrder }, { it.name }))
+            val childCounts = categories.groupingBy { it.parentId }.eachCount()
+            val rows = rootCategories.mapIndexed { index, category ->
+                CategoryManageRow(
+                    category = category,
+                    depth = 1,
+                    childCount = childCounts[category.id] ?: 0,
+                    archiveCount = counts[category.id] ?: 0,
+                    siblingIndex = index,
+                    siblingCount = rootCategories.size,
+                )
             }
-
-            walk(null, 1)
-            return rows
+            return Outcome.success(rows)
         }
 
         fun create(
@@ -270,46 +254,6 @@ fun CategoryManageRoute(
     )
 }
 
-/** 管理页的返回条：返回按钮与标题同行，下面一条细线分隔。 */
-@Composable
-private fun ManageBackBar(
-    title: String,
-    onBack: () -> Unit,
-) {
-    Column(modifier = Modifier.fillMaxWidth()) {
-        Row(
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .height(CulinarySpacing.xxl)
-                    .padding(horizontal = CulinarySpacing.pageHorizontal),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Row(
-                modifier =
-                    Modifier
-                        .clickable(role = Role.Button, onClick = onBack)
-                        .defaultMinSize(minHeight = 44.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Icon(
-                    imageVector = CulinaryIcons.Back,
-                    contentDescription = "返回",
-                    tint = MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.size(18.dp),
-                )
-            }
-            Spacer(modifier = Modifier.weight(1f))
-            Text(
-                text = title,
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-        CulinaryRule()
-    }
-}
-
 @Composable
 private fun CategoryManageScreen(
     state: CategoryManageUiState,
@@ -322,7 +266,6 @@ private fun CategoryManageScreen(
 ) {
     var dialog by remember { mutableStateOf<ManageDialog?>(null) }
     Column(modifier = Modifier.fillMaxSize()) {
-        ManageBackBar(title = "INVENTORY CATEGORIES", onBack = onBack)
         state.error?.let { message ->
             ErrorBanner(
                 message = message,
@@ -438,9 +381,6 @@ private fun CategoryManageScreen(
             CategoryActionsDialog(
                 row = current.row,
                 onDismiss = { dialog = null },
-                onAddChild = {
-                    dialog = ManageDialog.Create(parent = current.row.category)
-                },
                 onRename = { dialog = ManageDialog.Rename(current.row) },
                 onMoveUp = {
                     onMove(current.row.category.id, -1)
@@ -588,12 +528,11 @@ private fun CategoryNameDialog(
     )
 }
 
-/** 行内动作弹窗：把新建子分类、重命名、排序与删除收在一处，避免每行堆满按钮。 */
+/** 大分类动作弹窗：重命名、同级排序与删除。 */
 @Composable
 private fun CategoryActionsDialog(
     row: CategoryManageRow,
     onDismiss: () -> Unit,
-    onAddChild: () -> Unit,
     onRename: () -> Unit,
     onMoveUp: () -> Unit,
     onMoveDown: () -> Unit,
@@ -618,7 +557,6 @@ private fun CategoryActionsDialog(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 Spacer(modifier = Modifier.height(CulinarySpacing.xs))
-                DialogActionRow(text = "新建子分类", onClick = onAddChild)
                 DialogActionRow(text = "重命名", onClick = onRename)
                 if (row.siblingIndex > 0) {
                     DialogActionRow(text = "上移", onClick = onMoveUp)
