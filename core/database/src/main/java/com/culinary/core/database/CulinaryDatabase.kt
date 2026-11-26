@@ -51,6 +51,7 @@ import com.culinary.core.database.dao.SauceComponentDao
 import com.culinary.core.database.dao.SauceDao
 import com.culinary.core.database.dao.SauceVersionDao
 import com.culinary.core.database.dao.StorageLocationDao
+import com.culinary.core.database.dao.TemporaryBarcodeDao
 import com.culinary.core.database.dao.SupplierDao
 import com.culinary.core.database.dao.UnitDao
 import com.culinary.core.database.entity.AppMetadataEntity
@@ -103,11 +104,13 @@ import com.culinary.core.database.entity.SauceComponentEntity
 import com.culinary.core.database.entity.SauceEntity
 import com.culinary.core.database.entity.SauceVersionEntity
 import com.culinary.core.database.entity.StorageLocationEntity
+import com.culinary.core.database.entity.TemporaryBarcodeEntity
+import com.culinary.core.database.entity.TemporaryBarcodeHistoryEntity
 import com.culinary.core.database.entity.SupplierEntity
 import com.culinary.core.database.entity.UnitEntity
 
 /** Single source of truth for Room and startup compatibility checks. */
-const val CULINARY_DATABASE_SCHEMA_VERSION: Int = 16
+const val CULINARY_DATABASE_SCHEMA_VERSION: Int = 17
 
 /**
  * CULINARY 数据库（schema v11）。
@@ -180,6 +183,8 @@ const val CULINARY_DATABASE_SCHEMA_VERSION: Int = 16
         PendingStockDateAllocationEntity::class,
         InventoryCapacityCellEntity::class,
         InventoryBatchCapacityAllocationEntity::class,
+        TemporaryBarcodeEntity::class,
+        TemporaryBarcodeHistoryEntity::class,
     ],
     version = CULINARY_DATABASE_SCHEMA_VERSION,
     exportSchema = true,
@@ -219,6 +224,8 @@ abstract class CulinaryDatabase : RoomDatabase() {
     abstract fun productDao(): ProductDao
 
     abstract fun barcodeDao(): BarcodeDao
+
+    abstract fun temporaryBarcodeDao(): TemporaryBarcodeDao
 
     abstract fun storageLocationDao(): StorageLocationDao
 
