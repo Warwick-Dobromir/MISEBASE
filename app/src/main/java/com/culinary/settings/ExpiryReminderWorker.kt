@@ -8,10 +8,14 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
+import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import androidx.room.withTransaction
 import androidx.work.CoroutineWorker
+import androidx.work.ExistingWorkPolicy
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import com.culinary.core.database.DatabaseFactory
 import com.culinary.core.database.entity.InventoryBatchCapacityAllocationEntity
@@ -21,7 +25,6 @@ import com.culinary.core.domain.model.CapacityUnitAllocator
 import com.culinary.core.domain.model.ExpiryCapacityZone
 import java.math.BigDecimal
 import java.time.LocalDate
-import java.time.LocalDateTime
 import java.util.UUID
 import java.util.concurrent.Executors
 
@@ -36,7 +39,7 @@ class ExpiryReminderWorker(context: Context, parameters: WorkerParameters) : Cor
             val today = LocalDate.now()
             batches.forEach { batch ->
                 val archive = batch.archiveId?.let(archives::get) ?: return@forEach
-                val expiry = expiryDate(batch.productionDate, batch.expiryDate, archive.defaultShelfLifeValue ?: archive.shelfLifeDays, archive.defaultShelfLifeUnit)
+                val expiry = expiryDate(batch.productionDate, batch.expiryDate, if (archive.shelfLifeEnabled) archive.defaultShelfLifeValue ?: archive.shelfLifeDays else null, if (archive.shelfLifeEnabled) archive.defaultShelfLifeUnit ?: "DAY" else null)
                 val zone = expiryZone(batch.productionDate, expiry, today)
                 db.withTransaction {
                     reclassifyCapacity(db, batch, archive.capacityUnitPerStockUnit, zone)
@@ -70,28 +73,61 @@ class ExpiryReminderWorker(context: Context, parameters: WorkerParameters) : Cor
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             manager.createNotificationChannel(NotificationChannel(CHANNEL_ID, "库存效期提醒", NotificationManager.IMPORTANCE_HIGH))
         }
-        if ((Build.VERSION.SDK_INT < 33 || ContextCompat.checkSelfPermission(applicationContext, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED) && expired + near + attention > 0) {
-            val body = "过期 $expired 批 · 临期 $near 批 · 关注 $attention 批"
-            val launchIntent = applicationContext.packageManager.getLaunchIntentForPackage(applicationContext.packageName)
-            val pending = launchIntent?.let {
-                PendingIntent.getActivity(applicationContext, 4208, it.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP), PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+        val actionableCount = expired + near + attention
+        val permissionGranted = Build.VERSION.SDK_INT < 33 ||
+            ContextCompat.checkSelfPermission(applicationContext, Manifest.permission.POST_NOTIFICATIONS) ==
+            PackageManager.PERMISSION_GRANTED
+        val channelEnabled = Build.VERSION.SDK_INT < Build.VERSION_CODES.O ||
+            manager.getNotificationChannel(CHANNEL_ID)?.importance != NotificationManager.IMPORTANCE_NONE
+        val notificationStatus = when {
+            actionableCount == 0 -> "扫描完成：当前没有需要提醒的批次"
+            !permissionGranted -> "通知权限未授予"
+            !manager.areNotificationsEnabled() -> "系统通知已关闭"
+            !channelEnabled -> "库存效期提醒通知渠道已关闭"
+            else -> {
+                val body = "过期 " + expired + " 批 · 临期 " + near + " 批 · 关注 " + attention + " 批"
+                val launchIntent = applicationContext.packageManager.getLaunchIntentForPackage(applicationContext.packageName)
+                    ?.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+                val pending = launchIntent?.let {
+                    PendingIntent.getActivity(
+                        applicationContext,
+                        NOTIFICATION_ID,
+                        it,
+                        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+                    )
+                }
+                val notification = NotificationCompat.Builder(applicationContext, CHANNEL_ID)
+                    .setSmallIcon(com.culinary.R.drawable.ic_stat_notification)
+                    .setContentTitle("MISEBASE 库存效期提醒")
+                    .setContentText(body)
+                    .setStyle(NotificationCompat.BigTextStyle().bigText("当前库存有批次需要处理：" + body + "。打开库存批次查看详情。"))
+                    .setPriority(NotificationCompat.PRIORITY_HIGH)
+                    .setCategory(NotificationCompat.CATEGORY_REMINDER)
+                    .setDefaults(NotificationCompat.DEFAULT_ALL)
+                    .setAutoCancel(true)
+                    .apply { if (pending != null) setContentIntent(pending) }
+                    .build()
+                manager.notify(NOTIFICATION_ID, notification)
+                "通知已发送"
             }
-            val notification = NotificationCompat.Builder(applicationContext, CHANNEL_ID)
-                .setSmallIcon(com.culinary.R.mipmap.ic_launcher)
-                .setContentTitle("MISEBASE 库存效期提醒")
-                .setContentText(body)
-                .setStyle(NotificationCompat.BigTextStyle().bigText("当前库存有批次需要处理：$body。打开库存批次查看详情。"))
-                .setPriority(NotificationCompat.PRIORITY_HIGH)
-                .setAutoCancel(true)
-                .apply { if (pending != null) setContentIntent(pending) }
-                .build()
-            manager.notify(NOTIFICATION_ID, notification)
         }
         val expiredProducts = result.second.getValue("过期").size
         ExpiryAlertStore.save(if (expired > 0) InventoryExpiryAlert(expiredProducts, expired, emptyList(), System.currentTimeMillis()) else null)
-        scheduleNext(applicationContext, inputData.getString(KEY_NEXT_NAME) ?: WORK_B)
+        val completedAt = System.currentTimeMillis()
+        applicationContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).edit()
+            .putLong(KEY_LAST_SUCCESSFUL_SCAN, completedAt)
+            .putLong(KEY_LAST_SCAN_AT, completedAt)
+            .putString(KEY_LAST_SCAN_STATUS, notificationStatus)
+            .remove(KEY_LAST_SCAN_ERROR)
+            .apply()
         Result.success()
     } catch (error: Throwable) {
+        applicationContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).edit()
+            .putLong(KEY_LAST_SCAN_AT, System.currentTimeMillis())
+            .putString(KEY_LAST_SCAN_STATUS, "扫描执行失败")
+            .putString(KEY_LAST_SCAN_ERROR, error.message ?: error.javaClass.simpleName)
+            .apply()
+        Log.e("ExpiryReminderWorker", "Inventory expiry scan failed", error)
         Result.retry()
     }
 
@@ -142,6 +178,12 @@ class ExpiryReminderWorker(context: Context, parameters: WorkerParameters) : Cor
         const val WORK_A = "inventory-expiry-reminder-a"
         const val WORK_B = "inventory-expiry-reminder-b"
         const val KEY_NEXT_NAME = "next_work_name"
+        const val WORK_NAME = "inventory-expiry-reminder-scan"
+        const val PREFS_NAME = "inventory_expiry_reminder_runtime"
+        const val KEY_LAST_SUCCESSFUL_SCAN = "last_successful_scan"
+        const val KEY_LAST_SCAN_AT = "last_scan_at"
+        const val KEY_LAST_SCAN_STATUS = "last_scan_status"
+        const val KEY_LAST_SCAN_ERROR = "last_scan_error"
         private const val CHANNEL_ID = "inventory_expiry_reminder"
         private const val NOTIFICATION_ID = 4208
 
@@ -167,28 +209,32 @@ class ExpiryReminderWorker(context: Context, parameters: WorkerParameters) : Cor
                 ?: ExpiryCapacityZone.UNCLASSIFIED
         }
 
-        fun scheduleNext(context: Context, uniqueName: String) {
-            val next = if (uniqueName == WORK_A) WORK_B else WORK_A
-            val now = LocalDateTime.now()
-            val morning = now.toLocalDate().atTime(8, 0)
-            val evening = now.toLocalDate().atTime(20, 0)
-            val target = when {
-                now.isBefore(morning) -> morning
-                now.isBefore(evening) -> evening
-                else -> now.toLocalDate().plusDays(1).atTime(8, 0)
-            }
-            ExpiryReminderAlarmReceiver.scheduleReminderAt(
-                context.applicationContext,
-                target.atZone(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli(),
-                next,
-            )
-        }
+
     }
 }
 
 object ExpiryReminderScheduler {
+    private const val STARTUP_CATCH_UP_AFTER_MILLIS = 10 * 60 * 60 * 1000L
+
     fun ensureScheduled(context: Context) {
-        // AlarmManager 独立于应用进程存活；应用启动只负责校准下一次系统闹钟。
-        ExpiryReminderAlarmReceiver.scheduleNextReminder(context.applicationContext)
+        val appContext = context.applicationContext
+        ExpiryReminderAlarmReceiver.restorePendingTestNotification(appContext)
+        ExpiryReminderAlarmReceiver.scheduleNextReminder(appContext)
+
+        val workManager = WorkManager.getInstance(appContext)
+        workManager.cancelUniqueWork(ExpiryReminderWorker.WORK_A)
+        workManager.cancelUniqueWork(ExpiryReminderWorker.WORK_B)
+
+        val preferences = appContext.getSharedPreferences(ExpiryReminderWorker.PREFS_NAME, Context.MODE_PRIVATE)
+        val lastSuccessfulScan = preferences.getLong(ExpiryReminderWorker.KEY_LAST_SUCCESSFUL_SCAN, 0L)
+        val now = System.currentTimeMillis()
+        if (lastSuccessfulScan == 0L || now - lastSuccessfulScan >= STARTUP_CATCH_UP_AFTER_MILLIS) {
+            val request = OneTimeWorkRequestBuilder<ExpiryReminderWorker>().build()
+            workManager.enqueueUniqueWork(
+                ExpiryReminderWorker.WORK_NAME,
+                ExistingWorkPolicy.KEEP,
+                request,
+            )
+        }
     }
 }

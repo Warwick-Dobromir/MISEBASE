@@ -14,9 +14,7 @@ import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import androidx.work.ExistingWorkPolicy
 import androidx.work.OneTimeWorkRequestBuilder
-import androidx.work.OutOfQuotaPolicy
 import androidx.work.WorkManager
-import androidx.work.workDataOf
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.util.concurrent.TimeUnit
@@ -29,25 +27,15 @@ class ExpiryReminderAlarmReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent?) {
         when (intent?.action) {
             ACTION_REMINDER -> {
-                // 先登记下一次闹钟，再启动扫描；即使本次 Worker 失败，也不会断掉后续提醒。
                 scheduleNextReminder(context.applicationContext)
-                val nextName = intent.getStringExtra(ExpiryReminderWorker.KEY_NEXT_NAME)
-                    ?: ExpiryReminderWorker.WORK_B
-                val request = OneTimeWorkRequestBuilder<ExpiryReminderWorker>()
-                    .setExpedited(OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST)
-                    .setInputData(workDataOf(ExpiryReminderWorker.KEY_NEXT_NAME to nextName))
-                    .build()
+                val request = OneTimeWorkRequestBuilder<ExpiryReminderWorker>().build()
                 WorkManager.getInstance(context).enqueueUniqueWork(
-                    nextName,
-                    ExistingWorkPolicy.REPLACE,
+                    ExpiryReminderWorker.WORK_NAME,
+                    ExistingWorkPolicy.KEEP,
                     request,
                 )
             }
-            ACTION_TEST_NOTIFICATION -> {
-                val productCount = intent.getIntExtra(ExpiryTestNotificationWorker.KEY_PRODUCT_COUNT, 0)
-                val batchCount = intent.getIntExtra(ExpiryTestNotificationWorker.KEY_BATCH_COUNT, 0)
-                showTestNotification(context.applicationContext, productCount, batchCount)
-            }
+            ACTION_TEST_NOTIFICATION -> restorePendingTestNotification(context.applicationContext)
         }
     }
 
@@ -58,6 +46,10 @@ class ExpiryReminderAlarmReceiver : BroadcastReceiver() {
         private const val TEST_REQUEST_CODE = 4107
         private const val TEST_CHANNEL_ID = "inventory_expiry_test"
         private const val TEST_NOTIFICATION_ID = 4107
+        private const val TEST_PENDING_KEY = "pending_test_notification"
+        private const val TEST_TRIGGER_AT_KEY = "test_notification_trigger_at"
+        private const val TEST_PRODUCT_COUNT_KEY = "test_notification_product_count"
+        private const val TEST_BATCH_COUNT_KEY = "test_notification_batch_count"
 
         fun scheduleNextReminder(context: Context) {
             val now = LocalDateTime.now()
@@ -95,22 +87,54 @@ class ExpiryReminderAlarmReceiver : BroadcastReceiver() {
             batchCount: Int,
             delayMinutes: Long,
         ) {
+            val triggerAt = System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(delayMinutes)
+            val preferences = context.getSharedPreferences(
+                ExpiryTestNotificationWorker.TEST_STATE_PREFS,
+                Context.MODE_PRIVATE,
+            )
+            preferences.edit()
+                .putBoolean(TEST_PENDING_KEY, true)
+                .putLong(TEST_TRIGGER_AT_KEY, triggerAt)
+                .putInt(TEST_PRODUCT_COUNT_KEY, productCount)
+                .putInt(TEST_BATCH_COUNT_KEY, batchCount)
+                .putString(ExpiryTestNotificationWorker.TEST_STATE_KEY, "测试通知已登记")
+                .putLong(ExpiryTestNotificationWorker.TEST_UPDATED_KEY, System.currentTimeMillis())
+                .commit()
+            scheduleTestAlarm(context, triggerAt)
+        }
+
+        fun restorePendingTestNotification(context: Context) {
+            val preferences = context.getSharedPreferences(
+                ExpiryTestNotificationWorker.TEST_STATE_PREFS,
+                Context.MODE_PRIVATE,
+            )
+            if (!preferences.getBoolean(TEST_PENDING_KEY, false)) return
+            val triggerAt = preferences.getLong(TEST_TRIGGER_AT_KEY, 0L)
+            if (triggerAt <= 0L) {
+                preferences.edit().putBoolean(TEST_PENDING_KEY, false).apply()
+                return
+            }
+            if (triggerAt > System.currentTimeMillis()) {
+                scheduleTestAlarm(context, triggerAt)
+                return
+            }
+            val productCount = preferences.getInt(TEST_PRODUCT_COUNT_KEY, 0)
+            val batchCount = preferences.getInt(TEST_BATCH_COUNT_KEY, 0)
+            val claimed = preferences.edit().putBoolean(TEST_PENDING_KEY, false).commit()
+            if (claimed) showTestNotification(context, productCount, batchCount)
+        }
+
+        private fun scheduleTestAlarm(context: Context, triggerAtMillis: Long) {
             val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
             val intent = Intent(context, ExpiryReminderAlarmReceiver::class.java)
                 .setAction(ACTION_TEST_NOTIFICATION)
-                .putExtra(ExpiryTestNotificationWorker.KEY_PRODUCT_COUNT, productCount)
-                .putExtra(ExpiryTestNotificationWorker.KEY_BATCH_COUNT, batchCount)
             val pending = PendingIntent.getBroadcast(
                 context,
                 TEST_REQUEST_CODE,
                 intent,
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
             )
-            alarmManager.setAndAllowWhileIdle(
-                AlarmManager.RTC_WAKEUP,
-                System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(delayMinutes),
-                pending,
-            )
+            alarmManager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAtMillis, pending)
         }
 
         private fun showTestNotification(context: Context, productCount: Int, batchCount: Int) {
@@ -144,6 +168,10 @@ class ExpiryReminderAlarmReceiver : BroadcastReceiver() {
                 manager.createNotificationChannel(
                     NotificationChannel(TEST_CHANNEL_ID, "库存效期警戒", NotificationManager.IMPORTANCE_HIGH),
                 )
+                if (manager.getNotificationChannel(TEST_CHANNEL_ID)?.importance == NotificationManager.IMPORTANCE_NONE) {
+                    updateTestState(preferences, "测试通知渠道已关闭")
+                    return
+                }
             }
             val body = if (productCount > 0 && batchCount > 0) {
                 "库存过期警戒：检测到 $productCount 种商品、$batchCount 个批次存在过期库存，请及时处理。"
@@ -161,17 +189,23 @@ class ExpiryReminderAlarmReceiver : BroadcastReceiver() {
                 )
             }
             val notification = NotificationCompat.Builder(context, TEST_CHANNEL_ID)
-                .setSmallIcon(com.culinary.R.mipmap.ic_launcher)
+                .setSmallIcon(com.culinary.R.drawable.ic_stat_notification)
                 .setContentTitle("库存效期警戒")
                 .setContentText(body)
                 .setStyle(NotificationCompat.BigTextStyle().bigText(body))
                 .setPriority(NotificationCompat.PRIORITY_HIGH)
+                .setCategory(NotificationCompat.CATEGORY_REMINDER)
+                .setDefaults(NotificationCompat.DEFAULT_ALL)
                 .setAutoCancel(true)
                 .apply { if (pending != null) setContentIntent(pending) }
                 .build()
             manager.notify(TEST_NOTIFICATION_ID, notification)
+            updateTestState(preferences, "系统通知已发送")
+        }
+
+        private fun updateTestState(preferences: android.content.SharedPreferences, value: String) {
             preferences.edit()
-                .putString(ExpiryTestNotificationWorker.TEST_STATE_KEY, "系统通知已发送")
+                .putString(ExpiryTestNotificationWorker.TEST_STATE_KEY, value)
                 .putLong(ExpiryTestNotificationWorker.TEST_UPDATED_KEY, System.currentTimeMillis())
                 .apply()
         }
@@ -183,10 +217,11 @@ class ExpiryReminderBootReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent?) {
         if (
             intent?.action == Intent.ACTION_BOOT_COMPLETED ||
+            intent?.action == Intent.ACTION_MY_PACKAGE_REPLACED ||
             intent?.action == Intent.ACTION_TIME_CHANGED ||
             intent?.action == Intent.ACTION_TIMEZONE_CHANGED
         ) {
-            ExpiryReminderAlarmReceiver.scheduleNextReminder(context.applicationContext)
+            ExpiryReminderScheduler.ensureScheduled(context.applicationContext)
         }
     }
 }
