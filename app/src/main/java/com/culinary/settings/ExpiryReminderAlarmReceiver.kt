@@ -30,6 +30,8 @@ class ExpiryReminderAlarmReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent?) {
         when (intent?.action) {
             ACTION_REMINDER -> {
+                // 先登记下一次闹钟，再启动扫描；即使本次 Worker 失败，也不会断掉后续提醒。
+                scheduleNextReminder(context.applicationContext)
                 val nextName = intent.getStringExtra(ExpiryReminderWorker.KEY_NEXT_NAME)
                     ?: ExpiryReminderWorker.WORK_B
                 val request = OneTimeWorkRequestBuilder<ExpiryReminderWorker>()

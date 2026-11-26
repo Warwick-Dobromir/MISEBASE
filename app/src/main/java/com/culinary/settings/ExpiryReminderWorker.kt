@@ -12,9 +12,6 @@ import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import androidx.room.withTransaction
 import androidx.work.CoroutineWorker
-import androidx.work.ExistingWorkPolicy
-import androidx.work.OneTimeWorkRequestBuilder
-import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import androidx.work.workDataOf
 import com.culinary.core.database.DatabaseFactory
@@ -24,11 +21,10 @@ import com.culinary.core.domain.model.CapacityCellSnapshot
 import com.culinary.core.domain.model.CapacityUnitAllocator
 import com.culinary.core.domain.model.ExpiryCapacityZone
 import java.math.BigDecimal
-import java.time.Duration
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.UUID
-import java.util.concurrent.TimeUnit
+import java.util.concurrent.Executors
 
 class ExpiryReminderWorker(context: Context, parameters: WorkerParameters) : CoroutineWorker(context, parameters) {
     override suspend fun doWork(): Result = try {
@@ -182,7 +178,6 @@ class ExpiryReminderWorker(context: Context, parameters: WorkerParameters) : Cor
                 now.isBefore(evening) -> evening
                 else -> now.toLocalDate().plusDays(1).atTime(8, 0)
             }
-            val delay = Duration.between(now, target).toMillis().coerceAtLeast(0L)
             ExpiryReminderAlarmReceiver.scheduleReminderAt(
                 context.applicationContext,
                 target.atZone(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli(),
