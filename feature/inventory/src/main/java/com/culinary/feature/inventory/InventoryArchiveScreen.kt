@@ -120,6 +120,7 @@ class ArchiveDetailViewModel
                 _uiState.update { it.copy(message = "条形码没有变化。") }
             } else {
                 _uiState.update { it.copy(pendingScannedBarcode = scanned, error = null) }
+                confirmBarcodeReplacement()
             }
         }
 
@@ -242,34 +243,6 @@ private fun ArchiveDetailScreen(
     onRetry: () -> Unit,
 ) {
     val detail = state.detail
-    state.pendingScannedBarcode?.let { scanned ->
-        AlertDialog(
-            onDismissRequest = onDismissBarcodeReplacement,
-            title = { Text("确认更换条形码", style = MaterialTheme.typography.titleMedium) },
-            text = {
-                Column(verticalArrangement = Arrangement.spacedBy(CulinarySpacing.sm)) {
-                    Row(horizontalArrangement = Arrangement.spacedBy(CulinarySpacing.md)) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text("原条形码", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            Text(detail?.archive?.barcode?.ifBlank { "未关联" } ?: "未关联", style = MaterialTheme.typography.bodyMedium)
-                        }
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text("新条形码", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            Text(scanned, style = MaterialTheme.typography.bodyMedium)
-                        }
-                    }
-                    Text("确认后将替换当前档案的条形码。", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-            },
-            confirmButton = {
-                CulinaryTextButton(
-                    text = if (state.isReplacingBarcode) "正在更换…" else "确认更换",
-                    onClick = onConfirmBarcodeReplacement,
-                )
-            },
-            dismissButton = { CulinaryTextButton(text = "取消", onClick = onDismissBarcodeReplacement) },
-        )
-    }
     Column(modifier = Modifier.fillMaxSize()) {
         state.error?.let { message ->
             ErrorBanner(
