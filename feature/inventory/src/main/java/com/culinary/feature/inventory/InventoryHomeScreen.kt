@@ -208,6 +208,7 @@ private fun InventoryHomeScreen(
                 CulinaryTextButton(text = "···", onClick = onOpenManagement)
             },
         )
+        CulinaryRule()
         if (state.isLoading) {
             LoadingRows()
         } else {
@@ -268,6 +269,7 @@ private fun HomeSummarySection(summary: InventoryHomeSummary?) {
     SectionHeader(
         title = "库存概况",
         subtitle = "按全部库存档案统计当前状态",
+        showRule = false,
         modifier =
             Modifier
                 .padding(horizontal = CulinarySpacing.pageHorizontal)
