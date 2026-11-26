@@ -1093,5 +1093,23 @@ private val MIGRATION_16_17_IMPL =
             """.trimIndent())
             db.execSQL("CREATE INDEX IF NOT EXISTS index_temporary_barcode_history_barcode_id_occurred_at ON temporary_barcode_history(barcode_id, occurred_at)")
             db.execSQL("CREATE INDEX IF NOT EXISTS index_temporary_barcode_history_batch_id ON temporary_barcode_history(batch_id)")
+            db.execSQL("""
+                CREATE TRIGGER IF NOT EXISTS trg_release_temporary_barcode_on_batch_close
+                AFTER UPDATE OF status ON inventory_batch
+                WHEN NEW.status IN ('DEPLETED', 'RECYCLED', 'DISPOSED')
+                BEGIN
+                    INSERT INTO temporary_barcode_history
+                        (id, barcode_id, barcode_code, batch_id, action, occurred_at)
+                    SELECT lower(hex(randomblob(16))), id, code, OLD.id, 'AUTO_RELEASED',
+                           CAST(strftime('%s','now') AS INTEGER) * 1000
+                    FROM temporary_barcode
+                    WHERE current_batch_id = OLD.id AND status = 'ASSIGNED';
+
+                    UPDATE temporary_barcode
+                    SET status = 'AVAILABLE', current_batch_id = NULL,
+                        updated_at = CAST(strftime('%s','now') AS INTEGER) * 1000
+                    WHERE current_batch_id = OLD.id AND status = 'ASSIGNED';
+                END
+            """.trimIndent())
         }
     }
