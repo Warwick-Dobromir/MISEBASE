@@ -90,7 +90,7 @@ fun UnitManagementRoute(
                         Text(
                             if (unit.isActive) "停用" else "启用",
                             color = MaterialTheme.colorScheme.secondary,
-                            modifier = Modifier.clickable { viewModel.setActive(unit, !unit.isActive()) }
+                            modifier = Modifier.clickable { viewModel.setActive(unit, !unit.isActive) }
                                 .padding(start = 8.dp),
                         )
                     }
