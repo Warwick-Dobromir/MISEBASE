@@ -36,6 +36,7 @@ internal object CulinaryMigrations {
     val MIGRATION_11_12: Migration = MIGRATION_11_12_IMPL
     val MIGRATION_12_13: Migration = MIGRATION_12_13_IMPL
     val MIGRATION_13_14: Migration = MIGRATION_13_14_IMPL
+    val MIGRATION_14_15: Migration = MIGRATION_14_15_IMPL
 
     val ALL: Array<Migration> =
         arrayOf(
@@ -52,6 +53,7 @@ internal object CulinaryMigrations {
             MIGRATION_11_12,
             MIGRATION_12_13,
             MIGRATION_13_14,
+            MIGRATION_14_15,
         )
 }
 
@@ -993,5 +995,23 @@ private val MIGRATION_13_14_IMPL =
             db.execSQL("CREATE INDEX IF NOT EXISTS `index_pending_stock_item_stock_unit_id` ON `pending_stock_item` (`stock_unit_id`)")
             db.execSQL("CREATE INDEX IF NOT EXISTS `index_pending_stock_item_source_product_id` ON `pending_stock_item` (`source_product_id`)")
             db.execSQL("CREATE INDEX IF NOT EXISTS `index_pending_stock_date_allocation_item_id` ON `pending_stock_date_allocation` (`item_id`)")
+        }
+    }
+
+
+/** v14 → v15：为待入库的每个生产日期分组单独保存库位；历史行保持 null，要求用户显式选择。 */
+private val MIGRATION_14_15_IMPL =
+    object : Migration(14, 15) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            CulinarySchemaExtras.dropPartialIndexes(db)
+            db.execSQL(
+                "ALTER TABLE `pending_stock_date_allocation` " +
+                    "ADD COLUMN `location_id` TEXT REFERENCES `storage_location`(`id`) " +
+                    "ON UPDATE NO ACTION ON DELETE RESTRICT",
+            )
+            db.execSQL(
+                "CREATE INDEX IF NOT EXISTS `index_pending_stock_date_allocation_location_id` " +
+                    "ON `pending_stock_date_allocation` (`location_id`)",
+            )
         }
     }

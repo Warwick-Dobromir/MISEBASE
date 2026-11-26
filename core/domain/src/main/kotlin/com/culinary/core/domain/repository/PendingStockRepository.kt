@@ -19,6 +19,7 @@ data class PendingStockDateAllocation(
     val productionDate: LocalDate,
     val quantity: Double,
     val sortOrder: Int,
+    val locationId: String? = null,
 )
 
 data class PendingStockEntry(

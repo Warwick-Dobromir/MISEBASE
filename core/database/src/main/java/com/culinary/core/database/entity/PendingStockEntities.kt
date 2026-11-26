@@ -52,13 +52,19 @@ data class PendingStockItemEntity(
     tableName = "pending_stock_date_allocation",
     foreignKeys = [
         ForeignKey(
+            entity = StorageLocationEntity::class,
+            parentColumns = ["id"],
+            childColumns = ["location_id"],
+            onDelete = ForeignKey.RESTRICT,
+        ),
+        ForeignKey(
             entity = PendingStockItemEntity::class,
             parentColumns = ["id"],
             childColumns = ["item_id"],
             onDelete = ForeignKey.CASCADE,
         ),
     ],
-    indices = [Index("item_id")],
+    indices = [Index("item_id"), Index("location_id")],
 )
 data class PendingStockDateAllocationEntity(
     @PrimaryKey @ColumnInfo(name = "id") val id: String,
@@ -66,4 +72,5 @@ data class PendingStockDateAllocationEntity(
     @ColumnInfo(name = "production_date") val productionDate: String,
     @ColumnInfo(name = "quantity") val quantity: Double,
     @ColumnInfo(name = "sort_order") val sortOrder: Int,
+    @ColumnInfo(name = "location_id") val locationId: String? = null,
 )

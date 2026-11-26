@@ -2,6 +2,7 @@ package com.culinary
 
 import android.app.Application
 import com.culinary.crash.CrashLogWriter
+import com.culinary.settings.ExpiryAlertStore
 import dagger.hilt.android.HiltAndroidApp
 import timber.log.Timber
 import javax.inject.Inject
@@ -19,6 +20,7 @@ class CulinaryApplication : Application() {
 
     override fun onCreate() {
         super.onCreate()
+        ExpiryAlertStore.initialize(this)
         Timber.plant(Timber.DebugTree())
         Thread.setDefaultUncaughtExceptionHandler(
             crashLogWriter.install(Thread.getDefaultUncaughtExceptionHandler()),

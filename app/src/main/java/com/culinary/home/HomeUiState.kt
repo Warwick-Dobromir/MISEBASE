@@ -1,5 +1,7 @@
 package com.culinary.home
 
+import com.culinary.settings.InventoryExpiryAlert
+
 import androidx.annotation.StringRes
 import com.culinary.R
 
@@ -32,6 +34,7 @@ data class HomePurchaseRecord(
 data class HomeUiState(
     val plans: List<HomePlan> = HomeMockData.plans,
     val purchases: List<HomePurchaseRecord> = HomeMockData.purchases,
+    val expiryAlert: InventoryExpiryAlert? = null,
 ) {
     val completedPlanCount: Int
         get() = plans.count { it.completed }

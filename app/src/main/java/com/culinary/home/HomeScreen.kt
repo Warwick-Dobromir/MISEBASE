@@ -49,6 +49,7 @@ import com.culinary.core.designsystem.component.CulinaryRule
 import com.culinary.core.designsystem.icon.CulinaryIcons
 import com.culinary.core.designsystem.theme.CulinarySpacing
 import com.culinary.core.designsystem.theme.CulinaryTextStyles
+import com.culinary.settings.InventoryExpiryAlert
 
 /**
  * 首页路由（HOME-001）。
@@ -64,6 +65,7 @@ fun HomeRoute(
     onNewPurchase: () -> Unit,
     onOpenAllPurchases: () -> Unit,
     onOpenPurchase: (String) -> Unit,
+    onOpenInventory: () -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: HomeViewModel = hiltViewModel(),
 ) {
@@ -79,6 +81,7 @@ fun HomeRoute(
         onNewPurchase = onNewPurchase,
         onOpenAllPurchases = onOpenAllPurchases,
         onOpenPurchase = onOpenPurchase,
+        onOpenInventory = onOpenInventory,
         modifier = modifier,
     )
 }
@@ -100,6 +103,7 @@ internal fun HomeScreen(
     onNewPurchase: () -> Unit,
     onOpenAllPurchases: () -> Unit,
     onOpenPurchase: (String) -> Unit,
+    onOpenInventory: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -120,6 +124,10 @@ internal fun HomeScreen(
                     .weight(1f)
                     .verticalScroll(rememberScrollState()),
         ) {
+            state.expiryAlert?.let { alert ->
+                ExpiryAlertSection(alert, onClick = onOpenInventory)
+                CulinaryRule()
+            }
             TodayPreparationSection(
                 state = state,
                 onTogglePlan = onTogglePlan,
@@ -134,6 +142,38 @@ internal fun HomeScreen(
                 onOpenPurchase = onOpenPurchase,
             )
             Spacer(modifier = Modifier.height(CulinarySpacing.xl))
+        }
+    }
+}
+
+/** 首页动态过期警戒：仅在扫描到仍有余额的过期批次时显示。 */
+@Composable
+private fun ExpiryAlertSection(alert: InventoryExpiryAlert, onClick: () -> Unit) {
+    Column(
+        modifier = Modifier.fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(horizontal = CulinarySpacing.pageHorizontal, vertical = CulinarySpacing.md),
+        verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(4.dp),
+    ) {
+        Text(
+            "库存过期警戒",
+            style = MaterialTheme.typography.titleSmall,
+            color = MaterialTheme.colorScheme.error,
+            fontWeight = FontWeight.SemiBold,
+        )
+        Text(
+            "检测到 ${alert.expiredProductCount} 种商品、${alert.expiredBatchCount} 个批次存在过期库存，请及时处理。",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurface,
+        )
+        if (alert.archiveNames.isNotEmpty()) {
+            Text(
+                alert.archiveNames.take(3).joinToString("、") +
+                    if (alert.archiveNames.size > 3) " 等" else "",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 2,
+            )
         }
     }
 }

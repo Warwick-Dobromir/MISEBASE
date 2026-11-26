@@ -39,6 +39,7 @@ class PendingStockRepositoryImpl @Inject constructor(
                         productionDate = LocalDate.parse(it.productionDate),
                         quantity = it.quantity,
                         sortOrder = it.sortOrder,
+                        locationId = it.locationId,
                     )
                 },
             )
@@ -83,6 +84,7 @@ class PendingStockRepositoryImpl @Inject constructor(
                     productionDate = allocation.productionDate.toString(),
                     quantity = allocation.quantity,
                     sortOrder = index,
+                    locationId = allocation.locationId,
                 )
             },
         )

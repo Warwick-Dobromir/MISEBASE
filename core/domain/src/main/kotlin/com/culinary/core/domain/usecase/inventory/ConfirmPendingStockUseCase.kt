@@ -5,6 +5,7 @@ import com.culinary.core.common.Outcome
 import com.culinary.core.common.flatMap
 import com.culinary.core.domain.model.DefaultShelfLifeUnit
 import com.culinary.core.domain.model.InventoryArchive
+import com.culinary.core.domain.model.LocationId
 import com.culinary.core.domain.repository.InventoryArchiveRepository
 import com.culinary.core.domain.repository.PendingStockRepository
 import com.culinary.core.domain.transaction.TransactionRunner
@@ -30,6 +31,16 @@ class ConfirmPendingStockUseCase(
                 }
                 return@write Outcome.failure(CulinaryError.Validation("production_date", detail))
             }
+            val missingLocations = items.flatMap { item ->
+                item.allocations.filter { it.locationId.isNullOrBlank() }.map { allocation ->
+                    "${item.name}（生产日期 ${allocation.productionDate}）未选择库位"
+                }
+            }
+            if (missingLocations.isNotEmpty()) {
+                return@write Outcome.failure(
+                    CulinaryError.Validation("locationId", missingLocations.joinToString("；")),
+                )
+            }
             val results = mutableListOf<ReceiptResult>()
             items.forEach { item ->
                 val archive =
@@ -47,6 +58,7 @@ class ConfirmPendingStockUseCase(
                                 unitId = item.stockUnitId,
                                 productionDate = allocation.productionDate,
                                 expiresOn = expiryDate(archive, allocation.productionDate),
+                                locationId = allocation.locationId?.let(::LocationId),
                                 sourceProductId = item.sourceProductId,
                                 idempotencyKey = "pending-stock:${item.id}:${allocation.id}",
                             ),

@@ -1,11 +1,15 @@
 package com.culinary.settings
 
+import android.Manifest
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -73,7 +77,13 @@ fun SettingsRoute(
     viewModel: SettingsViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val expiryTestViewModel: ExpiryScanTestViewModel = hiltViewModel()
+    val expiryTestState by expiryTestViewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
+
+    val notificationPermissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        if (granted) expiryTestViewModel.scanInventory() else expiryTestViewModel.notificationPermissionDenied()
+    }
 
     val backupLauncher =
         rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument(ZIP_MIME)) { uri ->
@@ -110,6 +120,16 @@ fun SettingsRoute(
         onRestoreRecycleItem = viewModel::restoreRecycleItem,
         onDeleteRecycleItem = viewModel::permanentlyDeleteRecycleItem,
         onDismissRecycleMessage = viewModel::clearRecycleBinMessage,
+        expiryScanTestState = expiryTestState,
+        onScanTestClick = {
+            if (Build.VERSION.SDK_INT >= 33 &&
+                ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
+            ) {
+                notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+            } else {
+                expiryTestViewModel.scanInventory()
+            }
+        },
         modifier = modifier,
     )
 }
@@ -135,6 +155,8 @@ internal fun SettingsScreen(
     onRestoreRecycleItem: (RecycleBinItem) -> Unit,
     onDeleteRecycleItem: (RecycleBinItem) -> Unit,
     onDismissRecycleMessage: () -> Unit,
+    expiryScanTestState: ExpiryScanTestUiState,
+    onScanTestClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var showSeedClearConfirm by remember { mutableStateOf(false) }
@@ -181,6 +203,23 @@ internal fun SettingsScreen(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.fillMaxWidth(),
             )
+            Spacer(modifier = Modifier.height(CulinarySpacing.md))
+            CulinaryButton(
+                text = if (expiryScanTestState.isRunning) "正在扫描库存" else "扫描测试",
+                onClick = onScanTestClick,
+                enabled = !expiryScanTestState.isRunning,
+                loading = expiryScanTestState.isRunning,
+                variant = CulinaryButtonVariant.Secondary,
+                modifier = Modifier.fillMaxWidth(),
+            )
+            expiryScanTestState.message?.let { message ->
+                Text(
+                    text = message,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = CulinarySpacing.xs),
+                )
+            }
         }
     }
 

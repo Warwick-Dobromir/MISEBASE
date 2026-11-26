@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -16,8 +17,10 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -49,6 +52,8 @@ import com.culinary.core.designsystem.component.PageHeader
 import com.culinary.core.designsystem.component.SectionHeader
 import com.culinary.core.designsystem.theme.CulinaryColorScheme
 import com.culinary.core.designsystem.theme.CulinarySpacing
+import com.culinary.core.domain.model.StorageLocation
+import com.culinary.core.domain.repository.InventoryArchiveRepository
 import com.culinary.core.domain.repository.PendingStockDateAllocation
 import com.culinary.core.domain.repository.PendingStockEntry
 import com.culinary.core.domain.repository.PendingStockRepository
@@ -64,11 +69,13 @@ import javax.inject.Inject
 
 data class PendingStockUiState(
     val items: List<PendingStockEntry> = emptyList(),
+    val locations: List<StorageLocation> = emptyList(),
     val isLoading: Boolean = true,
     val isSaving: Boolean = false,
     val error: String? = null,
     val deleteItemId: String? = null,
     val incompleteItemId: String? = null,
+    val missingLocationItemId: String? = null,
     val completed: Boolean = false,
 ) {
     val totalQuantity: Double get() = items.sumOf { it.quantity }
@@ -79,6 +86,7 @@ data class PendingStockUiState(
 class PendingStockViewModel @Inject constructor(
     private val repository: PendingStockRepository,
     private val confirmPendingStock: ConfirmPendingStockUseCase,
+    private val archiveRepository: InventoryArchiveRepository,
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(PendingStockUiState())
     val uiState: StateFlow<PendingStockUiState> = _uiState.asStateFlow()
@@ -89,7 +97,16 @@ class PendingStockViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = it.items.isEmpty(), error = null) }
             runCatching { repository.list() }
-                .onSuccess { rows -> _uiState.update { it.copy(items = rows, isLoading = false) } }
+                .onSuccess { rows ->
+                    val locations = runCatching { archiveRepository.listLocations() }.getOrNull()
+                    _uiState.update {
+                        it.copy(
+                            items = rows,
+                            locations = (locations as? Outcome.Success)?.value.orEmpty(),
+                            isLoading = false,
+                        )
+                    }
+                }
                 .onFailure { error -> _uiState.update { it.copy(isLoading = false, error = error.message ?: "读取待入库清单失败。") } }
         }
     }
@@ -151,6 +168,17 @@ class PendingStockViewModel @Inject constructor(
             _uiState.update { it.copy(incompleteItemId = incomplete.id) }
             return
         }
+        val missingLocation = state.items.firstOrNull { item -> item.allocations.any { it.locationId.isNullOrBlank() } }
+        if (missingLocation != null) {
+            val allocation = missingLocation.allocations.first { it.locationId.isNullOrBlank() }
+            _uiState.update {
+                it.copy(
+                    missingLocationItemId = missingLocation.id,
+                    error = "${missingLocation.name}（生产日期 ${allocation.productionDate}）尚未选择库位。",
+                )
+            }
+            return
+        }
         viewModelScope.launch {
             _uiState.update { it.copy(isSaving = true, error = null) }
             when (val result = confirmPendingStock()) {
@@ -163,6 +191,7 @@ class PendingStockViewModel @Inject constructor(
     }
 
     fun dismissIncomplete() { _uiState.update { it.copy(incompleteItemId = null) } }
+    fun dismissMissingLocation() { _uiState.update { it.copy(missingLocationItemId = null) } }
 }
 
 private fun parseProductionDateDigits(value: String): LocalDate? {
@@ -191,6 +220,7 @@ fun PendingStockRoute(
         onSaveDates = viewModel::saveAllocations,
         onConfirm = viewModel::confirm,
         onDismissIncomplete = viewModel::dismissIncomplete,
+        onDismissMissingLocation = viewModel::dismissMissingLocation,
     )
 }
 
@@ -341,6 +371,7 @@ private fun PendingStockScreen(
     editingItem?.let { item ->
         PendingStockDateSheet(
             item = item,
+            locations = state.locations,
             onDismiss = { editingItem = null },
             onSave = { rows ->
                 onSaveDates(item.id, rows)
@@ -402,6 +433,22 @@ private fun PendingStockScreen(
             text = { Text("确定从待入库清单中删除「${item?.name.orEmpty()}」吗？正式库存档案和库存数量不会受到影响。") },
             confirmButton = { TextButton(onClick = onConfirmDelete) { Text("确认删除", color = CulinaryColorScheme.current.danger) } },
             dismissButton = { TextButton(onClick = onDismissDelete) { Text("取消") } },
+        )
+    }
+
+    state.missingLocationItemId?.let { id ->
+        val item = state.items.firstOrNull { it.id == id }
+        AlertDialog(
+            onDismissRequest = onDismissMissingLocation,
+            title = { Text("库位尚未选择") },
+            text = { Text("${item?.name.orEmpty()} 的每个生产日期分组都必须单独选择库位，确认入库不会自动分配。") },
+            confirmButton = {
+                TextButton(onClick = {
+                    editingItem = item
+                    onDismissMissingLocation()
+                }) { Text("去选择库位") }
+            },
+            dismissButton = { TextButton(onClick = onDismissMissingLocation) { Text("取消") } },
         )
     }
 
@@ -484,6 +531,7 @@ private fun PendingStockRow(
 @Composable
 private fun PendingStockDateSheet(
     item: PendingStockEntry,
+    locations: List<StorageLocation>,
     onDismiss: () -> Unit,
     onSave: (List<PendingStockDateAllocation>) -> Unit,
 ) {
@@ -493,9 +541,10 @@ private fun PendingStockDateSheet(
                 .ifEmpty { listOf("" to "") },
         )
     }
+    var locationIds by remember(item.id) { mutableStateOf(item.allocations.map { it.locationId }.ifEmpty { listOf(null) }) }
     val allocated = rows.sumOf { it.second.toDoubleOrNull()?.takeIf { value -> value.isFinite() && value > 0 } ?: 0.0 }
     val remaining = (item.quantity - allocated).coerceAtLeast(0.0)
-    val valid = allocated <= item.quantity + 1e-9 && rows.all { (date, quantity) ->
+    val valid = allocated <= item.quantity + 1e-9 && locationIds.size == rows.size && locationIds.all { !it.isNullOrBlank() } && rows.all { (date, quantity) ->
         date.isBlank() && quantity.isBlank() ||
             parseProductionDateDigits(date) != null &&
             (quantity.toDoubleOrNull()?.let { it.isFinite() && it > 0 } == true)
@@ -575,6 +624,7 @@ private fun PendingStockDateSheet(
                         if (rows.size > 1) {
                             TextButton(onClick = {
                                 rows = rows.toMutableList().also { it.removeAt(index) }
+                                locationIds = locationIds.toMutableList().also { it.removeAt(index) }
                             }) { Text("移除") }
                         }
                     }
@@ -586,6 +636,39 @@ private fun PendingStockDateSheet(
                         label = "生产日期",
                         modifier = Modifier.fillMaxWidth(),
                     )
+                    var locationMenuExpanded by remember(index) { mutableStateOf(false) }
+                    val selectedLocation = locations.firstOrNull { it.id.value == locationIds.getOrNull(index) }
+                    Box(modifier = Modifier.fillMaxWidth()) {
+                        OutlinedTextField(
+                            value = selectedLocation?.name ?: "选择库位",
+                            onValueChange = {},
+                            readOnly = true,
+                            label = { Text("存放库位") },
+                            modifier = Modifier.fillMaxWidth().clickable { locationMenuExpanded = true },
+                            shape = RoundedCornerShape(8.dp),
+                        )
+                        DropdownMenu(
+                            expanded = locationMenuExpanded,
+                            onDismissRequest = { locationMenuExpanded = false },
+                        ) {
+                            if (locations.isEmpty()) {
+                                DropdownMenuItem(
+                                    text = { Text("暂无可用库位") },
+                                    enabled = false,
+                                    onClick = {},
+                                )
+                            }
+                            locations.forEach { location ->
+                                DropdownMenuItem(
+                                    text = { Text(location.name) },
+                                    onClick = {
+                                        locationIds = locationIds.toMutableList().also { it[index] = location.id.value }
+                                        locationMenuExpanded = false
+                                    },
+                                )
+                            }
+                        }
+                    }
                     Text("对应数量", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     OutlinedTextField(
                         value = row.second,
@@ -602,7 +685,10 @@ private fun PendingStockDateSheet(
             }
 
             Row(
-                modifier = Modifier.fillMaxWidth().clickable { rows = rows + ("" to "") }.padding(vertical = CulinarySpacing.sm),
+                modifier = Modifier.fillMaxWidth().clickable {
+                    rows = rows + ("" to "")
+                    locationIds = locationIds + null
+                }.padding(vertical = CulinarySpacing.sm),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text("+", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold)
@@ -643,6 +729,7 @@ private fun PendingStockDateSheet(
                                 productionDate = date,
                                 quantity = qty,
                                 sortOrder = index,
+                                locationId = locationIds.getOrNull(index),
                             )
                         } else null
                     }
