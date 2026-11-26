@@ -17,7 +17,6 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.OutOfQuotaPolicy
 import androidx.work.WorkManager
 import androidx.work.workDataOf
-import java.time.Duration
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.util.concurrent.TimeUnit
@@ -182,11 +181,10 @@ class ExpiryReminderAlarmReceiver : BroadcastReceiver() {
 /** 系统重启或用户调整时间/时区后，重新登记下一次提醒。 */
 class ExpiryReminderBootReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent?) {
-        if (intent?.action in setOf(
-                Intent.ACTION_BOOT_COMPLETED,
-                Intent.ACTION_TIME_CHANGED,
-                Intent.ACTION_TIMEZONE_CHANGED,
-            )
+        if (
+            intent?.action == Intent.ACTION_BOOT_COMPLETED ||
+            intent?.action == Intent.ACTION_TIME_CHANGED ||
+            intent?.action == Intent.ACTION_TIMEZONE_CHANGED
         ) {
             ExpiryReminderAlarmReceiver.scheduleNextReminder(context.applicationContext)
         }
