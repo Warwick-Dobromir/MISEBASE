@@ -92,6 +92,21 @@ private val MIGRATION_16_17_IMPL =
             db.execSQL("CREATE INDEX IF NOT EXISTS `index_temporary_batch_barcode_history_barcode` ON `temporary_batch_barcode_history` (`barcode`)")
             db.execSQL("CREATE INDEX IF NOT EXISTS `index_temporary_batch_barcode_history_batch_id` ON `temporary_batch_barcode_history` (`batch_id`)")
             db.execSQL("CREATE INDEX IF NOT EXISTS `index_temporary_batch_barcode_history_occurred_at` ON `temporary_batch_barcode_history` (`occurred_at`)")
+            db.execSQL("""
+                CREATE TRIGGER IF NOT EXISTS `release_temporary_barcode_on_batch_terminal`
+                AFTER UPDATE OF `status` ON `inventory_batch`
+                WHEN NEW.`status` IN ('DEPLETED', 'EXPIRED', 'DISCARDED', 'RECYCLED')
+                     AND OLD.`status` NOT IN ('DEPLETED', 'EXPIRED', 'DISCARDED', 'RECYCLED')
+                BEGIN
+                    INSERT INTO `temporary_batch_barcode_history` (`id`, `barcode`, `batch_id`, `action`, `occurred_at`)
+                    SELECT lower(hex(randomblob(16))), `barcode`, NEW.`id`, 'RELEASED', CAST(strftime('%s', 'now') AS INTEGER) * 1000
+                    FROM `temporary_batch_barcode`
+                    WHERE `batch_id` = NEW.`id` AND `state` = 'ASSIGNED';
+                    UPDATE `temporary_batch_barcode`
+                    SET `batch_id` = NULL, `state` = 'FREE', `released_at` = CAST(strftime('%s', 'now') AS INTEGER) * 1000
+                    WHERE `batch_id` = NEW.`id` AND `state` = 'ASSIGNED';
+                END
+            """.trimIndent())
         }
     }
 
