@@ -52,6 +52,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.culinary.core.common.CulinaryError
 import com.culinary.core.common.Outcome
+import com.culinary.core.database.dao.InventoryArchiveDao
 import com.culinary.core.designsystem.component.ArchiveEditorInlineField
 import com.culinary.core.designsystem.component.ArchiveEditorSectionHeader
 import com.culinary.core.designsystem.component.ArchiveEditorTopBar
@@ -184,6 +185,7 @@ class ArchiveEditViewModel
         private val linkArchiveProduct: LinkArchiveProductUseCase,
         private val unlinkArchiveProduct: UnlinkArchiveProductUseCase,
         private val inventoryRepository: InventoryRepository,
+        private val inventoryArchiveDao: InventoryArchiveDao,
         private val pendingStockRepository: PendingStockRepository? = null,
     ) : ViewModel() {
         private val archiveId: String? =
@@ -447,6 +449,17 @@ class ArchiveEditViewModel
             }
             viewModelScope.launch {
                 _uiState.update { it.copy(isSaving = true, fieldErrors = emptyMap(), error = null) }
+                val barcode = state.barcode.trim()
+                val duplicateBarcode = barcode.takeIf { it.isNotEmpty() }?.let { inventoryArchiveDao.findByBarcode(it) }
+                if (duplicateBarcode != null && duplicateBarcode.id != state.archiveId) {
+                    _uiState.update {
+                        it.copy(
+                            isSaving = false,
+                            fieldErrors = mapOf("barcode" to "该条码已被其他库存档案占用，不能重复使用。"),
+                        )
+                    }
+                    return@launch
+                }
                 when (val result = saveArchive(state.toArchive(unit))) {
                     is Outcome.Success -> {
                         val product = state.detail?.links?.firstOrNull()?.product
