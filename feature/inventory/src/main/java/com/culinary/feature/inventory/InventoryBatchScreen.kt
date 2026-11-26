@@ -65,6 +65,7 @@ import com.culinary.core.domain.usecase.inventory.InventoryLedgerUseCases
 import com.culinary.core.domain.usecase.inventory.ListStorageLocationsUseCase
 import com.culinary.core.domain.usecase.inventory.TransferBatchLocationUseCase
 import com.culinary.core.domain.usecase.inventory.UnfreezeBatchUseCase
+import com.culinary.core.domain.repository.TemporaryBarcodeRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -77,6 +78,7 @@ import javax.inject.Inject
 data class BatchDetailUiState(
     val batch: InventoryBatchRecord? = null,
     val archiveName: String = "",
+    val temporaryBarcode: String? = null,
     val expiryInfo: BatchExpiryInfo = BatchExpiryInfo.pending(),
     val ledger: List<InventoryLedgerEntry> = emptyList(),
     val freezeRecords: List<FreezeRecord> = emptyList(),
@@ -99,6 +101,7 @@ class BatchDetailViewModel
         private val unfreezeBatch: UnfreezeBatchUseCase,
         private val transferBatch: TransferBatchLocationUseCase,
         private val listLocations: ListStorageLocationsUseCase,
+        private val temporaryBarcodes: TemporaryBarcodeRepository,
     ) : ViewModel() {
         private val batchId: String =
             savedStateHandle.get<String>(InventoryRoutes.ARG_BATCH_ID).orEmpty()
@@ -123,6 +126,7 @@ class BatchDetailViewModel
                             it.copy(
                                 batch = result.value.batch,
                                 archiveName = result.value.archiveName,
+                                temporaryBarcode = temporaryBarcodes.findForBatch(batchId),
                                 expiryInfo = result.value.expiryInfo,
                                 ledger = result.value.ledger,
                                 freezeRecords = result.value.freezeRecords,
@@ -243,6 +247,8 @@ fun BatchDetailRoute(
         onUnfreeze = viewModel::unfreeze,
         onTransferConfirm = viewModel::transfer,
         onRetry = viewModel::load,
+        onAssignTemporaryBarcode = viewModel::assignTemporaryBarcode,
+        onReleaseTemporaryBarcode = viewModel::releaseTemporaryBarcode,
     )
 }
 
@@ -353,6 +359,22 @@ private fun BatchDetailScreen(
                         )
                         CulinaryInfoRow(label = "当前库位", value = batch.locationName ?: "未指定")
                         CulinaryInfoRow(label = "来源商品", value = batch.sourceProductName ?: "未关联商品")
+                        CulinaryInfoRow(label = "临时条码", value = state.temporaryBarcode ?: "未分配")
+                        if (state.temporaryBarcode != null) {
+                            CulinaryTextButton(
+                                text = "回收临时条码",
+                                onClick = onReleaseTemporaryBarcode,
+                                enabled = !state.isWorking,
+                                modifier = Modifier.defaultMinSize(minHeight = 44.dp),
+                            )
+                        } else {
+                            CulinaryTextButton(
+                                text = "分配临时条码",
+                                onClick = onAssignTemporaryBarcode,
+                                enabled = !state.isWorking && batch.onHand > 0.0,
+                                modifier = Modifier.defaultMinSize(minHeight = 44.dp),
+                            )
+                        }
                         if (batch.isFrozen) {
                             CulinaryInfoRow(
                                 label = "冻结原因",
