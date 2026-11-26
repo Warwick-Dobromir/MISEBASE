@@ -13,7 +13,6 @@ import androidx.core.content.ContextCompat
 import androidx.room.withTransaction
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
-import androidx.work.workDataOf
 import com.culinary.core.database.DatabaseFactory
 import com.culinary.core.database.entity.InventoryBatchCapacityAllocationEntity
 import com.culinary.core.database.entity.InventoryCapacityCellEntity
@@ -47,7 +46,7 @@ class ExpiryReminderWorker(context: Context, parameters: WorkerParameters) : Cor
             val productIds = mutableMapOf("过期" to mutableSetOf<String>(), "临期" to mutableSetOf<String>(), "关注" to mutableSetOf<String>())
             batches.forEach { batch ->
                 val archive = batch.archiveId?.let(archives::get) ?: return@forEach
-                val expiry = expiryDate(batch.productionDate, batch.expiryDate, archive.defaultShelfLifeValue ?: archive.shelfLifeDays, archive.defaultShelfLifeUnit) ?: return@forEach
+                val expiry = expiryDate(batch.productionDate, batch.expiryDate, if (archive.shelfLifeEnabled) archive.defaultShelfLifeValue ?: archive.shelfLifeDays else null, if (archive.shelfLifeEnabled) archive.defaultShelfLifeUnit ?: "DAY" else null) ?: return@forEach
                 val zone = expiryZone(batch.productionDate, expiry, today)
                 val label = when (zone) {
                     ExpiryCapacityZone.EXPIRED -> "过期"

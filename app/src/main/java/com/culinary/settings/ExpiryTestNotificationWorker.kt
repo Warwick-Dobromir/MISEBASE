@@ -51,7 +51,7 @@ class ExpiryTestNotificationWorker(
             )
         }
         val builder = NotificationCompat.Builder(applicationContext, CHANNEL_ID)
-            .setSmallIcon(com.culinary.R.mipmap.ic_launcher)
+            .setSmallIcon(com.culinary.R.drawable.ic_stat_notification)
             .setContentTitle("库存效期警戒")
             .setContentText(body)
             .setStyle(NotificationCompat.BigTextStyle().bigText(body))

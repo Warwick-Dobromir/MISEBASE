@@ -23,7 +23,7 @@ import java.util.concurrent.TimeUnit
 
 /**
  * AlarmManager 是独立于应用进程的触发源；即使用户从最近任务划掉应用，
- * 系统闹钟仍会唤醒接收器，再以 expedited Work 执行库存扫描。
+ * 系统闹钟仍会唤醒接收器，再以 WorkManager 执行库存扫描。
  */
 class ExpiryReminderAlarmReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent?) {
