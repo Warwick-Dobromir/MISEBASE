@@ -10,13 +10,13 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.weight
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -40,7 +40,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
 import coil3.compose.AsyncImage
 import com.culinary.core.common.Outcome
-import androidx.compose.material3.OutlinedTextField
 import com.culinary.core.designsystem.component.CulinaryDateField
 import com.culinary.core.designsystem.component.CulinaryRule
 import com.culinary.core.designsystem.component.CulinaryTextButton
@@ -482,6 +481,7 @@ private fun PendingStockRow(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun PendingStockDateSheet(
     item: PendingStockEntry,
@@ -606,7 +606,7 @@ private fun PendingStockDateSheet(
                 modifier = Modifier.fillMaxWidth().clickable { rows = rows + ("" to "") }.padding(vertical = CulinarySpacing.sm),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text("+", color = CulinaryColorScheme.current.accent, fontWeight = FontWeight.SemiBold)
+                Text("+", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold)
                 Text(
                     "  添加生产日期分组",
                     color = CulinaryColorScheme.current.accent,
