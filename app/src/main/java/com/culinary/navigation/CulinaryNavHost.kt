@@ -809,7 +809,7 @@ private fun NavGraphBuilder.settingsGraph(navController: NavHostController) {
         SettingsRoute(onOpenUnits = { navController.navigate(UNIT_MANAGEMENT_ROUTE) })
     }
     composable(UNIT_MANAGEMENT_ROUTE) {
-        UnitManagementRoute(onBack = { navController.popBackStack() })
+        UnitManagementRoute()
     }
 }
 
