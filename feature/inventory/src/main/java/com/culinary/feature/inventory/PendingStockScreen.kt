@@ -6,6 +6,7 @@ import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
@@ -557,7 +558,7 @@ private fun PendingStockDateSheet(
                         Text(
                             "${(index + 1).toString().padStart(2, '0')}",
                             style = MaterialTheme.typography.labelMedium,
-                            color = CulinaryColorScheme.current.accent,
+                            color = MaterialTheme.colorScheme.primary,
                             fontWeight = FontWeight.SemiBold,
                         )
                         Text(
