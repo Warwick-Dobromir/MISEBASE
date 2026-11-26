@@ -4,6 +4,7 @@ import com.culinary.core.database.CulinaryDatabase
 import com.culinary.core.database.dao.InventoryArchiveDao
 import com.culinary.core.database.dao.InventoryArchiveProductDao
 import com.culinary.core.database.dao.InventoryBatchDao
+import com.culinary.core.database.dao.TemporaryBarcodeDao
 import com.culinary.core.database.dao.InventoryCapacityDao
 import com.culinary.core.database.dao.InventoryIssueDao
 import com.culinary.core.database.dao.InventoryLedgerDao
@@ -23,6 +24,10 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 object InventoryDaoModule {
+    @Provides
+    @Singleton
+    fun provideTemporaryBarcodeDao(database: CulinaryDatabase): TemporaryBarcodeDao = database.temporaryBarcodeDao()
+
     @Provides
     @Singleton
     fun provideInventoryBatchDao(database: CulinaryDatabase): InventoryBatchDao = database.inventoryBatchDao()
