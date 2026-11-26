@@ -111,6 +111,7 @@ import com.culinary.kitchen.archive.kitchenReferenceTypeFromRoute
 import com.culinary.kitchen.archive.toArchiveSection
 import com.culinary.kitchen.archive.toReferenceType
 import com.culinary.settings.SettingsRoute
+import com.culinary.settings.UnitManagementRoute
 
 /**
  * 应用导航外壳。
@@ -291,7 +292,7 @@ private fun AppNavGraph(
         cookingGraph(navController)
         inventoryGraph(navController)
         scanGraph(navController)
-        settingsGraph()
+        settingsGraph(navController)
     }
 }
 
@@ -801,9 +802,14 @@ private fun NavGraphBuilder.scanGraph(navController: NavHostController) {
     }
 }
 
-private fun NavGraphBuilder.settingsGraph() {
+private const val UNIT_MANAGEMENT_ROUTE = "settings/units"
+
+private fun NavGraphBuilder.settingsGraph(navController: NavHostController) {
     composable(SETTINGS_ROUTE) {
-        SettingsRoute()
+        SettingsRoute(onOpenUnits = { navController.navigate(UNIT_MANAGEMENT_ROUTE) })
+    }
+    composable(UNIT_MANAGEMENT_ROUTE) {
+        UnitManagementRoute(onBack = { navController.popBackStack() })
     }
 }
 
