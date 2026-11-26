@@ -9,7 +9,6 @@ import android.content.pm.PackageManager
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.core.content.ContextCompat
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -39,9 +38,11 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.culinary.R
 import com.culinary.core.common.ErrorCode
+import com.culinary.core.data.recycle.RecycleBinItem
 import com.culinary.core.designsystem.component.BrandPageHeader
 import com.culinary.core.designsystem.component.ConfirmDialog
 import com.culinary.core.designsystem.component.CulinaryButton
@@ -53,7 +54,6 @@ import com.culinary.core.designsystem.component.SectionHeader
 import com.culinary.core.designsystem.component.StatusTone
 import com.culinary.core.designsystem.icon.CulinaryIcons
 import com.culinary.core.designsystem.theme.CulinarySpacing
-import com.culinary.core.data.recycle.RecycleBinItem
 import com.culinary.diagnostics.FailureLogEntry
 import java.text.SimpleDateFormat
 import java.util.Date

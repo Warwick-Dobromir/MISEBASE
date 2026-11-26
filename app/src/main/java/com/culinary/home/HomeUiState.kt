@@ -1,9 +1,8 @@
 package com.culinary.home
 
-import com.culinary.settings.InventoryExpiryAlert
-
 import androidx.annotation.StringRes
 import com.culinary.R
+import com.culinary.settings.InventoryExpiryAlert
 
 /**
  * 首页一条今日计划。
