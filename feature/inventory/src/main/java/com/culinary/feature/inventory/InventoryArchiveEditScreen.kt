@@ -329,6 +329,10 @@ class ArchiveEditViewModel
         }
 
         fun dismissScannedBarcode() { _uiState.update { it.copy(pendingScannedBarcode = null) } }
+
+        fun onBarcodeConflict(archiveId: String) {
+            _uiState.update { it.copy(fieldErrors = it.fieldErrors + ("barcode" to "该条码已被其他库存档案占用（$archiveId），不能重复使用。")) }
+        }
         fun onPurchaseUnitIdChange(value: String) = update("purchaseUnit") { it.copy(purchaseUnitId = value) }
         fun onPurchaseSpecificationChange(value: String) = update("purchaseSpecification") { it.copy(purchaseSpecification = value) }
         fun onUnitConversionChange(value: String) = update("unitConversion") { it.copy(unitConversion = value) }
@@ -651,7 +655,9 @@ fun ArchiveEditRoute(
     onBack: () -> Unit,
     onScanBarcode: () -> Unit,
     scannedBarcode: String?,
+    duplicateBarcodeArchiveId: String?,
     onScannedBarcodeConsumed: () -> Unit,
+    onDuplicateBarcodeConsumed: () -> Unit,
     viewModel: ArchiveEditViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -661,6 +667,10 @@ fun ArchiveEditRoute(
     LaunchedEffect(scannedBarcode) {
         scannedBarcode?.takeIf { it.isNotBlank() }?.let(viewModel::onBarcodeScanned)
         if (scannedBarcode != null) onScannedBarcodeConsumed()
+    }
+    LaunchedEffect(duplicateBarcodeArchiveId) {
+        duplicateBarcodeArchiveId?.takeIf { it.isNotBlank() }?.let(viewModel::onBarcodeConflict)
+        if (duplicateBarcodeArchiveId != null) onDuplicateBarcodeConsumed()
     }
     state.pendingScannedBarcode?.let { candidate ->
         AlertDialog(
