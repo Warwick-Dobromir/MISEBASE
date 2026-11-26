@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Text
@@ -54,6 +55,7 @@ import com.culinary.core.domain.model.InventoryBatchRecord
 import com.culinary.core.domain.model.InventoryLedgerEntry
 import com.culinary.core.domain.usecase.inventory.GetInventoryArchiveDetailUseCase
 import com.culinary.core.domain.usecase.inventory.ListStorageLocationsUseCase
+import com.culinary.core.domain.usecase.inventory.ReplaceInventoryArchiveBarcodeUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.Dispatchers
@@ -71,6 +73,8 @@ data class ArchiveDetailUiState(
     val isLoading: Boolean = true,
     val error: String? = null,
     val message: String? = null,
+    val pendingScannedBarcode: String? = null,
+    val isReplacingBarcode: Boolean = false,
 )
 
 @HiltViewModel
@@ -80,6 +84,7 @@ class ArchiveDetailViewModel
         savedStateHandle: SavedStateHandle,
         private val getArchiveDetail: GetInventoryArchiveDetailUseCase,
         private val listLocations: ListStorageLocationsUseCase,
+        private val replaceBarcode: ReplaceInventoryArchiveBarcodeUseCase,
     ) : ViewModel() {
         private val archiveId: String =
             savedStateHandle.get<String>(InventoryRoutes.ARG_ARCHIVE_ID).orEmpty()
