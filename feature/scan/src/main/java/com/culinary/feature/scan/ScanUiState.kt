@@ -45,6 +45,7 @@ data class ScanUiState(
     val mode: ScanMode = ScanMode.STOCK_IN,
     val successFeedbacks: List<ScanSuccessFeedback> = emptyList(),
     val openArchiveId: String? = null,
+    val openBatchId: String? = null,
     val pendingCapture: ScanCapture? = null,
     val matchedArchive: InventoryArchive? = null,
 ) {
