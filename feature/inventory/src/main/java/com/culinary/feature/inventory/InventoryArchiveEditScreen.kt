@@ -199,6 +199,14 @@ class ArchiveEditViewModel
 
         init {
             viewModelScope.launch {
+                savedStateHandle.getStateFlow<Boolean>("archive_barcode_duplicate", false).collect { duplicate ->
+                    if (duplicate) {
+                        savedStateHandle["archive_barcode_duplicate"] = false
+                        _uiState.update { it.copy(error = "该条码已关联其他库存档案，不能重复使用。") }
+                    }
+                }
+            }
+            viewModelScope.launch {
                 savedStateHandle.getStateFlow<String?>("archive_barcode_scan_result", null).collect { scanned ->
                     if (!scanned.isNullOrBlank()) {
                         savedStateHandle["archive_barcode_scan_result"] = null
