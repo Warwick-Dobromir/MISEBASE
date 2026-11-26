@@ -174,4 +174,3 @@ private fun UnitDimension.label(): String =
         UnitDimension.COUNT -> "数量"
     }
 
-private fun Unit.isActive(): Boolean = true
