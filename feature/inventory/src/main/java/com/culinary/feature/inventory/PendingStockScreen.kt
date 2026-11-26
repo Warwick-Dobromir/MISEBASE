@@ -40,6 +40,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
 import coil3.compose.AsyncImage
 import com.culinary.core.common.Outcome
+import androidx.compose.material3.OutlinedTextField
+import com.culinary.core.designsystem.component.CulinaryDateField
 import com.culinary.core.designsystem.component.CulinaryRule
 import com.culinary.core.designsystem.component.CulinaryTextButton
 import com.culinary.core.designsystem.component.ErrorBanner
@@ -165,6 +167,13 @@ class PendingStockViewModel @Inject constructor(
 }
 
 private data class PendingDateDraft(val date: String, val quantity: String)
+
+private fun parseProductionDateDigits(value: String): LocalDate? {
+    val digits = value.filter(Char::isDigit).take(8)
+    if (digits.length != 8) return null
+    val isoDate = "${digits.substring(0, 4)}-${digits.substring(4, 6)}-${digits.substring(6, 8)}"
+    return runCatching { LocalDate.parse(isoDate) }.getOrNull()
+}
 
 @Composable
 fun PendingStockRoute(
@@ -353,12 +362,11 @@ private fun PendingStockScreen(
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(CulinarySpacing.xs)) {
                     Text("将同一生产日期应用于所选商品尚未分配日期的数量；已填写的日期分组不会被覆盖。")
-                    OutlinedTextField(
+                    CulinaryDateField(
                         value = productionDate,
                         onValueChange = { productionDate = it },
-                        label = { Text("生产日期") },
-                        placeholder = { Text("YYYY-MM-DD") },
-                        singleLine = true,
+                        label = "生产日期",
+                        modifier = Modifier.fillMaxWidth(),
                     )
                     Text("将填写 ${selectedItems.size} 项商品", style = MaterialTheme.typography.labelSmall)
                 }
@@ -366,7 +374,7 @@ private fun PendingStockScreen(
             confirmButton = {
                 TextButton(
                     onClick = {
-                        val date = runCatching { LocalDate.parse(productionDate.trim()) }.getOrNull()
+                        val date = parseProductionDateDigits(productionDate)
                         if (date != null) {
                             selectedItems.forEach { item ->
                                 onSaveDates(
@@ -383,7 +391,7 @@ private fun PendingStockScreen(
                             showBulkDateDialog = false
                         }
                     },
-                    enabled = runCatching { LocalDate.parse(productionDate.trim()) }.isSuccess && selectedItems.isNotEmpty(),
+                    enabled = parseProductionDateDigits(productionDate) != null && selectedItems.isNotEmpty(),
                 ) { Text("应用") }
             },
             dismissButton = { TextButton(onClick = { showBulkDateDialog = false }) { Text("取消") } },
@@ -484,7 +492,7 @@ private fun PendingStockDateSheet(
 ) {
     var rows by remember(item.id) {
         mutableStateOf(
-            item.allocations.map { it.productionDate.toString() to formatAmount(it.quantity) }
+            item.allocations.map { it.productionDate.toString().filter(Char::isDigit) to formatAmount(it.quantity) }
                 .ifEmpty { listOf("" to "") },
         )
     }
@@ -492,7 +500,7 @@ private fun PendingStockDateSheet(
     val remaining = (item.quantity - allocated).coerceAtLeast(0.0)
     val valid = allocated <= item.quantity + 1e-9 && rows.all { (date, quantity) ->
         date.isBlank() && quantity.isBlank() ||
-            runCatching { LocalDate.parse(date.trim()) }.isSuccess &&
+            parseProductionDateDigits(date) != null &&
             (quantity.toDoubleOrNull()?.let { it.isFinite() && it > 0 } == true)
     }
     val sheetState = androidx.compose.material3.rememberModalBottomSheetState(skipPartiallyExpanded = true)
@@ -574,15 +582,13 @@ private fun PendingStockDateSheet(
                         }
                     }
                     Text("生产日期", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    OutlinedTextField(
+                    CulinaryDateField(
                         value = row.first,
                         onValueChange = { value ->
                             rows = rows.toMutableList().also { it[index] = value to row.second }
                         },
-                        placeholder = { Text("YYYY-MM-DD") },
-                        singleLine = true,
+                        label = "生产日期",
                         modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(8.dp),
                     )
                     Text("对应数量", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     OutlinedTextField(
@@ -633,7 +639,7 @@ private fun PendingStockDateSheet(
             Row(
                 modifier = Modifier.fillMaxWidth().clickable(enabled = valid) {
                     val parsed = rows.mapIndexedNotNull { index, row ->
-                        val date = runCatching { LocalDate.parse(row.first.trim()) }.getOrNull()
+                        val date = parseProductionDateDigits(row.first)
                         val qty = row.second.trim().toDoubleOrNull()
                         if (date != null && qty != null && qty.isFinite() && qty > 0) {
                             PendingStockDateAllocation(
