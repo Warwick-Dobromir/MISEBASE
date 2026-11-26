@@ -816,7 +816,7 @@ private fun NavGraphBuilder.scanGraph(navController: NavHostController) {
                 navController.popBackStack()
             },
             onBack = { navController.popBackStack() },
-            initialMode = ScanMode.VIEW_DETAILS,
+            initialMode = ScanMode.BARCODE_ASSIGNMENT,
         )
     }
     composable(SCAN_ROUTE) {
