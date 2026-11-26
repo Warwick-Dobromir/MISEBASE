@@ -26,6 +26,7 @@ object UnitMapper {
             isBase = entity.isBase,
             isApproximate = entity.isApproximate,
             displayPrecision = entity.displayPrecision,
+            isActive = entity.isActive,
         )
 
     fun toDomain(entity: IngredientUnitConversionEntity): IngredientUnitConversion =
