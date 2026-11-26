@@ -45,6 +45,12 @@ class ScanViewModel
         private val feedbackDismissJobs = mutableMapOf<Long, Job>()
         private var feedbackSequence = 0L
 
+        fun onSetMode(mode: ScanMode) {
+            if (_uiState.value.lookupInProgress) return
+            gate.reset()
+            _uiState.update { it.copy(mode = mode) }
+        }
+
         fun onToggleMode() {
             if (_uiState.value.lookupInProgress) return
             gate.reset()
