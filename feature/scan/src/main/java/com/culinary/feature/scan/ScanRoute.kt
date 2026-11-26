@@ -30,6 +30,7 @@ fun ScanRoute(
     onOpenArchive: (String) -> Unit,
     onOpenBatch: (String) -> Unit,
     onBack: () -> Unit,
+    initialMode: ScanMode = ScanMode.STOCK_IN,
     modifier: Modifier = Modifier,
     viewModel: ScanViewModel = hiltViewModel(),
 ) {
@@ -42,7 +43,8 @@ fun ScanRoute(
             viewModel.onPermissionResult(granted)
         }
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(initialMode) {
+        viewModel.onSetMode(initialMode)
         viewModel.onCameraAvailability(hasCamera)
         viewModel.onPermissionChecked(CameraPermission.isGranted(context))
         viewModel.onResumeScanning()
