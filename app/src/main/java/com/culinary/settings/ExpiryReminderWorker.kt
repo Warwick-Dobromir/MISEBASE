@@ -15,6 +15,7 @@ import androidx.room.withTransaction
 import androidx.work.CoroutineWorker
 import androidx.work.ExistingWorkPolicy
 import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.OutOfQuotaPolicy
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import com.culinary.core.database.DatabaseFactory
@@ -270,10 +271,12 @@ object ExpiryReminderScheduler {
                 "MISSED_REMINDER_CATCH_UP_ENQUEUED",
                 "trigger=$trigger; missedTarget=$previouslyScheduledTarget; lastSuccessfulScan=$lastSuccessfulScan",
             )
-            val missedRequest = OneTimeWorkRequestBuilder<ExpiryReminderWorker>().build()
+            val missedRequest = OneTimeWorkRequestBuilder<ExpiryReminderWorker>()
+                .setExpedited(OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST)
+                .build()
             workManager.enqueueUniqueWork(
                 ExpiryReminderWorker.WORK_NAME,
-                ExistingWorkPolicy.KEEP,
+                ExistingWorkPolicy.APPEND_OR_REPLACE,
                 missedRequest,
             )
         }
@@ -285,10 +288,12 @@ object ExpiryReminderScheduler {
                 "STARTUP_CATCH_UP_ENQUEUED",
                 "trigger=$trigger; lastSuccessfulScan=$lastSuccessfulScan; now=$now",
             )
-            val request = OneTimeWorkRequestBuilder<ExpiryReminderWorker>().build()
+            val request = OneTimeWorkRequestBuilder<ExpiryReminderWorker>()
+                .setExpedited(OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST)
+                .build()
             workManager.enqueueUniqueWork(
                 ExpiryReminderWorker.WORK_NAME,
-                ExistingWorkPolicy.KEEP,
+                ExistingWorkPolicy.APPEND_OR_REPLACE,
                 request,
             )
         }
