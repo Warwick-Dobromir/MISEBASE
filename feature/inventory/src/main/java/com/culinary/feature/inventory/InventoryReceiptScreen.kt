@@ -686,29 +686,6 @@ internal fun ReceiptScreen(
                     return@Column
                 }
                 Column(modifier = Modifier.padding(horizontal = CulinarySpacing.pageHorizontal)) {
-                        SectionHeader(title = "01 采购信息")
-                        Text(
-                            text = "采购入库应关联首页采购单，自动读取供应商、采购单号、采购日期及采购明细。",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                        CulinaryRule()
-                        SectionHeader(title = "02 采购明细")
-                        EmptyState(
-                            title = "采购单功能尚未接入",
-                            description = "采购单模块完成后，此处读取采购单并登记实际收货数量、库位和批次。当前不创建虚假的采购单数据。",
-                            compact = true,
-                        )
-                        SectionHeader(title = "03 验收入库")
-                        Text(
-                            text = "支持部分到货；未收齐数量保留在原采购单。确认入库时与手动入库共用确认流程。",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                    return@Column
-                }
-                Column(modifier = Modifier.padding(horizontal = CulinarySpacing.pageHorizontal)) {
                     state.message?.let { text ->
                         StatusBadge(
                             text = text,
