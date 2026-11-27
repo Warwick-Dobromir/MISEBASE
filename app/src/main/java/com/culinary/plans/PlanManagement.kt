@@ -442,10 +442,7 @@ fun AddPlanRoute(
     }
 
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 22.dp, vertical = 18.dp)) {
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Text("‹ 返回${if (step == 0) "今日计划" else "添加计划"}", modifier = Modifier.clickable {
-                if (step == 0 || planId != null) onBack() else step = 0
-            }, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
             Text(if (step == 0) "NEW PLAN" else if (kind == PlanKind.WORK) "WORK PLAN" else "PRODUCTION PLAN", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         Spacer(Modifier.height(18.dp))
@@ -467,6 +464,7 @@ fun AddPlanRoute(
             PlanPrimaryAction("继续") { step = 1 }
         } else {
             Spacer(Modifier.height(8.dp))
+            if (planId == null) Text("‹ 修改计划类型", Modifier.clickable { step = 0 }.padding(vertical = 6.dp), color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
             Text(if (kind == PlanKind.PRODUCTION) "PRODUCTION TASK · 生产任务" else "WORK TASK · 日常工作任务", color = MaterialTheme.colorScheme.onSurfaceVariant)
             HorizontalDivider(Modifier.padding(vertical = 18.dp), color = MaterialTheme.colorScheme.outlineVariant)
             if (kind == PlanKind.PRODUCTION) {
