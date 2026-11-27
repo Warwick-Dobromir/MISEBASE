@@ -433,7 +433,7 @@ private fun PlanListGroup(title: String, eyebrow: String, items: List<PlanUiItem
 }
 
 @Composable
-fun AddPlanRoute(onSaved: () -> Unit, onBack: () -> Unit, planId: String? = null, kindArg: String? = null, viewModel: PlanManagementViewModel = hiltViewModel()) {
+fun AddPlanRoute(onSaved: () -> Unit, onBack: () -> Unit, planId: String? = null, kindArg: String? = null, onOpenRecipeEditor: (String?) -> Unit = {}, viewModel: PlanManagementViewModel = hiltViewModel()) {
     val plans by viewModel.plans.collectAsStateWithLifecycle()
     val message by viewModel.message.collectAsStateWithLifecycle()
     val existing = plans.firstOrNull { it.id == planId }
@@ -507,11 +507,15 @@ fun AddPlanRoute(onSaved: () -> Unit, onBack: () -> Unit, planId: String? = null
                                     Text(option.name, style = MaterialTheme.typography.bodyLarge, fontWeight = if (recipeId == option.id) FontWeight.SemiBold else FontWeight.Normal)
                                     Text("当前版本产出：" + option.defaultQuantity + " " + option.unitName, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                 }
-                                Text(if (recipeId == option.id) "已选择 ✓" else "选择", color = if (recipeId == option.id) Color(0xFF8A6A2B) else MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelMedium)
+                                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                    Text(if (recipeId == option.id) "已选择 ✓" else "选择", color = if (recipeId == option.id) Color(0xFF8A6A2B) else MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelMedium)
+                                    Text("编写", Modifier.clickable { onOpenRecipeEditor(option.id) }, color = MaterialTheme.colorScheme.secondary, style = MaterialTheme.typography.labelMedium)
+                                }
                             }
                         }
                         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                     }
+                    Text("＋ 新建制作档案", Modifier.fillMaxWidth().clickable { onOpenRecipeEditor(null) }.padding(vertical = 10.dp), color = MaterialTheme.colorScheme.secondary, style = MaterialTheme.typography.labelMedium)
                     if (target.isNotBlank()) Text("关联档案：" + target, color = Color(0xFF8A6A2B), style = MaterialTheme.typography.labelMedium)
                     Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
                         Column(Modifier.weight(1f)) { PlanField("制作数量", quantity, KeyboardType.Decimal) { quantity = it } }
