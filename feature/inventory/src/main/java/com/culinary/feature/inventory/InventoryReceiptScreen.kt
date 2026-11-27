@@ -988,7 +988,6 @@ private fun ReceiptFields(
     onQuantityChange: (String) -> Unit,
     onBatchCodeChange: (String) -> Unit,
     onProductionDateChange: (String) -> Unit,
-    onExpiresOnChange: (String) -> Unit,
     onNoteChange: (String) -> Unit,
     onTemporaryChange: (Boolean) -> Unit,
     showTemporary: Boolean,
@@ -1036,12 +1035,28 @@ private fun ReceiptFields(
         )
     }
     CulinaryRule()
+    val selectedArchive = state.selectedArchive
+    val shelfLifeValue = selectedArchive?.defaultShelfLifeValue
+    val shelfLifeUnit = selectedArchive?.defaultShelfLifeUnit?.name
+    val shelfLifeLabel = if (shelfLifeValue != null && shelfLifeUnit != null) {
+        val unitLabel = when (shelfLifeUnit) {
+            "DAY" -> "天"
+            "WEEK" -> "周"
+            "MONTH" -> "个月"
+            "YEAR" -> "年"
+            else -> ""
+        }
+        "$shelfLifeValue$unitLabel"
+    } else {
+        if (selectedArchive == null) "选择食材后自动带入" else "档案未设置"
+    }
+    ReceiptValueRow(label = "默认保质期", value = shelfLifeLabel)
     ReceiptValueRow(
         label = "到期日期",
         value = state.expiresOn.ifBlank {
             when {
-                state.selectedArchive == null -> "选择食材后自动带入"
-                state.selectedArchive?.defaultShelfLifeValue == null -> "档案未设置默认保质期"
+                selectedArchive == null -> "选择食材后自动带入"
+                shelfLifeValue == null -> "档案未设置默认保质期"
                 state.productionDate.isBlank() -> "填写生产日期后自动计算"
                 else -> "—"
             }
