@@ -629,7 +629,6 @@ internal fun ReceiptScreen(
                     eyebrow = if (showConfirmation) "STOCK IN / FINAL REVIEW" else "INVENTORY / STOCK IN",
                     title = if (showConfirmation) "确认入库" else "入库",
                     supporting = if (showConfirmation) "RECEIPT CONFIRMATION" else "STOCK RECEIPT · 库存接收",
-                    actions = { CulinaryTextButton(text = "返回", onClick = onBack) },
                 )
                 if (!showConfirmation) {
                     Row(
