@@ -18,6 +18,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -244,39 +245,57 @@ internal fun AppTopBar(
     onBack: () -> Unit,
     title: String? = null,
 ) {
-    CenterAlignedTopAppBar(
-        title = {
-            if (!title.isNullOrBlank()) {
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+    val titleContent: @Composable () -> Unit = {
+        if (!title.isNullOrBlank()) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+    val navigationContent: @Composable () -> Unit = {
+        when {
+            showBack ->
+                CulinaryIconButton(
+                    icon = CulinaryIcons.Back,
+                    contentDescription = stringResource(R.string.action_back),
+                    onClick = onBack,
                 )
-            }
-        },
-        navigationIcon = {
-            when {
-                showBack ->
-                    CulinaryIconButton(
-                        icon = CulinaryIcons.Back,
-                        contentDescription = stringResource(R.string.action_back),
-                        onClick = onBack,
-                    )
-
-                topLevel != null ->
-                    CulinaryIconButton(
-                        icon = CulinaryIcons.ChefHat,
-                        contentDescription = stringResource(R.string.home_brand_home),
-                        onClick = onOpenHome,
-                        tint = MaterialTheme.colorScheme.onSurface,
-                    )
-            }
-        },
-        colors =
-            TopAppBarDefaults.topAppBarColors(
+            topLevel != null ->
+                CulinaryIconButton(
+                    icon = CulinaryIcons.ChefHat,
+                    contentDescription = stringResource(R.string.home_brand_home),
+                    onClick = onOpenHome,
+                    tint = MaterialTheme.colorScheme.onSurface,
+                )
+        }
+    }
+    if (title == "INVENTORY / STOCK IN") {
+        CenterAlignedTopAppBar(
+            title = titleContent,
+            navigationIcon = navigationContent,
+            colors = TopAppBarDefaults.topAppBarColors(
                 containerColor = MaterialTheme.colorScheme.background,
             ),
-    )
+        )
+    } else {
+        TopAppBar(
+            title = {
+                if (!title.isNullOrBlank()) {
+                    Text(
+                        text = title,
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onSurface,
+                    )
+                }
+            },
+            navigationIcon = navigationContent,
+            colors = TopAppBarDefaults.topAppBarColors(
+                containerColor = MaterialTheme.colorScheme.background,
+            ),
+        )
+    }
 }
 
 @Composable
