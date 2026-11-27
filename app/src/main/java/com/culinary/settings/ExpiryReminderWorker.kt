@@ -82,7 +82,7 @@ class ExpiryReminderWorker(context: Context, parameters: WorkerParameters) : Cor
         ExpiryReminderDiagnostics.record(
             applicationContext,
             "SCAN_COUNTS",
-            "expired=$expired; near=$near; attention=$attention; batches=${batches.size}",
+            "expired=$expired; near=$near; attention=$attention",
         )
         val permissionGranted = Build.VERSION.SDK_INT < 33 ||
             ContextCompat.checkSelfPermission(applicationContext, Manifest.permission.POST_NOTIFICATIONS) ==
