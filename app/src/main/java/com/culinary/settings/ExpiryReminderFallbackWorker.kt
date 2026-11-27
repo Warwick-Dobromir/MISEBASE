@@ -18,6 +18,7 @@ class ExpiryReminderFallbackWorker(
     parameters: WorkerParameters,
 ) : CoroutineWorker(context, parameters) {
     override suspend fun doWork(): Result {
+        ExpiryReminderDiagnostics.record(applicationContext, "WORKMANAGER_FALLBACK_TRIGGERED", "fallback worker started")
         val preferences = applicationContext.getSharedPreferences(
             ExpiryReminderWorker.PREFS_NAME,
             Context.MODE_PRIVATE,
@@ -29,6 +30,7 @@ class ExpiryReminderFallbackWorker(
 
         ExpiryReminderAlarmReceiver.scheduleNextReminder(applicationContext)
         val request = OneTimeWorkRequestBuilder<ExpiryReminderWorker>().build()
+        ExpiryReminderDiagnostics.record(applicationContext, "SCAN_WORK_ENQUEUED", "source=WorkManager fallback; policy=KEEP")
         WorkManager.getInstance(applicationContext).enqueueUniqueWork(
             ExpiryReminderWorker.WORK_NAME,
             ExistingWorkPolicy.KEEP,
