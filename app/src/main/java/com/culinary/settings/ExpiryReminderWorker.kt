@@ -230,6 +230,7 @@ object ExpiryReminderScheduler {
 
     fun ensureScheduled(context: Context) {
         val appContext = context.applicationContext
+        ExpiryReminderDiagnostics.record(appContext, "SCHEDULER_CHECK", "application startup / ensureScheduled")
         ExpiryReminderAlarmReceiver.restorePendingTestNotification(appContext)
         ExpiryReminderAlarmReceiver.scheduleNextReminder(appContext)
 
@@ -241,6 +242,7 @@ object ExpiryReminderScheduler {
         val lastSuccessfulScan = preferences.getLong(ExpiryReminderWorker.KEY_LAST_SUCCESSFUL_SCAN, 0L)
         val now = System.currentTimeMillis()
         if (lastSuccessfulScan == 0L || now - lastSuccessfulScan >= STARTUP_CATCH_UP_AFTER_MILLIS) {
+            ExpiryReminderDiagnostics.record(appContext, "STARTUP_CATCH_UP_ENQUEUED", "lastSuccessfulScan=$lastSuccessfulScan; now=$now")
             val request = OneTimeWorkRequestBuilder<ExpiryReminderWorker>().build()
             workManager.enqueueUniqueWork(
                 ExpiryReminderWorker.WORK_NAME,
