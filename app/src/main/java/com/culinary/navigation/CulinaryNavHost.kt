@@ -343,6 +343,7 @@ private fun NavGraphBuilder.homeGraph(navController: NavHostController) {
             onOpenInventory = { navController.navigateToTopLevel(INVENTORY_ROUTE) },
             onOpenAllPlans = { navController.navigate(ALL_PLANS_ROUTE) },
             onAddPlan = { navController.navigate(PLAN_ADD_ROUTE) },
+            onOpenPlan = { planId -> navController.navigate("home/plans/detail/$planId") },
             onNewPurchase = { navController.navigate(homePlaceholderRoute(HomePlaceholderSection.PURCHASE_ADD)) },
             onOpenAllPurchases = { navController.navigate(homePlaceholderRoute(HomePlaceholderSection.PURCHASES)) },
             onOpenPurchase = { purchaseId -> navController.navigate(homePurchaseDetailRoute(purchaseId)) },
