@@ -557,9 +557,9 @@ fun AddPlanRoute(onSaved: () -> Unit, onBack: () -> Unit, planId: String? = null
                 PlanSection("02  执行安排", "日期、时间与优先级") {
                     PlanDateField(date) { date = it }
                     Text("执行时间", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    ChoiceRow(listOf("不指定", "09:00", "10:00", "11:00", "14:00", "15:00", "16:00", "17:00"), time) { time = it }
+                    PlanWheelChoice(listOf("不指定", "09:00", "10:00", "11:00", "14:00", "15:00", "16:00", "17:00"), time) { time = it }
                     Text("优先级", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    ChoiceRow(listOf("低", "普通", "高", "紧急"), priority) { priority = it }
+                    PlanWheelChoice(listOf("低", "普通", "高", "紧急"), priority) { priority = it }
                 }
                 PlanSection("03  执行要求", "工作说明与完成标准") {
                     PlanField("工作说明", instructions, minLines = 3) { instructions = it }
@@ -590,18 +590,27 @@ fun AddPlanRoute(onSaved: () -> Unit, onBack: () -> Unit, planId: String? = null
 }
 
 @Composable
-private fun PlanTypeChoice(title: String, eyebrow: String, detail: String, selected: Boolean, onClick: () -> Unit) {
-    Column(Modifier.fillMaxWidth().clickable(onClick = onClick).padding(vertical = 16.dp)) {
-        Row(Modifier.fillMaxWidth(), verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
-            Column(Modifier.weight(1f)) {
-                Text(title, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Medium)
-                Text(eyebrow, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-            Text(if (selected) "●" else "○", color = if (selected) Color(0xFF8A6A2B) else MaterialTheme.colorScheme.outline)
-        }
-        Spacer(Modifier.height(7.dp))
-        Text(detail, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        HorizontalDivider(Modifier.padding(top = 13.dp), color = if (selected) Color(0xFF8A6A2B) else MaterialTheme.colorScheme.outlineVariant)
+private fun PlanTypeChoice(
+    title: String,
+    eyebrow: String,
+    detail: String,
+    selected: Boolean,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit,
+) {
+    Column(
+        modifier.fillMaxWidth().clickable(onClick = onClick).padding(top = 16.dp, bottom = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Text(eyebrow, style = MaterialTheme.typography.labelSmall, color = if (selected) Color(0xFF8A6A2B) else MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(title, style = MaterialTheme.typography.titleLarge, fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal)
+        Text(detail, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, minLines = 3)
+        HorizontalDivider(
+            Modifier.padding(top = 5.dp),
+            color = if (selected) Color(0xFF8A6A2B) else MaterialTheme.colorScheme.outlineVariant,
+            thickness = if (selected) 2.dp else 1.dp,
+        )
+        Text(if (selected) "已选择" else "选择此类型", style = MaterialTheme.typography.labelSmall, color = if (selected) Color(0xFF8A6A2B) else MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 
@@ -641,6 +650,40 @@ private fun PlanDateField(value: String, onChange: (String) -> Unit) {
             Text("选择日期  ›", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.secondary)
         }
         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+    }
+}
+
+@Composable
+private fun PlanWheelChoice(options: List<String>, selected: String, onSelect: (String) -> Unit) {
+    val selectedIndex = options.indexOf(selected).coerceAtLeast(0)
+    val previous = options.getOrNull(selectedIndex - 1)
+    val next = options.getOrNull(selectedIndex + 1)
+    Column(
+        Modifier.fillMaxWidth().padding(vertical = 5.dp),
+        horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally,
+    ) {
+        Box(
+            Modifier.fillMaxWidth().height(30.dp).clickable(enabled = previous != null) { previous?.let(onSelect) },
+            contentAlignment = androidx.compose.ui.Alignment.Center,
+        ) {
+            Text(previous ?: " ", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.55f))
+        }
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+        Box(
+            Modifier.fillMaxWidth().height(38.dp).clickable {
+                options.getOrNull((selectedIndex + 1).coerceAtMost(options.lastIndex))?.let(onSelect)
+            },
+            contentAlignment = androidx.compose.ui.Alignment.Center,
+        ) {
+            Text(selected, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold, color = Color(0xFF8A6A2B))
+        }
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+        Box(
+            Modifier.fillMaxWidth().height(30.dp).clickable(enabled = next != null) { next?.let(onSelect) },
+            contentAlignment = androidx.compose.ui.Alignment.Center,
+        ) {
+            Text(next ?: " ", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.55f))
+        }
     }
 }
 
