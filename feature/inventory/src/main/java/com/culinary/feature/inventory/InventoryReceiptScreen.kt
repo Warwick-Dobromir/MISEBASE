@@ -627,9 +627,9 @@ internal fun ReceiptScreen(
                         .padding(bottom = CulinarySpacing.xl),
             ) {
                 PageHeader(
-                    eyebrow = "",
+                    eyebrow = null,
                     title = if (showConfirmation) "确认入库" else "入库",
-                    supporting = "",
+                    supporting = if (showConfirmation) "RECEIPT CONFIRMATION · 入库确认" else "STOCK RECEIPT · 库存接收",
                 )
                 if (!showConfirmation) {
                     Row(
