@@ -132,24 +132,64 @@ class ArchiveDetailViewModel
 
         fun confirmBarcodeReplacement() {
             val scanned = _uiState.value.pendingScannedBarcode ?: return
+            replaceBarcodeFromScanner(scanned) {}
+        }
+
+        /**
+         * Scanner confirmation is committed by the archive's own ViewModel while the
+         * dialog is still visible. The dialog is dismissed only after the persisted
+         * value has been read back and verified.
+         */
+        fun replaceBarcodeFromScanner(scannedBarcode: String, onComplete: (Boolean) -> Unit) {
+            val scanned = scannedBarcode.trim()
+            if (scanned.isEmpty() || _uiState.value.isReplacingBarcode) {
+                onComplete(false)
+                return
+            }
             viewModelScope.launch {
-                _uiState.update { it.copy(isReplacingBarcode = true, error = null) }
-                when (val result = replaceBarcode(archiveId, scanned)) {
-                    is Outcome.Success -> {
+                _uiState.update { it.copy(isReplacingBarcode = true, error = null, message = null) }
+                val result = replaceBarcode(archiveId, scanned)
+                when (result) {
+                    is Outcome.Failure -> {
                         _uiState.update {
-                            it.copy(pendingScannedBarcode = null, isReplacingBarcode = false, message = "条形码已更换。")
+                            it.copy(
+                                isReplacingBarcode = false,
+                                error = if (result.error is CulinaryError.Conflict) {
+                                    "这个新条码已存在于其他库存档案中，不能重复使用。请重新扫描其他条码。"
+                                } else {
+                                    InventoryErrorMessages.describe(result.error)
+                                },
+                            )
                         }
-                        load()
+                        onComplete(false)
                     }
-                    is Outcome.Failure -> _uiState.update {
-                        it.copy(
-                            isReplacingBarcode = false,
-                            error = if (result.error is CulinaryError.Conflict) {
-                                "这个新条码已存在于其他库存档案中，不能重复使用。请重新扫描其他条码。"
-                            } else {
-                                InventoryErrorMessages.describe(result.error)
-                            },
-                        )
+                    is Outcome.Success -> {
+                        when (val refreshed = read()) {
+                            is Outcome.Success -> {
+                                val persisted = refreshed.value.detail?.archive?.barcode?.trim()
+                                if (persisted.equals(scanned, ignoreCase = true)) {
+                                    _uiState.value = refreshed.value.copy(message = "条形码已更换。")
+                                    onComplete(true)
+                                } else {
+                                    _uiState.update {
+                                        it.copy(
+                                            isReplacingBarcode = false,
+                                            error = "条形码写入后校验失败，档案未确认更新。请重试。",
+                                        )
+                                    }
+                                    onComplete(false)
+                                }
+                            }
+                            is Outcome.Failure -> {
+                                _uiState.update {
+                                    it.copy(
+                                        isReplacingBarcode = false,
+                                        error = "条形码已提交，但重新读取档案失败：${InventoryErrorMessages.describe(refreshed.error)}",
+                                    )
+                                }
+                                onComplete(false)
+                            }
+                        }
                     }
                 }
             }
