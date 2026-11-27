@@ -31,6 +31,7 @@ class ExpiryReminderAlarmReceiver : BroadcastReceiver() {
                 val appContext = context.applicationContext
                 try {
                     recordReminderStage(appContext, "系统闹钟已触发")
+                    ExpiryReminderDiagnostics.record(appContext, "ALARM_BROADCAST_RECEIVED", "action=ACTION_REMINDER; receiver=ExpiryReminderAlarmReceiver")
                     ExpiryReminderDiagnostics.record(
                         appContext,
                         "ALARM_TRIGGERED",
@@ -59,7 +60,7 @@ class ExpiryReminderAlarmReceiver : BroadcastReceiver() {
                     Log.e("ExpiryReminderAlarm", "Failed to handle reminder alarm", error)
                 }
             }
-            ACTION_TEST_NOTIFICATION -> restorePendingTestNotification(context.applicationContext)
+            ACTION_TEST_NOTIFICATION -> { ExpiryReminderDiagnostics.record(context.applicationContext, "TEST_ALARM_BROADCAST_RECEIVED", "source=AlarmManager"); restorePendingTestNotification(context.applicationContext, "alarm_broadcast") }
         }
     }
 
@@ -193,7 +194,7 @@ class ExpiryReminderAlarmReceiver : BroadcastReceiver() {
             }
         }
 
-        fun restorePendingTestNotification(context: Context) {
+        fun restorePendingTestNotification(context: Context, source: String) {
             val preferences = context.getSharedPreferences(
                 ExpiryTestNotificationWorker.TEST_STATE_PREFS,
                 Context.MODE_PRIVATE,
@@ -217,7 +218,7 @@ class ExpiryReminderAlarmReceiver : BroadcastReceiver() {
             val productCount = preferences.getInt(TEST_PRODUCT_COUNT_KEY, 0)
             val batchCount = preferences.getInt(TEST_BATCH_COUNT_KEY, 0)
             val claimed = preferences.edit().putBoolean(TEST_PENDING_KEY, false).commit()
-            if (claimed) showTestNotification(context, productCount, batchCount)
+            if (claimed) showTestNotification(context, productCount, batchCount, source)
         }
 
         private fun scheduleTestAlarm(context: Context, triggerAtMillis: Long) {
@@ -239,12 +240,12 @@ class ExpiryReminderAlarmReceiver : BroadcastReceiver() {
         private fun canScheduleExactAlarms(context: Context, alarmManager: AlarmManager): Boolean =
             Build.VERSION.SDK_INT < Build.VERSION_CODES.S || alarmManager.canScheduleExactAlarms()
 
-        private fun showTestNotification(context: Context, productCount: Int, batchCount: Int) {
+        private fun showTestNotification(context: Context, productCount: Int, batchCount: Int, source: String) {
             val preferences = context.getSharedPreferences(
                 ExpiryTestNotificationWorker.TEST_STATE_PREFS,
                 Context.MODE_PRIVATE,
             )
-            ExpiryReminderDiagnostics.record(context, "TEST_ALARM_TRIGGERED", "test notification alarm received")
+            if (source != "alarm_broadcast") ExpiryReminderDiagnostics.record(context, "TEST_ALARM_RECOVERED_WITHOUT_BROADCAST", "source=$source")
             preferences.edit()
                 .putString(ExpiryTestNotificationWorker.TEST_STATE_KEY, "后台闹钟已触发")
                 .putLong(ExpiryTestNotificationWorker.TEST_UPDATED_KEY, System.currentTimeMillis())
@@ -303,7 +304,7 @@ class ExpiryReminderAlarmReceiver : BroadcastReceiver() {
                 .apply { if (pending != null) setContentIntent(pending) }
                 .build()
             manager.notify(TEST_NOTIFICATION_ID, notification)
-            ExpiryReminderDiagnostics.record(context, "TEST_NOTIFICATION_POSTED", "NotificationManager.notify returned")
+            ExpiryReminderDiagnostics.record(context, "TEST_NOTIFICATION_POSTED", "source=$source; NotificationManager.notify returned")
             updateTestState(preferences, "系统通知已发送")
         }
 
@@ -327,7 +328,7 @@ class ExpiryReminderBootReceiver : BroadcastReceiver() {
             intent?.action == AlarmManager.ACTION_SCHEDULE_EXACT_ALARM_PERMISSION_STATE_CHANGED
         ) {
             ExpiryReminderDiagnostics.record(context, "BOOT_OR_TIME_EVENT", "action=${intent?.action}")
-            ExpiryReminderScheduler.ensureScheduled(context.applicationContext)
+            ExpiryReminderScheduler.ensureScheduled(context.applicationContext, intent.action ?: "boot_or_time_event")
         }
     }
 }
