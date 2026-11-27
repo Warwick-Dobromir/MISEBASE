@@ -63,7 +63,7 @@ class ArchiveBarcodeScanViewModel @Inject constructor(
 @Composable
 fun ArchiveBarcodeScanRoute(
     oldBarcode: String?,
-    onConfirm: (String) -> Unit,
+    onConfirm: (String, (Boolean) -> Unit) -> Unit,
     onBack: () -> Unit,
     viewModel: ArchiveBarcodeScanViewModel = hiltViewModel(),
 ) {
@@ -76,6 +76,8 @@ fun ArchiveBarcodeScanRoute(
     var candidate by remember { mutableStateOf<String?>(null) }
     var selected by remember { mutableStateOf(false) }
     var scanning by remember { mutableStateOf(true) }
+    var confirming by remember { mutableStateOf(false) }
+    var confirmError by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(viewModel) { viewModel.begin() }
 
@@ -217,6 +219,10 @@ fun ArchiveBarcodeScanRoute(
                         }
                     }
                 }
+                confirmError?.let { message ->
+                    Spacer(Modifier.height(10.dp))
+                    Text(message, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
+                }
                 Spacer(Modifier.height(22.dp))
                 Spacer(Modifier.fillMaxWidth().height(1.dp).background(MaterialTheme.colorScheme.outlineVariant))
                 Row(
@@ -231,11 +237,18 @@ fun ArchiveBarcodeScanRoute(
                         style = MaterialTheme.typography.bodyLarge,
                     )
                     Text(
-                        "确认替换",
-                        modifier = Modifier.clickable(enabled = selected && candidate != null) {
-                            candidate?.let(onConfirm)
+                        if (confirming) "正在保存…" else "确认替换",
+                        modifier = Modifier.clickable(enabled = selected && candidate != null && !confirming) {
+                            candidate?.let { barcode ->
+                                confirming = true
+                                confirmError = null
+                                onConfirm(barcode) { success ->
+                                    confirming = false
+                                    if (!success) confirmError = "保存未成功，档案未更新。请检查提示后重试。"
+                                }
+                            }
                         }.padding(vertical = 6.dp),
-                        color = if (selected && candidate != null) accent else MaterialTheme.colorScheme.outline,
+                        color = if (selected && candidate != null && !confirming) accent else MaterialTheme.colorScheme.outline,
                         style = MaterialTheme.typography.bodyLarge,
                     )
                 }
