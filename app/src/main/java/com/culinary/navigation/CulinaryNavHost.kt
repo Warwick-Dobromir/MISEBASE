@@ -821,8 +821,8 @@ private fun NavGraphBuilder.scanGraph(navController: NavHostController) {
             oldBarcode = archiveEntry.savedStateHandle.get<String>("archive_barcode_current"),
             onConfirm = { barcode, onComplete ->
                 archiveViewModel.replaceBarcodeFromScanner(barcode) { saved ->
-                    if (saved) navController.popBackStack()
                     onComplete(saved)
+                    if (saved) navController.popBackStack()
                 }
             },
             onBack = { navController.popBackStack() },
