@@ -27,9 +27,12 @@ class ExpiryReminderAlarmReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent?) {
         when (intent?.action) {
             ACTION_REMINDER -> {
-                scheduleNextReminder(context.applicationContext)
+                val appContext = context.applicationContext
+                recordReminderStage(appContext, "系统闹钟已触发")
+                WorkManager.getInstance(appContext).cancelUniqueWork(ExpiryReminderFallbackWorker.WORK_NAME)
+                scheduleNextReminder(appContext)
                 val request = OneTimeWorkRequestBuilder<ExpiryReminderWorker>().build()
-                WorkManager.getInstance(context).enqueueUniqueWork(
+                WorkManager.getInstance(appContext).enqueueUniqueWork(
                     ExpiryReminderWorker.WORK_NAME,
                     ExistingWorkPolicy.KEEP,
                     request,
@@ -50,6 +53,20 @@ class ExpiryReminderAlarmReceiver : BroadcastReceiver() {
         private const val TEST_TRIGGER_AT_KEY = "test_notification_trigger_at"
         private const val TEST_PRODUCT_COUNT_KEY = "test_notification_product_count"
         private const val TEST_BATCH_COUNT_KEY = "test_notification_batch_count"
+        const val KEY_NEXT_ALARM_AT = "next_alarm_at"
+        const val KEY_ALARM_SCHEDULE_MODE = "alarm_schedule_mode"
+        const val KEY_ALARM_STAGE = "alarm_stage"
+        const val KEY_ALARM_STAGE_AT = "alarm_stage_at"
+        const val KEY_ALARM_LAST_TRIGGERED_AT = "alarm_last_triggered_at"
+
+        private fun recordReminderStage(context: Context, stage: String) {
+            context.getSharedPreferences(ExpiryReminderWorker.PREFS_NAME, Context.MODE_PRIVATE)
+                .edit()
+                .putString(KEY_ALARM_STAGE, stage)
+                .putLong(KEY_ALARM_STAGE_AT, System.currentTimeMillis())
+                .putLong(KEY_ALARM_LAST_TRIGGERED_AT, System.currentTimeMillis())
+                .apply()
+        }
 
         fun scheduleNextReminder(context: Context) {
             val now = LocalDateTime.now()
@@ -78,15 +95,37 @@ class ExpiryReminderAlarmReceiver : BroadcastReceiver() {
                 intent,
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
             )
-            if (canScheduleExactAlarms(context, alarmManager)) {
+            val exactAllowed = canScheduleExactAlarms(context, alarmManager)
+            val scheduleMode = if (exactAllowed) {
                 try {
                     alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAtMillis, pending)
+                    "精确闹钟 + WorkManager 兜底"
                 } catch (_: SecurityException) {
                     alarmManager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAtMillis, pending)
+                    "非精确闹钟 + WorkManager 兜底"
                 }
             } else {
                 alarmManager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAtMillis, pending)
+                "未获精确闹钟权限：非精确闹钟 + WorkManager 兜底"
             }
+            context.getSharedPreferences(ExpiryReminderWorker.PREFS_NAME, Context.MODE_PRIVATE)
+                .edit()
+                .putLong(KEY_NEXT_ALARM_AT, triggerAtMillis)
+                .putString(KEY_ALARM_SCHEDULE_MODE, scheduleMode)
+                .putString(KEY_ALARM_STAGE, "已登记下一次提醒")
+                .putLong(KEY_ALARM_STAGE_AT, System.currentTimeMillis())
+                .apply()
+
+            // AlarmManager 负责准点唤醒；WorkManager 作为持久化兜底。
+            val delay = (triggerAtMillis - System.currentTimeMillis()).coerceAtLeast(0L)
+            val fallback = OneTimeWorkRequestBuilder<ExpiryReminderFallbackWorker>()
+                .setInitialDelay(delay, TimeUnit.MILLISECONDS)
+                .build()
+            WorkManager.getInstance(context).enqueueUniqueWork(
+                ExpiryReminderFallbackWorker.WORK_NAME,
+                ExistingWorkPolicy.REPLACE,
+                fallback,
+            )
         }
 
         fun scheduleTestNotification(
