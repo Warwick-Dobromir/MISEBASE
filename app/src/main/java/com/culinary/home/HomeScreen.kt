@@ -81,7 +81,7 @@ fun HomeRoute(
     val today = LocalDate.now().toString()
     val todayPlans = persistentPlans
         .filter { it.plannedDate == null || it.plannedDate == today }
-        .map { plan -> HomePlan(id = plan.id, titleRes = null, completed = plan.completed, title = plan.title, kind = plan.kind.name, subtitle = listOf(plan.metadata.quantity, plan.metadata.unit).filter { it.isNotBlank() }.joinToString(" ").ifBlank { plan.metadata.category }) }
+        .map { plan -> HomePlan(id = plan.id, titleRes = null, completed = plan.completed, title = plan.title, kind = plan.kind.name, subtitle = listOf(plan.metadata.quantity, plan.metadata.unit).filter { it.isNotBlank() }.joinToString(" ").ifBlank { plan.metadata.category }, hasScheduledTime = plan.metadata.time.isNotBlank() && plan.metadata.time != "不指定") }
     val expiryAlert by ExpiryAlertStore.alert.collectAsStateWithLifecycle()
 
     HomeScreen(
@@ -447,21 +447,22 @@ private fun PlanRow(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(modifier = Modifier.weight(1f)) {
-        Text(
-            text = plan.title ?: plan.titleRes?.let { stringResource(it) }.orEmpty(),
-            style = MaterialTheme.typography.bodyLarge,
-            color =
-                if (plan.completed) {
-                    MaterialTheme.colorScheme.onSurfaceVariant
-                } else {
-                    MaterialTheme.colorScheme.onSurface
-                },
-            maxLines = 2,
-            textDecoration = if (plan.completed) TextDecoration.LineThrough else TextDecoration.None,
-        )
-        plan.subtitle?.takeIf { it.isNotBlank() }?.let {
-            Text(it, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = plan.title ?: plan.titleRes?.let { stringResource(it) }.orEmpty(),
+                    modifier = Modifier.weight(1f),
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = if (plan.completed) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
+                    maxLines = 2,
+                    textDecoration = if (plan.completed) TextDecoration.LineThrough else TextDecoration.None,
+                )
+                if (plan.hasScheduledTime && !plan.completed) {
+                    Text("!", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = Color(0xFF8A6A2B))
+                }
+            }
+            plan.subtitle?.takeIf { it.isNotBlank() }?.let {
+                Text(it, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
         }
     }
 }
