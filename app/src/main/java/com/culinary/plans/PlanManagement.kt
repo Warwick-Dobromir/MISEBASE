@@ -475,6 +475,7 @@ private fun PlanListGroup(title: String, eyebrow: String, items: List<PlanUiItem
 fun AddPlanRoute(onSaved: () -> Unit, onBack: () -> Unit, planId: String? = null, kindArg: String? = null, onOpenRecipeEditor: (String?) -> Unit = {}, viewModel: PlanManagementViewModel = hiltViewModel()) {
     val plans by viewModel.plans.collectAsStateWithLifecycle()
     val message by viewModel.message.collectAsStateWithLifecycle()
+    val context = LocalContext.current
     val notificationPermissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { }
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner) {
@@ -608,7 +609,7 @@ fun AddPlanRoute(onSaved: () -> Unit, onBack: () -> Unit, planId: String? = null
             PlanTextAction(if (kind == PlanKind.PRODUCTION) "保存制作计划" else "保存工作计划", title.isNotBlank() && date.isNotBlank() && (kind != PlanKind.PRODUCTION || recipeId.isNotBlank())) {
                 val metadata = PlanMetadata(target, quantity, unit, category, time, priority, instructions, criteria, linkedArchive, note = note, recipeId = recipeId, recipeVersionId = versionId, unitId = unitId)
                 if (time.isNotBlank() && time != "不指定" && Build.VERSION.SDK_INT >= 33 &&
-                    ContextCompat.checkSelfPermission(context = LocalContext.current, permission = Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
+                    ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
                 ) {
                     notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
                 }
