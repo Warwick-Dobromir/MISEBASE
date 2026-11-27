@@ -229,6 +229,14 @@ internal fun SettingsScreen(
             )
             Spacer(modifier = Modifier.height(CulinarySpacing.md))
             CulinaryButton(
+                text = "导出后台提醒诊断记录",
+                onClick = onExportDiagnostics,
+                variant = CulinaryButtonVariant.Secondary,
+                enabled = state.diagnosticsExport !is DiagnosticsExportState.Running,
+                modifier = Modifier.fillMaxWidth(),
+            )
+            Spacer(modifier = Modifier.height(CulinarySpacing.xs))
+            CulinaryButton(
                 text = if (expiryScanTestState.isRunning) "正在扫描库存" else "扫描测试",
                 onClick = onScanTestClick,
                 enabled = !expiryScanTestState.isRunning,
