@@ -75,6 +75,7 @@ fun SettingsRoute(
     onOpenUnits: () -> Unit = {},
     onOpenBatchHistory: () -> Unit = {},
     onOpenInventoryLedger: () -> Unit = {},
+    onOpenPlanRecycleBin: () -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: SettingsViewModel = hiltViewModel(),
 ) {
@@ -119,6 +120,7 @@ fun SettingsRoute(
         onOpenUnits = onOpenUnits,
         onOpenBatchHistory = onOpenBatchHistory,
         onOpenInventoryLedger = onOpenInventoryLedger,
+        onOpenPlanRecycleBin = onOpenPlanRecycleBin,
         onBackupClick = { backupLauncher.launch("MISEBASE-backup-${fileStamp()}.zip") },
         onRestoreClick = { restoreLauncher.launch(RESTORE_MIME_TYPES) },
         onConfirmRestore = viewModel::confirmRestore,
@@ -181,6 +183,7 @@ internal fun SettingsScreen(
     onDismissRecycleMessage: () -> Unit,
     expiryScanTestState: ExpiryScanTestUiState,
     onScanTestClick: () -> Unit,
+    onOpenPlanRecycleBin: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     var showSeedClearConfirm by remember { mutableStateOf(false) }
@@ -203,6 +206,7 @@ internal fun SettingsScreen(
                 onOpenBatches = onOpenBatchHistory,
                 onOpenLedger = onOpenInventoryLedger,
             )
+            PlanRecycleBinSection(onOpenPlanRecycleBin)
             BackupSection(state = state, onBackupClick = onBackupClick)
             RestoreSection(
                 state = state,
@@ -339,6 +343,21 @@ private fun InventoryHistorySection(
         style = MaterialTheme.typography.bodyLarge,
         color = MaterialTheme.colorScheme.onSurface,
         modifier = Modifier.fillMaxWidth().clickable(onClick = onOpenLedger).padding(vertical = CulinarySpacing.sm),
+    )
+    CulinaryRule()
+}
+
+@Composable
+private fun PlanRecycleBinSection(onOpen: () -> Unit) {
+    SectionHeader(title = "计划回收站")
+    Text(
+        text = "管理已完成的制作计划与工作计划；永久删除需要专用密码",
+        style = MaterialTheme.typography.bodyMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onOpen)
+            .padding(vertical = CulinarySpacing.sm),
     )
     CulinaryRule()
 }

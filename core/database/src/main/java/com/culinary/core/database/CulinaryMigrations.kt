@@ -39,6 +39,7 @@ internal object CulinaryMigrations {
     val MIGRATION_14_15: Migration = MIGRATION_14_15_IMPL
     val MIGRATION_15_16: Migration = MIGRATION_15_16_IMPL
     val MIGRATION_16_17: Migration = MIGRATION_16_17_IMPL
+    val MIGRATION_17_18: Migration = MIGRATION_17_18_IMPL
 
     val ALL: Array<Migration> =
         arrayOf(
@@ -58,6 +59,7 @@ internal object CulinaryMigrations {
             MIGRATION_14_15,
             MIGRATION_15_16,
             MIGRATION_16_17,
+            MIGRATION_17_18,
         )
 }
 
@@ -1070,3 +1072,31 @@ private val MIGRATION_16_17_IMPL = object : Migration(16, 17) {
   db.execSQL("CREATE TRIGGER IF NOT EXISTS `release_temporary_barcode_on_batch_close` AFTER UPDATE OF `status` ON `inventory_batch` WHEN NEW.`status` IN ('DEPLETED','EXPIRED','DISCARDED','RECYCLED') AND OLD.`status` NOT IN ('DEPLETED','EXPIRED','DISCARDED','RECYCLED') BEGIN INSERT INTO `temporary_barcode_history` (`id`,`barcode_id`,`barcode`,`batch_id`,`action`,`occurred_at`) SELECT lower(hex(randomblob(16))), `id`, `barcode`, NEW.`id`, 'RELEASED', CAST(strftime('%s','now') AS INTEGER)*1000 FROM `temporary_barcode` WHERE `batch_id`=NEW.`id` AND `status`='ALLOCATED'; UPDATE `temporary_barcode` SET `status`='FREE', `batch_id`=NULL, `released_at`=CAST(strftime('%s','now') AS INTEGER)*1000, `updated_at`=CAST(strftime('%s','now') AS INTEGER)*1000 WHERE `batch_id`=NEW.`id` AND `status`='ALLOCATED'; END")
  }
 }
+
+
+/** v18：工作计划独立持久化，与制作计划表分离。 */
+private val MIGRATION_17_18_IMPL =
+    object : Migration(17, 18) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            CulinarySchemaExtras.dropPartialIndexes(db)
+            db.execSQL(
+                """
+                CREATE TABLE IF NOT EXISTS work_plan (
+                    id TEXT NOT NULL,
+                    title TEXT NOT NULL,
+                    description TEXT,
+                    planned_date TEXT,
+                    status TEXT NOT NULL DEFAULT 'OPEN',
+                    completed_at INTEGER,
+                    created_at INTEGER NOT NULL,
+                    updated_at INTEGER NOT NULL,
+                    PRIMARY KEY(id)
+                )
+                """.trimIndent(),
+            )
+            db.execSQL(
+                "CREATE INDEX IF NOT EXISTS index_work_plan_status_planned_date " +
+                    "ON work_plan (status, planned_date)",
+            )
+        }
+    }

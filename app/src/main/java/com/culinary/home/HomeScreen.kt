@@ -49,8 +49,10 @@ import com.culinary.core.designsystem.component.CulinaryRule
 import com.culinary.core.designsystem.icon.CulinaryIcons
 import com.culinary.core.designsystem.theme.CulinarySpacing
 import com.culinary.core.designsystem.theme.CulinaryTextStyles
+import com.culinary.plans.PlanManagementViewModel
 import com.culinary.settings.ExpiryAlertStore
 import com.culinary.settings.InventoryExpiryAlert
+import java.time.LocalDate
 
 /**
  * 首页路由（HOME-001）。
@@ -71,11 +73,21 @@ fun HomeRoute(
     viewModel: HomeViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val planViewModel: PlanManagementViewModel = hiltViewModel()
+    val persistentPlans by planViewModel.plans.collectAsStateWithLifecycle()
+    val today = LocalDate.now().toString()
+    val todayPlans = persistentPlans
+        .filter { it.plannedDate == null || it.plannedDate == today }
+        .map { plan -> HomePlan(id = plan.id, titleRes = null, completed = plan.completed, title = plan.title) }
     val expiryAlert by ExpiryAlertStore.alert.collectAsStateWithLifecycle()
 
     HomeScreen(
-        state = state.copy(expiryAlert = expiryAlert),
-        onTogglePlan = viewModel::togglePlan,
+        state = state.copy(plans = todayPlans, expiryAlert = expiryAlert),
+        onTogglePlan = { id ->
+            persistentPlans.firstOrNull { it.id == id }?.let { plan ->
+                if (plan.completed) planViewModel.restore(plan) else planViewModel.complete(plan)
+            }
+        },
         onOpenTimer = onOpenTimer,
         onOpenSettings = onOpenSettings,
         onOpenAllPlans = onOpenAllPlans,
@@ -414,7 +426,7 @@ private fun PlanRow(
         PlanCheck(checked = plan.completed)
         Spacer(modifier = Modifier.width(CulinarySpacing.sm))
         Text(
-            text = stringResource(plan.titleRes),
+            text = plan.title ?: plan.titleRes?.let { stringResource(it) }.orEmpty(),
             style = MaterialTheme.typography.bodyLarge,
             color =
                 if (plan.completed) {

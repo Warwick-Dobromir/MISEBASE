@@ -12,8 +12,9 @@ import com.culinary.settings.InventoryExpiryAlert
  */
 data class HomePlan(
     val id: String,
-    @StringRes val titleRes: Int,
+    @StringRes val titleRes: Int? = null,
     val completed: Boolean = false,
+    val title: String? = null,
 )
 
 /** 首页一条采购记录。当前为只读演示数据，点击进入明确的占位详情入口。 */

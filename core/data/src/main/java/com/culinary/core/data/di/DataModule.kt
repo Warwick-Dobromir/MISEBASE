@@ -17,7 +17,9 @@ import com.culinary.core.database.DatabaseFactory
 import com.culinary.core.database.dao.CalculationRecordDao
 import com.culinary.core.database.dao.IngredientDao
 import com.culinary.core.database.dao.IngredientVersionDao
+import com.culinary.core.database.dao.ProductionPlanDao
 import com.culinary.core.database.dao.UnitDao
+import com.culinary.core.database.dao.WorkPlanDao
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -78,6 +80,14 @@ object DataModule {
     @Provides
     @Singleton
     fun provideCalculationRecordDao(database: CulinaryDatabase): CalculationRecordDao = database.calculationRecordDao()
+
+    @Provides
+    @Singleton
+    fun provideProductionPlanDao(database: CulinaryDatabase): ProductionPlanDao = database.productionPlanDao()
+
+    @Provides
+    @Singleton
+    fun provideWorkPlanDao(database: CulinaryDatabase): WorkPlanDao = database.workPlanDao()
 
     @Provides
     @Singleton

@@ -104,6 +104,12 @@ import com.culinary.home.HomePlaceholderRoute
 import com.culinary.home.HomePlaceholderSection
 import com.culinary.home.HomePurchasePlaceholderRoute
 import com.culinary.home.HomeRoute
+import com.culinary.plans.AddPlanRoute
+import com.culinary.plans.AllPlansRoute
+import com.culinary.plans.PlanDetailRoute
+import com.culinary.plans.PlanRecycleBinRoute
+import com.culinary.plans.planDetailRoute
+import com.culinary.plans.planEditRoute
 import com.culinary.home.homePlaceholderRoute
 import com.culinary.home.homePurchaseDetailRoute
 import com.culinary.kitchen.KitchenRoute
@@ -315,6 +321,7 @@ private fun AppNavGraph(
         popExitTransition = { fadeOut(animationSpec = tween(durationMillis = 120)) },
     ) {
         homeGraph(navController)
+        planGraph(navController)
         homePlaceholderGraph()
         kitchenReferenceGraph(navController)
         libraryGraph(navController, onArchiveSortingChanged, onArchiveBackLabelChanged)
@@ -334,11 +341,56 @@ private fun NavGraphBuilder.homeGraph(navController: NavHostController) {
             onOpenTimer = { navController.navigate(homePlaceholderRoute(HomePlaceholderSection.TIMER)) },
             onOpenSettings = { navController.navigateToTopLevel(SETTINGS_ROUTE) },
             onOpenInventory = { navController.navigateToTopLevel(INVENTORY_ROUTE) },
-            onOpenAllPlans = { navController.navigate(homePlaceholderRoute(HomePlaceholderSection.PLANS)) },
-            onAddPlan = { navController.navigate(homePlaceholderRoute(HomePlaceholderSection.PLAN_ADD)) },
+            onOpenAllPlans = { navController.navigate(ALL_PLANS_ROUTE) },
+            onAddPlan = { navController.navigate(PLAN_ADD_ROUTE) },
             onNewPurchase = { navController.navigate(homePlaceholderRoute(HomePlaceholderSection.PURCHASE_ADD)) },
             onOpenAllPurchases = { navController.navigate(homePlaceholderRoute(HomePlaceholderSection.PURCHASES)) },
             onOpenPurchase = { purchaseId -> navController.navigate(homePurchaseDetailRoute(purchaseId)) },
+        )
+    }
+}
+
+private const val ALL_PLANS_ROUTE = "home/plans"
+private const val PLAN_ADD_ROUTE = "home/plans/add"
+private const val PLAN_DETAIL_ROUTE = "home/plans/detail/{planId}"
+private const val PLAN_EDIT_ROUTE = "home/plans/edit/{planId}/{kind}"
+
+private fun NavGraphBuilder.planGraph(navController: NavHostController) {
+    composable(ALL_PLANS_ROUTE) {
+        AllPlansRoute(
+            onAdd = { navController.navigate(PLAN_ADD_ROUTE) },
+            onOpen = { plan -> navController.navigate(planDetailRoute(plan)) },
+        )
+    }
+    composable(PLAN_ADD_ROUTE) {
+        AddPlanRoute(
+            onSaved = { navController.popBackStack() },
+            onBack = { navController.popBackStack() },
+        )
+    }
+    composable(
+        route = PLAN_DETAIL_ROUTE,
+        arguments = listOf(navArgument("planId") { type = NavType.StringType }),
+    ) { entry ->
+        PlanDetailRoute(
+            planId = entry.arguments?.getString("planId").orEmpty(),
+            onBack = { navController.popBackStack() },
+            onEdit = { plan -> navController.navigate(planEditRoute(plan)) },
+            onDeleted = { navController.popBackStack() },
+        )
+    }
+    composable(
+        route = PLAN_EDIT_ROUTE,
+        arguments = listOf(
+            navArgument("planId") { type = NavType.StringType },
+            navArgument("kind") { type = NavType.StringType },
+        ),
+    ) { entry ->
+        AddPlanRoute(
+            planId = entry.arguments?.getString("planId"),
+            kindArg = entry.arguments?.getString("kind"),
+            onSaved = { navController.popBackStack() },
+            onBack = { navController.popBackStack() },
         )
     }
 }
@@ -893,6 +945,7 @@ private fun NavGraphBuilder.scanGraph(navController: NavHostController) {
 
 private const val ARCHIVE_BARCODE_SCAN_ROUTE = "inventory/archive-barcode-scan"
 private const val UNIT_MANAGEMENT_ROUTE = "settings/units"
+private const val PLAN_RECYCLE_BIN_ROUTE = "settings/plan-recycle-bin"
 
 private fun NavGraphBuilder.settingsGraph(navController: NavHostController) {
     composable(SETTINGS_ROUTE) {
@@ -900,10 +953,14 @@ private fun NavGraphBuilder.settingsGraph(navController: NavHostController) {
             onOpenUnits = { navController.navigate(UNIT_MANAGEMENT_ROUTE) },
             onOpenBatchHistory = { navController.navigate(InventoryRoutes.batchHistory()) },
             onOpenInventoryLedger = { navController.navigate(InventoryRoutes.ledgerV9()) },
+            onOpenPlanRecycleBin = { navController.navigate(PLAN_RECYCLE_BIN_ROUTE) },
         )
     }
     composable(UNIT_MANAGEMENT_ROUTE) {
         UnitManagementRoute()
+    }
+    composable(PLAN_RECYCLE_BIN_ROUTE) {
+        PlanRecycleBinRoute(onBack = { navController.popBackStack() })
     }
 }
 
