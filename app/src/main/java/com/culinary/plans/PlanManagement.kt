@@ -22,6 +22,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -30,6 +31,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextDecoration
@@ -161,7 +165,9 @@ class PlanManagementViewModel @Inject constructor(
     private val _requirements = MutableStateFlow<List<PlanRequirement>>(emptyList())
     val requirements = _requirements
 
-    init {
+    init { refreshRecipeOptions() }
+
+    fun refreshRecipeOptions() {
         viewModelScope.launch {
             _recipeOptions.value = recipeDao.listActive().mapNotNull { recipe ->
                 val version = recipeVersionDao.findCurrent(recipe.id) ?: return@mapNotNull null
@@ -436,6 +442,14 @@ private fun PlanListGroup(title: String, eyebrow: String, items: List<PlanUiItem
 fun AddPlanRoute(onSaved: () -> Unit, onBack: () -> Unit, planId: String? = null, kindArg: String? = null, onOpenRecipeEditor: (String?) -> Unit = {}, viewModel: PlanManagementViewModel = hiltViewModel()) {
     val plans by viewModel.plans.collectAsStateWithLifecycle()
     val message by viewModel.message.collectAsStateWithLifecycle()
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) viewModel.refreshRecipeOptions()
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
     val existing = plans.firstOrNull { it.id == planId }
     var kind by remember(planId, kindArg) { mutableStateOf(existing?.kind ?: if (kindArg == "work") PlanKind.WORK else PlanKind.PRODUCTION) }
     var step by remember(planId) { mutableStateOf(if (planId == null) 0 else 1) }
