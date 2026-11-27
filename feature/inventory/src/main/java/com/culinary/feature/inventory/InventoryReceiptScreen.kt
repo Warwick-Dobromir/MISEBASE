@@ -27,6 +27,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.OffsetMapping
+import androidx.compose.ui.text.input.TransformedText
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.SavedStateHandle
@@ -117,7 +120,6 @@ fun ReceiptRoute(
         onUnitSelected = viewModel::selectUnit,
         onBatchCodeChange = viewModel::onBatchCodeChange,
         onProductionDateChange = viewModel::onProductionDateChange,
-        onExpiresOnChange = viewModel::onExpiresOnChange,
         onLocationSelected = viewModel::selectLocation,
         onSourceProductSelected = viewModel::selectSourceProduct,
         onNoteChange = viewModel::onNoteChange,
@@ -593,7 +595,6 @@ internal fun ReceiptScreen(
     onUnitSelected: (String) -> Unit,
     onBatchCodeChange: (String) -> Unit,
     onProductionDateChange: (String) -> Unit,
-    onExpiresOnChange: (String) -> Unit,
     onLocationSelected: (String) -> Unit,
     onSourceProductSelected: (String?) -> Unit,
     onNoteChange: (String) -> Unit,
@@ -626,17 +627,9 @@ internal fun ReceiptScreen(
                         .padding(bottom = CulinarySpacing.xl),
             ) {
                 PageHeader(
-                    eyebrow = when {
-                        showConfirmation -> "STOCK IN / FINAL REVIEW"
-                        state.isPurchase -> "STOCK IN / PURCHASE"
-                        else -> "INVENTORY / STOCK IN"
-                    },
+                    eyebrow = "",
                     title = if (showConfirmation) "确认入库" else "入库",
-                    supporting = when {
-                        showConfirmation -> "RECEIPT CONFIRMATION"
-                        state.isPurchase -> "采购入库 · PURCHASE RECEIPT"
-                        else -> "STOCK RECEIPT · 库存接收"
-                    },
+                    supporting = "",
                 )
                 if (!showConfirmation) {
                     Row(
@@ -688,7 +681,7 @@ internal fun ReceiptScreen(
                         return@Column
                     }
                     if (state.isPurchase) {
-                        SectionHeader(title = "01  采购信息")
+                        SectionHeader(title = "采购信息")
                         ReceiptValueRow("供应商", "待关联采购单")
                         ReceiptValueRow("采购单号", "选择主页采购单后自动带入")
                         ReceiptValueRow("采购日期", "由采购单读取")
@@ -698,7 +691,7 @@ internal fun ReceiptScreen(
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.padding(vertical = CulinarySpacing.sm),
                         )
-                        SectionHeader(title = "02  采购明细")
+                        SectionHeader(title = "采购明细")
                     }
                     ReceiptFields(
                         state = state,
@@ -706,13 +699,12 @@ internal fun ReceiptScreen(
                         onQuantityChange = onQuantityChange,
                         onBatchCodeChange = onBatchCodeChange,
                         onProductionDateChange = onProductionDateChange,
-                        onExpiresOnChange = onExpiresOnChange,
                         onNoteChange = onNoteChange,
                         onTemporaryChange = onTemporaryChange,
                         showTemporary = !state.isPurchase,
                     )
                     if (state.isPurchase) {
-                        SectionHeader(title = "03  验收入库")
+                        SectionHeader(title = "验收入库")
                         ReceiptValueRow("实际收货数量", "${state.quantity.ifBlank { "0" }} ${state.unitSymbol}")
                         ReceiptValueRow(
                             label = "存放库位",
@@ -1001,14 +993,14 @@ private fun ReceiptFields(
     onTemporaryChange: (Boolean) -> Unit,
     showTemporary: Boolean,
 ) {
-    SectionHeader(title = if (state.isPurchase) "选择采购食材" else "01  选择食材")
+    SectionHeader(title = if (state.isPurchase) "选择采购食材" else "选择食材")
     ReceiptValueRow(
         label = "食材名称",
         value = state.selectedArchiveName ?: "选择库存档案",
         onClick = { onOpenPicker(ReceiptPicker.ARCHIVE) },
     )
 
-    SectionHeader(title = if (state.isPurchase) "实际收货数量" else "02  入库数量")
+    SectionHeader(title = if (state.isPurchase) "实际收货数量" else "入库数量")
     Row(
         modifier = Modifier.fillMaxWidth().padding(vertical = CulinarySpacing.md),
         verticalAlignment = Alignment.CenterVertically,
@@ -1029,7 +1021,7 @@ private fun ReceiptFields(
     }
     CulinaryRule()
 
-    SectionHeader(title = if (state.isPurchase) "批次信息" else "03  批次信息")
+    SectionHeader(title = if (state.isPurchase) "批次信息" else "批次信息")
     ReceiptValueRow("入库日期", LocalDate.now().toString())
     Row(
         modifier = Modifier.fillMaxWidth().padding(vertical = CulinarySpacing.sm),
@@ -1044,19 +1036,17 @@ private fun ReceiptFields(
         )
     }
     CulinaryRule()
-    Row(
-        modifier = Modifier.fillMaxWidth().padding(vertical = CulinarySpacing.sm),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text("保质期 / 到期日期", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        ReceiptPlainDateInput(
-            value = state.expiresOn,
-            onValueChange = onExpiresOnChange,
-            modifier = Modifier.weight(1f).padding(start = CulinarySpacing.lg),
-        )
-    }
-    CulinaryRule()
+    ReceiptValueRow(
+        label = "到期日期",
+        value = state.expiresOn.ifBlank {
+            when {
+                state.selectedArchive == null -> "选择食材后自动带入"
+                state.selectedArchive?.defaultShelfLifeValue == null -> "档案未设置默认保质期"
+                state.productionDate.isBlank() -> "填写生产日期后自动计算"
+                else -> "—"
+            }
+        },
+    )
     ReceiptValueRow(
         label = "库位",
         value = state.selectedLocationName ?: "选择实际库位",
@@ -1077,7 +1067,7 @@ private fun ReceiptFields(
         singleLine = true,
         modifier = Modifier.padding(top = CulinarySpacing.md),
     )
-    SectionHeader(title = "04  备注")
+    SectionHeader(title = "备注")
     ReceiptPlainInput(
         value = state.note,
         onValueChange = onNoteChange,
@@ -1114,6 +1104,7 @@ private fun ReceiptPlainInput(
     singleLine: Boolean = true,
     textStyle: androidx.compose.ui.text.TextStyle = MaterialTheme.typography.bodyLarge,
     keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
+    visualTransformation: VisualTransformation = VisualTransformation.None,
 ) {
     Column(modifier = modifier.padding(vertical = CulinarySpacing.xs)) {
         Box(modifier = Modifier.fillMaxWidth().padding(vertical = CulinarySpacing.sm)) {
@@ -1131,10 +1122,33 @@ private fun ReceiptPlainInput(
                 textStyle = textStyle.copy(color = MaterialTheme.colorScheme.onSurface),
                 singleLine = singleLine,
                 keyboardOptions = keyboardOptions,
+                visualTransformation = visualTransformation,
             )
         }
         CulinaryRule()
     }
+}
+
+private val ReceiptDateVisualTransformation = VisualTransformation { text ->
+    val digits = text.text.filter(Char::isDigit).take(8)
+    val formatted = buildString {
+        digits.forEachIndexed { index, char ->
+            if (index == 4 || index == 6) append('-')
+            append(char)
+        }
+    }
+    val offsetMapping = object : OffsetMapping {
+        override fun originalToTransformed(offset: Int): Int {
+            val safe = offset.coerceIn(0, digits.length)
+            return safe + (if (safe > 4) 1 else 0) + (if (safe > 6) 1 else 0)
+        }
+        override fun transformedToOriginal(offset: Int): Int {
+            val safe = offset.coerceIn(0, formatted.length)
+            return (safe - (if (safe > 4) 1 else 0) - (if (safe > 7) 1 else 0))
+                .coerceIn(0, digits.length)
+        }
+    }
+    TransformedText(androidx.compose.ui.text.AnnotatedString(formatted), offsetMapping)
 }
 
 @Composable
@@ -1150,6 +1164,7 @@ private fun ReceiptPlainDateInput(
         modifier = modifier,
         singleLine = true,
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+        visualTransformation = ReceiptDateVisualTransformation,
     )
 }
 
