@@ -699,8 +699,8 @@ private fun NavGraphBuilder.inventoryGraph(navController: NavHostController) {
             onPrint = { kind, refId -> navController.navigate(InventoryRoutes.printPreview(kind, refId, 80)) },
             onSaved = { navController.popBackStack() },
             isPurchase = false,
-            onOpenManual = { navController.navigate(InventoryRoutes.manualReceipt()) { launchSingleTop = true } },
-            onOpenPurchase = { navController.navigate(InventoryRoutes.purchase()) },
+            onOpenManual = { navController.replaceReceiptMode(InventoryRoutes.manualReceipt()) },
+            onOpenPurchase = { navController.replaceReceiptMode(InventoryRoutes.purchase()) },
         )
     }
     composable(
@@ -712,8 +712,8 @@ private fun NavGraphBuilder.inventoryGraph(navController: NavHostController) {
             onPrint = { kind, refId -> navController.navigate(InventoryRoutes.printPreview(kind, refId, 80)) },
             onSaved = { navController.popBackStack() },
             isPurchase = false,
-            onOpenManual = { navController.navigate(InventoryRoutes.manualReceipt()) },
-            onOpenPurchase = { navController.navigate(InventoryRoutes.purchase()) },
+            onOpenManual = { navController.replaceReceiptMode(InventoryRoutes.manualReceipt()) },
+            onOpenPurchase = { navController.replaceReceiptMode(InventoryRoutes.purchase()) },
         )
     }
     composable(InventoryRoutes.PURCHASE) {
@@ -722,8 +722,8 @@ private fun NavGraphBuilder.inventoryGraph(navController: NavHostController) {
             onPrint = { kind, refId -> navController.navigate(InventoryRoutes.printPreview(kind, refId, 80)) },
             onSaved = { navController.popBackStack() },
             isPurchase = true,
-            onOpenManual = { navController.navigate(InventoryRoutes.manualReceipt()) },
-            onOpenPurchase = { navController.navigate(InventoryRoutes.purchase()) { launchSingleTop = true } },
+            onOpenManual = { navController.replaceReceiptMode(InventoryRoutes.manualReceipt()) },
+            onOpenPurchase = { navController.replaceReceiptMode(InventoryRoutes.purchase()) },
         )
     }
     composable(
@@ -815,6 +815,16 @@ private fun NavGraphBuilder.inventoryGraph(navController: NavHostController) {
     }
     composable(InventoryRoutes.PLAN) {
         RequirementPlanRoute()
+    }
+}
+
+/** 手动/采购入库属于同一页面的模式切换，不把另一个模式压入返回栈。 */
+private fun NavHostController.replaceReceiptMode(targetRoute: String) {
+    val current = currentBackStackEntry ?: return
+    if (current.destination.route == targetRoute) return
+    navigate(targetRoute) {
+        popUpTo(current.destination.id) { inclusive = true }
+        launchSingleTop = true
     }
 }
 
