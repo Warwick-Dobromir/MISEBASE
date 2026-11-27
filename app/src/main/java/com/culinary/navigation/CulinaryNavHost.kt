@@ -57,6 +57,7 @@ import com.culinary.feature.ingredients.IngredientEditorRoute
 import com.culinary.feature.ingredients.IngredientsRoute
 import com.culinary.feature.ingredients.IngredientsRoutes
 import com.culinary.feature.inventory.ArchiveDetailRoute
+import com.culinary.feature.inventory.ArchiveDetailViewModel
 import com.culinary.feature.inventory.ArchiveEditRoute
 import com.culinary.feature.inventory.ArchiveListRoute
 import com.culinary.feature.inventory.BatchDetailRoute
@@ -815,11 +816,14 @@ private fun nullableString(name: String): NamedNavArgument =
 private fun NavGraphBuilder.scanGraph(navController: NavHostController) {
     dialog(ARCHIVE_BARCODE_SCAN_ROUTE) {
         val archiveEntry = navController.getBackStackEntry(InventoryRoutes.ARCHIVE)
+        val archiveViewModel: ArchiveDetailViewModel = hiltViewModel(archiveEntry)
         ArchiveBarcodeScanRoute(
             oldBarcode = archiveEntry.savedStateHandle.get<String>("archive_barcode_current"),
-            onConfirm = { barcode ->
-                archiveEntry.savedStateHandle["archive_barcode_scan_result"] = barcode
-                navController.popBackStack()
+            onConfirm = { barcode, onComplete ->
+                archiveViewModel.replaceBarcodeFromScanner(barcode) { saved ->
+                    if (saved) navController.popBackStack()
+                    onComplete(saved)
+                }
             },
             onBack = { navController.popBackStack() },
         )
