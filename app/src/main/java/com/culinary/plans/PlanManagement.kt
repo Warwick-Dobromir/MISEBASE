@@ -34,8 +34,16 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
 import com.culinary.core.database.dao.ProductionPlanDao
+import com.culinary.core.database.dao.ProductionPlanItemDao
+import com.culinary.core.database.dao.RecipeDao
+import com.culinary.core.database.dao.RecipeVersionDao
+import com.culinary.core.database.dao.RecipeComponentDao
+import com.culinary.core.database.dao.IngredientDao
+import com.culinary.core.database.dao.SauceDao
+import com.culinary.core.database.dao.UnitDao
 import com.culinary.core.database.dao.WorkPlanDao
 import com.culinary.core.database.entity.ProductionPlanEntity
+import com.culinary.core.database.entity.ProductionPlanItemEntity
 import com.culinary.core.database.entity.WorkPlanEntity
 import com.culinary.core.database.model.PlanStatusDb
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -73,13 +81,16 @@ data class PlanMetadata(
     val linkedArchive: String = "",
     val source: String = "手动创建",
     val note: String = "",
+    val recipeId: String = "",
+    val recipeVersionId: String = "",
+    val unitId: String = "",
 )
 
 private const val PLAN_META_PREFIX = "MISEBASE_PLAN_V1:"
 private fun encodeMetadata(meta: PlanMetadata): String {
     val raw = listOf(
         meta.target, meta.quantity, meta.unit, meta.category, meta.time, meta.priority,
-        meta.instructions, meta.completionCriteria, meta.linkedArchive, meta.source, meta.note,
+        meta.instructions, meta.completionCriteria, meta.linkedArchive, meta.source, meta.note, meta.recipeId, meta.recipeVersionId, meta.unitId,
     ).joinToString("\u001f")
     return PLAN_META_PREFIX + Base64.encodeToString(raw.toByteArray(Charsets.UTF_8), Base64.NO_WRAP)
 }
@@ -96,9 +107,23 @@ private fun decodeMetadata(value: String?): PlanMetadata {
             instructions = p.getOrElse(6) { "" }, completionCriteria = p.getOrElse(7) { "" },
             linkedArchive = p.getOrElse(8) { "" }, source = p.getOrElse(9) { "手动创建" },
             note = p.getOrElse(10) { "" },
+            recipeId = p.getOrElse(11) { "" }, recipeVersionId = p.getOrElse(12) { "" },
+            unitId = p.getOrElse(13) { "" },
         )
     }.getOrDefault(PlanMetadata(note = value))
 }
+
+data class PlanRecipeOption(
+    val id: String,
+    val versionId: String,
+    val unitId: String,
+    val name: String,
+    val unitName: String,
+    val unitSymbol: String,
+    val defaultQuantity: Double,
+)
+
+data class PlanRequirement(val name: String, val quantity: Double, val unit: String)
 
 data class PlanUiItem(
     val id: String,
@@ -118,7 +143,58 @@ data class PlanUiItem(
 class PlanManagementViewModel @Inject constructor(
     private val productionDao: ProductionPlanDao,
     private val workDao: WorkPlanDao,
+    private val productionItemDao: ProductionPlanItemDao,
+    private val recipeDao: RecipeDao,
+    private val recipeVersionDao: RecipeVersionDao,
+    private val recipeComponentDao: RecipeComponentDao,
+    private val ingredientDao: IngredientDao,
+    private val sauceDao: SauceDao,
+    private val unitDao: UnitDao,
 ) : ViewModel() {
+    private val _recipeOptions = MutableStateFlow<List<PlanRecipeOption>>(emptyList())
+    val recipeOptions = _recipeOptions
+    private val _requirements = MutableStateFlow<List<PlanRequirement>>(emptyList())
+    val requirements = _requirements
+
+    init {
+        viewModelScope.launch {
+            _recipeOptions.value = recipeDao.listActive().mapNotNull { recipe ->
+                val version = recipeVersionDao.findCurrent(recipe.id) ?: return@mapNotNull null
+                val unit = unitDao.findById(version.yieldUnitId)
+                PlanRecipeOption(
+                    id = recipe.id, versionId = version.id, unitId = version.yieldUnitId,
+                    name = recipe.name, unitName = unit?.name.orEmpty(), unitSymbol = unit?.symbol.orEmpty(),
+                    defaultQuantity = version.yieldQty,
+                )
+            }
+        }
+    }
+
+    fun loadRequirements(plan: PlanUiItem) {
+        if (plan.kind != PlanKind.PRODUCTION) {
+            _requirements.value = emptyList()
+            return
+        }
+        viewModelScope.launch {
+            val item = productionItemDao.listByPlan(plan.id).firstOrNull()
+            val version = item?.let { recipeVersionDao.findById(it.recipeVersionId) }
+            if (item == null || version == null) {
+                _requirements.value = emptyList()
+                return@launch
+            }
+            val scale = if (version.yieldQty > 0.0) item.quantity / version.yieldQty else 1.0
+            _requirements.value = recipeComponentDao.listByVersion(version.id).map { component ->
+                val name = when {
+                    component.ingredientId != null -> ingredientDao.findById(component.ingredientId)?.name
+                    component.referencedSauceId != null -> sauceDao.findById(component.referencedSauceId)?.name
+                    component.referencedRecipeId != null -> recipeDao.findById(component.referencedRecipeId)?.name
+                    else -> null
+                } ?: "未命名组成项"
+                val unit = unitDao.findById(component.unitId)?.symbol.orEmpty()
+                PlanRequirement(name, component.quantity * scale, unit)
+            }
+        }
+    }
     val plans = combine(productionDao.observeAll(), workDao.observeAll()) { production, work ->
         (production.map { it.toUi() } + work.map { it.toUi() })
             .sortedWith(compareBy<PlanUiItem> { it.plannedDate ?: "9999-99-99" }.thenByDescending { it.id })
@@ -137,28 +213,38 @@ class PlanManagementViewModel @Inject constructor(
             _message.value = "请选择计划日期"
             return
         }
-        if (kind == PlanKind.PRODUCTION && metadata.target.isBlank()) {
-            _message.value = "请选择或填写制作对象"
+        if (kind == PlanKind.PRODUCTION && (metadata.recipeId.isBlank() || metadata.recipeVersionId.isBlank())) {
+            _message.value = "请选择有效的制作档案"
             return
         }
         viewModelScope.launch {
             val now = System.currentTimeMillis()
             val cleanDate = date.trim()
             val encoded = encodeMetadata(metadata)
-            if (id == null) {
-                val newId = UUID.randomUUID().toString()
-                when (kind) {
-                    PlanKind.PRODUCTION -> productionDao.insert(
-                        ProductionPlanEntity(id = newId, title = cleanTitle, plannedDate = cleanDate, notes = encoded, createdAt = now, updatedAt = now),
-                    )
-                    PlanKind.WORK -> workDao.insert(
-                        WorkPlanEntity(id = newId, title = cleanTitle, description = encoded, plannedDate = cleanDate, createdAt = now, updatedAt = now),
-                    )
+            val planId = id ?: UUID.randomUUID().toString()
+            when (kind) {
+                PlanKind.PRODUCTION -> {
+                    if (id == null) {
+                        productionDao.insert(ProductionPlanEntity(id = planId, title = cleanTitle, plannedDate = cleanDate, notes = encoded, createdAt = now, updatedAt = now))
+                    } else {
+                        productionDao.updateOpen(planId, cleanTitle, cleanDate, encoded, now)
+                    }
+                    productionItemDao.deleteByPlan(planId)
+                    val version = metadata.recipeVersionId.takeIf { it.isNotBlank() }?.let { recipeVersionDao.findById(it) }
+                    if (version != null && metadata.recipeId.isNotBlank()) {
+                        productionItemDao.insert(
+                            ProductionPlanItemEntity(
+                                id = UUID.randomUUID().toString(), planId = planId, recipeId = metadata.recipeId,
+                                recipeVersionId = version.id, quantity = metadata.quantity.toDoubleOrNull() ?: version.yieldQty,
+                                unitId = metadata.unitId.ifBlank { version.yieldUnitId }, createdAt = now, updatedAt = now,
+                            ),
+                        )
+                    }
                 }
-            } else {
-                when (kind) {
-                    PlanKind.PRODUCTION -> productionDao.updateOpen(id, cleanTitle, cleanDate, encoded, now)
-                    PlanKind.WORK -> workDao.updateOpen(id, cleanTitle, encoded, cleanDate, now)
+                PlanKind.WORK -> if (id == null) {
+                    workDao.insert(WorkPlanEntity(id = planId, title = cleanTitle, description = encoded, plannedDate = cleanDate, createdAt = now, updatedAt = now))
+                } else {
+                    workDao.updateOpen(planId, cleanTitle, encoded, cleanDate, now)
                 }
             }
             _message.value = null
@@ -329,6 +415,10 @@ fun AddPlanRoute(
     var step by remember(planId) { mutableStateOf(if (planId == null) 0 else 1) }
     var title by remember(planId) { mutableStateOf(existing?.title.orEmpty()) }
     var date by remember(planId) { mutableStateOf(existing?.plannedDate ?: LocalDate.now().toString()) }
+    val recipeOptions by viewModel.recipeOptions.collectAsStateWithLifecycle()
+    var recipeId by remember(planId) { mutableStateOf(existing?.metadata?.recipeId.orEmpty()) }
+    var recipeVersionId by remember(planId) { mutableStateOf(existing?.metadata?.recipeVersionId.orEmpty()) }
+    var unitId by remember(planId) { mutableStateOf(existing?.metadata?.unitId.orEmpty()) }
     var target by remember(planId) { mutableStateOf(existing?.metadata?.target.orEmpty()) }
     var quantity by remember(planId) { mutableStateOf(existing?.metadata?.quantity.orEmpty()) }
     var unit by remember(planId) { mutableStateOf(existing?.metadata?.unit.orEmpty()) }
@@ -344,6 +434,7 @@ fun AddPlanRoute(
         if (existing != null) {
             title = existing.title; date = existing.plannedDate ?: LocalDate.now().toString()
             target = existing.metadata.target; quantity = existing.metadata.quantity; unit = existing.metadata.unit
+            recipeId = existing.metadata.recipeId; recipeVersionId = existing.metadata.recipeVersionId; unitId = existing.metadata.unitId
             category = existing.metadata.category.ifBlank { "其他" }; time = existing.metadata.time.ifBlank { "不指定" }
             priority = existing.metadata.priority; instructions = existing.metadata.instructions
             criteria = existing.metadata.completionCriteria; linkedArchive = existing.metadata.linkedArchive; note = existing.metadata.note
@@ -381,7 +472,29 @@ fun AddPlanRoute(
             if (kind == PlanKind.PRODUCTION) {
                 PlanSection("01  制作计划内容", "选择制作对象") {
                     PlanField("计划名称", title) { title = it }
-                    PlanField("制作对象 / 关联档案名称", target) { target = it }
+                    Text("选择制作档案", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelMedium)
+                    if (recipeOptions.isEmpty()) {
+                        Text("当前没有可用的菜谱档案或已发布版本。", color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+                    } else recipeOptions.forEach { option ->
+                        Column(
+                            Modifier.fillMaxWidth().clickable {
+                                recipeId = option.id
+                                recipeVersionId = option.versionId
+                                unitId = option.unitId
+                                target = option.name
+                                if (quantity.isBlank()) quantity = option.defaultQuantity.toString()
+                                unit = option.unitSymbol
+                            }.padding(vertical = 9.dp),
+                        ) {
+                            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                Text(option.name, fontWeight = if (recipeId == option.id) FontWeight.SemiBold else FontWeight.Normal)
+                                Text(if (recipeId == option.id) "已选择" else "选择 →", color = if (recipeId == option.id) Color(0xFF8A6A2B) else MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                            Text("当前版本产出：${option.defaultQuantity} ${option.unitName}", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelSmall)
+                            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                        }
+                    }
+                    if (target.isNotBlank()) Text("已关联：$target", color = Color(0xFF8A6A2B), style = MaterialTheme.typography.bodySmall)
                     Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                         Column(Modifier.weight(1f)) { PlanField("制作数量", quantity) { quantity = it } }
                         Column(Modifier.weight(1f)) { PlanField("计量单位", unit) { unit = it } }
@@ -426,7 +539,7 @@ fun AddPlanRoute(
                     linkedArchive = linkedArchive, note = note,
                 )
                 viewModel.save(kind, planId, title, date, meta)
-                if (title.isNotBlank() && date.isNotBlank() && (kind != PlanKind.PRODUCTION || target.isNotBlank())) onSaved()
+                if (title.isNotBlank() && date.isNotBlank() && (kind != PlanKind.PRODUCTION || recipeId.isNotBlank())) onSaved()
             }
         }
     }
@@ -505,6 +618,8 @@ fun PlanDetailRoute(
 ) {
     val plans by viewModel.plans.collectAsStateWithLifecycle()
     val plan = plans.firstOrNull { it.id == planId }
+    val requirements by viewModel.requirements.collectAsStateWithLifecycle()
+    LaunchedEffect(plan?.id) { plan?.let(viewModel::loadRequirements) }
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 22.dp, vertical = 18.dp)) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
             Text("计划详情", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelSmall)
@@ -525,8 +640,12 @@ fun PlanDetailRoute(
                     PlanInfoRow("制作对象", plan.metadata.target.ifBlank { "未关联" })
                     PlanInfoRow("制作档案", "需关联已有制作档案")
                 }
-                PlanSection("原料需求", "根据档案配方及制作数量计算") {
-                    Text("原料需求预览将在关联正式制作档案后显示。", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+                PlanSection("原料需求", "按关联配方版本及制作数量自动折算") {
+                    if (requirements.isEmpty()) {
+                        Text("该制作档案当前版本没有组成明细。", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+                    } else requirements.forEach { requirement ->
+                        PlanInfoRow(requirement.name, "${"%.2f".format(requirement.quantity)} ${requirement.unit}")
+                    }
                 }
             } else {
                 PlanSection("任务信息", "工作分类") {

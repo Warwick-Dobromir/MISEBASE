@@ -14,6 +14,9 @@ interface ProductionPlanItemDao {
     @Query("SELECT * FROM production_plan_item WHERE plan_id = :planId ORDER BY sort_order")
     suspend fun listByPlan(planId: String): List<ProductionPlanItemEntity>
 
+    @Query("DELETE FROM production_plan_item WHERE plan_id = :planId")
+    suspend fun deleteByPlan(planId: String)
+
     @Query("SELECT COUNT(*) FROM production_plan_item")
     suspend fun count(): Int
 }
