@@ -367,6 +367,7 @@ private fun NavGraphBuilder.planGraph(navController: NavHostController) {
         AddPlanRoute(
             onSaved = { navController.popBackStack() },
             onBack = { navController.popBackStack() },
+            onOpenRecipeEditor = { recipeId -> navController.navigate(RecipesRoutes.edit(recipeId)) },
         )
     }
     composable(
@@ -392,6 +393,7 @@ private fun NavGraphBuilder.planGraph(navController: NavHostController) {
             kindArg = entry.arguments?.getString("kind"),
             onSaved = { navController.popBackStack() },
             onBack = { navController.popBackStack() },
+            onOpenRecipeEditor = { recipeId -> navController.navigate(RecipesRoutes.edit(recipeId)) },
         )
     }
 }
