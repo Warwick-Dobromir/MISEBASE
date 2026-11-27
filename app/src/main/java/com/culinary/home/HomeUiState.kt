@@ -17,6 +17,7 @@ data class HomePlan(
     val title: String? = null,
     val kind: String = "WORK",
     val subtitle: String? = null,
+    val hasScheduledTime: Boolean = false,
 )
 
 /** 首页一条采购记录。当前为只读演示数据，点击进入明确的占位详情入口。 */
