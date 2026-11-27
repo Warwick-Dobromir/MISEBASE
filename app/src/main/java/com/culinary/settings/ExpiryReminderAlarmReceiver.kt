@@ -123,7 +123,11 @@ class ExpiryReminderAlarmReceiver : BroadcastReceiver() {
             val fallback = OneTimeWorkRequestBuilder<ExpiryReminderFallbackWorker>()
                 .setInitialDelay(delay, TimeUnit.MILLISECONDS)
                 .build()
-            ExpiryReminderDiagnostics.record(context, "REMINDER_SCHEDULED", "target=$triggerAtMillis; mode=$scheduleMode; fallbackDelayMs=$delay")
+            ExpiryReminderDiagnostics.record(
+                context,
+                "REMINDER_SCHEDULED",
+                "target=$triggerAtMillis; mode=$scheduleMode; fallbackDelayMs=$delay",
+            )
             WorkManager.getInstance(context).enqueueUniqueWork(
                 ExpiryReminderFallbackWorker.WORK_NAME,
                 ExistingWorkPolicy.REPLACE,
