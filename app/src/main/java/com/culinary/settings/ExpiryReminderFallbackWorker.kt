@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.work.CoroutineWorker
 import androidx.work.ExistingWorkPolicy
 import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.OutOfQuotaPolicy
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 
@@ -33,15 +34,17 @@ class ExpiryReminderFallbackWorker(
             .apply()
 
         ExpiryReminderAlarmReceiver.scheduleNextReminder(applicationContext)
-        val request = OneTimeWorkRequestBuilder<ExpiryReminderWorker>().build()
+        val request = OneTimeWorkRequestBuilder<ExpiryReminderWorker>()
+            .setExpedited(OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST)
+            .build()
         ExpiryReminderDiagnostics.record(
             applicationContext,
             "SCAN_WORK_ENQUEUED",
-            "source=WorkManager fallback; policy=KEEP",
+            "source=WorkManager fallback; policy=APPEND_OR_REPLACE; expedited=true",
         )
         WorkManager.getInstance(applicationContext).enqueueUniqueWork(
             ExpiryReminderWorker.WORK_NAME,
-            ExistingWorkPolicy.KEEP,
+            ExistingWorkPolicy.APPEND_OR_REPLACE,
             request,
         )
         Result.success()
