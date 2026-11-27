@@ -1,6 +1,7 @@
 package com.culinary.feature.inventory
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -24,7 +25,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.OffsetMapping
+import androidx.compose.ui.text.input.TransformedText
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.SavedStateHandle
@@ -34,10 +39,8 @@ import androidx.lifecycle.viewModelScope
 import com.culinary.core.common.Outcome
 import com.culinary.core.designsystem.component.CulinaryButton
 import com.culinary.core.designsystem.component.CulinaryButtonVariant
-import com.culinary.core.designsystem.component.CulinaryDateField
 import com.culinary.core.designsystem.component.CulinaryRule
 import com.culinary.core.designsystem.component.CulinaryTextButton
-import com.culinary.core.designsystem.component.CulinaryTextField
 import com.culinary.core.designsystem.component.EmptyState
 import com.culinary.core.designsystem.component.ErrorBanner
 import com.culinary.core.designsystem.component.LoadingRows
@@ -1013,13 +1016,13 @@ private fun ReceiptFields(
         modifier = Modifier.fillMaxWidth().padding(vertical = CulinarySpacing.md),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        CulinaryTextField(
+        ReceiptPlainInput(
             value = state.quantity,
             onValueChange = onQuantityChange,
-            label = "数量",
+            placeholder = "输入数量",
             singleLine = true,
+            textStyle = MaterialTheme.typography.headlineMedium,
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-            fillWidth = false,
             modifier = Modifier.weight(1f),
         )
         CulinaryTextButton(
@@ -1037,10 +1040,9 @@ private fun ReceiptFields(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text("生产日期", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        CulinaryDateField(
+        ReceiptPlainDateInput(
             value = state.productionDate,
             onValueChange = onProductionDateChange,
-            label = "选择日期",
             modifier = Modifier.weight(1f).padding(start = CulinarySpacing.lg),
         )
     }
@@ -1051,10 +1053,9 @@ private fun ReceiptFields(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text("保质期 / 到期日期", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        CulinaryDateField(
+        ReceiptPlainDateInput(
             value = state.expiresOn,
             onValueChange = onExpiresOnChange,
-            label = "填写",
             modifier = Modifier.weight(1f).padding(start = CulinarySpacing.lg),
         )
     }
@@ -1072,20 +1073,19 @@ private fun ReceiptFields(
             )
         }
     }
-    CulinaryTextField(
+    ReceiptPlainInput(
         value = state.batchCode,
         onValueChange = onBatchCodeChange,
-        label = "批次号（可选）",
-        placeholder = "留空则按入库时间生成",
+        placeholder = "批次号（可选，留空自动生成）",
         singleLine = true,
         modifier = Modifier.padding(top = CulinarySpacing.md),
     )
     SectionHeader(title = "04  备注")
-    CulinaryTextField(
+    ReceiptPlainInput(
         value = state.note,
         onValueChange = onNoteChange,
-        label = "填写本次入库说明……",
-        minLines = 2,
+        placeholder = "填写本次入库说明……",
+        singleLine = false,
         modifier = Modifier.padding(top = CulinarySpacing.sm),
     )
     if (showTemporary) {
@@ -1104,6 +1104,56 @@ private fun ReceiptFields(
             Switch(checked = state.isTemporary, onCheckedChange = onTemporaryChange)
         }
     }
+}
+
+
+/** 入库页专用无边框输入：仅保留底部细线，不使用通用描边输入框。 */
+@Composable
+private fun ReceiptPlainInput(
+    value: String,
+    onValueChange: (String) -> Unit,
+    placeholder: String,
+    modifier: Modifier = Modifier,
+    singleLine: Boolean = true,
+    textStyle: androidx.compose.ui.text.TextStyle = MaterialTheme.typography.bodyLarge,
+    keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
+) {
+    Column(modifier = modifier.padding(vertical = CulinarySpacing.xs)) {
+        Box(modifier = Modifier.fillMaxWidth().padding(vertical = CulinarySpacing.sm)) {
+            if (value.isEmpty()) {
+                Text(
+                    text = placeholder,
+                    style = textStyle,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            BasicTextField(
+                value = value,
+                onValueChange = onValueChange,
+                modifier = Modifier.fillMaxWidth(),
+                textStyle = textStyle.copy(color = MaterialTheme.colorScheme.onSurface),
+                singleLine = singleLine,
+                keyboardOptions = keyboardOptions,
+            )
+        }
+        CulinaryRule()
+    }
+}
+
+@Composable
+private fun ReceiptPlainDateInput(
+    value: String,
+    onValueChange: (String) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    ReceiptPlainInput(
+        value = value,
+        onValueChange = { onValueChange(it.filter(Char::isDigit).take(8)) },
+        placeholder = "YYYY-MM-DD",
+        modifier = modifier,
+        singleLine = true,
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+    )
 }
 
 @Composable
