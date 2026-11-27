@@ -158,6 +158,7 @@ class ExpiryReminderAlarmReceiver : BroadcastReceiver() {
             ) { "测试通知状态保存失败。" }
             try {
                 scheduleTestAlarm(context, triggerAt)
+                ExpiryReminderDiagnostics.record(context, "TEST_ALARM_SCHEDULED", "triggerAt=$triggerAt")
                 updateTestState(preferences, "精确闹钟已登记")
             } catch (error: Throwable) {
                 preferences.edit()
@@ -220,6 +221,7 @@ class ExpiryReminderAlarmReceiver : BroadcastReceiver() {
                 ExpiryTestNotificationWorker.TEST_STATE_PREFS,
                 Context.MODE_PRIVATE,
             )
+            ExpiryReminderDiagnostics.record(context, "TEST_ALARM_TRIGGERED", "test notification alarm received")
             preferences.edit()
                 .putString(ExpiryTestNotificationWorker.TEST_STATE_KEY, "后台闹钟已触发")
                 .putLong(ExpiryTestNotificationWorker.TEST_UPDATED_KEY, System.currentTimeMillis())
@@ -278,6 +280,7 @@ class ExpiryReminderAlarmReceiver : BroadcastReceiver() {
                 .apply { if (pending != null) setContentIntent(pending) }
                 .build()
             manager.notify(TEST_NOTIFICATION_ID, notification)
+            ExpiryReminderDiagnostics.record(context, "TEST_NOTIFICATION_POSTED", "NotificationManager.notify returned")
             updateTestState(preferences, "系统通知已发送")
         }
 
@@ -300,6 +303,7 @@ class ExpiryReminderBootReceiver : BroadcastReceiver() {
             intent?.action == Intent.ACTION_TIMEZONE_CHANGED ||
             intent?.action == AlarmManager.ACTION_SCHEDULE_EXACT_ALARM_PERMISSION_STATE_CHANGED
         ) {
+            ExpiryReminderDiagnostics.record(context, "BOOT_OR_TIME_EVENT", "action=${intent?.action}")
             ExpiryReminderScheduler.ensureScheduled(context.applicationContext)
         }
     }
