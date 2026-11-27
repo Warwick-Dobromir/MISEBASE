@@ -660,31 +660,6 @@ internal fun ReceiptScreen(
                     }
                     CulinaryRule()
                 }
-                if (state.isPurchase) {
-                    Column(modifier = Modifier.padding(horizontal = CulinarySpacing.pageHorizontal)) {
-                        SectionHeader(title = "01  采购信息")
-                        ReceiptValueRow("供应商", "选择采购单后读取")
-                        ReceiptValueRow("采购单号", "由采购单自动带入")
-                        ReceiptValueRow("采购日期", "由采购单自动带入")
-                        SectionHeader(title = "02  采购明细")
-                        EmptyState(
-                            title = "请选择采购单",
-                            description = "采购入库将关联库存主页的采购单。选择后读取供应商、采购商品和采购数量；实际收货数量可与采购数量不同，未收齐部分保留在原采购单。",
-                            compact = true,
-                        )
-                        SectionHeader(title = "03  验收入库")
-                        ReceiptValueRow("实际收货数量", "选择采购单后填写")
-                        ReceiptValueRow(
-                            label = "存放库位",
-                            value = state.selectedLocationName ?: "选择实际库位",
-                            onClick = { picker = ReceiptPicker.LOCATION },
-                        )
-                        ReceiptValueRow("批次信息", "按实际收货生成")
-                        ReceiptValueRow("验收状态", "待确认验收", accent = true)
-                        ReceiptValueRow("采购总额", "选择采购单后计算", emphasize = true)
-                    }
-                    return@Column
-                }
                 Column(modifier = Modifier.padding(horizontal = CulinarySpacing.pageHorizontal)) {
                     state.message?.let { text ->
                         StatusBadge(
@@ -712,6 +687,19 @@ internal fun ReceiptScreen(
                         )
                         return@Column
                     }
+                    if (state.isPurchase) {
+                        SectionHeader(title = "01  采购信息")
+                        ReceiptValueRow("供应商", "待关联采购单")
+                        ReceiptValueRow("采购单号", "选择主页采购单后自动带入")
+                        ReceiptValueRow("采购日期", "由采购单读取")
+                        Text(
+                            text = "采购单功能尚未接入：当前不会生成虚构采购单。接入后将读取主页采购单明细，并保留未收齐数量。",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(vertical = CulinarySpacing.sm),
+                        )
+                        SectionHeader(title = "02  采购明细")
+                    }
                     ReceiptFields(
                         state = state,
                         onOpenPicker = { picker = it },
@@ -724,15 +712,25 @@ internal fun ReceiptScreen(
                         showTemporary = !state.isPurchase,
                     )
                     if (state.isPurchase) {
-                        CulinaryButton(
-                            text = "添加一行",
+                        SectionHeader(title = "03  验收入库")
+                        ReceiptValueRow("实际收货数量", "${state.quantity.ifBlank { "0" }} ${state.unitSymbol}")
+                        ReceiptValueRow(
+                            label = "存放库位",
+                            value = state.selectedLocationName ?: "选择实际库位",
+                            onClick = { picker = ReceiptPicker.LOCATION },
+                        )
+                        ReceiptValueRow("批次信息", state.batchCode.ifBlank { "按实际收货生成" })
+                        ReceiptValueRow("验收状态", "待确认验收", accent = true)
+                        SectionHeader(title = "采购明细")
+                        CulinaryTextButton(
+                            text = "+ 添加采购食材",
                             onClick = onAddLine,
                             variant = CulinaryButtonVariant.Secondary,
                             enabled = !state.isSaving,
                             modifier = Modifier.fillMaxWidth().padding(top = CulinarySpacing.block),
                         )
                         SectionHeader(
-                            title = "待确认入库单",
+                            title = "待确认入库明细",
                             subtitle = "共 ${state.draftCount} 行 · 确认前不改变库存",
                         )
                         if (state.lines.isEmpty()) {
@@ -747,13 +745,24 @@ internal fun ReceiptScreen(
                                 CulinaryRule()
                             }
                         }
-                        CulinaryButton(
-                            text = if (state.isSaving) "正在确认" else "确认入库",
-                            onClick = onSubmit,
-                            enabled = !state.isSaving && state.lines.isNotEmpty(),
-                            loading = state.isSaving,
-                            modifier = Modifier.fillMaxWidth().padding(top = CulinarySpacing.block),
-                        )
+                        CulinaryRule()
+                        val totalCost = state.lines.sumOf { line ->
+                            val price = state.archives.firstOrNull { it.archive.id == line.archiveId }?.archive?.purchasePriceMinor
+                            if (price == null) 0.0 else line.quantity * price / 100.0
+                        }
+                        ReceiptSummaryRow("采购总额", if (totalCost > 0.0) "¥${formatAmount(totalCost)}" else "待采购单接入后计算")
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(top = CulinarySpacing.md),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            CulinaryTextButton(text = "取消", onClick = onBack, enabled = !state.isSaving)
+                            CulinaryTextButton(
+                                text = if (state.isSaving) "正在确认…" else "确认验收并入库  →",
+                                onClick = { showConfirmation = true },
+                                enabled = !state.isSaving && state.lines.isNotEmpty(),
+                            )
+                        }
                         if (state.lines.isEmpty()) {
                             Text(
                                 text = "至少添加一行后才能确认入库。",
@@ -764,7 +773,11 @@ internal fun ReceiptScreen(
                         }
                     } else {
                         CulinaryRule()
+                        val estimatedCost = state.selectedArchive?.purchasePriceMinor?.let { price ->
+                            state.quantity.toDoubleOrNull()?.let { it * price / 100.0 }
+                        }
                         ReceiptSummaryRow("本次入库数量", "${state.quantity.ifBlank { "0" }} ${state.unitSymbol}")
+                        ReceiptSummaryRow("预计入库成本", estimatedCost?.let { "¥${formatAmount(it)}" } ?: "—")
                         Row(
                             modifier = Modifier.fillMaxWidth().padding(top = CulinarySpacing.md),
                             horizontalArrangement = Arrangement.SpaceBetween,
@@ -990,14 +1003,14 @@ private fun ReceiptFields(
     onTemporaryChange: (Boolean) -> Unit,
     showTemporary: Boolean,
 ) {
-    SectionHeader(title = "01  选择食材")
+    SectionHeader(title = if (state.isPurchase) "选择采购食材" else "01  选择食材")
     ReceiptValueRow(
         label = "食材名称",
         value = state.selectedArchiveName ?: "选择库存档案",
         onClick = { onOpenPicker(ReceiptPicker.ARCHIVE) },
     )
 
-    SectionHeader(title = "02  入库数量")
+    SectionHeader(title = if (state.isPurchase) "实际收货数量" else "02  入库数量")
     Row(
         modifier = Modifier.fillMaxWidth().padding(vertical = CulinarySpacing.md),
         verticalAlignment = Alignment.CenterVertically,
@@ -1018,7 +1031,7 @@ private fun ReceiptFields(
     }
     CulinaryRule()
 
-    SectionHeader(title = "03  批次信息")
+    SectionHeader(title = if (state.isPurchase) "批次信息" else "03  批次信息")
     ReceiptValueRow("入库日期", LocalDate.now().toString())
     Row(
         modifier = Modifier.fillMaxWidth().padding(vertical = CulinarySpacing.sm),
