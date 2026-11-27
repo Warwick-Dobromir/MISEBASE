@@ -29,9 +29,11 @@ class ExpiryReminderAlarmReceiver : BroadcastReceiver() {
             ACTION_REMINDER -> {
                 val appContext = context.applicationContext
                 recordReminderStage(appContext, "系统闹钟已触发")
+                ExpiryReminderDiagnostics.record(appContext, "ALARM_TRIGGERED", "AlarmManager ACTION_REMINDER received")
                 WorkManager.getInstance(appContext).cancelUniqueWork(ExpiryReminderFallbackWorker.WORK_NAME)
                 scheduleNextReminder(appContext)
                 val request = OneTimeWorkRequestBuilder<ExpiryReminderWorker>().build()
+                ExpiryReminderDiagnostics.record(appContext, "SCAN_WORK_ENQUEUED", "source=AlarmManager; policy=KEEP")
                 WorkManager.getInstance(appContext).enqueueUniqueWork(
                     ExpiryReminderWorker.WORK_NAME,
                     ExistingWorkPolicy.KEEP,
@@ -121,6 +123,7 @@ class ExpiryReminderAlarmReceiver : BroadcastReceiver() {
             val fallback = OneTimeWorkRequestBuilder<ExpiryReminderFallbackWorker>()
                 .setInitialDelay(delay, TimeUnit.MILLISECONDS)
                 .build()
+            ExpiryReminderDiagnostics.record(context, "REMINDER_SCHEDULED", "target=$triggerAtMillis; mode=$scheduleMode; fallbackDelayMs=$delay")
             WorkManager.getInstance(context).enqueueUniqueWork(
                 ExpiryReminderFallbackWorker.WORK_NAME,
                 ExistingWorkPolicy.REPLACE,
