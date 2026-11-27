@@ -267,17 +267,8 @@ private fun TodayPreparationSection(
             title = stringResource(R.string.home_today_title),
             subtitle = stringResource(R.string.home_today_subtitle),
             modifier = Modifier.padding(horizontal = CulinarySpacing.pageHorizontal),
-            trailing = {
-                if (state.totalPlanCount > 0 && state.completedPlanCount >= state.totalPlanCount) {
-                    Text("所有任务已完成", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.secondary)
-                } else {
-                    Text(
-                        text = stringResource(R.string.home_today_count, state.completedPlanCount, state.totalPlanCount),
-                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Medium, letterSpacing = 0.05.em, fontFeatureSettings = "tnum"),
-                        color = MaterialTheme.colorScheme.onSurface,
-                    )
-                }
-            },
+            trailing = {},
+
         )
         if (state.totalPlanCount == 0 || state.completedPlanCount < state.totalPlanCount) {
             PlanProgressBar(
