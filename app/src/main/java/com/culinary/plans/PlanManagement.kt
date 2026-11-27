@@ -441,6 +441,9 @@ private fun PlanListGroup(title: String, eyebrow: String, items: List<PlanUiItem
                         color = if (plan.completed) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
                         fontWeight = FontWeight.Medium,
                     )
+                    if (!plan.completed && plan.metadata.time.isNotBlank() && plan.metadata.time != "不指定") {
+                        Text("!", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = Color(0xFF8A6A2B), modifier = Modifier.padding(end = 7.dp))
+                    }
                     Text(plan.statusLabel(), style = MaterialTheme.typography.labelSmall, color = if (plan.completed) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.onSurfaceVariant)
                 }
                 val info = if (plan.kind == PlanKind.PRODUCTION) listOf(plan.quantityLabel(), plan.metadata.time).filter { it.isNotBlank() }.joinToString(" · ") else listOf(plan.metadata.category, plan.metadata.time).filter { it.isNotBlank() && it != "不指定" }.joinToString(" · ")
@@ -665,6 +668,45 @@ private fun PlanDateField(value: String, onChange: (String) -> Unit) {
         Row(Modifier.fillMaxWidth().padding(vertical = 10.dp), verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
             Text(runCatching { LocalDate.parse(value).format(DateTimeFormatter.ofPattern("yyyy年MM月dd日 · E", java.util.Locale.CHINA)) }.getOrDefault("选择日期"), Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
             Text("选择日期  ›", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.secondary)
+        }
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+    }
+}
+
+@Composable
+private fun PlanTimeField(label: String, value: String, onChange: (String) -> Unit) {
+    val context = LocalContext.current
+    val parsed = value.split(":").takeIf { it.size == 2 }
+    val hour = parsed?.getOrNull(0)?.toIntOrNull()?.coerceIn(0, 23) ?: 9
+    val minute = parsed?.getOrNull(1)?.toIntOrNull()?.coerceIn(0, 59) ?: 0
+    Column(Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
+        Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Row(Modifier.fillMaxWidth().padding(top = 8.dp, bottom = 7.dp), verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+            BasicTextField(
+                value = value,
+                onValueChange = { input ->
+                    val cleaned = input.filter { it.isDigit() || it == ':' }.take(5)
+                    onChange(cleaned)
+                },
+                modifier = Modifier.weight(1f),
+                textStyle = MaterialTheme.typography.bodyLarge.copy(color = MaterialTheme.colorScheme.onSurface),
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Ascii),
+                decorationBox = { inner ->
+                    if (value.isEmpty()) Text("输入时间，例如 10:30", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.outline)
+                    inner()
+                },
+            )
+            Text(
+                "◷ 选择时间",
+                Modifier.clickable {
+                    TimePickerDialog(context, { _, selectedHour, selectedMinute ->
+                        onChange("%02d:%02d".format(selectedHour, selectedMinute))
+                    }, hour, minute, true).show()
+                }.padding(start = 14.dp, vertical = 8.dp),
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.secondary,
+            )
         }
         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
     }
