@@ -15,10 +15,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -35,10 +35,10 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
 import com.culinary.core.database.dao.ProductionPlanDao
 import com.culinary.core.database.dao.ProductionPlanItemDao
+import com.culinary.core.database.dao.IngredientDao
+import com.culinary.core.database.dao.RecipeComponentDao
 import com.culinary.core.database.dao.RecipeDao
 import com.culinary.core.database.dao.RecipeVersionDao
-import com.culinary.core.database.dao.RecipeComponentDao
-import com.culinary.core.database.dao.IngredientDao
 import com.culinary.core.database.dao.SauceDao
 import com.culinary.core.database.dao.UnitDao
 import com.culinary.core.database.dao.WorkPlanDao
@@ -184,10 +184,13 @@ class PlanManagementViewModel @Inject constructor(
             }
             val scale = if (version.yieldQty > 0.0) item.quantity / version.yieldQty else 1.0
             _requirements.value = recipeComponentDao.listByVersion(version.id).map { component ->
+                val ingredientId = component.ingredientId
+                val referencedSauceId = component.referencedSauceId
+                val referencedRecipeId = component.referencedRecipeId
                 val name = when {
-                    component.ingredientId != null -> ingredientDao.findById(component.ingredientId)?.name
-                    component.referencedSauceId != null -> sauceDao.findById(component.referencedSauceId)?.name
-                    component.referencedRecipeId != null -> recipeDao.findById(component.referencedRecipeId)?.name
+                    ingredientId != null -> ingredientDao.findById(ingredientId)?.name
+                    referencedSauceId != null -> sauceDao.findById(referencedSauceId)?.name
+                    referencedRecipeId != null -> recipeDao.findById(referencedRecipeId)?.name
                     else -> null
                 } ?: "未命名组成项"
                 val unit = unitDao.findById(component.unitId)?.symbol.orEmpty()
