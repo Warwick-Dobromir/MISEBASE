@@ -8,6 +8,7 @@ import android.app.PendingIntent
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.util.Log
 import android.content.pm.PackageManager
 import android.os.Build
 import androidx.core.app.NotificationCompat
@@ -28,17 +29,35 @@ class ExpiryReminderAlarmReceiver : BroadcastReceiver() {
         when (intent?.action) {
             ACTION_REMINDER -> {
                 val appContext = context.applicationContext
-                recordReminderStage(appContext, "系统闹钟已触发")
-                ExpiryReminderDiagnostics.record(appContext, "ALARM_TRIGGERED", "AlarmManager ACTION_REMINDER received")
-                WorkManager.getInstance(appContext).cancelUniqueWork(ExpiryReminderFallbackWorker.WORK_NAME)
-                scheduleNextReminder(appContext)
-                val request = OneTimeWorkRequestBuilder<ExpiryReminderWorker>().build()
-                ExpiryReminderDiagnostics.record(appContext, "SCAN_WORK_ENQUEUED", "source=AlarmManager; policy=KEEP")
-                WorkManager.getInstance(appContext).enqueueUniqueWork(
-                    ExpiryReminderWorker.WORK_NAME,
-                    ExistingWorkPolicy.KEEP,
-                    request,
-                )
+                try {
+                    recordReminderStage(appContext, "系统闹钟已触发")
+                    ExpiryReminderDiagnostics.record(
+                        appContext,
+                        "ALARM_TRIGGERED",
+                        "AlarmManager ACTION_REMINDER received",
+                    )
+                    WorkManager.getInstance(appContext)
+                        .cancelUniqueWork(ExpiryReminderFallbackWorker.WORK_NAME)
+                    scheduleNextReminder(appContext)
+                    val request = OneTimeWorkRequestBuilder<ExpiryReminderWorker>().build()
+                    ExpiryReminderDiagnostics.record(
+                        appContext,
+                        "SCAN_WORK_ENQUEUED",
+                        "source=AlarmManager; policy=KEEP",
+                    )
+                    WorkManager.getInstance(appContext).enqueueUniqueWork(
+                        ExpiryReminderWorker.WORK_NAME,
+                        ExistingWorkPolicy.KEEP,
+                        request,
+                    )
+                } catch (error: Throwable) {
+                    ExpiryReminderDiagnostics.record(
+                        appContext,
+                        "ALARM_HANDLER_FAILED",
+                        "${error.javaClass.simpleName}: ${error.message ?: "no message"}",
+                    )
+                    Log.e("ExpiryReminderAlarm", "Failed to handle reminder alarm", error)
+                }
             }
             ACTION_TEST_NOTIFICATION -> restorePendingTestNotification(context.applicationContext)
         }
