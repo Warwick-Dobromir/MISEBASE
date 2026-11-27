@@ -13,7 +13,7 @@ interface WorkPlanDao {
     @Insert(onConflict = OnConflictStrategy.ABORT)
     suspend fun insert(entity: WorkPlanEntity)
 
-    @Query("UPDATE work_plan SET title = :title, description = :description, planned_date = :plannedDate, updated_at = :updatedAt WHERE id = :id AND status = 'OPEN'")
+    @Query("UPDATE work_plan SET title = :title, description = :description, planned_date = :plannedDate, updated_at = :updatedAt WHERE id = :id AND status != 'COMPLETED'")
     suspend fun updateOpen(id: String, title: String, description: String?, plannedDate: String?, updatedAt: Long): Int
 
     @Query("SELECT * FROM work_plan WHERE id = :id")
@@ -28,7 +28,10 @@ interface WorkPlanDao {
     @Query("SELECT * FROM work_plan WHERE status = 'COMPLETED' ORDER BY completed_at DESC")
     fun observeCompleted(): Flow<List<WorkPlanEntity>>
 
-    @Query("UPDATE work_plan SET status = 'COMPLETED', completed_at = :completedAt, updated_at = :completedAt WHERE id = :id AND status = 'OPEN'")
+    @Query("UPDATE work_plan SET status = 'IN_PROGRESS', updated_at = :updatedAt WHERE id = :id AND status = 'OPEN'")
+    suspend fun start(id: String, updatedAt: Long): Int
+
+    @Query("UPDATE work_plan SET status = 'COMPLETED', completed_at = :completedAt, updated_at = :completedAt WHERE id = :id AND status != 'COMPLETED'")
     suspend fun complete(id: String, completedAt: Long): Int
 
     @Query("UPDATE work_plan SET status = 'OPEN', completed_at = NULL, updated_at = :updatedAt WHERE id = :id AND status = 'COMPLETED'")
