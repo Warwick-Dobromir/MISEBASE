@@ -227,7 +227,7 @@ class PlanManagementViewModel @Inject constructor(
     private val _message = MutableStateFlow<String?>(null)
     val message = _message
 
-    fun save(kind: PlanKind, id: String?, title: String, date: String?, metadata: PlanMetadata) {
+    fun save(kind: PlanKind, id: String?, title: String, date: String?, metadata: PlanMetadata, onSaved: () -> Unit = {}) {
         val cleanTitle = title.trim()
         if (cleanTitle.isEmpty()) {
             _message.value = "请填写计划名称"
@@ -272,6 +272,7 @@ class PlanManagementViewModel @Inject constructor(
                 }
             }
             _message.value = null
+            onSaved()
         }
     }
 
@@ -344,7 +345,7 @@ class PlanManagementViewModel @Inject constructor(
 fun AllPlansRoute(onAdd: () -> Unit, onOpen: (PlanUiItem) -> Unit, modifier: Modifier = Modifier, viewModel: PlanManagementViewModel = hiltViewModel()) {
     val plans by viewModel.plans.collectAsStateWithLifecycle()
     var selectedDate by remember { mutableStateOf(LocalDate.now()) }
-    val dayPlans = plans.filter { it.plannedDate == selectedDate.toString() }
+    val dayPlans = plans.filter { it.plannedDate == selectedDate.toString() || (it.plannedDate.isNullOrBlank() && selectedDate == LocalDate.now()) }
     val production = dayPlans.filter { it.kind == PlanKind.PRODUCTION }
     val work = dayPlans.filter { it.kind == PlanKind.WORK }
     val completed = dayPlans.count { it.completed }
@@ -532,8 +533,7 @@ fun AddPlanRoute(onSaved: () -> Unit, onBack: () -> Unit, planId: String? = null
             message?.let { Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall) }
             PlanTextAction(if (kind == PlanKind.PRODUCTION) "保存制作计划" else "保存工作计划", title.isNotBlank() && date.isNotBlank() && (kind != PlanKind.PRODUCTION || recipeId.isNotBlank())) {
                 val metadata = PlanMetadata(target, quantity, unit, category, time, priority, instructions, criteria, linkedArchive, note = note, recipeId = recipeId, recipeVersionId = versionId, unitId = unitId)
-                viewModel.save(kind, planId, title, date, metadata)
-                if (title.isNotBlank() && date.isNotBlank() && (kind != PlanKind.PRODUCTION || recipeId.isNotBlank())) onSaved()
+                viewModel.save(kind, planId, title, date, metadata, onSaved)
             }
         }
     }
