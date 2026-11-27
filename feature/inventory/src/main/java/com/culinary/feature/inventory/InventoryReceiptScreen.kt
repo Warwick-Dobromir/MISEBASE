@@ -626,17 +626,37 @@ internal fun ReceiptScreen(
                         .padding(bottom = CulinarySpacing.xl),
             ) {
                 PageHeader(
-                    eyebrow = if (showConfirmation) "STOCK IN / FINAL REVIEW" else "INVENTORY / STOCK IN",
+                    eyebrow = when {
+                        showConfirmation -> "STOCK IN / FINAL REVIEW"
+                        state.isPurchase -> "STOCK IN / PURCHASE"
+                        else -> "INVENTORY / STOCK IN"
+                    },
                     title = if (showConfirmation) "确认入库" else "入库",
-                    supporting = if (showConfirmation) "RECEIPT CONFIRMATION" else "STOCK RECEIPT · 库存接收",
+                    supporting = when {
+                        showConfirmation -> "RECEIPT CONFIRMATION"
+                        state.isPurchase -> "采购入库 · PURCHASE RECEIPT"
+                        else -> "STOCK RECEIPT · 库存接收"
+                    },
                 )
                 if (!showConfirmation) {
                     Row(
                         modifier = Modifier.fillMaxWidth().padding(horizontal = CulinarySpacing.pageHorizontal),
                         horizontalArrangement = Arrangement.spacedBy(CulinarySpacing.lg),
                     ) {
-                        CulinaryTextButton(text = "手动入库", onClick = onOpenManual, enabled = !state.isSaving)
-                        CulinaryTextButton(text = "采购入库", onClick = onOpenPurchase, enabled = !state.isSaving)
+                        Text(
+                            text = "手动入库",
+                            modifier = Modifier.clickable(enabled = !state.isSaving, onClick = onOpenManual)
+                                .padding(vertical = CulinarySpacing.md),
+                            style = MaterialTheme.typography.titleMedium,
+                            color = if (!state.isPurchase) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        Text(
+                            text = "采购入库",
+                            modifier = Modifier.clickable(enabled = !state.isSaving, onClick = onOpenPurchase)
+                                .padding(vertical = CulinarySpacing.md),
+                            style = MaterialTheme.typography.titleMedium,
+                            color = if (state.isPurchase) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
                     }
                     CulinaryRule()
                 }
@@ -766,19 +786,20 @@ internal fun ReceiptScreen(
                             )
                         }
                     } else {
-                        CulinaryButton(
-                            text = if (state.isSaving) "正在入库" else "确认入库",
-                            onClick = { showConfirmation = true },
-                            enabled = !state.isSaving && state.quantity.isNotBlank() && state.selectedArchiveId != null,
-                            loading = state.isSaving,
-                            modifier = Modifier.fillMaxWidth().padding(top = CulinarySpacing.block),
-                        )
-                        Text(
-                            text = "确认后将新建一个批次，库存数量只由批次与流水决定。",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.padding(top = CulinarySpacing.xs),
-                        )
+                        CulinaryRule()
+                        ReceiptSummaryRow("本次入库数量", "${state.quantity.ifBlank { "0" }} ${state.unitSymbol}")
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(top = CulinarySpacing.md),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            CulinaryTextButton(text = "取消", onClick = onBack, enabled = !state.isSaving)
+                            CulinaryTextButton(
+                                text = if (state.isSaving) "正在入库…" else "确认入库  →",
+                                onClick = { showConfirmation = true },
+                                enabled = !state.isSaving && state.quantity.isNotBlank() && state.selectedArchiveId != null,
+                            )
+                        }
                     }
                 }
             }
