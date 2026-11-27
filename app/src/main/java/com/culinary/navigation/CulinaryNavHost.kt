@@ -176,6 +176,8 @@ fun CulinaryNavHost(
                     "STORAGE_STANDARD", "storage-standard" -> "储存标准"
                     else -> "厨房"
                 }
+            InventoryRoutes.MANUAL_RECEIPT, InventoryRoutes.RECEIPT, InventoryRoutes.PURCHASE ->
+                "INVENTORY / STOCK IN"
             else -> null
         }
 
