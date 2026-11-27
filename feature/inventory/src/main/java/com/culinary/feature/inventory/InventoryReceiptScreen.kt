@@ -884,8 +884,9 @@ private fun ReceiptConfirmationContent(
                 "¥${formatAmount(price / 100.0)} ${archive.purchasePriceUnit.orEmpty()}".trim(),
             )
             val amount = state.quantity.toDoubleOrNull()
-            val priceUnitMatches = archive.purchasePriceUnit.isNullOrBlank() ||
-                archive.purchasePriceUnit.contains(state.unitSymbol, ignoreCase = true)
+            val priceUnit = archive.purchasePriceUnit.orEmpty()
+            val priceUnitMatches = priceUnit.isBlank() ||
+                priceUnit.contains(state.unitSymbol, ignoreCase = true)
             if (amount != null && priceUnitMatches) {
                 ReceiptSummaryRow("入库总成本", "¥${formatAmount(amount * price / 100.0)}")
             }
