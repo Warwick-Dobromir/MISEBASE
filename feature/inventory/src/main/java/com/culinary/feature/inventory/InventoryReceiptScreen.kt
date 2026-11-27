@@ -636,8 +636,8 @@ internal fun ReceiptScreen(
                         modifier = Modifier.fillMaxWidth().padding(horizontal = CulinarySpacing.pageHorizontal),
                         horizontalArrangement = Arrangement.spacedBy(CulinarySpacing.lg),
                     ) {
-                        CulinaryTextButton(text = "手动入库", onClick = onOpenManual, enabled = !state.isPurchase)
-                        CulinaryTextButton(text = "采购入库", onClick = onOpenPurchase, enabled = state.isPurchase)
+                        CulinaryTextButton(text = "手动入库", onClick = onOpenManual, enabled = !state.isSaving)
+                        CulinaryTextButton(text = "采购入库", onClick = onOpenPurchase, enabled = !state.isSaving)
                     }
                     CulinaryRule()
                 }
@@ -919,6 +919,15 @@ private fun ReceiptFields(
         )
     }
     SectionHeader(title = "03 批次信息")
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(vertical = CulinarySpacing.sm),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text("入库日期", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(LocalDate.now().toString(), style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurface)
+    }
+    CulinaryRule()
     CulinaryTextField(
         value = state.batchCode,
         onValueChange = onBatchCodeChange,
@@ -950,13 +959,6 @@ private fun ReceiptFields(
     CulinaryButton(
         text = state.selectedLocationName ?: "选择实际库位 *",
         onClick = { onOpenPicker(ReceiptPicker.LOCATION) },
-        variant = CulinaryButtonVariant.Secondary,
-        icon = CulinaryIcons.ChevronDown,
-        modifier = Modifier.fillMaxWidth().padding(top = CulinarySpacing.md),
-    )
-    CulinaryButton(
-        text = state.sourceProductName ?: "来源采购商品（可空）",
-        onClick = { onOpenPicker(ReceiptPicker.SOURCE_PRODUCT) },
         variant = CulinaryButtonVariant.Secondary,
         icon = CulinaryIcons.ChevronDown,
         modifier = Modifier.fillMaxWidth().padding(top = CulinarySpacing.md),
