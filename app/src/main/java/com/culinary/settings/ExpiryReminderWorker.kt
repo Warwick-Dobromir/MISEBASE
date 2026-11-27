@@ -79,7 +79,11 @@ class ExpiryReminderWorker(context: Context, parameters: WorkerParameters) : Cor
             manager.createNotificationChannel(NotificationChannel(CHANNEL_ID, "库存效期提醒", NotificationManager.IMPORTANCE_HIGH))
         }
         val actionableCount = expired + near + attention
-        ExpiryReminderDiagnostics.record(applicationContext, "SCAN_COUNTS", "expired=$expired; near=$near; attention=$attention; batches=${batches.size}")
+        ExpiryReminderDiagnostics.record(
+            applicationContext,
+            "SCAN_COUNTS",
+            "expired=$expired; near=$near; attention=$attention; batches=${batches.size}",
+        )
         val permissionGranted = Build.VERSION.SDK_INT < 33 ||
             ContextCompat.checkSelfPermission(applicationContext, Manifest.permission.POST_NOTIFICATIONS) ==
             PackageManager.PERMISSION_GRANTED
@@ -138,7 +142,11 @@ class ExpiryReminderWorker(context: Context, parameters: WorkerParameters) : Cor
             .putLong(ExpiryReminderAlarmReceiver.KEY_ALARM_STAGE_AT, System.currentTimeMillis())
             .putString(KEY_LAST_SCAN_ERROR, error.message ?: error.javaClass.simpleName)
             .apply()
-        ExpiryReminderDiagnostics.record(applicationContext, "SCAN_FAILED", "${error.javaClass.simpleName}: ${error.message ?: "no message"}")
+        ExpiryReminderDiagnostics.record(
+            applicationContext,
+            "SCAN_FAILED",
+            "${error.javaClass.simpleName}: ${error.message ?: "no message"}",
+        )
         Log.e("ExpiryReminderWorker", "Inventory expiry scan failed", error)
         Result.retry()
     }
@@ -242,7 +250,11 @@ object ExpiryReminderScheduler {
         val lastSuccessfulScan = preferences.getLong(ExpiryReminderWorker.KEY_LAST_SUCCESSFUL_SCAN, 0L)
         val now = System.currentTimeMillis()
         if (lastSuccessfulScan == 0L || now - lastSuccessfulScan >= STARTUP_CATCH_UP_AFTER_MILLIS) {
-            ExpiryReminderDiagnostics.record(appContext, "STARTUP_CATCH_UP_ENQUEUED", "lastSuccessfulScan=$lastSuccessfulScan; now=$now")
+            ExpiryReminderDiagnostics.record(
+                appContext,
+                "STARTUP_CATCH_UP_ENQUEUED",
+                "lastSuccessfulScan=$lastSuccessfulScan; now=$now",
+            )
             val request = OneTimeWorkRequestBuilder<ExpiryReminderWorker>().build()
             workManager.enqueueUniqueWork(
                 ExpiryReminderWorker.WORK_NAME,
