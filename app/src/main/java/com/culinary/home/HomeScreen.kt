@@ -65,6 +65,7 @@ fun HomeRoute(
     onOpenSettings: () -> Unit,
     onOpenAllPlans: () -> Unit,
     onAddPlan: () -> Unit,
+    onOpenPlan: (String) -> Unit = {},
     onNewPurchase: () -> Unit,
     onOpenAllPurchases: () -> Unit,
     onOpenPurchase: (String) -> Unit,
@@ -78,7 +79,7 @@ fun HomeRoute(
     val today = LocalDate.now().toString()
     val todayPlans = persistentPlans
         .filter { it.plannedDate == null || it.plannedDate == today }
-        .map { plan -> HomePlan(id = plan.id, titleRes = null, completed = plan.completed, title = plan.title) }
+        .map { plan -> HomePlan(id = plan.id, titleRes = null, completed = plan.completed, title = plan.title, kind = plan.kind.name, subtitle = listOf(plan.metadata.quantity, plan.metadata.unit).filter { it.isNotBlank() }.joinToString(" ").ifBlank { plan.metadata.category }) }
     val expiryAlert by ExpiryAlertStore.alert.collectAsStateWithLifecycle()
 
     HomeScreen(
@@ -92,6 +93,7 @@ fun HomeRoute(
         onOpenSettings = onOpenSettings,
         onOpenAllPlans = onOpenAllPlans,
         onAddPlan = onAddPlan,
+        onOpenPlan = onOpenPlan,
         onNewPurchase = onNewPurchase,
         onOpenAllPurchases = onOpenAllPurchases,
         onOpenPurchase = onOpenPurchase,
@@ -114,6 +116,7 @@ internal fun HomeScreen(
     onOpenSettings: () -> Unit,
     onOpenAllPlans: () -> Unit,
     onAddPlan: () -> Unit,
+    onOpenPlan: (String) -> Unit = {},
     onNewPurchase: () -> Unit,
     onOpenAllPurchases: () -> Unit,
     onOpenPurchase: (String) -> Unit,
@@ -147,6 +150,7 @@ internal fun HomeScreen(
                 onTogglePlan = onTogglePlan,
                 onOpenAllPlans = onOpenAllPlans,
                 onAddPlan = onAddPlan,
+                onOpenPlan = onOpenPlan,
             )
             CulinaryRule()
             PurchaseRecordsSection(
@@ -254,6 +258,7 @@ private fun TodayPreparationSection(
     onTogglePlan: (String) -> Unit,
     onOpenAllPlans: () -> Unit,
     onAddPlan: () -> Unit,
+    onOpenPlan: (String) -> Unit,
 ) {
     Column(modifier = Modifier.fillMaxWidth()) {
         SectionHeading(
@@ -286,11 +291,24 @@ private fun TodayPreparationSection(
                     .padding(top = CulinarySpacing.sm),
         )
         Spacer(modifier = Modifier.height(CulinarySpacing.xs))
-        state.plans.forEach { plan ->
-            PlanRow(
-                plan = plan,
-                onToggle = { onTogglePlan(plan.id) },
-            )
+        listOf("PRODUCTION" to "生产计划", "WORK" to "工作计划").forEach { (kind, heading) ->
+            val grouped = state.plans.filter { it.kind == kind }
+            if (grouped.isNotEmpty()) {
+                Text(
+                    text = heading,
+                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.padding(
+                        start = CulinarySpacing.pageHorizontal,
+                        end = CulinarySpacing.pageHorizontal,
+                        top = CulinarySpacing.md,
+                        bottom = CulinarySpacing.xxs,
+                    ),
+                )
+                grouped.forEach { plan ->
+                    PlanRow(plan = plan, onToggle = { onTogglePlan(plan.id) }, onOpen = { onOpenPlan(plan.id) })
+                }
+            }
         }
         TodayPlanActions(
             onOpenAllPlans = onOpenAllPlans,
@@ -405,16 +423,14 @@ private fun PlanProgressBar(
 private fun PlanRow(
     plan: HomePlan,
     onToggle: () -> Unit,
+    onOpen: () -> Unit,
 ) {
     Row(
         modifier =
             Modifier
                 .fillMaxWidth()
-                .toggleable(
-                    value = plan.completed,
-                    role = Role.Checkbox,
-                    onValueChange = { onToggle() },
-                ).defaultMinSize(minHeight = 48.dp)
+                .clickable(onClick = onOpen)
+                .defaultMinSize(minHeight = 48.dp)
                 .padding(
                     start = CulinarySpacing.pageHorizontal,
                     end = CulinarySpacing.pageHorizontal,
@@ -423,8 +439,9 @@ private fun PlanRow(
                 ),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        PlanCheck(checked = plan.completed)
+        Box(Modifier.clickable(onClick = onToggle)) { PlanCheck(checked = plan.completed) }
         Spacer(modifier = Modifier.width(CulinarySpacing.sm))
+        Column(modifier = Modifier.weight(1f)) {
         Text(
             text = plan.title ?: plan.titleRes?.let { stringResource(it) }.orEmpty(),
             style = MaterialTheme.typography.bodyLarge,
@@ -436,6 +453,10 @@ private fun PlanRow(
                 },
             maxLines = 2,
         )
+        plan.subtitle?.takeIf { it.isNotBlank() }?.let {
+            Text(it, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        }
     }
 }
 
