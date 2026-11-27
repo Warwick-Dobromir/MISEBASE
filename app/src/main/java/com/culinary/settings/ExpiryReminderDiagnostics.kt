@@ -48,7 +48,12 @@ object ExpiryReminderDiagnostics {
         val alarmManager = app.getSystemService(Context.ALARM_SERVICE) as AlarmManager
         val notificationManager = app.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         val powerManager = app.getSystemService(Context.POWER_SERVICE) as PowerManager
-        val reminderChannel = notificationManager.getNotificationChannel("inventory_expiry_reminder")
+        val reminderChannel =
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                notificationManager.getNotificationChannel("inventory_expiry_reminder")
+            } else {
+                null
+            }
         val testPrefs = app.getSharedPreferences(ExpiryTestNotificationWorker.TEST_STATE_PREFS, Context.MODE_PRIVATE)
         val exactAllowed = Build.VERSION.SDK_INT < Build.VERSION_CODES.S || runCatching {
             alarmManager.canScheduleExactAlarms()
