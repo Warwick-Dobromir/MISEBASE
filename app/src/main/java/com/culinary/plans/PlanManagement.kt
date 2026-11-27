@@ -748,7 +748,7 @@ private fun PlanTimeField(label: String, value: String, onChange: (String) -> Un
                 )
                 Text(
                     "不指定",
-                    Modifier.clickable { onChange(""); editing = false }.padding(start = 4.dp, vertical = 8.dp),
+                    Modifier.clickable { onChange(""); editing = false }.padding(start = 4.dp, top = 8.dp, bottom = 8.dp),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
