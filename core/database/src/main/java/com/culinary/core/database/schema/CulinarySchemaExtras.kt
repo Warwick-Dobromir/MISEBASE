@@ -91,7 +91,9 @@ internal object CulinarySchemaExtras {
         installAppendOnly(db, "change_log")
         installCalculationRecordImmutability(db)
         installCalculationRecordLineGuard(db)
-        installPlanDeletionGuard(db)
+        // 计划删除权限由计划业务层控制：未完成计划可直接删除；已完成计划
+        // 必须先通过专属回收站密码验证。清除旧版数据库触发器，避免旧规则拦截授权删除。
+        db.execSQL("DROP TRIGGER IF EXISTS `trg_production_plan_delete_guard`")
     }
 
     /** 删除 v1 的 recipe_version 触发器，使新增的 servings 约束可以生效。 */
@@ -149,22 +151,6 @@ internal object CulinarySchemaExtras {
                 "WHEN (SELECT status FROM calculation_record " +
                 "WHERE id = OLD.calculation_record_id) = 'CONFIRMED' " +
                 "BEGIN SELECT RAISE(ABORT, 'confirmed calculation record lines are immutable'); END",
-        )
-    }
-
-    /**
-     * 计划删除守卫：只有草稿计划允许删除（A04 §"删除草稿 只删草稿"）。
-     *
-     * 已确认/进行中/已完成/已取消的计划只能保留或取消，不能删除；这样历史快照
-     * 不会因为计划被删而丢失。快照本身另有 append-only 触发器，即使级联到快照
-     * 也会中止，形成第二道保护。
-     */
-    private fun installPlanDeletionGuard(db: SupportSQLiteDatabase) {
-        db.execSQL(
-            "CREATE TRIGGER IF NOT EXISTS trg_production_plan_delete_guard " +
-                "BEFORE DELETE ON production_plan " +
-                "WHEN OLD.status <> 'DRAFT' " +
-                "BEGIN SELECT RAISE(ABORT, 'only draft plans can be deleted; cancel instead'); END",
         )
     }
 
