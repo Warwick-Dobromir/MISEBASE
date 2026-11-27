@@ -1,46 +1,43 @@
 package com.culinary.plans
 
-import android.util.Base64
-import androidx.compose.ui.text.input.KeyboardOptions
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.foundation.text.BasicTextField
 import android.app.DatePickerDialog
-import androidx.compose.foundation.BorderStroke
+import android.util.Base64
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.culinary.core.database.dao.IngredientDao
 import com.culinary.core.database.dao.ProductionPlanDao
 import com.culinary.core.database.dao.ProductionPlanItemDao
-import com.culinary.core.database.dao.IngredientDao
 import com.culinary.core.database.dao.RecipeComponentDao
 import com.culinary.core.database.dao.RecipeDao
 import com.culinary.core.database.dao.RecipeVersionDao
@@ -52,13 +49,13 @@ import com.culinary.core.database.entity.ProductionPlanItemEntity
 import com.culinary.core.database.entity.WorkPlanEntity
 import com.culinary.core.database.model.PlanStatusDb
 import dagger.hilt.android.lifecycle.HiltViewModel
-import java.time.LocalDate
 import java.time.format.DateTimeFormatter
+import java.time.LocalDate
 import java.util.UUID
 import javax.inject.Inject
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -439,6 +436,25 @@ fun AddPlanRoute(onSaved: () -> Unit, onBack: () -> Unit, planId: String? = null
     var linkedArchive by remember(planId) { mutableStateOf(existing?.metadata?.linkedArchive.orEmpty()) }
     var note by remember(planId) { mutableStateOf(existing?.metadata?.note.orEmpty()) }
     LaunchedEffect(versionId, quantity) { if (versionId.isNotBlank()) viewModel.previewRequirements(versionId, quantity.toDoubleOrNull()) }
+    LaunchedEffect(existing?.id) {
+        if (existing != null) {
+            title = existing.title
+            date = existing.plannedDate ?: LocalDate.now().toString()
+            recipeId = existing.metadata.recipeId
+            versionId = existing.metadata.recipeVersionId
+            unitId = existing.metadata.unitId
+            target = existing.metadata.target
+            quantity = existing.metadata.quantity
+            unit = existing.metadata.unit
+            category = existing.metadata.category.ifBlank { "其他" }
+            time = existing.metadata.time.ifBlank { "不指定" }
+            priority = existing.metadata.priority
+            instructions = existing.metadata.instructions
+            criteria = existing.metadata.completionCriteria
+            linkedArchive = existing.metadata.linkedArchive
+            note = existing.metadata.note
+        }
+    }
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 22.dp, vertical = 20.dp)) {
         PlanEyebrow(if (planId == null) "CREATE PLAN" else "EDIT PLAN")
         Spacer(Modifier.height(12.dp))
