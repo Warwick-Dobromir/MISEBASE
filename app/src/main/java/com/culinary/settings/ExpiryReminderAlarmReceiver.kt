@@ -15,6 +15,7 @@ import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import androidx.work.ExistingWorkPolicy
 import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.OutOfQuotaPolicy
 import androidx.work.WorkManager
 import java.time.LocalDateTime
 import java.time.ZoneId
@@ -40,15 +41,17 @@ class ExpiryReminderAlarmReceiver : BroadcastReceiver() {
                     WorkManager.getInstance(appContext)
                         .cancelUniqueWork(ExpiryReminderFallbackWorker.WORK_NAME)
                     scheduleNextReminder(appContext)
-                    val request = OneTimeWorkRequestBuilder<ExpiryReminderWorker>().build()
+                    val request = OneTimeWorkRequestBuilder<ExpiryReminderWorker>()
+                        .setExpedited(OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST)
+                        .build()
                     ExpiryReminderDiagnostics.record(
                         appContext,
                         "SCAN_WORK_ENQUEUED",
-                        "source=AlarmManager; policy=KEEP",
+                        "source=AlarmManager; policy=APPEND_OR_REPLACE; expedited=true",
                     )
                     WorkManager.getInstance(appContext).enqueueUniqueWork(
                         ExpiryReminderWorker.WORK_NAME,
-                        ExistingWorkPolicy.KEEP,
+                        ExistingWorkPolicy.APPEND_OR_REPLACE,
                         request,
                     )
                 } catch (error: Throwable) {
@@ -118,13 +121,25 @@ class ExpiryReminderAlarmReceiver : BroadcastReceiver() {
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
             )
             val exactAllowed = canScheduleExactAlarms(context, alarmManager)
+            val showIntent = PendingIntent.getActivity(
+                context,
+                REMINDER_REQUEST_CODE + 1,
+                Intent(context, com.culinary.MainActivity::class.java)
+                    .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP),
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+            )
             val scheduleMode = if (exactAllowed) {
                 try {
-                    alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAtMillis, pending)
-                    "精确闹钟 + WorkManager 兜底"
+                    // AlarmClock alarms are the platform's highest-priority user-visible alarms:
+                    // Android exits Doze shortly before delivery, so the follow-up scan can run.
+                    alarmManager.setAlarmClock(
+                        AlarmManager.AlarmClockInfo(triggerAtMillis, showIntent),
+                        pending,
+                    )
+                    "系统闹钟 setAlarmClock + WorkManager 兜底"
                 } catch (_: SecurityException) {
                     alarmManager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAtMillis, pending)
-                    "非精确闹钟 + WorkManager 兜底"
+                    "精确权限异常：非精确闹钟 + WorkManager 兜底"
                 }
             } else {
                 alarmManager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAtMillis, pending)
