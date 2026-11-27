@@ -17,7 +17,7 @@ class ExpiryReminderFallbackWorker(
     context: Context,
     parameters: WorkerParameters,
 ) : CoroutineWorker(context, parameters) {
-    override suspend fun doWork(): Result {
+    override suspend fun doWork(): Result = try {
         ExpiryReminderDiagnostics.record(
             applicationContext,
             "WORKMANAGER_FALLBACK_TRIGGERED",
@@ -44,7 +44,14 @@ class ExpiryReminderFallbackWorker(
             ExistingWorkPolicy.KEEP,
             request,
         )
-        return Result.success()
+        Result.success()
+    } catch (error: Throwable) {
+        ExpiryReminderDiagnostics.record(
+            applicationContext,
+            "WORKMANAGER_FALLBACK_FAILED",
+            "${error.javaClass.simpleName}: ${error.message ?: "no message"}",
+        )
+        Result.retry()
     }
 
     companion object {
