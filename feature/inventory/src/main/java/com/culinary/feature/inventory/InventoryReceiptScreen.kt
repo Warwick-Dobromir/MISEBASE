@@ -877,7 +877,30 @@ private fun ReceiptConfirmationContent(
     )
     ReceiptSummaryRow("新建批次", "是")
     ReceiptSummaryRow("存放库位", state.selectedLocationName ?: "未选择")
+    state.selectedArchive?.let { archive ->
+        archive.purchasePriceMinor?.let { price ->
+            ReceiptSummaryRow(
+                "单位成本",
+                "¥${formatAmount(price / 100.0)} ${archive.purchasePriceUnit.orEmpty()}".trim(),
+            )
+            val amount = state.quantity.toDoubleOrNull()
+            val priceUnitMatches = archive.purchasePriceUnit.isNullOrBlank() ||
+                archive.purchasePriceUnit.contains(state.unitSymbol, ignoreCase = true)
+            if (amount != null && priceUnitMatches) {
+                ReceiptSummaryRow("入库总成本", "¥${formatAmount(amount * price / 100.0)}")
+            }
+        }
+    }
     CulinaryRule()
+    val archiveRow = state.archives.firstOrNull { it.archive.id == state.selectedArchiveId }
+    val stockAmount = state.quantity.toDoubleOrNull()
+    if (archiveRow != null && stockAmount != null && state.unitCode == archiveRow.archive.stockUnit.code) {
+        SectionHeader(title = "库存变化预览")
+        ReceiptSummaryRow("入库前", "${formatAmount(archiveRow.onHand)} ${archiveRow.archive.stockUnit.symbol}")
+        ReceiptSummaryRow("本次增加", "+${formatAmount(stockAmount)} ${archiveRow.archive.stockUnit.symbol}")
+        ReceiptSummaryRow("入库后", "${formatAmount(archiveRow.onHand + stockAmount)} ${archiveRow.archive.stockUnit.symbol}")
+        CulinaryRule()
+    }
     SectionHeader(title = "批次信息")
     ReceiptSummaryRow("入库日期", LocalDate.now().toString())
     ReceiptSummaryRow("批次号", state.batchCode.ifBlank { "系统生成" })
@@ -1029,6 +1052,14 @@ private fun ReceiptFields(
         value = state.selectedLocationName ?: "选择实际库位",
         onClick = { onOpenPicker(ReceiptPicker.LOCATION) },
     )
+    state.selectedArchive?.let { archive ->
+        archive.purchasePriceMinor?.let { price ->
+            ReceiptValueRow(
+                "单位成本",
+                "¥${formatAmount(price / 100.0)} ${archive.purchasePriceUnit.orEmpty()}".trim(),
+            )
+        }
+    }
     CulinaryTextField(
         value = state.batchCode,
         onValueChange = onBatchCodeChange,
