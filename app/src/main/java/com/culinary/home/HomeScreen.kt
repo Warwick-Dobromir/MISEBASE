@@ -290,7 +290,7 @@ private fun TodayPreparationSection(
                     .padding(top = CulinarySpacing.sm),
         )
         Spacer(modifier = Modifier.height(CulinarySpacing.xs))
-        listOf("PRODUCTION" to "生产计划", "WORK" to "工作计划").forEach { (kind, heading) ->
+        listOf("PRODUCTION" to "制作计划", "WORK" to "工作计划").forEach { (kind, heading) ->
             val grouped = state.plans.filter { it.kind == kind }
             if (grouped.isNotEmpty()) {
                 Text(
