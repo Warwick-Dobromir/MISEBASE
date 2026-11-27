@@ -2,6 +2,12 @@ package com.culinary.plans
 
 import android.app.DatePickerDialog
 import android.app.TimePickerDialog
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
 import android.content.Context
 import android.util.Base64
 import androidx.compose.foundation.background
@@ -66,6 +72,7 @@ import java.util.UUID
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -237,6 +244,16 @@ class PlanManagementViewModel @Inject constructor(
         (production.map { it.toUi() } + work.map { it.toUi() })
             .sortedWith(compareBy<PlanUiItem> { it.plannedDate ?: "9999-99-99" }.thenByDescending { it.id })
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    init {
+        viewModelScope.launch {
+            plans.collect { currentPlans ->
+                currentPlans.filterNot { it.completed }.forEach { plan ->
+                    PlanReminderScheduler.schedule(appContext, plan.id, plan.title, plan.plannedDate.orEmpty(), plan.metadata.time)
+                }
+            }
+        }
+    }
 
     private val _message = MutableStateFlow<String?>(null)
     val message = _message
@@ -458,6 +475,7 @@ private fun PlanListGroup(title: String, eyebrow: String, items: List<PlanUiItem
 fun AddPlanRoute(onSaved: () -> Unit, onBack: () -> Unit, planId: String? = null, kindArg: String? = null, onOpenRecipeEditor: (String?) -> Unit = {}, viewModel: PlanManagementViewModel = hiltViewModel()) {
     val plans by viewModel.plans.collectAsStateWithLifecycle()
     val message by viewModel.message.collectAsStateWithLifecycle()
+    val notificationPermissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { }
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
@@ -589,6 +607,11 @@ fun AddPlanRoute(onSaved: () -> Unit, onBack: () -> Unit, planId: String? = null
             message?.let { Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall) }
             PlanTextAction(if (kind == PlanKind.PRODUCTION) "保存制作计划" else "保存工作计划", title.isNotBlank() && date.isNotBlank() && (kind != PlanKind.PRODUCTION || recipeId.isNotBlank())) {
                 val metadata = PlanMetadata(target, quantity, unit, category, time, priority, instructions, criteria, linkedArchive, note = note, recipeId = recipeId, recipeVersionId = versionId, unitId = unitId)
+                if (time.isNotBlank() && time != "不指定" && Build.VERSION.SDK_INT >= 33 &&
+                    ContextCompat.checkSelfPermission(context = LocalContext.current, permission = Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
+                ) {
+                    notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                }
                 viewModel.save(kind, planId, title, date, metadata, onSaved)
             }
         }
