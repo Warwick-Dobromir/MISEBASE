@@ -6,10 +6,12 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
@@ -30,6 +32,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
@@ -349,34 +352,45 @@ fun AllPlansRoute(onAdd: () -> Unit, onOpen: (PlanUiItem) -> Unit, modifier: Mod
     val production = dayPlans.filter { it.kind == PlanKind.PRODUCTION }
     val work = dayPlans.filter { it.kind == PlanKind.WORK }
     val completed = dayPlans.count { it.completed }
-    Column(modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 22.dp, vertical = 20.dp)) {
-        PlanEyebrow("PLAN MANAGEMENT")
-        Spacer(Modifier.height(12.dp))
-        Text("全部计划", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.SemiBold)
-        Spacer(Modifier.height(18.dp))
-        Row(Modifier.fillMaxWidth(), verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
-            Text(selectedDate.format(DateTimeFormatter.ofPattern("yyyy年MM月dd日 · E", java.util.Locale.CHINA)), Modifier.weight(1f), style = MaterialTheme.typography.titleSmall)
-            Text("‹", Modifier.clickable { selectedDate = selectedDate.minusDays(1) }.padding(horizontal = 12.dp), style = MaterialTheme.typography.headlineSmall)
-            Text("›", Modifier.clickable { selectedDate = selectedDate.plusDays(1) }.padding(start = 12.dp), style = MaterialTheme.typography.headlineSmall)
-        }
-        HorizontalDivider(Modifier.padding(vertical = 16.dp), color = MaterialTheme.colorScheme.outlineVariant)
-        Row(Modifier.fillMaxWidth(), verticalAlignment = androidx.compose.ui.Alignment.Bottom) {
-            Column(Modifier.weight(1f)) {
-                Text("当日完成进度", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Row(verticalAlignment = androidx.compose.ui.Alignment.Bottom) {
-                    Text("%02d".format(completed), style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Medium)
-                    Text(" / %02d 项".format(dayPlans.size), Modifier.padding(start = 7.dp, bottom = 5.dp), color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
+
+    Column(modifier.fillMaxSize()) {
+        Column(
+            Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState())
+                .padding(horizontal = 22.dp, vertical = 20.dp)
+        ) {
+            PlanEyebrow("PLAN MANAGEMENT")
+            Spacer(Modifier.height(12.dp))
+            Text("全部计划", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.SemiBold)
+            Spacer(Modifier.height(18.dp))
+            Row(Modifier.fillMaxWidth(), verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                Text(selectedDate.format(DateTimeFormatter.ofPattern("yyyy年MM月dd日 · E", java.util.Locale.CHINA)), Modifier.weight(1f), style = MaterialTheme.typography.titleSmall)
+                Text("‹", Modifier.clickable { selectedDate = selectedDate.minusDays(1) }.padding(horizontal = 12.dp), style = MaterialTheme.typography.headlineSmall)
+                Text("›", Modifier.clickable { selectedDate = selectedDate.plusDays(1) }.padding(start = 12.dp), style = MaterialTheme.typography.headlineSmall)
             }
-            Text(if (dayPlans.isEmpty()) "—" else (completed * 100 / dayPlans.size).toString() + "%", color = MaterialTheme.colorScheme.secondary)
+            HorizontalDivider(Modifier.padding(vertical = 16.dp), color = MaterialTheme.colorScheme.outlineVariant)
+            Row(Modifier.fillMaxWidth(), verticalAlignment = androidx.compose.ui.Alignment.Bottom) {
+                Column(Modifier.weight(1f)) {
+                    Text("当日完成进度", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Row(verticalAlignment = androidx.compose.ui.Alignment.Bottom) {
+                        Text("%02d".format(completed), style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Medium)
+                        Text(" / %02d 项".format(dayPlans.size), Modifier.padding(start = 7.dp, bottom = 5.dp), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                }
+                Text(if (dayPlans.isEmpty()) "—" else (completed * 100 / dayPlans.size).toString() + "%", color = MaterialTheme.colorScheme.secondary)
+            }
+            Spacer(Modifier.height(10.dp))
+            PlanProgress(completed, dayPlans.size)
+            PlanListGroup("制作计划", "PRODUCTION", production, onOpen)
+            PlanListGroup("工作计划", "WORK", work, onOpen)
+            Spacer(Modifier.height(12.dp))
         }
-        Spacer(Modifier.height(10.dp))
-        PlanProgress(completed, dayPlans.size)
-        PlanListGroup("制作计划", "PRODUCTION", production, onOpen)
-        PlanListGroup("工作计划", "WORK", work, onOpen)
-        Spacer(Modifier.height(18.dp))
         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-        Text("＋ 添加计划", Modifier.fillMaxWidth().clickable(onClick = onAdd).padding(vertical = 16.dp), color = MaterialTheme.colorScheme.secondary, style = MaterialTheme.typography.bodyLarge)
+        Text(
+            "＋ 添加计划",
+            Modifier.fillMaxWidth().clickable(onClick = onAdd).padding(horizontal = 22.dp, vertical = 17.dp),
+            color = MaterialTheme.colorScheme.secondary,
+            style = MaterialTheme.typography.bodyLarge,
+        )
     }
 }
 
@@ -401,7 +415,13 @@ private fun PlanListGroup(title: String, eyebrow: String, items: List<PlanUiItem
         else items.forEach { plan ->
             Column(Modifier.fillMaxWidth().clickable { onOpen(plan) }.padding(vertical = 13.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
                 Row(Modifier.fillMaxWidth(), verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
-                    Text(plan.title, Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
+                    Text(
+                        plan.title,
+                        Modifier.weight(1f),
+                        style = MaterialTheme.typography.bodyLarge.copy(textDecoration = if (plan.completed) TextDecoration.LineThrough else TextDecoration.None),
+                        color = if (plan.completed) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
+                        fontWeight = FontWeight.Medium,
+                    )
                     Text(plan.statusLabel(), style = MaterialTheme.typography.labelSmall, color = if (plan.completed) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.onSurfaceVariant)
                 }
                 val info = if (plan.kind == PlanKind.PRODUCTION) listOf(plan.quantityLabel(), plan.metadata.time).filter { it.isNotBlank() }.joinToString(" · ") else listOf(plan.metadata.category, plan.metadata.time).filter { it.isNotBlank() && it != "不指定" }.joinToString(" · ")
@@ -596,9 +616,16 @@ private fun PlanDateField(value: String, onChange: (String) -> Unit) {
 
 @Composable
 private fun ChoiceRow(options: List<String>, selected: String, onSelect: (String) -> Unit) {
-    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(13.dp)) {
+    FlowRow(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(18.dp),
+        verticalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
         options.forEach { option ->
-            Column(Modifier.clickable { onSelect(option) }.padding(vertical = 8.dp), horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally) {
+            Column(
+                Modifier.widthIn(min = 48.dp).clickable { onSelect(option) }.padding(vertical = 8.dp),
+                horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally,
+            ) {
                 Text(option, color = if (option == selected) Color(0xFF8A6A2B) else MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelMedium, fontWeight = if (option == selected) FontWeight.SemiBold else FontWeight.Normal)
                 if (option == selected) HorizontalDivider(Modifier.padding(top = 4.dp), color = Color(0xFF8A6A2B), thickness = 2.dp)
             }
@@ -678,7 +705,9 @@ fun PlanDetailRoute(planId: String, onBack: () -> Unit, onEdit: (PlanUiItem) -> 
                     Text("编辑计划", Modifier.clickable { onEdit(plan) }.padding(vertical = 13.dp), color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Text("删除计划", Modifier.clickable { viewModel.deleteUnfinished(plan); onDeleted() }.padding(vertical = 13.dp), color = MaterialTheme.colorScheme.error)
                 }
-                PlanTextAction(if (plan.inProgress) "标记为已完成" else "开始执行", true) { if (plan.inProgress) viewModel.complete(plan) else viewModel.start(plan) }
+                PlanTextAction(if (plan.inProgress) "执行已完成" else "开始执行", true) {
+                    if (plan.inProgress) viewModel.complete(plan) else viewModel.start(plan)
+                }
             } else Text("此计划已完成，记录已转入计划回收站。", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
