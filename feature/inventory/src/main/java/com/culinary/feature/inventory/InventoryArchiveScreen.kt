@@ -34,6 +34,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.culinary.core.common.CulinaryError
 import com.culinary.core.common.Outcome
 import com.culinary.core.designsystem.component.ArchiveDetailBar
 import com.culinary.core.designsystem.component.ArchiveWideImage
@@ -109,11 +110,11 @@ class ArchiveDetailViewModel
          * Reading the saved value here avoids losing a one-shot result while a dialog
          * destination is being removed from the navigation back stack.
          */
-        fun consumeScannedBarcodeResult() {
+        fun consumeScannedBarcodeResult(): Boolean {
             val scanned = savedStateHandle.get<String>("archive_barcode_scan_result")
                 ?.trim()
                 ?.takeIf { it.isNotEmpty() }
-                ?: return
+                ?: return false
             savedStateHandle["archive_barcode_scan_result"] = null
             val current = _uiState.value.detail?.archive?.barcode.orEmpty()
             if (current == scanned) {
@@ -122,6 +123,7 @@ class ArchiveDetailViewModel
                 _uiState.update { it.copy(pendingScannedBarcode = scanned, error = null) }
                 confirmBarcodeReplacement()
             }
+            return true
         }
 
         fun dismissBarcodeReplacement() {
@@ -140,7 +142,14 @@ class ArchiveDetailViewModel
                         load()
                     }
                     is Outcome.Failure -> _uiState.update {
-                        it.copy(isReplacingBarcode = false, error = InventoryErrorMessages.describe(result.error))
+                        it.copy(
+                            isReplacingBarcode = false,
+                            error = if (result.error is CulinaryError.Conflict) {
+                                "这个新条码已存在于其他库存档案中，不能重复使用。请重新扫描其他条码。"
+                            } else {
+                                InventoryErrorMessages.describe(result.error)
+                            },
+                        )
                     }
                 }
             }
@@ -207,8 +216,11 @@ fun ArchiveDetailRoute(
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
-        viewModel.consumeScannedBarcodeResult()
-        viewModel.load()
+        // 扫码结果消费后会自行执行替换并在写入完成后刷新；
+        // 避免这里并发发起旧数据读取，覆盖刚写入的新条码。
+        if (!viewModel.consumeScannedBarcodeResult()) {
+            viewModel.load()
+        }
     }
     ArchiveDetailScreen(
         state = state,
