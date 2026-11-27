@@ -40,7 +40,6 @@ class ExpiryReminderAlarmReceiver : BroadcastReceiver() {
                     )
                     WorkManager.getInstance(appContext)
                         .cancelUniqueWork(ExpiryReminderFallbackWorker.WORK_NAME)
-                    scheduleNextReminder(appContext)
                     val request = OneTimeWorkRequestBuilder<ExpiryReminderWorker>()
                         .setExpedited(OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST)
                         .build()
@@ -54,6 +53,15 @@ class ExpiryReminderAlarmReceiver : BroadcastReceiver() {
                         ExistingWorkPolicy.APPEND_OR_REPLACE,
                         request,
                     )
+                    // Scheduling tomorrow's alarm must never prevent this alarm's scan.
+                    runCatching { scheduleNextReminder(appContext) }
+                        .onFailure {
+                            ExpiryReminderDiagnostics.record(
+                                appContext,
+                                "NEXT_REMINDER_RESCHEDULE_FAILED",
+                                "${it.javaClass.simpleName}: ${it.message ?: "no message"}",
+                            )
+                        }
                 } catch (error: Throwable) {
                     ExpiryReminderDiagnostics.record(
                         appContext,
