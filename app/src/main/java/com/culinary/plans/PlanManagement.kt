@@ -244,8 +244,7 @@ fun AllPlansRoute(
     val production = dayPlans.filter { it.kind == PlanKind.PRODUCTION }
     val work = dayPlans.filter { it.kind == PlanKind.WORK }
     Column(modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 22.dp, vertical = 18.dp)) {
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Text("‹ 返回首页", modifier = Modifier.clickable { /* navigation back handled by system bar */ }, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
             Text("TODAY'S PLAN", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         Spacer(Modifier.height(18.dp))
@@ -507,8 +506,7 @@ fun PlanDetailRoute(
     val plans by viewModel.plans.collectAsStateWithLifecycle()
     val plan = plans.firstOrNull { it.id == planId }
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 22.dp, vertical = 18.dp)) {
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Text("‹ 返回今日计划", Modifier.clickable(onClick = onBack), color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
             Text("计划详情", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelSmall)
         }
         Spacer(Modifier.height(22.dp))
