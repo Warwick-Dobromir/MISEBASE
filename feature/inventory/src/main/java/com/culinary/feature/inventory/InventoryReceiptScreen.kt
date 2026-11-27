@@ -725,9 +725,7 @@ internal fun ReceiptScreen(
                         CulinaryTextButton(
                             text = "+ 添加采购食材",
                             onClick = onAddLine,
-                            variant = CulinaryButtonVariant.Secondary,
                             enabled = !state.isSaving,
-                            modifier = Modifier.fillMaxWidth().padding(top = CulinarySpacing.block),
                         )
                         SectionHeader(
                             title = "待确认入库明细",
