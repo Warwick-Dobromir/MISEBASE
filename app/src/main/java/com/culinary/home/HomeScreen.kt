@@ -268,19 +268,11 @@ private fun TodayPreparationSection(
             subtitle = stringResource(R.string.home_today_subtitle),
             modifier = Modifier.padding(horizontal = CulinarySpacing.pageHorizontal),
             trailing = {
-                if (state.totalPlanCount > 0 && state.completedPlanCount == state.totalPlanCount) {
-                    Text(
-                        "所有任务已完成",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.secondary,
-                    )
-                } else {
-                    Text(
-                        "%02d/%02d".format(state.completedPlanCount, state.totalPlanCount),
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
+                Text(
+                    "%02d/%02d".format(state.completedPlanCount, state.totalPlanCount),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
             },
         )
         if (state.totalPlanCount == 0 || state.completedPlanCount < state.totalPlanCount) {
@@ -294,7 +286,7 @@ private fun TodayPreparationSection(
             val grouped = state.plans.filter { it.kind == kind }
             if (grouped.isNotEmpty()) {
                 AnimatedVisibility(
-                    visible = grouped.any { !it.completed },
+                    visible = true,
                     exit = fadeOut(animationSpec = tween(420)) + shrinkVertically(animationSpec = tween(420)),
                 ) {
                     Column {
@@ -316,6 +308,14 @@ private fun TodayPreparationSection(
                             ) {
                                 PlanRow(plan = plan, onOpen = { onOpenPlan(plan.id) })
                             }
+                        }
+                        if (grouped.all { it.completed }) {
+                            Text(
+                                "所有任务已完成",
+                                modifier = Modifier.padding(horizontal = CulinarySpacing.pageHorizontal, vertical = CulinarySpacing.sm),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.secondary,
+                            )
                         }
                     }
                 }
