@@ -1,6 +1,10 @@
 package com.culinary.home
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -285,8 +289,8 @@ private fun TodayPreparationSection(
             Spacer(modifier = Modifier.height(CulinarySpacing.xs))
         }
         listOf("PRODUCTION" to "制作计划", "WORK" to "工作计划").forEach { (kind, heading) ->
-            val grouped = state.plans.filter { it.kind == kind && !it.completed }
-            if (grouped.isNotEmpty()) {
+            val grouped = state.plans.filter { it.kind == kind }
+            if (grouped.any { !it.completed }) {
                 Text(
                     text = heading,
                     style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
@@ -299,7 +303,12 @@ private fun TodayPreparationSection(
                     ),
                 )
                 grouped.forEach { plan ->
-                    PlanRow(plan = plan, onOpen = { onOpenPlan(plan.id) })
+                    AnimatedVisibility(
+                        visible = !plan.completed,
+                        exit = fadeOut(animationSpec = tween(320)) + shrinkVertically(animationSpec = tween(320)),
+                    ) {
+                        PlanRow(plan = plan, onOpen = { onOpenPlan(plan.id) })
+                    }
                 }
             }
         }
@@ -442,6 +451,7 @@ private fun PlanRow(
                     MaterialTheme.colorScheme.onSurface
                 },
             maxLines = 2,
+            textDecoration = if (plan.completed) TextDecoration.LineThrough else TextDecoration.None,
         )
         plan.subtitle?.takeIf { it.isNotBlank() }?.let {
             Text(it, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
