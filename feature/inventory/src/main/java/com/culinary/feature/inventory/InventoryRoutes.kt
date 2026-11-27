@@ -34,6 +34,7 @@ object InventoryRoutes {
     const val PENDING_STOCK = "inventory/pending-stock"
     const val RECEIPT = "inventory/receipt?archiveId={archiveId}"
     const val PURCHASE = "inventory/purchase"
+    const val MANUAL_RECEIPT = "inventory/receipt/manual"
     const val ISSUE = "inventory/issue?archiveId={archiveId}&recipeVersionId={recipeVersionId}"
     const val STOCKTAKE = "inventory/stocktake?scope={scope}&scopeRef={scopeRef}"
     const val FREEZE = "inventory/freeze"
@@ -108,7 +109,9 @@ object InventoryRoutes {
     fun pendingStock(): String = PENDING_STOCK
 
     fun receipt(archiveId: String? = null): String =
-        if (archiveId == null) "inventory/receipt" else "inventory/receipt?archiveId=$archiveId"
+        if (archiveId == null) MANUAL_RECEIPT else "inventory/receipt?archiveId=$archiveId"
+
+    fun manualReceipt(): String = MANUAL_RECEIPT
 
     fun purchase(): String = PURCHASE
 

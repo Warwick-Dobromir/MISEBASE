@@ -596,7 +596,7 @@ private fun NavGraphBuilder.inventoryGraph(navController: NavHostController) {
             onOpenCategory = { categoryId -> navController.navigate(InventoryRoutes.category(categoryId)) },
             onAddCategory = { navController.navigate(InventoryRoutes.categories()) },
             onOpenPendingStock = { navController.navigate(InventoryRoutes.pendingStock()) },
-            onOpenReceipt = { navController.navigate(InventoryRoutes.receipt()) },
+            onOpenReceipt = { navController.navigate(InventoryRoutes.manualReceipt()) },
             onOpenIssue = { navController.navigate(InventoryRoutes.issue()) },
             onOpenStocktake = { navController.navigate(InventoryRoutes.stocktake()) },
             onOpenLedger = { navController.navigate(InventoryRoutes.ledgerV9()) },
@@ -693,6 +693,16 @@ private fun NavGraphBuilder.inventoryGraph(navController: NavHostController) {
             onCompleted = { navController.popBackStack() },
         )
     }
+    composable(InventoryRoutes.MANUAL_RECEIPT) {
+        ReceiptRoute(
+            onBack = { navController.popBackStack() },
+            onPrint = { kind, refId -> navController.navigate(InventoryRoutes.printPreview(kind, refId, 80)) },
+            onSaved = { navController.popBackStack() },
+            isPurchase = false,
+            onOpenManual = { navController.navigate(InventoryRoutes.manualReceipt()) { launchSingleTop = true } },
+            onOpenPurchase = { navController.navigate(InventoryRoutes.purchase()) },
+        )
+    }
     composable(
         route = InventoryRoutes.RECEIPT,
         arguments = listOf(nullableString(InventoryRoutes.ARG_ARCHIVE_ID)),
@@ -701,6 +711,9 @@ private fun NavGraphBuilder.inventoryGraph(navController: NavHostController) {
             onBack = { navController.popBackStack() },
             onPrint = { kind, refId -> navController.navigate(InventoryRoutes.printPreview(kind, refId, 80)) },
             onSaved = { navController.popBackStack() },
+            isPurchase = false,
+            onOpenManual = { navController.navigate(InventoryRoutes.manualReceipt()) },
+            onOpenPurchase = { navController.navigate(InventoryRoutes.purchase()) },
         )
     }
     composable(InventoryRoutes.PURCHASE) {
@@ -708,6 +721,9 @@ private fun NavGraphBuilder.inventoryGraph(navController: NavHostController) {
             onBack = { navController.popBackStack() },
             onPrint = { kind, refId -> navController.navigate(InventoryRoutes.printPreview(kind, refId, 80)) },
             onSaved = { navController.popBackStack() },
+            isPurchase = true,
+            onOpenManual = { navController.navigate(InventoryRoutes.manualReceipt()) },
+            onOpenPurchase = { navController.navigate(InventoryRoutes.purchase()) { launchSingleTop = true } },
         )
     }
     composable(

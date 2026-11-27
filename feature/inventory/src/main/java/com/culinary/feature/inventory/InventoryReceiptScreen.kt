@@ -85,9 +85,13 @@ fun ReceiptRoute(
     onBack: () -> Unit,
     onPrint: (String, String) -> Unit,
     onSaved: () -> Unit,
+    isPurchase: Boolean = false,
+    onOpenManual: () -> Unit = {},
+    onOpenPurchase: () -> Unit = {},
     viewModel: ReceiptViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    LaunchedEffect(isPurchase) { viewModel.setMode(isPurchase) }
     LaunchedEffect(state.completion) {
         when (val done = state.completion) {
             is ReceiptCompletion.Print -> {
@@ -106,6 +110,8 @@ fun ReceiptRoute(
     ReceiptScreen(
         state = state,
         onBack = onBack,
+        onOpenManual = onOpenManual,
+        onOpenPurchase = onOpenPurchase,
         onArchiveSelected = viewModel::selectArchive,
         onQuantityChange = viewModel::onQuantityChange,
         onUnitSelected = viewModel::selectUnit,
@@ -215,11 +221,15 @@ class ReceiptViewModel
         /** 手工入库幂等键：同一屏幕只生成一次，防止重复触发导致双写。 */
         private val receiptKey: String = UUID.randomUUID().toString()
 
-        private val _uiState = MutableStateFlow(ReceiptUiState(isPurchase = routeArchiveId == null))
+        private val _uiState = MutableStateFlow(ReceiptUiState(isPurchase = false))
         val uiState: StateFlow<ReceiptUiState> = _uiState.asStateFlow()
 
         init {
             load()
+        }
+
+        fun setMode(isPurchase: Boolean) {
+            _uiState.update { it.copy(isPurchase = isPurchase) }
         }
 
         fun load() {
@@ -576,6 +586,8 @@ private enum class ReceiptPicker {
 internal fun ReceiptScreen(
     state: ReceiptUiState,
     onBack: () -> Unit,
+    onOpenManual: () -> Unit,
+    onOpenPurchase: () -> Unit,
     onArchiveSelected: (String) -> Unit,
     onQuantityChange: (String) -> Unit,
     onUnitSelected: (String) -> Unit,
@@ -593,6 +605,8 @@ internal fun ReceiptScreen(
     onDismissError: () -> Unit,
 ) {
     var picker by remember { mutableStateOf<ReceiptPicker?>(null) }
+    var showConfirmation by remember { mutableStateOf(false) }
+    var confirmationChecked by remember { mutableStateOf(false) }
     Column(modifier = Modifier.fillMaxSize()) {
         state.error?.let { message ->
             ErrorBanner(
@@ -612,16 +626,45 @@ internal fun ReceiptScreen(
                         .padding(bottom = CulinarySpacing.xl),
             ) {
                 PageHeader(
-                    eyebrow = "RECEIPT",
-                    title = if (state.isPurchase) "采购入库" else "手工入库",
-                    supporting =
-                        if (state.isPurchase) {
-                            "逐行加入待确认入库单，确认后才写入库存与流水。"
-                        } else {
-                            "确认入库后新建批次并写入入库流水，编辑档案不会改变数量。"
-                        },
+                    eyebrow = if (showConfirmation) "STOCK IN / FINAL REVIEW" else "INVENTORY / STOCK IN",
+                    title = if (showConfirmation) "确认入库" else "入库",
+                    supporting = if (showConfirmation) "RECEIPT CONFIRMATION" else "STOCK RECEIPT · 库存接收",
                     actions = { CulinaryTextButton(text = "返回", onClick = onBack) },
                 )
+                if (!showConfirmation) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = CulinarySpacing.pageHorizontal),
+                        horizontalArrangement = Arrangement.spacedBy(CulinarySpacing.lg),
+                    ) {
+                        CulinaryTextButton(text = "手动入库", onClick = onOpenManual, enabled = !state.isPurchase)
+                        CulinaryTextButton(text = "采购入库", onClick = onOpenPurchase, enabled = state.isPurchase)
+                    }
+                    CulinaryRule()
+                }
+                if (state.isPurchase) {
+                    Column(modifier = Modifier.padding(horizontal = CulinarySpacing.pageHorizontal)) {
+                        SectionHeader(title = "01 采购信息")
+                        Text(
+                            text = "采购入库应关联首页采购单，自动读取供应商、采购单号、采购日期及采购明细。",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        CulinaryRule()
+                        SectionHeader(title = "02 采购明细")
+                        EmptyState(
+                            title = "采购单功能尚未接入",
+                            description = "采购单模块完成后，此处读取采购单并登记实际收货数量、库位和批次。当前不创建虚假的采购单数据。",
+                            compact = true,
+                        )
+                        SectionHeader(title = "03 验收入库")
+                        Text(
+                            text = "支持部分到货；未收齐数量保留在原采购单。确认入库时与手动入库共用确认流程。",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    return@Column
+                }
                 Column(modifier = Modifier.padding(horizontal = CulinarySpacing.pageHorizontal)) {
                     state.message?.let { text ->
                         StatusBadge(
@@ -636,6 +679,16 @@ internal fun ReceiptScreen(
                             description = "请先在库存档案中建立档案，再回到这里入库。",
                             actionLabel = "重新加载",
                             onAction = onReload,
+                        )
+                        return@Column
+                    }
+                    if (showConfirmation) {
+                        ReceiptConfirmationContent(
+                            state = state,
+                            checked = confirmationChecked,
+                            onCheckedChange = { confirmationChecked = it },
+                            onBack = { showConfirmation = false; confirmationChecked = false },
+                            onConfirm = onSubmit,
                         )
                         return@Column
                     }
@@ -692,8 +745,8 @@ internal fun ReceiptScreen(
                     } else {
                         CulinaryButton(
                             text = if (state.isSaving) "正在入库" else "确认入库",
-                            onClick = onSubmit,
-                            enabled = !state.isSaving,
+                            onClick = { showConfirmation = true },
+                            enabled = !state.isSaving && state.quantity.isNotBlank() && state.selectedArchiveId != null,
                             loading = state.isSaving,
                             modifier = Modifier.fillMaxWidth().padding(top = CulinarySpacing.block),
                         )
@@ -765,6 +818,69 @@ internal fun ReceiptScreen(
 }
 
 @Composable
+private fun ReceiptConfirmationContent(
+    state: ReceiptUiState,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+    onBack: () -> Unit,
+    onConfirm: () -> Unit,
+) {
+    SectionHeader(title = "入库摘要")
+    Text(
+        text = "${state.quantity.ifBlank { "0" }} ${state.unitSymbol}",
+        style = MaterialTheme.typography.headlineLarge,
+        color = MaterialTheme.colorScheme.onSurface,
+    )
+    Text(
+        text = "本次实际入库数量",
+        style = MaterialTheme.typography.bodyMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
+    CulinaryRule()
+    SectionHeader(title = "食材明细")
+    ReceiptSummaryRow("食材", state.selectedArchiveName ?: "未选择")
+    ReceiptSummaryRow("批次号", state.batchCode.ifBlank { "系统生成" })
+    ReceiptSummaryRow("生产日期", state.productionDate.ifBlank { "未填写" })
+    ReceiptSummaryRow("到期日期", state.expiresOn.ifBlank { "未填写" })
+    ReceiptSummaryRow("存放库位", state.selectedLocationName ?: "未选择")
+    CulinaryRule()
+    SectionHeader(title = "最终确认")
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        androidx.compose.material3.Checkbox(checked = checked, onCheckedChange = onCheckedChange)
+        Text(
+            text = "我已核对本次入库数量、批次和库位。",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurface,
+        )
+    }
+    CulinaryRule()
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(top = CulinarySpacing.md),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        CulinaryTextButton(text = "返回修改", onClick = onBack)
+        CulinaryTextButton(
+            text = if (state.isSaving) "正在入库…" else "确认入库并打印 →",
+            onClick = onConfirm,
+            enabled = checked && !state.isSaving,
+        )
+    }
+}
+
+@Composable
+private fun ReceiptSummaryRow(label: String, value: String) {
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(vertical = CulinarySpacing.sm),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(label, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(value, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurface)
+    }
+}
+
+@Composable
 private fun ReceiptFields(
     state: ReceiptUiState,
     onOpenPicker: (ReceiptPicker) -> Unit,
@@ -776,7 +892,7 @@ private fun ReceiptFields(
     onTemporaryChange: (Boolean) -> Unit,
     showTemporary: Boolean,
 ) {
-    SectionHeader(title = "入库信息")
+    SectionHeader(title = "01 选择食材")
     CulinaryButton(
         text = state.selectedArchiveName ?: "选择库存档案",
         onClick = { onOpenPicker(ReceiptPicker.ARCHIVE) },
@@ -784,6 +900,7 @@ private fun ReceiptFields(
         icon = CulinaryIcons.ChevronDown,
         modifier = Modifier.fillMaxWidth(),
     )
+    SectionHeader(title = "02 入库数量")
     Row(modifier = Modifier.padding(top = CulinarySpacing.field), verticalAlignment = Alignment.CenterVertically) {
         CulinaryTextField(
             value = state.quantity,
@@ -801,6 +918,7 @@ private fun ReceiptFields(
             modifier = Modifier.padding(start = CulinarySpacing.sm),
         )
     }
+    SectionHeader(title = "03 批次信息")
     CulinaryTextField(
         value = state.batchCode,
         onValueChange = onBatchCodeChange,
@@ -843,6 +961,7 @@ private fun ReceiptFields(
         icon = CulinaryIcons.ChevronDown,
         modifier = Modifier.fillMaxWidth().padding(top = CulinarySpacing.md),
     )
+    SectionHeader(title = "04 备注")
     CulinaryTextField(
         value = state.note,
         onValueChange = onNoteChange,
