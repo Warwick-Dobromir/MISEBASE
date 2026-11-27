@@ -229,14 +229,6 @@ internal fun SettingsScreen(
             )
             Spacer(modifier = Modifier.height(CulinarySpacing.md))
             CulinaryButton(
-                text = "导出后台提醒诊断记录",
-                onClick = onExportDiagnostics,
-                variant = CulinaryButtonVariant.Secondary,
-                enabled = state.diagnosticsExport !is DiagnosticsExportState.Running,
-                modifier = Modifier.fillMaxWidth(),
-            )
-            Spacer(modifier = Modifier.height(CulinarySpacing.xs))
-            CulinaryButton(
                 text = if (expiryScanTestState.isRunning) "正在扫描库存" else "扫描测试",
                 onClick = onScanTestClick,
                 enabled = !expiryScanTestState.isRunning,
@@ -572,7 +564,7 @@ private fun DiagnosticsSection(
     )
     Spacer(modifier = Modifier.height(CulinarySpacing.sm))
     CulinaryButton(
-        text = stringResource(R.string.settings_diag_export),
+        text = "导出诊断信息（含后台提醒记录）",
         onClick = onExportDiagnostics,
         variant = CulinaryButtonVariant.Secondary,
         enabled = state.diagnosticsExport !is DiagnosticsExportState.Running,
@@ -599,6 +591,12 @@ private fun DiagnosticsSection(
     }
     Text(
         text = stringResource(R.string.settings_diag_hint),
+        style = MaterialTheme.typography.labelSmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(top = CulinarySpacing.xs),
+    )
+    Text(
+        text = "同时包含最近 200 条后台提醒事件、闹钟登记时间、扫描结果、通知权限与电池优化状态。",
         style = MaterialTheme.typography.labelSmall,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
         modifier = Modifier.padding(top = CulinarySpacing.xs),
