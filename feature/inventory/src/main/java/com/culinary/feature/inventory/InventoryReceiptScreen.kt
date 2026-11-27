@@ -642,6 +642,30 @@ internal fun ReceiptScreen(
                 }
                 if (state.isPurchase) {
                     Column(modifier = Modifier.padding(horizontal = CulinarySpacing.pageHorizontal)) {
+                        SectionHeader(title = "01  采购信息")
+                        ReceiptValueRow("供应商", "选择采购单后读取")
+                        ReceiptValueRow("采购单号", "由采购单自动带入")
+                        ReceiptValueRow("采购日期", "由采购单自动带入")
+                        SectionHeader(title = "02  采购明细")
+                        EmptyState(
+                            title = "请选择采购单",
+                            description = "采购入库将关联库存主页的采购单。选择后读取供应商、采购商品和采购数量；实际收货数量可与采购数量不同，未收齐部分保留在原采购单。",
+                            compact = true,
+                        )
+                        SectionHeader(title = "03  验收入库")
+                        ReceiptValueRow("实际收货数量", "选择采购单后填写")
+                        ReceiptValueRow(
+                            label = "存放库位",
+                            value = state.selectedLocationName ?: "选择实际库位",
+                            onClick = { picker = ReceiptPicker.LOCATION },
+                        )
+                        ReceiptValueRow("批次信息", "按实际收货生成")
+                        ReceiptValueRow("验收状态", "待确认验收", accent = true)
+                        ReceiptValueRow("采购总额", "选择采购单后计算", emphasize = true)
+                    }
+                    return@Column
+                }
+                Column(modifier = Modifier.padding(horizontal = CulinarySpacing.pageHorizontal)) {
                         SectionHeader(title = "01 采购信息")
                         Text(
                             text = "采购入库应关联首页采购单，自动读取供应商、采购单号、采购日期及采购明细。",
@@ -824,6 +848,11 @@ private fun ReceiptConfirmationContent(
     onBack: () -> Unit,
     onConfirm: () -> Unit,
 ) {
+    StatusBadge(
+        text = "待确认",
+        tone = StatusTone.Success,
+        modifier = Modifier.padding(bottom = CulinarySpacing.md),
+    )
     SectionHeader(title = "入库摘要")
     Text(
         text = "${state.quantity.ifBlank { "0" }} ${state.unitSymbol}",
@@ -837,14 +866,31 @@ private fun ReceiptConfirmationContent(
     )
     CulinaryRule()
     SectionHeader(title = "食材明细")
-    ReceiptSummaryRow("食材", state.selectedArchiveName ?: "未选择")
+    Text(
+        text = state.selectedArchiveName ?: "未选择食材",
+        style = MaterialTheme.typography.titleLarge,
+        color = MaterialTheme.colorScheme.onSurface,
+    )
+    Text(
+        text = "${state.quantity.ifBlank { "0" }} ${state.unitSymbol}",
+        style = MaterialTheme.typography.titleMedium,
+        color = MaterialTheme.colorScheme.onSurface,
+        modifier = Modifier.padding(top = CulinarySpacing.xs, bottom = CulinarySpacing.sm),
+    )
+    ReceiptSummaryRow("新建批次", "是")
+    ReceiptSummaryRow("存放库位", state.selectedLocationName ?: "未选择")
+    CulinaryRule()
+    SectionHeader(title = "批次信息")
+    ReceiptSummaryRow("入库日期", LocalDate.now().toString())
     ReceiptSummaryRow("批次号", state.batchCode.ifBlank { "系统生成" })
     ReceiptSummaryRow("生产日期", state.productionDate.ifBlank { "未填写" })
     ReceiptSummaryRow("到期日期", state.expiresOn.ifBlank { "未填写" })
-    ReceiptSummaryRow("存放库位", state.selectedLocationName ?: "未选择")
     CulinaryRule()
     SectionHeader(title = "最终确认")
-    Row(verticalAlignment = Alignment.CenterVertically) {
+    Row(
+        modifier = Modifier.fillMaxWidth().clickable { onCheckedChange(!checked) }.padding(vertical = CulinarySpacing.md),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
         androidx.compose.material3.Checkbox(checked = checked, onCheckedChange = onCheckedChange)
         Text(
             text = "我已核对本次入库数量、批次和库位。",
@@ -860,7 +906,7 @@ private fun ReceiptConfirmationContent(
     ) {
         CulinaryTextButton(text = "返回修改", onClick = onBack)
         CulinaryTextButton(
-            text = if (state.isSaving) "正在入库…" else "确认入库并打印 →",
+            text = if (state.isSaving) "正在入库…" else "确认入库并打印  →",
             onClick = onConfirm,
             enabled = checked && !state.isSaving,
         )
@@ -880,6 +926,37 @@ private fun ReceiptSummaryRow(label: String, value: String) {
 }
 
 @Composable
+private fun ReceiptValueRow(
+    label: String,
+    value: String,
+    onClick: (() -> Unit)? = null,
+    accent: Boolean = false,
+    emphasize: Boolean = false,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
+            .padding(vertical = CulinarySpacing.md),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(label, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                value,
+                style = if (emphasize) MaterialTheme.typography.titleLarge else MaterialTheme.typography.bodyLarge,
+                color = if (accent) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+            )
+            if (onClick != null) {
+                Text("  ›", style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        }
+    }
+    CulinaryRule()
+}
+
+@Composable
 private fun ReceiptFields(
     state: ReceiptUiState,
     onOpenPicker: (ReceiptPicker) -> Unit,
@@ -891,84 +968,84 @@ private fun ReceiptFields(
     onTemporaryChange: (Boolean) -> Unit,
     showTemporary: Boolean,
 ) {
-    SectionHeader(title = "01 选择食材")
-    CulinaryButton(
-        text = state.selectedArchiveName ?: "选择库存档案",
+    SectionHeader(title = "01  选择食材")
+    ReceiptValueRow(
+        label = "食材名称",
+        value = state.selectedArchiveName ?: "选择库存档案",
         onClick = { onOpenPicker(ReceiptPicker.ARCHIVE) },
-        variant = CulinaryButtonVariant.Secondary,
-        icon = CulinaryIcons.ChevronDown,
-        modifier = Modifier.fillMaxWidth(),
     )
-    SectionHeader(title = "02 入库数量")
-    Row(modifier = Modifier.padding(top = CulinarySpacing.field), verticalAlignment = Alignment.CenterVertically) {
+
+    SectionHeader(title = "02  入库数量")
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(vertical = CulinarySpacing.md),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
         CulinaryTextField(
             value = state.quantity,
             onValueChange = onQuantityChange,
-            label = "数量 *",
+            label = "数量",
             singleLine = true,
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
             fillWidth = false,
             modifier = Modifier.weight(1f),
         )
-        CulinaryButton(
-            text = state.unitSymbol.ifBlank { "单位" },
+        CulinaryTextButton(
+            text = state.unitSymbol.ifBlank { "选择单位" },
             onClick = { onOpenPicker(ReceiptPicker.UNIT) },
-            variant = CulinaryButtonVariant.Secondary,
-            modifier = Modifier.padding(start = CulinarySpacing.sm),
         )
     }
-    SectionHeader(title = "03 批次信息")
+    CulinaryRule()
+
+    SectionHeader(title = "03  批次信息")
+    ReceiptValueRow("入库日期", LocalDate.now().toString())
     Row(
         modifier = Modifier.fillMaxWidth().padding(vertical = CulinarySpacing.sm),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text("入库日期", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Text(LocalDate.now().toString(), style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurface)
-    }
-    CulinaryRule()
-    CulinaryTextField(
-        value = state.batchCode,
-        onValueChange = onBatchCodeChange,
-        label = "批次号",
-        placeholder = "可留空，系统按入库时间生成 FIFO 顺序",
-        singleLine = true,
-        modifier = Modifier.padding(top = CulinarySpacing.md),
-    )
-    Row(modifier = Modifier.padding(top = CulinarySpacing.md), horizontalArrangement = Arrangement.spacedBy(CulinarySpacing.sm)) {
+        Text("生产日期", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         CulinaryDateField(
             value = state.productionDate,
             onValueChange = onProductionDateChange,
-            label = "生产日期",
-            modifier = Modifier.weight(1f),
+            label = "选择日期",
+            modifier = Modifier.weight(1f).padding(start = CulinarySpacing.lg),
         )
+    }
+    CulinaryRule()
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(vertical = CulinarySpacing.sm),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text("保质期 / 到期日期", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         CulinaryDateField(
             value = state.expiresOn,
             onValueChange = onExpiresOnChange,
-            label = "到期日期",
-            modifier = Modifier.weight(1f),
+            label = "填写",
+            modifier = Modifier.weight(1f).padding(start = CulinarySpacing.lg),
         )
     }
-    Text(
-        text = "填写生产日期后，系统按档案默认保质期自动计算；需要时可手动调整到期日期。",
-        style = MaterialTheme.typography.bodySmall,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-        modifier = Modifier.padding(top = CulinarySpacing.xs),
-    )
-    CulinaryButton(
-        text = state.selectedLocationName ?: "选择实际库位 *",
+    CulinaryRule()
+    ReceiptValueRow(
+        label = "库位",
+        value = state.selectedLocationName ?: "选择实际库位",
         onClick = { onOpenPicker(ReceiptPicker.LOCATION) },
-        variant = CulinaryButtonVariant.Secondary,
-        icon = CulinaryIcons.ChevronDown,
-        modifier = Modifier.fillMaxWidth().padding(top = CulinarySpacing.md),
     )
-    SectionHeader(title = "04 备注")
+    CulinaryTextField(
+        value = state.batchCode,
+        onValueChange = onBatchCodeChange,
+        label = "批次号（可选）",
+        placeholder = "留空则按入库时间生成",
+        singleLine = true,
+        modifier = Modifier.padding(top = CulinarySpacing.md),
+    )
+    SectionHeader(title = "04  备注")
     CulinaryTextField(
         value = state.note,
         onValueChange = onNoteChange,
-        label = "备注",
+        label = "填写本次入库说明……",
         minLines = 2,
-        modifier = Modifier.padding(top = CulinarySpacing.md),
+        modifier = Modifier.padding(top = CulinarySpacing.sm),
     )
     if (showTemporary) {
         Row(
