@@ -28,6 +28,7 @@ import java.math.BigDecimal
 import java.time.LocalDate
 import java.util.UUID
 import java.util.concurrent.Executors
+import kotlinx.coroutines.CancellationException
 
 class ExpiryReminderWorker(context: Context, parameters: WorkerParameters) : CoroutineWorker(context, parameters) {
     override suspend fun doWork(): Result = try {
@@ -135,6 +136,8 @@ class ExpiryReminderWorker(context: Context, parameters: WorkerParameters) : Cor
             .apply()
         ExpiryReminderDiagnostics.record(applicationContext, "SCAN_FINISHED", notificationStatus)
         Result.success()
+    } catch (cancelled: CancellationException) {
+        throw cancelled
     } catch (error: Throwable) {
         applicationContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).edit()
             .putLong(KEY_LAST_SCAN_AT, System.currentTimeMillis())
@@ -250,8 +253,15 @@ object ExpiryReminderScheduler {
             "SCHEDULER_CHECK",
             "trigger=$trigger; previousTarget=$previouslyScheduledTarget; lastSuccessfulScan=$lastSuccessfulScan",
         )
-        ExpiryReminderAlarmReceiver.restorePendingTestNotification(appContext, trigger)
-        
+        runCatching { ExpiryReminderAlarmReceiver.restorePendingTestNotification(appContext, trigger) }
+            .onFailure {
+                ExpiryReminderDiagnostics.record(
+                    appContext,
+                    "TEST_NOTIFICATION_RESTORE_FAILED",
+                    "${it.javaClass.simpleName}: ${it.message ?: "no message"}",
+                )
+            }
+
         val workManager = WorkManager.getInstance(appContext)
         workManager.cancelUniqueWork(ExpiryReminderWorker.WORK_A)
         workManager.cancelUniqueWork(ExpiryReminderWorker.WORK_B)
@@ -265,7 +275,6 @@ object ExpiryReminderScheduler {
             lastSuccessfulScan < previouslyScheduledTarget &&
             preferences.getLong(KEY_LAST_MISSED_CATCH_UP_TARGET, 0L) != previouslyScheduledTarget
         ) {
-            preferences.edit().putLong(KEY_LAST_MISSED_CATCH_UP_TARGET, previouslyScheduledTarget).apply()
             ExpiryReminderDiagnostics.record(
                 appContext,
                 "MISSED_REMINDER_CATCH_UP_ENQUEUED",
@@ -279,6 +288,8 @@ object ExpiryReminderScheduler {
                 ExistingWorkPolicy.APPEND_OR_REPLACE,
                 missedRequest,
             )
+            // Persist the de-duplication marker only after WorkManager accepted the request.
+            preferences.edit().putLong(KEY_LAST_MISSED_CATCH_UP_TARGET, previouslyScheduledTarget).commit()
         }
 
         ExpiryReminderAlarmReceiver.scheduleNextReminder(appContext)
