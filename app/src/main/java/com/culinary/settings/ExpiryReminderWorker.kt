@@ -310,7 +310,14 @@ object ExpiryReminderScheduler {
             preferences.edit().putLong(KEY_LAST_MISSED_CATCH_UP_TARGET, missedReminderTarget).commit()
         }
 
-        ExpiryReminderAlarmReceiver.scheduleNextReminder(appContext)
+        runCatching { ExpiryReminderAlarmReceiver.scheduleNextReminder(appContext) }
+            .onFailure {
+                ExpiryReminderDiagnostics.record(
+                    appContext,
+                    "REMINDER_RESCHEDULE_FAILED",
+                    "${it.javaClass.simpleName}: ${it.message ?: "no message"}",
+                )
+            }
         if (lastSuccessfulScan == 0L || now - lastSuccessfulScan >= STARTUP_CATCH_UP_AFTER_MILLIS) {
             ExpiryReminderDiagnostics.record(
                 appContext,
