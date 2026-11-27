@@ -177,25 +177,44 @@ class PlanManagementViewModel @Inject constructor(
         }
         viewModelScope.launch {
             val item = productionItemDao.listByPlan(plan.id).firstOrNull()
-            val version = item?.let { recipeVersionDao.findById(it.recipeVersionId) }
-            if (item == null || version == null) {
+            if (item == null) {
                 _requirements.value = emptyList()
-                return@launch
+            } else {
+                calculateRequirements(item.recipeVersionId, item.quantity)
             }
-            val scale = if (version.yieldQty > 0.0) item.quantity / version.yieldQty else 1.0
-            _requirements.value = recipeComponentDao.listByVersion(version.id).map { component ->
-                val ingredientId = component.ingredientId
-                val referencedSauceId = component.referencedSauceId
-                val referencedRecipeId = component.referencedRecipeId
-                val name = when {
-                    ingredientId != null -> ingredientDao.findById(ingredientId)?.name
-                    referencedSauceId != null -> sauceDao.findById(referencedSauceId)?.name
-                    referencedRecipeId != null -> recipeDao.findById(referencedRecipeId)?.name
-                    else -> null
-                } ?: "未命名组成项"
-                val unit = unitDao.findById(component.unitId)?.symbol.orEmpty()
-                PlanRequirement(name, component.quantity * scale, unit)
+        }
+    }
+
+    fun previewRequirements(versionId: String, quantity: Double?) {
+        viewModelScope.launch {
+            val version = recipeVersionDao.findById(versionId)
+            if (version == null) {
+                _requirements.value = emptyList()
+            } else {
+                calculateRequirements(versionId, quantity ?: version.yieldQty)
             }
+        }
+    }
+
+    private suspend fun calculateRequirements(versionId: String, quantity: Double) {
+        val version = recipeVersionDao.findById(versionId)
+        if (version == null) {
+            _requirements.value = emptyList()
+            return
+        }
+        val scale = if (version.yieldQty > 0.0) quantity / version.yieldQty else 1.0
+        _requirements.value = recipeComponentDao.listByVersion(version.id).map { component ->
+            val ingredientId = component.ingredientId
+            val referencedSauceId = component.referencedSauceId
+            val referencedRecipeId = component.referencedRecipeId
+            val name = when {
+                ingredientId != null -> ingredientDao.findById(ingredientId)?.name
+                referencedSauceId != null -> sauceDao.findById(referencedSauceId)?.name
+                referencedRecipeId != null -> recipeDao.findById(referencedRecipeId)?.name
+                else -> null
+            } ?: "未命名组成项"
+            val unit = unitDao.findById(component.unitId)?.symbol.orEmpty()
+            PlanRequirement(name, component.quantity * scale, unit)
         }
     }
     val plans = combine(productionDao.observeAll(), workDao.observeAll()) { production, work ->
@@ -419,6 +438,7 @@ fun AddPlanRoute(
     var title by remember(planId) { mutableStateOf(existing?.title.orEmpty()) }
     var date by remember(planId) { mutableStateOf(existing?.plannedDate ?: LocalDate.now().toString()) }
     val recipeOptions by viewModel.recipeOptions.collectAsStateWithLifecycle()
+    val requirements by viewModel.requirements.collectAsStateWithLifecycle()
     var recipeId by remember(planId) { mutableStateOf(existing?.metadata?.recipeId.orEmpty()) }
     var recipeVersionId by remember(planId) { mutableStateOf(existing?.metadata?.recipeVersionId.orEmpty()) }
     var unitId by remember(planId) { mutableStateOf(existing?.metadata?.unitId.orEmpty()) }
@@ -432,6 +452,12 @@ fun AddPlanRoute(
     var criteria by remember(planId) { mutableStateOf(existing?.metadata?.completionCriteria.orEmpty()) }
     var linkedArchive by remember(planId) { mutableStateOf(existing?.metadata?.linkedArchive.orEmpty()) }
     var note by remember(planId) { mutableStateOf(existing?.metadata?.note.orEmpty()) }
+
+    LaunchedEffect(recipeVersionId, quantity) {
+        if (recipeVersionId.isNotBlank()) {
+            viewModel.previewRequirements(recipeVersionId, quantity.toDoubleOrNull())
+        }
+    }
 
     LaunchedEffect(existing?.id) {
         if (existing != null) {
@@ -506,8 +532,27 @@ fun AddPlanRoute(
                     PlanField("执行时间（如 09:00）", time) { time = it }
                     PlanField("备注（可选）", note) { note = it }
                 }
-                PlanSection("03  原料需求预览", "根据关联制作档案和数量计算") {
-                    Text(if (target.isBlank()) "选择制作对象后显示配方原料需求" else "已记录制作对象：$target。原料需求需从对应档案的配方版本读取。", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+                PlanSection("03  原料需求预览", "根据关联配方版本和制作数量自动折算") {
+                    if (recipeId.isBlank()) {
+                        Text(
+                            "选择制作档案后显示原料需求。",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            style = MaterialTheme.typography.bodySmall,
+                        )
+                    } else if (requirements.isEmpty()) {
+                        Text(
+                            "当前配方版本没有组成明细。",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            style = MaterialTheme.typography.bodySmall,
+                        )
+                    } else {
+                        requirements.forEach { requirement ->
+                            PlanInfoRow(
+                                requirement.name,
+                                "${"%.2f".format(requirement.quantity)} ${requirement.unit}",
+                            )
+                        }
+                    }
                 }
             } else {
                 PlanSection("01  任务信息", "工作内容") {
