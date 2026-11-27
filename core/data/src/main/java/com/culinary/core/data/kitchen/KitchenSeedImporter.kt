@@ -197,7 +197,10 @@ class KitchenSeedImporter
                             updatedAt = now,
                         ),
                     )
-                    data.counts
+                    data.counts.copy(
+                        productionPlans = productionPlanDao.countSeed(PLAN_SEED_VERSION),
+                        workPlans = workPlanDao.countSeed(PLAN_SEED_VERSION),
+                    )
                 }
             return when (result) {
                 is Outcome.Success -> {
