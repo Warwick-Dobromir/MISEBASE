@@ -98,6 +98,8 @@ data class KitchenSeedCounts(
     val recipes: Int = 0,
     val references: Int = 0,
     val relations: Int = 0,
+    val productionPlans: Int = 0,
+    val workPlans: Int = 0,
 )
 
 data class KitchenSeedStatus(

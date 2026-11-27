@@ -8,10 +8,14 @@ import com.culinary.core.database.dao.AppMetadataDao
 import com.culinary.core.database.dao.IngredientDao
 import com.culinary.core.database.dao.KitchenReferenceDao
 import com.culinary.core.database.dao.KitchenRelationDao
+import com.culinary.core.database.dao.ProductionPlanDao
+import com.culinary.core.database.dao.WorkPlanDao
 import com.culinary.core.database.dao.RecipeDao
 import com.culinary.core.database.dao.SauceDao
 import com.culinary.core.database.entity.AppMetadataEntity
 import com.culinary.core.database.entity.KitchenRelationEntity
+import com.culinary.core.database.entity.ProductionPlanEntity
+import com.culinary.core.database.entity.WorkPlanEntity
 import com.culinary.core.domain.model.ComponentTarget
 import com.culinary.core.domain.model.EntityStatus
 import com.culinary.core.domain.model.Ingredient
@@ -43,6 +47,7 @@ import com.culinary.core.domain.transaction.TransactionRunner
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
+import java.time.ZoneId
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -70,6 +75,8 @@ class KitchenSeedImporter
         private val ingredientDao: IngredientDao,
         private val recipeDao: RecipeDao,
         private val referenceDao: KitchenReferenceDao,
+        private val productionPlanDao: ProductionPlanDao,
+        private val workPlanDao: WorkPlanDao,
         private val clock: Clock,
         private val logger: AppLogger,
     ) {
@@ -81,7 +88,11 @@ class KitchenSeedImporter
                 val disabled = metadataDao.find(DISABLED_KEY)?.value == "true"
                 val counts =
                     if (version == null) {
-                        KitchenSeedCounts(relations = relationDao.countSeed())
+                        KitchenSeedCounts(
+                            relations = relationDao.countSeed(),
+                            productionPlans = productionPlanDao.countSeed(PLAN_SEED_VERSION),
+                            workPlans = workPlanDao.countSeed(PLAN_SEED_VERSION),
+                        )
                     } else {
                         KitchenSeedCounts(
                             ingredients = ingredientDao.countSeed(version),
@@ -89,6 +100,8 @@ class KitchenSeedImporter
                             recipes = recipeDao.countSeed(version),
                             references = referenceDao.countSeed(version),
                             relations = relationDao.countSeed(),
+                            productionPlans = productionPlanDao.countSeed(PLAN_SEED_VERSION),
+                            workPlans = workPlanDao.countSeed(PLAN_SEED_VERSION),
                         )
                     }
                 KitchenSeedStatus(version = version, disabled = disabled, counts = counts)
@@ -110,14 +123,14 @@ class KitchenSeedImporter
                             ),
                         )
 
-                    existingVersion == seed.version ->
-                        Outcome.success(
-                            KitchenSeedImportResult(
-                                imported = false,
-                                version = seed.version,
-                                counts = status().counts,
-                            ),
-                        )
+                    existingVersion == seed.version -> {
+                        when (val planSeed = ensurePlanSeeded()) {
+                            is Outcome.Success -> Outcome.success(
+                                KitchenSeedImportResult(imported = false, version = seed.version, counts = status().counts),
+                            )
+                            is Outcome.Failure -> planSeed
+                        }
+                    }
 
                     else -> import(seed, force = false)
                 }
@@ -175,6 +188,7 @@ class KitchenSeedImporter
                         saveOrThrow(referenceRepository.save(reference))
                     }
                     relationDao.insertAll(data.relations)
+                    insertPlanSeeds(now)
                     metadataDao.delete(DISABLED_KEY)
                     metadataDao.put(
                         AppMetadataEntity(
@@ -197,6 +211,8 @@ class KitchenSeedImporter
                             "recipes" to result.value.recipes,
                             "references" to result.value.references,
                             "relations" to result.value.relations,
+                            "productionPlans" to productionPlanDao.countSeed(PLAN_SEED_VERSION),
+                            "workPlans" to workPlanDao.countSeed(PLAN_SEED_VERSION),
                         ),
                     )
                     Outcome.success(
@@ -221,6 +237,47 @@ class KitchenSeedImporter
             sauceDao.deleteAllSeed()
             referenceDao.deleteAllSeed()
             ingredientDao.deleteAllSeed()
+            productionPlanDao.deleteSeed(PLAN_SEED_VERSION)
+            workPlanDao.deleteSeed(PLAN_SEED_VERSION)
+            metadataDao.delete(PLAN_VERSION_KEY)
+        }
+
+        private suspend fun ensurePlanSeeded(): Outcome<Unit> {
+            if (metadataDao.find(PLAN_VERSION_KEY)?.value == PLAN_SEED_VERSION) return Outcome.success(Unit)
+            val now = clock.now().toEpochMilli()
+            return transactionRunner.write {
+                if (metadataDao.find(PLAN_VERSION_KEY)?.value != PLAN_SEED_VERSION) insertPlanSeeds(now)
+                Unit
+            }
+        }
+
+        private suspend fun insertPlanSeeds(now: Long) {
+            val today = clock.now().atZone(ZoneId.of("Asia/Hong_Kong")).toLocalDate().toString()
+            fun id(seedId: String): String = UUID.nameUUIDFromBytes("$PLAN_ID_NAMESPACE:$seedId".toByteArray(Charsets.UTF_8)).toString()
+            listOf(
+                Triple("TODAY-PROD-01", "制作法式番茄酱", "按标准批量制作，记录成品状态与实际产量。"),
+                Triple("TODAY-PROD-02", "测试奶油蘑菇酱配方", "验证奶油比例、浓稠度与冷藏后的质地变化。"),
+            ).forEach { (seedId, title, notes) ->
+                productionPlanDao.insert(
+                    ProductionPlanEntity(
+                        id = id(seedId), title = title, plannedDate = today, notes = notes,
+                        createdAt = now, updatedAt = now, seedId = seedId, seedVersion = PLAN_SEED_VERSION,
+                    ),
+                )
+            }
+            listOf(
+                Triple("TODAY-WORK-01", "检查今日食材库存", "核对主要食材数量、批次与效期。"),
+                Triple("TODAY-WORK-02", "整理冷藏库位", "检查库位占用情况，整理并确认容量。"),
+                Triple("TODAY-WORK-03", "核对黄油批次效期", "检查黄油各批次的生产日期、到期日期与状态。"),
+            ).forEach { (seedId, title, description) ->
+                workPlanDao.insert(
+                    WorkPlanEntity(
+                        id = id(seedId), title = title, description = description, plannedDate = today,
+                        createdAt = now, updatedAt = now, seedId = seedId, seedVersion = PLAN_SEED_VERSION,
+                    ),
+                )
+            }
+            metadataDao.put(AppMetadataEntity(key = PLAN_VERSION_KEY, value = PLAN_SEED_VERSION, updatedAt = now))
         }
 
         private suspend fun readSeed(): KitchenSeedFile {
@@ -458,6 +515,9 @@ class KitchenSeedImporter
             const val SEED_VERSION = "v1"
             const val VERSION_KEY = "kitchen_seed_version"
             const val DISABLED_KEY = "kitchen_seed_disabled"
+            const val PLAN_VERSION_KEY = "kitchen_plan_seed_version"
+            const val PLAN_SEED_VERSION = "kitchen-plan-v1"
+            const val PLAN_ID_NAMESPACE = "MISEBASE-KITCHEN-PLAN-SEED"
             const val ID_NAMESPACE = "MISEBASE-KITCHEN-SEED"
         }
     }

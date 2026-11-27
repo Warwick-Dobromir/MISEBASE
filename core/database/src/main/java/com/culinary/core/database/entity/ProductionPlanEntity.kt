@@ -26,6 +26,7 @@ import com.culinary.core.database.model.PlanStatusDb
     indices = [
         Index(value = ["status", "planned_date"]),
         Index(value = ["current_snapshot_id"]),
+        Index(value = ["seed_version"]),
     ],
 )
 data class ProductionPlanEntity(
@@ -54,4 +55,8 @@ data class ProductionPlanEntity(
     val updatedAt: Long,
     @ColumnInfo(name = "revision")
     val revision: Int = 1,
+    @ColumnInfo(name = "seed_id")
+    val seedId: String? = null,
+    @ColumnInfo(name = "seed_version")
+    val seedVersion: String? = null,
 )

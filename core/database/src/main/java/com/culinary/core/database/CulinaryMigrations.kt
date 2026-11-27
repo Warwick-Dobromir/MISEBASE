@@ -40,6 +40,7 @@ internal object CulinaryMigrations {
     val MIGRATION_15_16: Migration = MIGRATION_15_16_IMPL
     val MIGRATION_16_17: Migration = MIGRATION_16_17_IMPL
     val MIGRATION_17_18: Migration = MIGRATION_17_18_IMPL
+    val MIGRATION_18_19: Migration = MIGRATION_18_19_IMPL
 
     val ALL: Array<Migration> =
         arrayOf(
@@ -60,6 +61,7 @@ internal object CulinaryMigrations {
             MIGRATION_15_16,
             MIGRATION_16_17,
             MIGRATION_17_18,
+            MIGRATION_18_19,
         )
 }
 
@@ -1098,5 +1100,20 @@ private val MIGRATION_17_18_IMPL =
                 "CREATE INDEX IF NOT EXISTS index_work_plan_status_planned_date " +
                     "ON work_plan (status, planned_date)",
             )
+        }
+    }
+
+
+/** v19：为制作计划与工作计划增加可清理的厨房测试种子标记。 */
+private val MIGRATION_18_19_IMPL =
+    object : Migration(18, 19) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            CulinarySchemaExtras.dropPartialIndexes(db)
+            db.execSQL("ALTER TABLE `production_plan` ADD COLUMN `seed_id` TEXT")
+            db.execSQL("ALTER TABLE `production_plan` ADD COLUMN `seed_version` TEXT")
+            db.execSQL("ALTER TABLE `work_plan` ADD COLUMN `seed_id` TEXT")
+            db.execSQL("ALTER TABLE `work_plan` ADD COLUMN `seed_version` TEXT")
+            db.execSQL("CREATE INDEX IF NOT EXISTS `index_production_plan_seed_version` ON `production_plan` (`seed_version`)")
+            db.execSQL("CREATE INDEX IF NOT EXISTS `index_work_plan_seed_version` ON `work_plan` (`seed_version`)")
         }
     }

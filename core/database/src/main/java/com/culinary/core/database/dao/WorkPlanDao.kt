@@ -39,4 +39,10 @@ interface WorkPlanDao {
 
     @Query("DELETE FROM work_plan WHERE id = :id AND status = 'COMPLETED'")
     suspend fun permanentlyDeleteCompleted(id: String): Int
+
+    @Query("SELECT COUNT(*) FROM work_plan WHERE seed_version = :version")
+    suspend fun countSeed(version: String): Int
+
+    @Query("DELETE FROM work_plan WHERE seed_version = :version")
+    suspend fun deleteSeed(version: String): Int
 }

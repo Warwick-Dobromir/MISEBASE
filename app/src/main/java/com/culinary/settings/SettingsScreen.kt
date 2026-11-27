@@ -507,6 +507,12 @@ private fun SeedSection(
         style = MaterialTheme.typography.bodyLarge,
         color = MaterialTheme.colorScheme.onSurface,
     )
+    Text(
+        text = "今日任务测试数据：制作计划 ${status?.counts?.productionPlans ?: 0} 条 · 工作计划 ${status?.counts?.workPlans ?: 0} 条",
+        style = MaterialTheme.typography.labelSmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(top = CulinarySpacing.xxs),
+    )
     Spacer(modifier = Modifier.height(CulinarySpacing.sm))
     Row(modifier = Modifier.fillMaxWidth()) {
         CulinaryButton(

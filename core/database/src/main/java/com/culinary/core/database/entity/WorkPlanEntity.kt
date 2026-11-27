@@ -10,7 +10,7 @@ import androidx.room.PrimaryKey
  */
 @Entity(
     tableName = "work_plan",
-    indices = [Index(value = ["status", "planned_date"])],
+    indices = [Index(value = ["status", "planned_date"]), Index(value = ["seed_version"])],
 )
 data class WorkPlanEntity(
     @PrimaryKey
@@ -30,6 +30,10 @@ data class WorkPlanEntity(
     val createdAt: Long,
     @ColumnInfo(name = "updated_at")
     val updatedAt: Long,
+    @ColumnInfo(name = "seed_id")
+    val seedId: String? = null,
+    @ColumnInfo(name = "seed_version")
+    val seedVersion: String? = null,
 ) {
     companion object {
         const val STATUS_OPEN = "OPEN"

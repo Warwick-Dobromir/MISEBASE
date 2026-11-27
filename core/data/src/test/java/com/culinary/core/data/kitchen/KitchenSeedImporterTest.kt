@@ -77,6 +77,8 @@ class KitchenSeedImporterTest {
             ingredientDao = database.ingredientDao(),
             recipeDao = database.recipeDao(),
             referenceDao = database.kitchenReferenceDao(),
+            productionPlanDao = database.productionPlanDao(),
+            workPlanDao = database.workPlanDao(),
             clock = clock,
             logger = NoopLogger,
         )
@@ -100,6 +102,8 @@ class KitchenSeedImporterTest {
                         recipes = 10,
                         references = 30,
                         relations = 260,
+                        productionPlans = 2,
+                        workPlans = 3,
                     ),
                 )
 
@@ -110,6 +114,8 @@ class KitchenSeedImporterTest {
             assertThat(database.recipeDao().countSeed("v1")).isEqualTo(10)
             assertThat(database.kitchenReferenceDao().countSeed("v1")).isEqualTo(30)
             assertThat(database.kitchenRelationDao().countSeed()).isEqualTo(260)
+            assertThat(database.productionPlanDao().countSeed("kitchen-plan-v1")).isEqualTo(2)
+            assertThat(database.workPlanDao().countSeed("kitchen-plan-v1")).isEqualTo(3)
         }
 
     @Test
@@ -123,6 +129,8 @@ class KitchenSeedImporterTest {
             assertThat(importer.status().counts.ingredients).isEqualTo(0)
             assertThat(database.ingredientDao().countSeed("v1")).isEqualTo(0)
             assertThat(database.kitchenRelationDao().countSeed()).isEqualTo(0)
+            assertThat(database.productionPlanDao().countSeed("kitchen-plan-v1")).isEqualTo(0)
+            assertThat(database.workPlanDao().countSeed("kitchen-plan-v1")).isEqualTo(0)
 
             val afterClear = importer.ensureImported()
             assertThat((afterClear as Outcome.Success).value.imported).isFalse()
@@ -132,6 +140,8 @@ class KitchenSeedImporterTest {
             assertThat((reimported as Outcome.Success).value.imported).isTrue()
             assertThat(importer.status().counts.ingredients).isEqualTo(18)
             assertThat(database.kitchenRelationDao().countSeed()).isEqualTo(260)
+            assertThat(database.productionPlanDao().countSeed("kitchen-plan-v1")).isEqualTo(2)
+            assertThat(database.workPlanDao().countSeed("kitchen-plan-v1")).isEqualTo(3)
         }
 
     private object NoopLogger : AppLogger {

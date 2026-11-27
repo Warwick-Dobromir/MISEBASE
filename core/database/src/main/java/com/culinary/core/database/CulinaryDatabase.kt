@@ -112,7 +112,7 @@ import com.culinary.core.database.entity.WorkPlanEntity
 import com.culinary.core.database.entity.UnitEntity
 
 /** Single source of truth for Room and startup compatibility checks. */
-const val CULINARY_DATABASE_SCHEMA_VERSION: Int = 18
+const val CULINARY_DATABASE_SCHEMA_VERSION: Int = 19
 
 /**
  * CULINARY 数据库（schema v11）。
