@@ -37,7 +37,7 @@ interface WorkPlanDao {
     @Query("UPDATE work_plan SET status = 'OPEN', completed_at = NULL, updated_at = :updatedAt WHERE id = :id AND status = 'COMPLETED'")
     suspend fun restore(id: String, updatedAt: Long): Int
 
-    @Query("DELETE FROM work_plan WHERE id = :id AND status = 'OPEN'")
+    @Query("DELETE FROM work_plan WHERE id = :id AND status != 'COMPLETED'")
     suspend fun deleteOpen(id: String): Int
 
     @Query("DELETE FROM work_plan WHERE id = :id AND status = 'COMPLETED'")
