@@ -30,6 +30,10 @@ import java.util.concurrent.Executors
 
 class ExpiryReminderWorker(context: Context, parameters: WorkerParameters) : CoroutineWorker(context, parameters) {
     override suspend fun doWork(): Result = try {
+        applicationContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).edit()
+            .putString(ExpiryReminderAlarmReceiver.KEY_ALARM_STAGE, "后台扫描任务已启动")
+            .putLong(ExpiryReminderAlarmReceiver.KEY_ALARM_STAGE_AT, System.currentTimeMillis())
+            .apply()
         val writeExecutor = Executors.newSingleThreadExecutor()
         val readExecutor = Executors.newFixedThreadPool(2)
         val db = DatabaseFactory.create(applicationContext, writeExecutor, readExecutor)
@@ -118,6 +122,8 @@ class ExpiryReminderWorker(context: Context, parameters: WorkerParameters) : Cor
             .putLong(KEY_LAST_SUCCESSFUL_SCAN, completedAt)
             .putLong(KEY_LAST_SCAN_AT, completedAt)
             .putString(KEY_LAST_SCAN_STATUS, notificationStatus)
+            .putString(ExpiryReminderAlarmReceiver.KEY_ALARM_STAGE, "后台扫描完成：$notificationStatus")
+            .putLong(ExpiryReminderAlarmReceiver.KEY_ALARM_STAGE_AT, completedAt)
             .remove(KEY_LAST_SCAN_ERROR)
             .apply()
         Result.success()
@@ -125,6 +131,8 @@ class ExpiryReminderWorker(context: Context, parameters: WorkerParameters) : Cor
         applicationContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).edit()
             .putLong(KEY_LAST_SCAN_AT, System.currentTimeMillis())
             .putString(KEY_LAST_SCAN_STATUS, "扫描执行失败")
+            .putString(ExpiryReminderAlarmReceiver.KEY_ALARM_STAGE, "后台扫描失败")
+            .putLong(ExpiryReminderAlarmReceiver.KEY_ALARM_STAGE_AT, System.currentTimeMillis())
             .putString(KEY_LAST_SCAN_ERROR, error.message ?: error.javaClass.simpleName)
             .apply()
         Log.e("ExpiryReminderWorker", "Inventory expiry scan failed", error)
