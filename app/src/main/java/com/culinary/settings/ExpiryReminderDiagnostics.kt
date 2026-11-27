@@ -52,8 +52,10 @@ object ExpiryReminderDiagnostics {
         val exactAllowed = Build.VERSION.SDK_INT < Build.VERSION_CODES.S || runCatching {
             alarmManager.canScheduleExactAlarms()
         }.getOrDefault(false)
-        val notificationPermission = Build.VERSION.SDK_INT < 33 ||
-            ContextCompat.checkSelfPermission(app, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
+        val notificationPermission =
+            Build.VERSION.SDK_INT < 33 ||
+                ContextCompat.checkSelfPermission(app, Manifest.permission.POST_NOTIFICATIONS) ==
+                PackageManager.PERMISSION_GRANTED
         val nextAlarm = prefs.getLong(ExpiryReminderAlarmReceiver.KEY_NEXT_ALARM_AT, 0L)
         val events = runCatching { JSONArray(prefs.getString(KEY_EVENTS, "[]") ?: "[]") }
             .getOrDefault(JSONArray())
@@ -68,11 +70,15 @@ object ExpiryReminderDiagnostics {
             appendLine("通知运行时权限: ${if (notificationPermission) "已允许" else "未允许"}")
             appendLine("系统通知总开关: ${notificationManager.areNotificationsEnabled()}")
             appendLine("电池优化豁免: ${powerManager.isIgnoringBatteryOptimizations(app.packageName)}")
-            appendLine("下次提醒时间: ${if (nextAlarm > 0L) formatter.format(Instant.ofEpochMilli(nextAlarm).atZone(zone)) else "未登记"}")
+            val nextAlarmText =
+                if (nextAlarm > 0L) formatter.format(Instant.ofEpochMilli(nextAlarm).atZone(zone)) else "未登记"
+            appendLine("下次提醒时间: $nextAlarmText")
             appendLine("闹钟登记模式: ${prefs.getString(ExpiryReminderAlarmReceiver.KEY_ALARM_SCHEDULE_MODE, "未知")}")
             appendLine("最近提醒阶段: ${prefs.getString(ExpiryReminderAlarmReceiver.KEY_ALARM_STAGE, "无记录")}")
-            appendLine("最近阶段时间: ${formatMillis(prefs.getLong(ExpiryReminderAlarmReceiver.KEY_ALARM_STAGE_AT, 0L), zone)}")
-            appendLine("最近闹钟触发时间: ${formatMillis(prefs.getLong(ExpiryReminderAlarmReceiver.KEY_ALARM_LAST_TRIGGERED_AT, 0L), zone)}")
+            val stageAt = prefs.getLong(ExpiryReminderAlarmReceiver.KEY_ALARM_STAGE_AT, 0L)
+            appendLine("最近阶段时间: ${formatMillis(stageAt, zone)}")
+            val lastAlarmAt = prefs.getLong(ExpiryReminderAlarmReceiver.KEY_ALARM_LAST_TRIGGERED_AT, 0L)
+            appendLine("最近闹钟触发时间: ${formatMillis(lastAlarmAt, zone)}")
             appendLine("最近扫描时间: ${formatMillis(prefs.getLong(ExpiryReminderWorker.KEY_LAST_SCAN_AT, 0L), zone)}")
             appendLine("最近扫描状态: ${prefs.getString(ExpiryReminderWorker.KEY_LAST_SCAN_STATUS, "无记录")}")
             appendLine("最近扫描错误: ${prefs.getString(ExpiryReminderWorker.KEY_LAST_SCAN_ERROR, "无")}")
