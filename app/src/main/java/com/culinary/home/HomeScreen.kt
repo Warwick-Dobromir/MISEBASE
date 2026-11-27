@@ -290,24 +290,31 @@ private fun TodayPreparationSection(
         }
         listOf("PRODUCTION" to "制作计划", "WORK" to "工作计划").forEach { (kind, heading) ->
             val grouped = state.plans.filter { it.kind == kind }
-            if (grouped.any { !it.completed }) {
-                Text(
-                    text = heading,
-                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
-                    color = MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.padding(
-                        start = CulinarySpacing.pageHorizontal,
-                        end = CulinarySpacing.pageHorizontal,
-                        top = CulinarySpacing.md,
-                        bottom = CulinarySpacing.xxs,
-                    ),
-                )
-                grouped.forEach { plan ->
-                    AnimatedVisibility(
-                        visible = !plan.completed,
-                        exit = fadeOut(animationSpec = tween(320)) + shrinkVertically(animationSpec = tween(320)),
-                    ) {
-                        PlanRow(plan = plan, onOpen = { onOpenPlan(plan.id) })
+            if (grouped.isNotEmpty()) {
+                AnimatedVisibility(
+                    visible = grouped.any { !it.completed },
+                    exit = fadeOut(animationSpec = tween(420)) + shrinkVertically(animationSpec = tween(420)),
+                ) {
+                    Column {
+                        Text(
+                            text = heading,
+                            style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
+                            color = MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.padding(
+                                start = CulinarySpacing.pageHorizontal,
+                                end = CulinarySpacing.pageHorizontal,
+                                top = CulinarySpacing.md,
+                                bottom = CulinarySpacing.xxs,
+                            ),
+                        )
+                        grouped.forEach { plan ->
+                            AnimatedVisibility(
+                                visible = !plan.completed,
+                                exit = fadeOut(animationSpec = tween(320)) + shrinkVertically(animationSpec = tween(320)),
+                            ) {
+                                PlanRow(plan = plan, onOpen = { onOpenPlan(plan.id) })
+                            }
+                        }
                     }
                 }
             }
