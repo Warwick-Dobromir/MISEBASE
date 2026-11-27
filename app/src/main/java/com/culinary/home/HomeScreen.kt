@@ -38,6 +38,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -265,33 +266,26 @@ private fun TodayPreparationSection(
             subtitle = stringResource(R.string.home_today_subtitle),
             modifier = Modifier.padding(horizontal = CulinarySpacing.pageHorizontal),
             trailing = {
-                Text(
-                    text =
-                        stringResource(
-                            R.string.home_today_count,
-                            state.completedPlanCount,
-                            state.totalPlanCount,
-                        ),
-                    style =
-                        MaterialTheme.typography.titleMedium.copy(
-                            fontWeight = FontWeight.Medium,
-                            letterSpacing = 0.05.em,
-                            fontFeatureSettings = "tnum",
-                        ),
-                    color = MaterialTheme.colorScheme.onSurface,
-                )
+                if (state.totalPlanCount > 0 && state.completedPlanCount >= state.totalPlanCount) {
+                    Text("所有任务已完成", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.secondary)
+                } else {
+                    Text(
+                        text = stringResource(R.string.home_today_count, state.completedPlanCount, state.totalPlanCount),
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Medium, letterSpacing = 0.05.em, fontFeatureSettings = "tnum"),
+                        color = MaterialTheme.colorScheme.onSurface,
+                    )
+                }
             },
         )
-        PlanProgressBar(
-            progress = state.planProgress,
-            modifier =
-                Modifier
-                    .padding(horizontal = CulinarySpacing.pageHorizontal)
-                    .padding(top = CulinarySpacing.sm),
-        )
-        Spacer(modifier = Modifier.height(CulinarySpacing.xs))
+        if (state.totalPlanCount == 0 || state.completedPlanCount < state.totalPlanCount) {
+            PlanProgressBar(
+                progress = state.planProgress,
+                modifier = Modifier.padding(horizontal = CulinarySpacing.pageHorizontal).padding(top = CulinarySpacing.sm),
+            )
+            Spacer(modifier = Modifier.height(CulinarySpacing.xs))
+        }
         listOf("PRODUCTION" to "制作计划", "WORK" to "工作计划").forEach { (kind, heading) ->
-            val grouped = state.plans.filter { it.kind == kind }
+            val grouped = state.plans.filter { it.kind == kind && !it.completed }
             if (grouped.isNotEmpty()) {
                 Text(
                     text = heading,
@@ -305,7 +299,7 @@ private fun TodayPreparationSection(
                     ),
                 )
                 grouped.forEach { plan ->
-                    PlanRow(plan = plan, onToggle = { onTogglePlan(plan.id) }, onOpen = { onOpenPlan(plan.id) })
+                    PlanRow(plan = plan, onOpen = { onOpenPlan(plan.id) })
                 }
             }
         }
@@ -417,11 +411,10 @@ private fun PlanProgressBar(
     }
 }
 
-/** 一条计划：左侧固定 22dp 圆圈，右侧文字严格左对齐；整行可点击。 */
+/** 主页计划只负责进入详情；完成操作仅在详情页执行，避免误触。 */
 @Composable
 private fun PlanRow(
     plan: HomePlan,
-    onToggle: () -> Unit,
     onOpen: () -> Unit,
 ) {
     Row(
@@ -438,8 +431,6 @@ private fun PlanRow(
                 ),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Box(Modifier.clickable(onClick = onToggle)) { PlanCheck(checked = plan.completed) }
-        Spacer(modifier = Modifier.width(CulinarySpacing.sm))
         Column(modifier = Modifier.weight(1f)) {
         Text(
             text = plan.title ?: plan.titleRes?.let { stringResource(it) }.orEmpty(),
@@ -455,30 +446,6 @@ private fun PlanRow(
         plan.subtitle?.takeIf { it.isNotBlank() }?.let {
             Text(it, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
-        }
-    }
-}
-
-@Composable
-private fun PlanCheck(checked: Boolean) {
-    val fill = if (checked) MaterialTheme.colorScheme.secondary else Color.Transparent
-    val border = if (checked) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.outline
-    Box(
-        modifier =
-            Modifier
-                .size(22.dp)
-                .clip(CircleShape)
-                .background(fill)
-                .border(width = 1.dp, color = border, shape = CircleShape),
-        contentAlignment = Alignment.Center,
-    ) {
-        if (checked) {
-            Icon(
-                imageVector = CulinaryIcons.Check,
-                contentDescription = null,
-                modifier = Modifier.size(14.dp),
-                tint = MaterialTheme.colorScheme.onSecondary,
-            )
         }
     }
 }
