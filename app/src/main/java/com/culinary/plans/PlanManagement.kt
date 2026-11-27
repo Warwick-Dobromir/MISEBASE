@@ -1,6 +1,8 @@
 package com.culinary.plans
 
 import android.app.DatePickerDialog
+import android.app.TimePickerDialog
+import android.content.Context
 import android.util.Base64
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -57,6 +59,7 @@ import com.culinary.core.database.entity.ProductionPlanItemEntity
 import com.culinary.core.database.entity.WorkPlanEntity
 import com.culinary.core.database.model.PlanStatusDb
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.UUID
@@ -160,6 +163,7 @@ class PlanManagementViewModel @Inject constructor(
     private val ingredientDao: IngredientDao,
     private val sauceDao: SauceDao,
     private val unitDao: UnitDao,
+    @ApplicationContext private val appContext: Context,
 ) : ViewModel() {
     private val _recipeOptions = MutableStateFlow<List<PlanRecipeOption>>(emptyList())
     val recipeOptions = _recipeOptions
@@ -251,6 +255,10 @@ class PlanManagementViewModel @Inject constructor(
             _message.value = "请选择有效的制作档案"
             return
         }
+        if (metadata.time.isNotBlank() && metadata.time != "不指定" && !metadata.time.matches(Regex("^(?:[01]\\d|2[0-3]):[0-5]\\d$"))) {
+            _message.value = "执行时间请填写有效的 24 小时制时间，例如 10:30"
+            return
+        }
         viewModelScope.launch {
             val now = System.currentTimeMillis()
             val cleanDate = date.trim()
@@ -281,6 +289,7 @@ class PlanManagementViewModel @Inject constructor(
                     workDao.updateOpen(planId, cleanTitle, encoded, cleanDate, now)
                 }
             }
+            PlanReminderScheduler.schedule(appContext, planId, cleanTitle, cleanDate, metadata.time)
             _message.value = null
             onSaved()
         }
@@ -298,6 +307,7 @@ class PlanManagementViewModel @Inject constructor(
     }
 
     fun complete(plan: PlanUiItem) {
+        PlanReminderScheduler.cancel(appContext, plan.id)
         viewModelScope.launch {
             val now = System.currentTimeMillis()
             when (plan.kind) {
@@ -312,6 +322,7 @@ class PlanManagementViewModel @Inject constructor(
             _message.value = "已完成的计划请在计划回收站中处理"
             return
         }
+        PlanReminderScheduler.cancel(appContext, plan.id)
         viewModelScope.launch {
             when (plan.kind) {
                 PlanKind.PRODUCTION -> productionDao.deleteOpen(plan.id)
@@ -321,6 +332,7 @@ class PlanManagementViewModel @Inject constructor(
     }
 
     fun restore(plan: PlanUiItem) {
+        PlanReminderScheduler.schedule(appContext, plan.id, plan.title, plan.plannedDate.orEmpty(), plan.metadata.time)
         viewModelScope.launch {
             val now = System.currentTimeMillis()
             when (plan.kind) {
@@ -465,7 +477,7 @@ fun AddPlanRoute(onSaved: () -> Unit, onBack: () -> Unit, planId: String? = null
     var quantity by remember(planId) { mutableStateOf(existing?.metadata?.quantity.orEmpty()) }
     var unit by remember(planId) { mutableStateOf(existing?.metadata?.unit.orEmpty()) }
     var category by remember(planId) { mutableStateOf(existing?.metadata?.category ?: "其他") }
-    var time by remember(planId) { mutableStateOf(existing?.metadata?.time ?: "不指定") }
+    var time by remember(planId) { mutableStateOf(existing?.metadata?.time.orEmpty().takeUnless { it == "不指定" } ?: "") }
     var priority by remember(planId) { mutableStateOf(existing?.metadata?.priority ?: "普通") }
     var instructions by remember(planId) { mutableStateOf(existing?.metadata?.instructions.orEmpty()) }
     var criteria by remember(planId) { mutableStateOf(existing?.metadata?.completionCriteria.orEmpty()) }
@@ -483,7 +495,7 @@ fun AddPlanRoute(onSaved: () -> Unit, onBack: () -> Unit, planId: String? = null
             quantity = existing.metadata.quantity
             unit = existing.metadata.unit
             category = existing.metadata.category.ifBlank { "其他" }
-            time = existing.metadata.time.ifBlank { "不指定" }
+            time = existing.metadata.time.takeUnless { it == "不指定" }.orEmpty()
             priority = existing.metadata.priority
             instructions = existing.metadata.instructions
             criteria = existing.metadata.completionCriteria
@@ -542,7 +554,7 @@ fun AddPlanRoute(onSaved: () -> Unit, onBack: () -> Unit, planId: String? = null
                 }
                 PlanSection("02  执行安排", "日期、时间与补充说明") {
                     PlanDateField(date) { date = it }
-                    PlanField("执行时间", time) { time = it }
+                    PlanTimeField("执行时间", time) { time = it }
                     PlanField("备注", note) { note = it }
                 }
                 PlanSection("03  原料需求", "根据固定配方版本及制作数量自动折算") {
@@ -558,8 +570,7 @@ fun AddPlanRoute(onSaved: () -> Unit, onBack: () -> Unit, planId: String? = null
                 }
                 PlanSection("02  执行安排", "日期、时间与优先级") {
                     PlanDateField(date) { date = it }
-                    Text("执行时间", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    PlanOptionSelector(listOf("不指定", "09:00", "10:00", "11:00", "14:00", "15:00", "16:00", "17:00"), time) { time = it }
+                    PlanTimeField("执行时间", time) { time = it }
                     Text("优先级", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     PlanOptionSelector(listOf("低", "普通", "高", "紧急"), priority) { priority = it }
                 }
