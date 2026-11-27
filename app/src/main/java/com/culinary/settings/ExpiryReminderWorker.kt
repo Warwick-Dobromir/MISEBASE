@@ -30,6 +30,7 @@ import java.util.concurrent.Executors
 
 class ExpiryReminderWorker(context: Context, parameters: WorkerParameters) : CoroutineWorker(context, parameters) {
     override suspend fun doWork(): Result = try {
+        ExpiryReminderDiagnostics.record(applicationContext, "SCAN_STARTED", "expiry reminder worker started")
         applicationContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).edit()
             .putString(ExpiryReminderAlarmReceiver.KEY_ALARM_STAGE, "后台扫描任务已启动")
             .putLong(ExpiryReminderAlarmReceiver.KEY_ALARM_STAGE_AT, System.currentTimeMillis())
@@ -78,6 +79,7 @@ class ExpiryReminderWorker(context: Context, parameters: WorkerParameters) : Cor
             manager.createNotificationChannel(NotificationChannel(CHANNEL_ID, "库存效期提醒", NotificationManager.IMPORTANCE_HIGH))
         }
         val actionableCount = expired + near + attention
+        ExpiryReminderDiagnostics.record(applicationContext, "SCAN_COUNTS", "expired=$expired; near=$near; attention=$attention; batches=${batches.size}")
         val permissionGranted = Build.VERSION.SDK_INT < 33 ||
             ContextCompat.checkSelfPermission(applicationContext, Manifest.permission.POST_NOTIFICATIONS) ==
             PackageManager.PERMISSION_GRANTED
@@ -126,6 +128,7 @@ class ExpiryReminderWorker(context: Context, parameters: WorkerParameters) : Cor
             .putLong(ExpiryReminderAlarmReceiver.KEY_ALARM_STAGE_AT, completedAt)
             .remove(KEY_LAST_SCAN_ERROR)
             .apply()
+        ExpiryReminderDiagnostics.record(applicationContext, "SCAN_FINISHED", notificationStatus)
         Result.success()
     } catch (error: Throwable) {
         applicationContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).edit()
@@ -135,6 +138,7 @@ class ExpiryReminderWorker(context: Context, parameters: WorkerParameters) : Cor
             .putLong(ExpiryReminderAlarmReceiver.KEY_ALARM_STAGE_AT, System.currentTimeMillis())
             .putString(KEY_LAST_SCAN_ERROR, error.message ?: error.javaClass.simpleName)
             .apply()
+        ExpiryReminderDiagnostics.record(applicationContext, "SCAN_FAILED", "${error.javaClass.simpleName}: ${error.message ?: "no message"}")
         Log.e("ExpiryReminderWorker", "Inventory expiry scan failed", error)
         Result.retry()
     }
