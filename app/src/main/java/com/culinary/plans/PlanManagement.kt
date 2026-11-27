@@ -700,37 +700,59 @@ private fun PlanDateField(value: String, onChange: (String) -> Unit) {
 @Composable
 private fun PlanTimeField(label: String, value: String, onChange: (String) -> Unit) {
     val context = LocalContext.current
-    val parsed = value.split(":").takeIf { it.size == 2 }
+    val normalizedValue = value.takeUnless { it == "不指定" }.orEmpty()
+    var editing by remember(value) { mutableStateOf(normalizedValue.isNotBlank()) }
+    val parsed = normalizedValue.split(":").takeIf { it.size == 2 }
     val hour = parsed?.getOrNull(0)?.toIntOrNull()?.coerceIn(0, 23) ?: 9
     val minute = parsed?.getOrNull(1)?.toIntOrNull()?.coerceIn(0, 59) ?: 0
+
     Column(Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
         Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Row(Modifier.fillMaxWidth().padding(top = 8.dp, bottom = 7.dp), verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
-            BasicTextField(
-                value = value,
-                onValueChange = { input ->
-                    val cleaned = input.filter { it.isDigit() || it == ':' }.take(5)
-                    onChange(cleaned)
-                },
-                modifier = Modifier.weight(1f),
-                textStyle = MaterialTheme.typography.bodyLarge.copy(color = MaterialTheme.colorScheme.onSurface),
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Ascii),
-                decorationBox = { inner ->
-                    if (value.isEmpty()) Text("输入时间，例如 10:30", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.outline)
-                    inner()
-                },
-            )
-            Text(
-                "◷ 选择时间",
-                Modifier.clickable {
-                    TimePickerDialog(context, { _, selectedHour, selectedMinute ->
-                        onChange("%02d:%02d".format(selectedHour, selectedMinute))
-                    }, hour, minute, true).show()
-                }.padding(start = 14.dp, vertical = 8.dp),
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.secondary,
-            )
+        if (!editing) {
+            Row(
+                Modifier.fillMaxWidth().clickable { editing = true }.padding(vertical = 11.dp),
+                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+            ) {
+                Text("不指定时间", Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text("◷  设置时间", style = MaterialTheme.typography.labelMedium, color = Color(0xFF8A6A2B))
+            }
+        } else {
+            Row(
+                Modifier.fillMaxWidth().padding(top = 8.dp, bottom = 7.dp),
+                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+            ) {
+                BasicTextField(
+                    value = normalizedValue,
+                    onValueChange = { input ->
+                        val cleaned = input.filter { it.isDigit() || it == ':' }.take(5)
+                        onChange(cleaned)
+                    },
+                    modifier = Modifier.weight(1f),
+                    textStyle = MaterialTheme.typography.bodyLarge.copy(color = MaterialTheme.colorScheme.onSurface),
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Ascii),
+                    decorationBox = { inner ->
+                        if (normalizedValue.isEmpty()) Text("输入时间，例如 10:30", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.outline)
+                        inner()
+                    },
+                )
+                Text(
+                    "◷",
+                    Modifier.clickable {
+                        TimePickerDialog(context, { _, selectedHour, selectedMinute ->
+                            onChange("%02d:%02d".format(selectedHour, selectedMinute))
+                        }, hour, minute, true).show()
+                    }.padding(horizontal = 12.dp, vertical = 8.dp),
+                    style = MaterialTheme.typography.titleMedium,
+                    color = Color(0xFF8A6A2B),
+                )
+                Text(
+                    "不指定",
+                    Modifier.clickable { onChange(""); editing = false }.padding(start = 4.dp, vertical = 8.dp),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
         }
         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
     }
