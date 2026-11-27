@@ -701,7 +701,7 @@ private fun PlanDateField(value: String, onChange: (String) -> Unit) {
 private fun PlanTimeField(label: String, value: String, onChange: (String) -> Unit) {
     val context = LocalContext.current
     val normalizedValue = value.takeUnless { it == "不指定" }.orEmpty()
-    var editing by remember(value) { mutableStateOf(normalizedValue.isNotBlank()) }
+    var editing by remember { mutableStateOf(normalizedValue.isNotBlank()) }
     val parsed = normalizedValue.split(":").takeIf { it.size == 2 }
     val hour = parsed?.getOrNull(0)?.toIntOrNull()?.coerceIn(0, 23) ?: 9
     val minute = parsed?.getOrNull(1)?.toIntOrNull()?.coerceIn(0, 59) ?: 0
