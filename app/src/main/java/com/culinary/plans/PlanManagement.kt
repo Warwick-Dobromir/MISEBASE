@@ -482,7 +482,7 @@ fun AddPlanRoute(
                                 recipeVersionId = option.versionId
                                 unitId = option.unitId
                                 target = option.name
-                                if (quantity.isBlank()) quantity = option.defaultQuantity.toString()
+                                quantity = option.defaultQuantity.toString()
                                 unit = option.unitSymbol
                             }.padding(vertical = 9.dp),
                         ) {
@@ -536,7 +536,7 @@ fun AddPlanRoute(
                 val meta = PlanMetadata(
                     target = target, quantity = quantity, unit = unit, category = category, time = time,
                     priority = priority, instructions = instructions, completionCriteria = criteria,
-                    linkedArchive = linkedArchive, note = note,
+                    linkedArchive = linkedArchive, note = note, recipeId = recipeId, recipeVersionId = recipeVersionId, unitId = unitId,
                 )
                 viewModel.save(kind, planId, title, date, meta)
                 if (title.isNotBlank() && date.isNotBlank() && (kind != PlanKind.PRODUCTION || recipeId.isNotBlank())) onSaved()
@@ -638,7 +638,7 @@ fun PlanDetailRoute(
                 PlanInfoRow("制作数量", plan.quantityLabel().ifBlank { "未填写" })
                 PlanSection("制作内容", "关联制作对象") {
                     PlanInfoRow("制作对象", plan.metadata.target.ifBlank { "未关联" })
-                    PlanInfoRow("制作档案", "需关联已有制作档案")
+                    PlanInfoRow("配方版本", if (plan.metadata.recipeVersionId.isNotBlank()) "已固定版本" else "未关联")
                 }
                 PlanSection("原料需求", "按关联配方版本及制作数量自动折算") {
                     if (requirements.isEmpty()) {
