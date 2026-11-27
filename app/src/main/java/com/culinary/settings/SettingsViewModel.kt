@@ -304,6 +304,8 @@ class SettingsViewModel
                 appendLine("Android: ${Build.VERSION.RELEASE} / API ${Build.VERSION.SDK_INT}")
                 appendLine("ABI: ${Build.SUPPORTED_ABIS.joinToString(",")}")
                 appendLine("离线: 无 INTERNET 权限")
+                appendLine()
+                append(ExpiryReminderDiagnostics.export(context))
             }
         }
     }
