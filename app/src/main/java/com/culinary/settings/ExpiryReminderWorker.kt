@@ -236,24 +236,54 @@ class ExpiryReminderWorker(context: Context, parameters: WorkerParameters) : Cor
 object ExpiryReminderScheduler {
     private const val STARTUP_CATCH_UP_AFTER_MILLIS = 10 * 60 * 60 * 1000L
 
-    fun ensureScheduled(context: Context) {
-        val appContext = context.applicationContext
-        ExpiryReminderDiagnostics.record(appContext, "SCHEDULER_CHECK", "application startup / ensureScheduled")
-        ExpiryReminderAlarmReceiver.restorePendingTestNotification(appContext)
-        ExpiryReminderAlarmReceiver.scheduleNextReminder(appContext)
+    private const val KEY_LAST_MISSED_CATCH_UP_TARGET = "last_missed_reminder_catch_up_target"
 
+    fun ensureScheduled(context: Context, trigger: String = "application_startup") {
+        val appContext = context.applicationContext
+        val now = System.currentTimeMillis()
+        val preferences = appContext.getSharedPreferences(ExpiryReminderWorker.PREFS_NAME, Context.MODE_PRIVATE)
+        val previouslyScheduledTarget = preferences.getLong(ExpiryReminderAlarmReceiver.KEY_NEXT_ALARM_AT, 0L)
+        val lastSuccessfulScan = preferences.getLong(ExpiryReminderWorker.KEY_LAST_SUCCESSFUL_SCAN, 0L)
+        ExpiryReminderDiagnostics.record(
+            appContext,
+            "SCHEDULER_CHECK",
+            "trigger=$trigger; previousTarget=$previouslyScheduledTarget; lastSuccessfulScan=$lastSuccessfulScan",
+        )
+        ExpiryReminderAlarmReceiver.restorePendingTestNotification(appContext, trigger)
+        
         val workManager = WorkManager.getInstance(appContext)
         workManager.cancelUniqueWork(ExpiryReminderWorker.WORK_A)
         workManager.cancelUniqueWork(ExpiryReminderWorker.WORK_B)
 
-        val preferences = appContext.getSharedPreferences(ExpiryReminderWorker.PREFS_NAME, Context.MODE_PRIVATE)
-        val lastSuccessfulScan = preferences.getLong(ExpiryReminderWorker.KEY_LAST_SUCCESSFUL_SCAN, 0L)
-        val now = System.currentTimeMillis()
+        // Do not silently discard a reminder whose scheduled time has passed.
+        // The old implementation overwrote the overdue target first, then only
+        // ran catch-up after 10 hours, so opening the app shortly after 20:00
+        // could both lose the reminder and produce no notification.
+        if (previouslyScheduledTarget > 0L &&
+            previouslyScheduledTarget <= now &&
+            lastSuccessfulScan < previouslyScheduledTarget &&
+            preferences.getLong(KEY_LAST_MISSED_CATCH_UP_TARGET, 0L) != previouslyScheduledTarget
+        ) {
+            preferences.edit().putLong(KEY_LAST_MISSED_CATCH_UP_TARGET, previouslyScheduledTarget).apply()
+            ExpiryReminderDiagnostics.record(
+                appContext,
+                "MISSED_REMINDER_CATCH_UP_ENQUEUED",
+                "trigger=$trigger; missedTarget=$previouslyScheduledTarget; lastSuccessfulScan=$lastSuccessfulScan",
+            )
+            val missedRequest = OneTimeWorkRequestBuilder<ExpiryReminderWorker>().build()
+            workManager.enqueueUniqueWork(
+                ExpiryReminderWorker.WORK_NAME,
+                ExistingWorkPolicy.KEEP,
+                missedRequest,
+            )
+        }
+
+        ExpiryReminderAlarmReceiver.scheduleNextReminder(appContext)
         if (lastSuccessfulScan == 0L || now - lastSuccessfulScan >= STARTUP_CATCH_UP_AFTER_MILLIS) {
             ExpiryReminderDiagnostics.record(
                 appContext,
                 "STARTUP_CATCH_UP_ENQUEUED",
-                "lastSuccessfulScan=$lastSuccessfulScan; now=$now",
+                "trigger=$trigger; lastSuccessfulScan=$lastSuccessfulScan; now=$now",
             )
             val request = OneTimeWorkRequestBuilder<ExpiryReminderWorker>().build()
             workManager.enqueueUniqueWork(
