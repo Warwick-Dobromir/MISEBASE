@@ -38,6 +38,7 @@ object InventoryRoutes {
     const val STOCKTAKE = "inventory/stocktake?scope={scope}&scopeRef={scopeRef}"
     const val FREEZE = "inventory/freeze"
     const val TEMPORARY = "inventory/temporary"
+    const val BARCODE_POOL = "inventory/barcode-pool"
     const val LOCATIONS = "inventory/locations"
     const val LEDGER_V9 = "inventory/ledger-v9"
     const val RECYCLE = "inventory/recycle"
@@ -122,6 +123,8 @@ object InventoryRoutes {
     fun freeze(): String = FREEZE
 
     fun temporary(): String = TEMPORARY
+
+    fun barcodePool(): String = BARCODE_POOL
 
     fun locations(): String = LOCATIONS
 

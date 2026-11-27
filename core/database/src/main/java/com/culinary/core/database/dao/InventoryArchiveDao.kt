@@ -39,6 +39,9 @@ interface InventoryArchiveDao {
     @Query("SELECT * FROM inventory_archive WHERE normalized_name = :normalizedName AND deleted_at IS NULL LIMIT 1")
     suspend fun findByNormalizedName(normalizedName: String): InventoryArchiveEntity?
 
+    @Query("SELECT * FROM inventory_archive WHERE barcode = :barcode LIMIT 1")
+    suspend fun findAnyByBarcode(barcode: String): InventoryArchiveEntity?
+
     @Query("SELECT COUNT(*) FROM inventory_archive WHERE status = 'ACTIVE' AND deleted_at IS NULL")
     suspend fun countActive(): Int
 }

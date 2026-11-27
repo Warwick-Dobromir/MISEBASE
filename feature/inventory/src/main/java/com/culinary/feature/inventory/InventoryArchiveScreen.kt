@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Text
@@ -33,6 +34,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.culinary.core.common.CulinaryError
 import com.culinary.core.common.Outcome
 import com.culinary.core.designsystem.component.ArchiveDetailBar
 import com.culinary.core.designsystem.component.ArchiveWideImage
@@ -54,6 +56,7 @@ import com.culinary.core.domain.model.InventoryBatchRecord
 import com.culinary.core.domain.model.InventoryLedgerEntry
 import com.culinary.core.domain.usecase.inventory.GetInventoryArchiveDetailUseCase
 import com.culinary.core.domain.usecase.inventory.ListStorageLocationsUseCase
+import com.culinary.core.domain.usecase.inventory.ReplaceInventoryArchiveBarcodeUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.Dispatchers
@@ -71,15 +74,18 @@ data class ArchiveDetailUiState(
     val isLoading: Boolean = true,
     val error: String? = null,
     val message: String? = null,
+    val pendingScannedBarcode: String? = null,
+    val isReplacingBarcode: Boolean = false,
 )
 
 @HiltViewModel
 class ArchiveDetailViewModel
     @Inject
     constructor(
-        savedStateHandle: SavedStateHandle,
+        private val savedStateHandle: SavedStateHandle,
         private val getArchiveDetail: GetInventoryArchiveDetailUseCase,
         private val listLocations: ListStorageLocationsUseCase,
+        private val replaceBarcode: ReplaceInventoryArchiveBarcodeUseCase,
     ) : ViewModel() {
         private val archiveId: String =
             savedStateHandle.get<String>(InventoryRoutes.ARG_ARCHIVE_ID).orEmpty()
@@ -88,7 +94,105 @@ class ArchiveDetailViewModel
         val uiState: StateFlow<ArchiveDetailUiState> = _uiState.asStateFlow()
 
         init {
+            viewModelScope.launch {
+                savedStateHandle.getStateFlow<Boolean>("archive_barcode_duplicate", false).collect { duplicate ->
+                    if (duplicate) {
+                        savedStateHandle["archive_barcode_duplicate"] = false
+                        _uiState.update { it.copy(error = "该条形码已分配给其他库存档案，不能更换。") }
+                    }
+                }
+            }
             load()
+        }
+
+        /**
+         * Consume the scanner result only after the archive detail destination resumes.
+         * Reading the saved value here avoids losing a one-shot result while a dialog
+         * destination is being removed from the navigation back stack.
+         */
+        fun consumeScannedBarcodeResult(): Boolean {
+            val scanned = savedStateHandle.get<String>("archive_barcode_scan_result")
+                ?.trim()
+                ?.takeIf { it.isNotEmpty() }
+                ?: return false
+            savedStateHandle["archive_barcode_scan_result"] = null
+            val current = _uiState.value.detail?.archive?.barcode.orEmpty()
+            if (current == scanned) {
+                _uiState.update { it.copy(message = "条形码没有变化。") }
+            } else {
+                _uiState.update { it.copy(pendingScannedBarcode = scanned, error = null) }
+                confirmBarcodeReplacement()
+            }
+            return true
+        }
+
+        fun dismissBarcodeReplacement() {
+            _uiState.update { it.copy(pendingScannedBarcode = null) }
+        }
+
+        fun confirmBarcodeReplacement() {
+            val scanned = _uiState.value.pendingScannedBarcode ?: return
+            replaceBarcodeFromScanner(scanned) {}
+        }
+
+        /**
+         * Scanner confirmation is committed by the archive's own ViewModel while the
+         * dialog is still visible. The dialog is dismissed only after the persisted
+         * value has been read back and verified.
+         */
+        fun replaceBarcodeFromScanner(scannedBarcode: String, onComplete: (Boolean) -> Unit) {
+            val scanned = scannedBarcode.trim()
+            if (scanned.isEmpty() || _uiState.value.isReplacingBarcode) {
+                onComplete(false)
+                return
+            }
+            viewModelScope.launch {
+                _uiState.update { it.copy(isReplacingBarcode = true, error = null, message = null) }
+                val result = replaceBarcode(archiveId, scanned)
+                when (result) {
+                    is Outcome.Failure -> {
+                        _uiState.update {
+                            it.copy(
+                                isReplacingBarcode = false,
+                                error = if (result.error is CulinaryError.Conflict) {
+                                    "这个新条码已存在于其他库存档案中，不能重复使用。请重新扫描其他条码。"
+                                } else {
+                                    InventoryErrorMessages.describe(result.error)
+                                },
+                            )
+                        }
+                        onComplete(false)
+                    }
+                    is Outcome.Success -> {
+                        when (val refreshed = read()) {
+                            is Outcome.Success -> {
+                                val persisted = refreshed.value.detail?.archive?.barcode?.trim()
+                                if (persisted.equals(scanned, ignoreCase = true)) {
+                                    _uiState.value = refreshed.value.copy(message = "条形码已更换。")
+                                    onComplete(true)
+                                } else {
+                                    _uiState.update {
+                                        it.copy(
+                                            isReplacingBarcode = false,
+                                            error = "条形码写入后校验失败，档案未确认更新。请重试。",
+                                        )
+                                    }
+                                    onComplete(false)
+                                }
+                            }
+                            is Outcome.Failure -> {
+                                _uiState.update {
+                                    it.copy(
+                                        isReplacingBarcode = false,
+                                        error = "条形码已提交，但重新读取档案失败：${InventoryErrorMessages.describe(refreshed.error)}",
+                                    )
+                                }
+                                onComplete(false)
+                            }
+                        }
+                    }
+                }
+            }
         }
 
         fun load() {
@@ -99,7 +203,14 @@ class ArchiveDetailViewModel
                     return@launch
                 }
                 when (val result = read()) {
-                    is Outcome.Success -> _uiState.value = result.value
+                    is Outcome.Success -> {
+                        val current = _uiState.value
+                        _uiState.value = result.value.copy(
+                            pendingScannedBarcode = current.pendingScannedBarcode,
+                            isReplacingBarcode = current.isReplacingBarcode,
+                            message = current.message,
+                        )
+                    }
                     is Outcome.Failure ->
                         _uiState.update {
                             it.copy(isLoading = false, error = InventoryErrorMessages.describe(result.error))
@@ -140,10 +251,17 @@ fun ArchiveDetailRoute(
     onReceipt: (String) -> Unit,
     onIssue: (String) -> Unit,
     onStocktake: (String) -> Unit,
+    onScanBarcode: (String) -> Unit,
     viewModel: ArchiveDetailViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
-    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { viewModel.load() }
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+        // 扫码结果消费后会自行执行替换并在写入完成后刷新；
+        // 避免这里并发发起旧数据读取，覆盖刚写入的新条码。
+        if (!viewModel.consumeScannedBarcodeResult()) {
+            viewModel.load()
+        }
+    }
     ArchiveDetailScreen(
         state = state,
         onOpenBatch = onOpenBatch,
@@ -153,6 +271,9 @@ fun ArchiveDetailRoute(
         onReceipt = onReceipt,
         onIssue = onIssue,
         onStocktake = onStocktake,
+        onScanBarcode = onScanBarcode,
+        onConfirmBarcodeReplacement = viewModel::confirmBarcodeReplacement,
+        onDismissBarcodeReplacement = viewModel::dismissBarcodeReplacement,
         onRetry = viewModel::load,
     )
 }
@@ -168,6 +289,9 @@ private fun ArchiveDetailScreen(
     onReceipt: (String) -> Unit,
     onIssue: (String) -> Unit,
     onStocktake: (String) -> Unit,
+    onScanBarcode: (String) -> Unit,
+    onConfirmBarcodeReplacement: () -> Unit,
+    onDismissBarcodeReplacement: () -> Unit,
     onRetry: () -> Unit,
 ) {
     val detail = state.detail
@@ -282,7 +406,32 @@ private fun ArchiveDetailScreen(
                     InventoryArchiveValueRow("品牌", detail.archive.brand ?: detail.links.firstOrNull()?.product?.brand ?: "未设置")
                     InventoryArchiveValueRow("商品规格", detail.archive.productSpecification ?: detail.links.firstOrNull()?.product?.packageLabel ?: "未设置")
                     InventoryArchiveValueRow("商品编码", detail.archive.productCode ?: detail.links.firstOrNull()?.product?.sku ?: "未生成")
-                    InventoryArchiveValueRow("条码", detail.archive.barcode?.takeIf { it.isNotBlank() } ?: "未关联")
+                    Row(
+                        modifier = Modifier.fillMaxWidth().heightIn(min = 42.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            "条码",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.weight(1f),
+                        )
+                        Text(
+                            detail.archive.barcode?.takeIf { it.isNotBlank() } ?: "未关联",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurface,
+                        )
+                        androidx.compose.material3.IconButton(
+                            onClick = { onScanBarcode(detail.archive.barcode.orEmpty()) },
+                            modifier = Modifier.height(32.dp),
+                        ) {
+                            androidx.compose.material3.Icon(
+                                imageVector = com.culinary.core.designsystem.icon.CulinaryIcons.Scan,
+                                contentDescription = "扫描并更换条形码",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    }
                     detail.sauceName?.let { InventoryArchiveValueRow("关联酱汁", it) }
                     InventoryArchiveSectionHeader(english = "SHELF LIFE & STORAGE", title = "保质期与储存")
                     InventoryArchiveValueRow(

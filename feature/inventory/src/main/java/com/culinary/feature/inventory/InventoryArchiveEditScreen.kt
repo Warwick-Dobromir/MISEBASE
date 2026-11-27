@@ -114,7 +114,6 @@ data class ArchiveEditUiState(
     val purchasePrice: String = "",
     val productCode: String = "",
     val barcode: String = "",
-    val pendingScannedBarcode: String? = null,
     val purchaseUnitId: String = "",
     val purchaseSpecification: String = "",
     val unitConversion: String = "",
@@ -210,20 +209,12 @@ class ArchiveEditViewModel
                 savedStateHandle.getStateFlow<String?>("archive_barcode_scan_result", null).collect { scanned ->
                     if (!scanned.isNullOrBlank()) {
                         savedStateHandle["archive_barcode_scan_result"] = null
-                        if (_uiState.value.barcode.isBlank() || _uiState.value.barcode == scanned) onBarcodeChange(scanned)
-                        else _uiState.update { it.copy(pendingScannedBarcode = scanned) }
+                        onBarcodeChange(scanned)
                     }
                 }
             }
             load()
         }
-
-        fun confirmScannedBarcodeReplacement() {
-            val scanned = _uiState.value.pendingScannedBarcode ?: return
-            onBarcodeChange(scanned)
-            _uiState.update { it.copy(pendingScannedBarcode = null) }
-        }
-        fun dismissScannedBarcodeReplacement() { _uiState.update { it.copy(pendingScannedBarcode = null) } }
 
         fun load() {
             viewModelScope.launch {
@@ -699,8 +690,6 @@ fun ArchiveEditRoute(
         onPurchasePriceChange = viewModel::onPurchasePriceChange,
         onProductCodeChange = viewModel::onProductCodeChange,
         onBarcodeChange = viewModel::onBarcodeChange,
-        onConfirmBarcodeReplacement = viewModel::confirmScannedBarcodeReplacement,
-        onDismissBarcodeReplacement = viewModel::dismissScannedBarcodeReplacement,
         onPurchaseUnitIdChange = viewModel::onPurchaseUnitIdChange,
         onPurchaseSpecificationChange = viewModel::onPurchaseSpecificationChange,
         onUnitConversionChange = viewModel::onUnitConversionChange,
@@ -772,8 +761,6 @@ private fun ArchiveEditScreen(
     onPurchasePriceChange: (String) -> Unit,
     onProductCodeChange: (String) -> Unit,
     onBarcodeChange: (String) -> Unit,
-    onConfirmBarcodeReplacement: () -> Unit,
-    onDismissBarcodeReplacement: () -> Unit,
     onPurchaseUnitIdChange: (String) -> Unit,
     onPurchaseSpecificationChange: (String) -> Unit,
     onUnitConversionChange: (String) -> Unit,
@@ -792,16 +779,6 @@ private fun ArchiveEditScreen(
     onUnlinkProduct: (String) -> Unit,
 ) {
     var picker by remember { mutableStateOf<EditPicker?>(null) }
-    state.pendingScannedBarcode?.let { scanned ->
-        AlertDialog(
-            onDismissRequest = onDismissBarcodeReplacement,
-            title = { Text("替换档案条码？") },
-            text = { Text("当前条码：${state.barcode}\\n扫描条码：$scanned") },
-            confirmButton = { CulinaryTextButton(text = "确认替换", onClick = onConfirmBarcodeReplacement) },
-            dismissButton = { CulinaryTextButton(text = "取消", onClick = onDismissBarcodeReplacement) },
-        )
-    }
-
     val context = LocalContext.current.applicationContext
     val imageUri = state.imageUri.takeIf { it.isNotBlank() }
     val imageBytes by produceState<ByteArray?>(initialValue = null, key1 = imageUri) {
@@ -897,10 +874,7 @@ private fun ArchiveEditScreen(
                 ArchiveEditReadOnlyRow("商品编码", state.productCode.ifBlank { "保存档案后自动生成" })
                 Row(modifier = Modifier.fillMaxWidth().padding(vertical = CulinarySpacing.xs), verticalAlignment = Alignment.CenterVertically) {
                     Text("条码", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.width(104.dp))
-                    ArchiveEditorInlineField(value = state.barcode, onValueChange = onBarcodeChange, placeholder = "扫描或填写商品条码", modifier = Modifier.weight(1f))
-                    IconButton(onClick = onScanBarcode, modifier = Modifier.size(36.dp)) {
-                        Icon(imageVector = CulinaryIcons.Scan, contentDescription = "扫描条码", tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(16.dp))
-                    }
+                    ArchiveEditorInlineField(value = state.barcode, onValueChange = onBarcodeChange, placeholder = "填写商品条码", modifier = Modifier.weight(1f))
                 }
                 if (state.kind == ArchiveKind.SAUCE) {
                     EditPickerField(

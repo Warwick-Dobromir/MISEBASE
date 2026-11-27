@@ -170,10 +170,17 @@ class ScanViewModel
                 return
             }
             viewModelScope.launch {
-                val temporaryBarcode = temporaryBarcodeDao?.findAllocatedByBarcode(capture.rawValue.trim())
+                val temporaryBarcode = temporaryBarcodeDao?.findByBarcode(capture.rawValue.trim())
                 if (temporaryBarcode != null) {
                     val activeBatchId =
                         temporaryBarcode.batchId.takeIf { temporaryBarcode.status == "ALLOCATED" }
+                    val unavailableMessage =
+                        when (temporaryBarcode.status) {
+                            "PENDING_CLEAN" -> "此临时条码待清洁，不能用于识别批次或创建新档案。"
+                            "FREE" -> "此临时条码已归还空闲池，旧标签不能继续使用。"
+                            "ALLOCATED" -> if (activeBatchId == null) "临时条码关联批次缺失，请检查条码池。" else null
+                            else -> "此临时条码状态异常，不能继续使用。"
+                        }
                     gate.resume()
                     _uiState.update { state ->
                         state.copy(
@@ -183,7 +190,22 @@ class ScanViewModel
                             pendingCapture = null,
                             matchedArchive = null,
                             openBatchId = activeBatchId,
-                            error = if (activeBatchId == null) "此临时条码已回收，不能再用于识别库存批次。" else null,
+                            error = unavailableMessage,
+                        )
+                    }
+                    return@launch
+                }
+                val historicalTemporaryBarcode = temporaryBarcodeDao?.findHistoricalBarcode(capture.rawValue.trim())
+                if (historicalTemporaryBarcode != null) {
+                    gate.resume()
+                    _uiState.update { state ->
+                        state.copy(
+                            lookupInProgress = false,
+                            scanning = state.hasCamera && state.cameraAccess == CameraAccessState.GRANTED,
+                            pendingCapture = null,
+                            matchedArchive = null,
+                            openBatchId = null,
+                            error = "这是旧代次临时条码，已失效；请使用当前批次重新打印的标签。",
                         )
                     }
                     return@launch
