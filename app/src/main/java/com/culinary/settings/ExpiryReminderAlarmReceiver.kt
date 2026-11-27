@@ -257,7 +257,17 @@ class ExpiryReminderAlarmReceiver : BroadcastReceiver() {
             check(canScheduleExactAlarms(context, alarmManager)) {
                 "精确闹钟权限未授予。"
             }
-            alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAtMillis, pending)
+            val showIntent = PendingIntent.getActivity(
+                context,
+                TEST_REQUEST_CODE + 1,
+                Intent(context, com.culinary.MainActivity::class.java)
+                    .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP),
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+            )
+            alarmManager.setAlarmClock(
+                AlarmManager.AlarmClockInfo(triggerAtMillis, showIntent),
+                pending,
+            )
         }
 
         private fun canScheduleExactAlarms(context: Context, alarmManager: AlarmManager): Boolean =
