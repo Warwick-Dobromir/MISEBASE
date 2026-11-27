@@ -490,18 +490,20 @@ fun AddPlanRoute(onSaved: () -> Unit, onBack: () -> Unit, planId: String? = null
             note = existing.metadata.note
         }
     }
-    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 22.dp, vertical = 20.dp)) {
+    Column(Modifier.fillMaxSize()) {
+        Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 22.dp, vertical = 20.dp)) {
         PlanEyebrow(if (planId == null) "CREATE PLAN" else "EDIT PLAN")
         Spacer(Modifier.height(12.dp))
         Text(if (planId == null) "添加计划" else "编辑计划", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.SemiBold)
         if (step == 0) {
             Spacer(Modifier.height(10.dp))
             Text("选择计划类型", color = MaterialTheme.colorScheme.onSurfaceVariant)
-            PlanTypeChoice("制作计划", "PRODUCTION PLAN", "安排菜品、酱汁、汤底及预制件制作，关联制作档案并计算原料需求。", kind == PlanKind.PRODUCTION) { kind = PlanKind.PRODUCTION }
-            PlanTypeChoice("工作计划", "WORK PLAN", "安排检查、清洁、整理、盘点等日常工作，不产生制作原料需求。", kind == PlanKind.WORK) { kind = PlanKind.WORK }
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(18.dp)) {
+                PlanTypeChoice("制作计划", "01 / PRODUCTION", "关联制作档案，自动计算原料需求。", kind == PlanKind.PRODUCTION, Modifier.weight(1f)) { kind = PlanKind.PRODUCTION }
+                PlanTypeChoice("工作计划", "02 / WORK", "安排检查、清洁、整理等日常工作。", kind == PlanKind.WORK, Modifier.weight(1f)) { kind = PlanKind.WORK }
+            }
             PlanSection("计划日期", "选择任务执行日期") { PlanDateField(date) { date = it } }
             PlanSection("计划来源", "建立方式") { Text("手动创建", style = MaterialTheme.typography.bodyMedium) }
-            PlanTextAction("继续", true) { step = 1 }
         } else {
             if (planId == null) Text("‹ 修改计划类型", Modifier.clickable { step = 0 }.padding(vertical = 8.dp), color = MaterialTheme.colorScheme.secondary, style = MaterialTheme.typography.labelLarge)
             Text(if (kind == PlanKind.PRODUCTION) "PRODUCTION · 制作安排" else "WORK · 工作安排", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -573,6 +575,16 @@ fun AddPlanRoute(onSaved: () -> Unit, onBack: () -> Unit, planId: String? = null
                 val metadata = PlanMetadata(target, quantity, unit, category, time, priority, instructions, criteria, linkedArchive, note = note, recipeId = recipeId, recipeVersionId = versionId, unitId = unitId)
                 viewModel.save(kind, planId, title, date, metadata, onSaved)
             }
+        }
+        }
+        if (step == 0) {
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+            Text(
+                "继续",
+                Modifier.fillMaxWidth().clickable { step = 1 }.padding(horizontal = 22.dp, vertical = 18.dp),
+                color = MaterialTheme.colorScheme.secondary,
+                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
+            )
         }
     }
 }
