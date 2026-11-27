@@ -33,7 +33,6 @@ class ExpiryReminderFallbackWorker(
             .putLong(ExpiryReminderAlarmReceiver.KEY_ALARM_STAGE_AT, System.currentTimeMillis())
             .apply()
 
-        ExpiryReminderAlarmReceiver.scheduleNextReminder(applicationContext)
         val request = OneTimeWorkRequestBuilder<ExpiryReminderWorker>()
             .setExpedited(OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST)
             .build()
@@ -47,6 +46,15 @@ class ExpiryReminderFallbackWorker(
             ExistingWorkPolicy.APPEND_OR_REPLACE,
             request,
         )
+        // Keep the current scan even if registering tomorrow's alarm fails.
+        runCatching { ExpiryReminderAlarmReceiver.scheduleNextReminder(applicationContext) }
+            .onFailure {
+                ExpiryReminderDiagnostics.record(
+                    applicationContext,
+                    "NEXT_REMINDER_RESCHEDULE_FAILED",
+                    "${it.javaClass.simpleName}: ${it.message ?: "no message"}",
+                )
+            }
         Result.success()
     } catch (error: Throwable) {
         ExpiryReminderDiagnostics.record(
