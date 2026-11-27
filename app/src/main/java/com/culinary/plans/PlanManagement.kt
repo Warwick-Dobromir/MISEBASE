@@ -490,8 +490,9 @@ fun AddPlanRoute(onSaved: () -> Unit, onBack: () -> Unit, planId: String? = null
             note = existing.metadata.note
         }
     }
-    Column(Modifier.fillMaxSize()) {
-        Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 22.dp, vertical = 20.dp)) {
+    androidx.compose.foundation.layout.Box(Modifier.fillMaxSize()) {
+      Column(Modifier.fillMaxSize()) {
+        Column(Modifier.fillMaxWidth().weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = 22.dp, vertical = 20.dp).padding(bottom = if (step == 0) 84.dp else 0.dp)) {
         PlanEyebrow(if (planId == null) "CREATE PLAN" else "EDIT PLAN")
         Spacer(Modifier.height(12.dp))
         Text(if (planId == null) "添加计划" else "编辑计划", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.SemiBold)
@@ -511,6 +512,7 @@ fun AddPlanRoute(onSaved: () -> Unit, onBack: () -> Unit, planId: String? = null
             if (kind == PlanKind.PRODUCTION) {
                 PlanSection("01  制作内容", "关联现有制作档案") {
                     PlanField("计划名称", title) { title = it }
+                    PlanField("制作对象", target) { target = it }
                     Text("选择制作档案", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     if (recipes.isEmpty()) Text("当前没有可用的菜谱档案或已发布版本。", color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
                     recipes.forEach { option ->
@@ -531,7 +533,6 @@ fun AddPlanRoute(onSaved: () -> Unit, onBack: () -> Unit, planId: String? = null
                         }
                         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                     }
-                    Text("＋ 新建制作档案", Modifier.fillMaxWidth().clickable { onOpenRecipeEditor(null) }.padding(vertical = 10.dp), color = MaterialTheme.colorScheme.secondary, style = MaterialTheme.typography.labelMedium)
                     if (target.isNotBlank()) Text("关联档案：" + target, color = Color(0xFF8A6A2B), style = MaterialTheme.typography.labelMedium)
                     Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
                         Column(Modifier.weight(1f)) { PlanField("制作数量", quantity, KeyboardType.Decimal) { quantity = it } }
@@ -552,14 +553,14 @@ fun AddPlanRoute(onSaved: () -> Unit, onBack: () -> Unit, planId: String? = null
                 PlanSection("01  工作内容", "定义需要完成的任务") {
                     PlanField("任务名称", title) { title = it }
                     Text("工作分类", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    ChoiceRow(listOf("库存检查", "设备检查", "清洁整理", "食材处理", "采购准备", "其他"), category) { category = it }
+                    PlanOptionSelector(listOf("库存检查", "设备检查", "清洁整理", "食材处理", "采购准备", "其他"), category) { category = it }
                 }
                 PlanSection("02  执行安排", "日期、时间与优先级") {
                     PlanDateField(date) { date = it }
                     Text("执行时间", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    PlanWheelChoice(listOf("不指定", "09:00", "10:00", "11:00", "14:00", "15:00", "16:00", "17:00"), time) { time = it }
+                    PlanOptionSelector(listOf("不指定", "09:00", "10:00", "11:00", "14:00", "15:00", "16:00", "17:00"), time) { time = it }
                     Text("优先级", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    PlanWheelChoice(listOf("低", "普通", "高", "紧急"), priority) { priority = it }
+                    PlanOptionSelector(listOf("低", "普通", "高", "紧急"), priority) { priority = it }
                 }
                 PlanSection("03  执行要求", "工作说明与完成标准") {
                     PlanField("工作说明", instructions, minLines = 3) { instructions = it }
@@ -577,15 +578,19 @@ fun AddPlanRoute(onSaved: () -> Unit, onBack: () -> Unit, planId: String? = null
             }
         }
         }
-        if (step == 0) {
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-            Text(
-                "继续",
-                Modifier.fillMaxWidth().clickable { step = 1 }.padding(horizontal = 22.dp, vertical = 18.dp),
-                color = MaterialTheme.colorScheme.secondary,
-                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
-            )
-        }
+      }
+      if (step == 0) {
+          Column(Modifier.align(androidx.compose.ui.Alignment.BottomCenter).fillMaxWidth()) {
+              HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+              Text(
+                  "继续",
+                  Modifier.fillMaxWidth().clickable { step = 1 }.padding(horizontal = 22.dp, vertical = 18.dp),
+                  color = MaterialTheme.colorScheme.secondary,
+                  style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
+                  textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+              )
+          }
+      }
     }
 }
 
@@ -654,33 +659,42 @@ private fun PlanDateField(value: String, onChange: (String) -> Unit) {
 }
 
 @Composable
-private fun PlanWheelChoice(options: List<String>, selected: String, onSelect: (String) -> Unit) {
-    val selectedIndex = options.indexOf(selected).coerceAtLeast(0)
-    val previous = options.getOrNull(selectedIndex - 1)
-    val next = options.getOrNull(selectedIndex + 1)
+private fun PlanOptionSelector(options: List<String>, selected: String, onSelect: (String) -> Unit) {
     Column(
         Modifier.fillMaxWidth().padding(vertical = 5.dp),
         horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally,
     ) {
-        Box(
-            Modifier.fillMaxWidth().height(30.dp).clickable(enabled = previous != null) { previous?.let(onSelect) },
-            contentAlignment = androidx.compose.ui.Alignment.Center,
-        ) {
-            Text(previous ?: " ", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.55f))
-        }
-        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+        // 选中值固定在同一位置；切换选项时只替换文字，不改变布局锚点。
         Box(
             Modifier.fillMaxWidth().height(38.dp),
             contentAlignment = androidx.compose.ui.Alignment.Center,
         ) {
-            Text(selected, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold, color = Color(0xFF8A6A2B))
+            Text(
+                selected,
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = FontWeight.SemiBold,
+                color = Color(0xFF8A6A2B),
+            )
         }
-        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-        Box(
-            Modifier.fillMaxWidth().height(30.dp).clickable(enabled = next != null) { next?.let(onSelect) },
-            contentAlignment = androidx.compose.ui.Alignment.Center,
+        HorizontalDivider(color = Color(0xFF8A6A2B), thickness = 2.dp)
+        FlowRow(
+            modifier = Modifier.fillMaxWidth().padding(top = 12.dp, bottom = 4.dp),
+            horizontalArrangement = Arrangement.SpaceEvenly,
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            maxItemsInEachRow = 5,
         ) {
-            Text(next ?: " ", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.55f))
+            options.filter { it != selected }.forEach { option ->
+                Box(
+                    Modifier.clickable { onSelect(option) }.padding(horizontal = 10.dp, vertical = 9.dp),
+                    contentAlignment = androidx.compose.ui.Alignment.Center,
+                ) {
+                    Text(
+                        option,
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
         }
     }
 }
