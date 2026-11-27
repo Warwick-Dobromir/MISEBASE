@@ -670,9 +670,7 @@ private fun PlanWheelChoice(options: List<String>, selected: String, onSelect: (
         }
         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
         Box(
-            Modifier.fillMaxWidth().height(38.dp).clickable {
-                options.getOrNull((selectedIndex + 1).coerceAtMost(options.lastIndex))?.let(onSelect)
-            },
+            Modifier.fillMaxWidth().height(38.dp),
             contentAlignment = androidx.compose.ui.Alignment.Center,
         ) {
             Text(selected, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold, color = Color(0xFF8A6A2B))
