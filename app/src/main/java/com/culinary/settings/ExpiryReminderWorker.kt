@@ -26,6 +26,8 @@ import com.culinary.core.domain.model.CapacityUnitAllocator
 import com.culinary.core.domain.model.ExpiryCapacityZone
 import java.math.BigDecimal
 import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.ZoneId
 import java.util.UUID
 import java.util.concurrent.Executors
 import kotlinx.coroutines.CancellationException
@@ -242,6 +244,18 @@ object ExpiryReminderScheduler {
 
     private const val KEY_LAST_MISSED_CATCH_UP_TARGET = "last_missed_reminder_catch_up_target"
 
+    private fun latestReminderTarget(nowMillis: Long): Long {
+        val now = LocalDateTime.ofInstant(java.time.Instant.ofEpochMilli(nowMillis), ZoneId.systemDefault())
+        val todayMorning = now.toLocalDate().atTime(8, 0)
+        val todayEvening = now.toLocalDate().atTime(20, 0)
+        val target = when {
+            !now.isBefore(todayEvening) -> todayEvening
+            !now.isBefore(todayMorning) -> todayMorning
+            else -> now.toLocalDate().minusDays(1).atTime(20, 0)
+        }
+        return target.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
+    }
+
     fun ensureScheduled(context: Context, trigger: String = "application_startup") {
         val appContext = context.applicationContext
         val now = System.currentTimeMillis()
@@ -270,15 +284,19 @@ object ExpiryReminderScheduler {
         // The old implementation overwrote the overdue target first, then only
         // ran catch-up after 10 hours, so opening the app shortly after 20:00
         // could both lose the reminder and produce no notification.
-        if (previouslyScheduledTarget > 0L &&
-            previouslyScheduledTarget <= now &&
-            lastSuccessfulScan < previouslyScheduledTarget &&
-            preferences.getLong(KEY_LAST_MISSED_CATCH_UP_TARGET, 0L) != previouslyScheduledTarget
+        // Derive the most recent 08:00/20:00 slot from wall-clock time as well as
+        // the stored target. Older app versions overwrote an overdue target on launch,
+        // so the stored target may already point to tomorrow even though today's slot
+        // was never scanned.
+        val missedReminderTarget = latestReminderTarget(now)
+        if (
+            lastSuccessfulScan < missedReminderTarget &&
+            preferences.getLong(KEY_LAST_MISSED_CATCH_UP_TARGET, 0L) != missedReminderTarget
         ) {
             ExpiryReminderDiagnostics.record(
                 appContext,
                 "MISSED_REMINDER_CATCH_UP_ENQUEUED",
-                "trigger=$trigger; missedTarget=$previouslyScheduledTarget; lastSuccessfulScan=$lastSuccessfulScan",
+                "trigger=$trigger; missedTarget=$missedReminderTarget; storedNextTarget=$previouslyScheduledTarget; lastSuccessfulScan=$lastSuccessfulScan",
             )
             val missedRequest = OneTimeWorkRequestBuilder<ExpiryReminderWorker>()
                 .setExpedited(OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST)
@@ -289,7 +307,7 @@ object ExpiryReminderScheduler {
                 missedRequest,
             )
             // Persist the de-duplication marker only after WorkManager accepted the request.
-            preferences.edit().putLong(KEY_LAST_MISSED_CATCH_UP_TARGET, previouslyScheduledTarget).commit()
+            preferences.edit().putLong(KEY_LAST_MISSED_CATCH_UP_TARGET, missedReminderTarget).commit()
         }
 
         ExpiryReminderAlarmReceiver.scheduleNextReminder(appContext)
