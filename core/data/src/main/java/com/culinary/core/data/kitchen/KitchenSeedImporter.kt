@@ -242,12 +242,12 @@ class KitchenSeedImporter
             metadataDao.delete(PLAN_VERSION_KEY)
         }
 
-        private suspend fun ensurePlanSeeded(): Outcome<Unit> {
-            if (metadataDao.find(PLAN_VERSION_KEY)?.value == PLAN_SEED_VERSION) return Outcome.success(Unit)
+        private suspend fun ensurePlanSeeded(): Outcome<kotlin.Unit> {
+            if (metadataDao.find(PLAN_VERSION_KEY)?.value == PLAN_SEED_VERSION) return Outcome.success(kotlin.Unit)
             val now = clock.now().toEpochMilli()
             return transactionRunner.write {
                 if (metadataDao.find(PLAN_VERSION_KEY)?.value != PLAN_SEED_VERSION) insertPlanSeeds(now)
-                Unit
+                kotlin.Unit
             }
         }
 
